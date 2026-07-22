@@ -1,0 +1,14 @@
+# Cấu hình Netlify — để Netlify tự biết build thư mục frontend/, không cần
+# nhập tay trên dashboard. Đọc backend/CLAUDE.md mục 7 để hiểu bối cảnh deploy.
+
+[build]
+  base = "frontend"          # code FE nằm trong frontend/, không phải gốc repo
+  command = "npm run build"
+  publish = "dist"           # Netlify hiểu tương đối theo base -> frontend/dist
+
+# SPA fallback: mọi đường dẫn chưa khớp file tĩnh đều trả index.html để React tự
+# xử lý (cần cho link ?phieu=... và link đặt lại mật khẩu quay về gốc site).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
