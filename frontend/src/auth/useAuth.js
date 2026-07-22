@@ -115,8 +115,14 @@ export function useAuth() {
     });
     if (eInsert) return { error: `Tạo tài khoản xong nhưng không lưu được hồ sơ: ${eInsert.message}` };
 
+    // RACE: signUp() tạo session -> onAuthStateChange(SIGNED_IN) bắn NGAY và gọi
+    // loadProfile TRƯỚC KHI insert ở trên kịp xong -> profileError "chưa có hồ
+    // sơ" dù thực ra đăng nhập lại là vào được. Nạp lại hồ sơ SAU insert để ghi
+    // đè kết quả tra hụt đó. (emailDaTra đã trỏ email này nên onAuthStateChange
+    // không gọi loadProfile lần nữa — lần gọi tay này là chốt cuối.)
+    await loadProfile(email);
     return { error: null };
-  }, []);
+  }, [loadProfile]);
 
   const sendPasswordReset = useCallback(async (email) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
