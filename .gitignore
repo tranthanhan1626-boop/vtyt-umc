@@ -1,0 +1,20 @@
+# Bí mật — TUYỆT ĐỐI không commit
+.env
+.env.*
+!.env.example
+backend/.env.local
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+dist/
+
+# Dữ liệu HIS (file Excel ~150k dòng, chứa dữ liệu bệnh viện)
+*.xlsx
+*.xls
+
+.DS_Store
