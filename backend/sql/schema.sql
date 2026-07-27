@@ -255,9 +255,8 @@ create table proposals (
                      ('mua_sam_bo_sung', 'chi_dinh_thau', 'dau_thau_rong_rai')),
     -- Kỳ dự kiến sử dụng. Lưu tháng/năm RỜI (không dùng kiểu date) vì nghiệp vụ
     -- chỉ tới mức THÁNG — nhét ngày vào sẽ tạo thông tin giả không ai nhập.
-    -- ĐỘC LẬP với so_thang_du_kien: khoa tự điền cả 2, có thể lệch nhau hợp lý
-    -- (vd "dùng 6 tháng" nhưng vật tư cần sẵn sàng suốt T1→T12). FE chỉ NHẮC
-    -- khi lệch, KHÔNG chặn gửi và KHÔNG tự tính đè.
+    -- so_thang_du_kien được TỰ TÍNH từ 4 mốc này (tính cả tháng đầu/cuối).
+    -- Không còn ô nhập số tháng riêng trên FE — xem lịch sử quyết định ở trên.
     tu_thang       smallint,
     tu_nam         int,
     den_thang      smallint,

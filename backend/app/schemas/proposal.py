@@ -25,20 +25,36 @@ class ProposalIn(BaseModel):
     ma_hang: str
     don_vi: str
     nam_de_xuat: int
-    so_luong_thang: dict[str, float]  # key "1".."12"
+    so_luong: float
+    loai_mua_sam: Literal["mua_sam_bo_sung", "chi_dinh_thau", "dau_thau_rong_rai"]
+    goi: str | None = None
+    tu_thang: int
+    tu_nam: int
+    den_thang: int
+    den_nam: int
     created_by: EmailStr
     reason: ProposalReasonIn
 
-    @field_validator("so_luong_thang")
+    @field_validator("so_luong")
     @classmethod
-    def phai_du_12_thang(cls, v: dict[str, float]):
-        thieu = [str(t) for t in range(1, 13) if str(t) not in v]
-        if thieu:
-            raise ValueError(f"Thiếu số lượng cho các tháng: {thieu} — phải nhập đủ 12 tháng.")
-        am = [t for t, so in v.items() if so < 0]
-        if am:
-            raise ValueError(f"Số lượng không được âm ở tháng: {am}")
+    def so_luong_duong(cls, v: float):
+        if v <= 0:
+            raise ValueError("Số lượng đề xuất phải lớn hơn 0.")
         return v
+
+    @model_validator(mode="after")
+    def ky_su_dung_hop_le(self):
+        if not 1 <= self.tu_thang <= 12 or not 1 <= self.den_thang <= 12:
+            raise ValueError("Tháng sử dụng phải nằm trong khoảng 1-12.")
+        bat_dau = self.tu_nam * 12 + self.tu_thang
+        ket_thuc = self.den_nam * 12 + self.den_thang
+        if ket_thuc < bat_dau:
+            raise ValueError("Mốc kết thúc phải sau mốc bắt đầu.")
+        return self
+
+    @property
+    def so_thang_du_kien(self) -> int:
+        return (self.den_nam * 12 + self.den_thang) - (self.tu_nam * 12 + self.tu_thang) + 1
 
 
 class PackageAssignIn(BaseModel):

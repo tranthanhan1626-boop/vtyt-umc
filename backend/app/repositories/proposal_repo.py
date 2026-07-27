@@ -1,6 +1,12 @@
 """
+LEGACY/THAM KHẢO — FastAPI hiện không được frontend production sử dụng.
+
 Function 1: đề xuất theo MÃ HÀNG — mỗi lần sửa tạo version mới, bản cũ vẫn
 tra được (is_current chuyển false, không xoá).
+
+Luồng production gửi cả giỏ qua RPC ``submit_proposal_group`` để mọi mã hàng
+được ghi trong một transaction. Không gọi ``create_proposal`` lặp lại để gửi
+một giỏ, vì các request HTTP riêng không thể rollback cùng nhau.
 
 Function 2: gán gói thầu theo NHÓM KỸ THUẬT (mã quản lý) — OVERWRITE khi đổi
 gói giữa kỳ (đúng 1 mã quản lý / 1 gói / năm), nhưng mọi lần đổi đều insert
@@ -61,7 +67,14 @@ def create_proposal(db: Client, payload: ProposalIn) -> dict:
                 "nam_de_xuat": payload.nam_de_xuat,
                 "version": next_version,
                 "is_current": True,
-                "so_luong_thang": payload.so_luong_thang,
+                "so_luong": payload.so_luong,
+                "so_thang_du_kien": payload.so_thang_du_kien,
+                "loai_mua_sam": payload.loai_mua_sam,
+                "goi": payload.goi,
+                "tu_thang": payload.tu_thang,
+                "tu_nam": payload.tu_nam,
+                "den_thang": payload.den_thang,
+                "den_nam": payload.den_nam,
                 "created_by": payload.created_by,
             }
         )

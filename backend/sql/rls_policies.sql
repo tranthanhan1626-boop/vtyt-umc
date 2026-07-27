@@ -247,6 +247,188 @@ create trigger trg_kiem_tra_chuyen_trang_thai
     before update on proposals
     for each row execute function fn_kiem_tra_chuyen_trang_thai();
 
+-- Gửi TOÀN BỘ một giỏ trong đúng 1 transaction. Trước đây FE lặp từng mã:
+-- hạ version cũ -> insert proposal -> insert lý do; lỗi giữa chừng có thể lưu
+-- nửa giỏ hoặc để mã đầu không còn bản current. RPC này validate, tạo version,
+-- proposal và lý do cùng một transaction; bất kỳ dòng nào lỗi thì rollback hết.
+-- SECURITY DEFINER để dieu_duong có thể lập thay khoa đã chọn, nhưng vì bypass
+-- RLS nên mọi kiểm tra role/khoa phải nằm tường minh trong hàm.
+create or replace function submit_proposal_group(
+    p_don_vi text,
+    p_nam_de_xuat int,
+    p_items jsonb
+)
+returns table (
+    id bigint,
+    ma_hang text,
+    version int,
+    nhom_de_xuat uuid
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+    v_role text := current_user_role();
+    v_email text := auth.email();
+    v_ho_ten text;
+    v_nhom uuid := gen_random_uuid();
+    v_item jsonb;
+    v_ma_hang text;
+    v_version int;
+    v_id bigint;
+    v_so_luong numeric;
+    v_tu_thang int;
+    v_tu_nam int;
+    v_den_thang int;
+    v_den_nam int;
+    v_so_thang int;
+    v_loai_ly_do text;
+begin
+    if v_email is null or v_role is null then
+        raise exception 'Phiên đăng nhập không hợp lệ.';
+    end if;
+
+    p_don_vi := nullif(trim(p_don_vi), '');
+    if p_don_vi is null then
+        raise exception 'Phải chọn khoa/đơn vị đề xuất.';
+    end if;
+
+    if v_role = 'dvsd' and p_don_vi is distinct from current_user_khoa() then
+        raise exception 'Khoa chỉ được tạo đề xuất cho đúng đơn vị của mình.';
+    elsif v_role not in ('dvsd', 'dieu_duong', 'admin') then
+        raise exception 'Tài khoản không có quyền tạo đề xuất.';
+    end if;
+
+    if p_nam_de_xuat not between extract(year from now())::int
+                               and extract(year from now())::int + 5 then
+        raise exception 'Năm đề xuất không hợp lệ: %', p_nam_de_xuat;
+    end if;
+
+    if jsonb_typeof(p_items) is distinct from 'array'
+       or jsonb_array_length(p_items) = 0 then
+        raise exception 'Giỏ đề xuất đang trống.';
+    end if;
+    if jsonb_array_length(p_items) > 500 then
+        raise exception 'Một giỏ không được vượt quá 500 mã hàng.';
+    end if;
+
+    if exists (
+        select 1
+        from jsonb_array_elements(p_items) x
+        group by trim(x->>'ma_hang')
+        having count(*) > 1
+    ) then
+        raise exception 'Giỏ đề xuất có mã hàng bị trùng.';
+    end if;
+
+    select ho_ten into v_ho_ten
+    from users
+    where email = v_email;
+
+    -- Chặn hai request cùng khoa/năm chạy song song và cùng tính một version.
+    perform pg_advisory_xact_lock(
+        hashtextextended('submit_proposal_group:' || p_don_vi || ':' || p_nam_de_xuat, 0)
+    );
+
+    for v_item in select value from jsonb_array_elements(p_items)
+    loop
+        v_ma_hang := nullif(trim(v_item->>'ma_hang'), '');
+        if v_ma_hang is null
+           or not exists (select 1 from vat_tu where vat_tu.ma_hang = v_ma_hang) then
+            raise exception 'Mã hàng không tồn tại trong danh mục: %',
+                coalesce(v_ma_hang, '(trống)');
+        end if;
+
+        begin
+            v_so_luong := (v_item->>'so_luong')::numeric;
+            v_tu_thang := (v_item->>'tu_thang')::int;
+            v_tu_nam := (v_item->>'tu_nam')::int;
+            v_den_thang := (v_item->>'den_thang')::int;
+            v_den_nam := (v_item->>'den_nam')::int;
+        exception when invalid_text_representation or numeric_value_out_of_range then
+            raise exception 'Số lượng hoặc kỳ sử dụng không hợp lệ cho mã %.', v_ma_hang;
+        end;
+
+        if v_so_luong <= 0 then
+            raise exception 'Số lượng mã % phải lớn hơn 0.', v_ma_hang;
+        end if;
+        if v_tu_thang not between 1 and 12 or v_den_thang not between 1 and 12
+           or v_tu_nam not between 2000 and 2100 or v_den_nam not between 2000 and 2100
+           or (v_den_nam * 12 + v_den_thang) < (v_tu_nam * 12 + v_tu_thang) then
+            raise exception 'Kỳ sử dụng không hợp lệ cho mã %.', v_ma_hang;
+        end if;
+        v_so_thang := (v_den_nam * 12 + v_den_thang)
+                    - (v_tu_nam * 12 + v_tu_thang) + 1;
+
+        if coalesce(v_item->>'loai_mua_sam', '') not in
+           ('mua_sam_bo_sung', 'chi_dinh_thau', 'dau_thau_rong_rai') then
+            raise exception 'Phương thức mua sắm không hợp lệ cho mã %.', v_ma_hang;
+        end if;
+
+        v_loai_ly_do := v_item->>'loai_ly_do';
+        if coalesce(v_loai_ly_do, '') not in
+           ('theo_lich_su', 'ky_thuat_moi', 'thay_doi_phac_do', 'khac') then
+            raise exception 'Lý do đề xuất không hợp lệ cho mã %.', v_ma_hang;
+        end if;
+        if v_loai_ly_do = 'ky_thuat_moi'
+           and nullif(trim(v_item->>'ten_ky_thuat_moi'), '') is null then
+            raise exception 'Mã % chọn kỹ thuật mới nhưng thiếu tên kỹ thuật.', v_ma_hang;
+        end if;
+
+        select coalesce(max(p.version), 0) + 1 into v_version
+        from proposals p
+        where p.ma_hang = v_ma_hang
+          and p.don_vi = p_don_vi
+          and p.nam_de_xuat = p_nam_de_xuat;
+
+        update proposals p
+        set is_current = false
+        where p.ma_hang = v_ma_hang
+          and p.don_vi = p_don_vi
+          and p.nam_de_xuat = p_nam_de_xuat
+          and p.is_current;
+
+        insert into proposals (
+            ma_hang, don_vi, nam_de_xuat, version, is_current, so_luong,
+            so_thang_du_kien, loai_mua_sam, goi,
+            tu_thang, tu_nam, den_thang, den_nam,
+            nhom_de_xuat, created_by, created_by_ho_ten
+        )
+        values (
+            v_ma_hang, p_don_vi, p_nam_de_xuat, v_version, true, v_so_luong,
+            v_so_thang, v_item->>'loai_mua_sam', nullif(trim(v_item->>'goi'), ''),
+            v_tu_thang, v_tu_nam, v_den_thang, v_den_nam,
+            v_nhom, v_email, v_ho_ten
+        )
+        returning proposals.id into v_id;
+
+        insert into proposal_reasons (
+            proposal_id, loai_ly_do, ten_ky_thuat_moi, uoc_ca_thang, ghi_chu
+        )
+        values (
+            v_id,
+            v_loai_ly_do,
+            case when v_loai_ly_do = 'ky_thuat_moi'
+                 then nullif(trim(v_item->>'ten_ky_thuat_moi'), '') end,
+            nullif(v_item->>'uoc_ca_thang', '')::numeric,
+            nullif(trim(v_item->>'ghi_chu'), '')
+        );
+
+        id := v_id;
+        ma_hang := v_ma_hang;
+        version := v_version;
+        nhom_de_xuat := v_nhom;
+        return next;
+    end loop;
+end;
+$$;
+
+revoke execute on function submit_proposal_group(text, int, jsonb)
+    from public, anon;
+grant execute on function submit_proposal_group(text, int, jsonb)
+    to authenticated;
+
 alter table proposal_reasons enable row level security;
 
 create policy "xem lý do đề xuất theo phân quyền khoa" on proposal_reasons

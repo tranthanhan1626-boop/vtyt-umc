@@ -75,7 +75,10 @@ Web app quản lý dự trù vật tư y tế (VTYT) cho Bệnh viện Đại h�
 5. **Giỏ đề xuất**: nhiều mã hàng ở NHIỀU nhóm kỹ thuật khác nhau gom chung 1
    giỏ; đổi nhóm/F5/đổi khoa đều KHÔNG mất (giỏ lưu `localStorage` tách theo
    khoa — `KHOA_GIO`). Gửi 1 lần → **1 giỏ = 1 bản đề xuất chung** (mọi mã hàng
-   chia sẻ 1 `proposals.nhom_de_xuat` uuid). Toàn viện thì nút gửi khoá.
+   chia sẻ 1 `proposals.nhom_de_xuat` uuid). FE gọi đúng **1 RPC
+   `submit_proposal_group`**; RPC validate + tạo version + proposal + lý do
+   trong 1 transaction, lỗi bất kỳ mã nào thì rollback cả giỏ. Không đổi lại
+   thành vòng lặp insert từ FE. Toàn viện thì nút gửi khoá.
 
 **2 khái niệm gói — ĐỪNG nhầm:**
 - `proposals.goi` (nhãn chữ, 5 gói: Dùng chung/CTCH-NTK/GMHS/Tim mạch/Răng Hàm

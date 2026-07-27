@@ -18,3 +18,4 @@ dist/
 *.xls
 
 .DS_Store
+.Rhistory

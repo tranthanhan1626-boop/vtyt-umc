@@ -19,10 +19,12 @@ async def item_history(ma_hang: str, user=Depends(get_current_user)):
 
 @router.post("/proposals")
 async def submit_proposal(payload: ProposalIn, user=Depends(get_current_user)):
-    """Function 1: gửi đề xuất — theo MÃ HÀNG, tự tạo version mới nếu đã có.
-    ProposalIn tự validate đủ 12 tháng + bắt buộc tên kỹ thuật khi chọn
-    'kỹ thuật mới' -> FastAPI tự trả 422 nếu Pydantic raise ValidationError,
-    không cần try/except thủ công ở đây."""
+    """LEGACY: gửi một mã hàng qua FastAPI tham khảo.
+
+    Frontend production gửi cả giỏ bằng RPC ``submit_proposal_group`` để có
+    transaction. ProposalIn ở đây vẫn bám schema hiện tại và tự validate số
+    lượng, kỳ sử dụng cùng lý do kỹ thuật mới.
+    """
     if user["role"] == "dvsd" and payload.don_vi != user["khoa"]:
         raise HTTPException(403, "Đơn vị sử dụng chỉ được đề xuất cho khoa của chính mình.")
 

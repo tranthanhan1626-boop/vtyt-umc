@@ -6,8 +6,22 @@ from pydantic import ValidationError
 from app.schemas.proposal import ProposalIn, ProposalReasonIn
 
 
-def full_year(value=100):
-    return {str(m): value for m in range(1, 13)}
+def proposal(**overrides):
+    data = {
+        "ma_hang": "66114",
+        "don_vi": "Khoa A",
+        "nam_de_xuat": 2027,
+        "so_luong": 100,
+        "loai_mua_sam": "mua_sam_bo_sung",
+        "tu_thang": 1,
+        "tu_nam": 2027,
+        "den_thang": 12,
+        "den_nam": 2027,
+        "created_by": "a@umc.edu.vn",
+        "reason": ProposalReasonIn(loai_ly_do="theo_lich_su"),
+    }
+    data.update(overrides)
+    return ProposalIn(**data)
 
 
 def test_ky_thuat_moi_thieu_ten_bi_chan():
@@ -25,33 +39,32 @@ def test_ky_thuat_moi_co_ten_hop_le():
     print("OK: ky_thuat_moi có tên -> hợp lệ")
 
 
-def test_thieu_thang_bi_chan():
-    data = full_year()
-    del data["12"]
+def test_so_luong_khong_duong_bi_chan():
     try:
-        ProposalIn(
-            ma_hang="66114", don_vi="Khoa A", nam_de_xuat=2027,
-            so_luong_thang=data, created_by="a@umc.edu.vn",
-            reason=ProposalReasonIn(loai_ly_do="theo_lich_su"),
-        )
+        proposal(so_luong=0)
         assert False, "phải raise ValidationError"
     except ValidationError:
-        print("OK: thiếu tháng 12 -> bị chặn")
+        print("OK: số lượng không dương -> bị chặn")
 
 
-def test_du_12_thang_hop_le():
-    p = ProposalIn(
-        ma_hang="66114", don_vi="Khoa A", nam_de_xuat=2027,
-        so_luong_thang=full_year(), created_by="a@umc.edu.vn",
-        reason=ProposalReasonIn(loai_ly_do="theo_lich_su"),
-    )
-    assert len(p.so_luong_thang) == 12
-    print("OK: đủ 12 tháng -> hợp lệ")
+def test_ky_nguoc_bi_chan():
+    try:
+        proposal(tu_thang=12, tu_nam=2027, den_thang=1, den_nam=2027)
+        assert False, "phải raise ValidationError"
+    except ValidationError:
+        print("OK: kỳ kết thúc trước kỳ bắt đầu -> bị chặn")
+
+
+def test_ky_hop_le_tu_tinh_so_thang():
+    p = proposal(tu_thang=10, tu_nam=2027, den_thang=3, den_nam=2028)
+    assert p.so_thang_du_kien == 6
+    print("OK: kỳ T10/2027-T3/2028 -> tự tính 6 tháng")
 
 
 if __name__ == "__main__":
     test_ky_thuat_moi_thieu_ten_bi_chan()
     test_ky_thuat_moi_co_ten_hop_le()
-    test_thieu_thang_bi_chan()
-    test_du_12_thang_hop_le()
+    test_so_luong_khong_duong_bi_chan()
+    test_ky_nguoc_bi_chan()
+    test_ky_hop_le_tu_tinh_so_thang()
     print("\nTất cả test PASS.")

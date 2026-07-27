@@ -569,57 +569,45 @@ export default function Function1({ profile }) {
     }
     setDangLuu(true);
 
-    // 1 giỏ = 1 bản đề xuất chung: mọi mã hàng gửi lần này chia sẻ 1 nhom_de_xuat
-    // để tab tổng hợp gom lại thành 1 đề xuất và chọn biểu mẫu 1 lần cho cả nhóm.
-    const nhomDeXuat = crypto.randomUUID();
-
-    const ketQua = [];
-    for (const nhap of gioHang) {
-      const tong = Math.round(Number(nhap.soLuong));
-
-      // Version tự tăng, bản cũ hạ cờ is_current (policy UPDATE đã thêm ở
-      // migration — trước đó RLS chặn âm thầm làm insert đụng unique index).
-      const { data: existing } = await supabase
-        .from("proposals").select("id, version")
-        .eq("ma_hang", nhap.ma_hang).eq("don_vi", khoaHienTai).eq("nam_de_xuat", NAM_DE_XUAT)
-        .order("version", { ascending: false }).limit(1);
-
-      const nextVersion = existing?.[0] ? existing[0].version + 1 : 1;
-      if (existing?.[0]) {
-        const { error: eUpd } = await supabase.from("proposals").update({ is_current: false })
-          .eq("ma_hang", nhap.ma_hang).eq("don_vi", khoaHienTai)
-          .eq("nam_de_xuat", NAM_DE_XUAT).eq("is_current", true);
-        if (eUpd) { setLoiLuu(`Không hạ được version cũ của ${nhap.ma_hang}: ${eUpd.message}`); setDangLuu(false); return; }
-      }
-
-      const { data: inserted, error } = await supabase.from("proposals").insert({
-        ma_hang: nhap.ma_hang, don_vi: khoaHienTai, nam_de_xuat: NAM_DE_XUAT,
-        version: nextVersion, is_current: true, so_luong: tong,
-        // Số tháng TÍNH TỪ kỳ đã chọn — không còn ô nhập tay (xem comment doDaiKy).
-        so_thang_du_kien: doDaiKy(nhap), loai_mua_sam: nhap.goiThau,
-        goi: nhap.goi || null,
-        tu_thang: Number(nhap.tuThang), tu_nam: Number(nhap.tuNam),
-        den_thang: Number(nhap.denThang), den_nam: Number(nhap.denNam),
-        nhom_de_xuat: nhomDeXuat,
-        created_by: profile.email, created_by_ho_ten: profile.ho_ten,
-      }).select().single();
-
-      if (error) { setLoiLuu(`Không lưu được ${nhap.ma_hang}: ${error.message}`); setDangLuu(false); return; }
-
-      const { error: eLyDo } = await supabase.from("proposal_reasons").insert({
-        proposal_id: inserted.id, loai_ly_do: nhap.loaiLyDo,
-        ten_ky_thuat_moi: nhap.loaiLyDo === "ky_thuat_moi" ? nhap.tenKyThuatMoi : null,
-        uoc_ca_thang: nhap.uocCaThang || null, ghi_chu: nhap.ghiChu || null,
-      });
-      if (eLyDo) { setLoiLuu(`Lưu được số lượng ${nhap.ma_hang} nhưng không lưu được lý do: ${eLyDo.message}`); setDangLuu(false); return; }
-
-      ketQua.push({
-        ma_hang: nhap.ma_hang, ten_vat_tu: nhap.ten_vat_tu, dvt: nhap.dvt, so_luong: tong,
-        so_thang: doDaiKy(nhap), goi_thau: nhap.goiThau, loai_ly_do: nhap.loaiLyDo,
-        ten_ky_thuat_moi: nhap.tenKyThuatMoi, ten_quan_ly: nhap.ten_quan_ly,
-        ky: `${nhap.tuThang}/${nhap.tuNam} – ${nhap.denThang}/${nhap.denNam}`,
-      });
+    // Một RPC = một transaction PostgreSQL: hoặc lưu đủ mọi mã + lý do +
+    // version, hoặc rollback toàn bộ. Không còn tình trạng gửi được nửa giỏ.
+    const items = gioHang.map((nhap) => ({
+      ma_hang: nhap.ma_hang,
+      so_luong: Math.round(Number(nhap.soLuong)),
+      loai_mua_sam: nhap.goiThau,
+      goi: nhap.goi || null,
+      tu_thang: Number(nhap.tuThang),
+      tu_nam: Number(nhap.tuNam),
+      den_thang: Number(nhap.denThang),
+      den_nam: Number(nhap.denNam),
+      loai_ly_do: nhap.loaiLyDo,
+      ten_ky_thuat_moi: nhap.loaiLyDo === "ky_thuat_moi" ? nhap.tenKyThuatMoi.trim() : null,
+      uoc_ca_thang: nhap.uocCaThang || null,
+      ghi_chu: nhap.ghiChu?.trim() || null,
+    }));
+    const { error } = await supabase.rpc("submit_proposal_group", {
+      p_don_vi: khoaHienTai,
+      p_nam_de_xuat: NAM_DE_XUAT,
+      p_items: items,
+    });
+    if (error) {
+      setLoiLuu(`Không gửi được giỏ đề xuất: ${error.message}`);
+      setDangLuu(false);
+      return;
     }
+
+    const ketQua = gioHang.map((nhap) => ({
+      ma_hang: nhap.ma_hang,
+      ten_vat_tu: nhap.ten_vat_tu,
+      dvt: nhap.dvt,
+      so_luong: Math.round(Number(nhap.soLuong)),
+      so_thang: doDaiKy(nhap),
+      goi_thau: nhap.goiThau,
+      loai_ly_do: nhap.loaiLyDo,
+      ten_ky_thuat_moi: nhap.tenKyThuatMoi,
+      ten_quan_ly: nhap.ten_quan_ly,
+      ky: `${nhap.tuThang}/${nhap.tuNam} – ${nhap.denThang}/${nhap.denNam}`,
+    }));
 
     setDaGui(ketQua);
     xoaCaGio();        // gửi xong dọn giỏ (cả storage), tránh gửi trùng lần 2
