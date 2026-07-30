@@ -47,7 +47,9 @@ phạm vi dữ liệu được thấy.
 
 ### A.1 — Tab ĐVSD "Đề xuất danh mục" (gánh cả 2 tình huống, QĐ-15)
 
-- [ ] **A.1a** Gộp mã tương đương vào mã quản lý có sẵn — mở lại chế độ đã bỏ 22/07
+- [x] **A.1a** Gộp mã tương đương vào mã quản lý có sẵn — ✅ 30/07/2026.
+      1 form 2 chế độ, có ô tìm nhóm. Không đổi schema (`la_nhom_moi` đã có sẵn).
+      ⚠️ Còn 1 ràng buộc chặn, xem câu hỏi mở #4
 - [ ] **A.1b** Khai mã mới hoàn toàn — dùng lại luồng "+ Thêm mã kỹ thuật" hiện có
 - [ ] **A.1c** Form đổi theo phương thức: chỉ định thầu (nội dung/lý do/danh mục)
       vs rộng rãi + bổ sung (đề xuất/danh mục/số lượng/thời gian sử dụng)
@@ -195,3 +197,10 @@ Không có ba thứ này thì Phase 5 dở dang, mà chúng không nằm trong t
 2. **ĐVSD thấy gì ở tab Tiến độ** — cả gói thầu, hay chỉ những mã của khoa mình?
    *(chặn A.4d)*
 3. **Mẫu 4 file** A.3b–A.3e. *(chặn A.3)*
+4. **Ràng buộc `unique (don_vi, ma_quan_ly)` trên `khoa_nhom_ky_thuat`** — với chế
+   độ gộp mới (A.1a), một khoa **chỉ khai được ĐÚNG MỘT** mã tương đương cho mỗi
+   mã quản lý, vĩnh viễn (ràng buộc không xét `trang_thai`, nên dòng đã duyệt vẫn
+   chiếm chỗ). Thực tế khoa thường cần khai nhiều hãng khác nhau cho cùng một
+   nhóm. Cần đổi thành `unique (don_vi, ma_quan_ly, ma_hang_moi)` — **là thay đổi
+   schema trên database dùng chung với production, phải có xác nhận.**
+   *(chưa chặn A.1a chạy thử, nhưng sẽ chặn khi dùng thật)*
