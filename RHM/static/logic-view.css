@@ -1,0 +1,2322 @@
+.logic-page {
+  --logic-navy: #153542;
+  --logic-teal: #087f74;
+  --logic-teal-dark: #075b55;
+  --logic-mint: #dff4ef;
+  --logic-blue: #2877a8;
+  --logic-blue-soft: #e9f3fa;
+  --logic-orange: #e18630;
+  --logic-orange-soft: #fff1df;
+  --logic-red: #b74a4a;
+  --logic-red-soft: #fff0ed;
+  --logic-cream: #fbfaf4;
+  color: var(--logic-navy);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.logic-page button,
+.logic-page select,
+.logic-page input {
+  font: inherit;
+}
+
+.logic-chapter {
+  min-width: 0;
+  max-width: 100%;
+  margin-bottom: 34px;
+  scroll-margin-top: 100px;
+}
+
+.logic-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.8fr);
+  gap: 22px;
+}
+
+.logic-hero-copy,
+.logic-thesis,
+.logic-story-card,
+.logic-timeline-card,
+.logic-local-evidence,
+.logic-chapter:not(.logic-hero) {
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 14px 42px rgba(20, 68, 62, 0.07);
+}
+
+.logic-hero-copy {
+  min-height: 390px;
+  padding: clamp(30px, 5vw, 64px);
+  background:
+    radial-gradient(circle at 100% 0, rgba(80, 196, 177, 0.22), transparent 38%),
+    linear-gradient(135deg, #ffffff, #f7fbfa);
+}
+
+.logic-kicker,
+.logic-section-no {
+  display: block;
+  color: var(--logic-teal);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.logic-hero h1 {
+  max-width: 760px;
+  margin: 15px 0 0;
+  color: var(--logic-navy);
+  font-size: clamp(2.2rem, 4.5vw, 4rem);
+  line-height: 1.03;
+  letter-spacing: -0.045em;
+}
+
+.logic-hero h1 em {
+  color: var(--logic-teal);
+  font-style: normal;
+}
+
+.logic-lead {
+  max-width: 680px;
+  margin: 22px 0 0;
+  color: #506b72;
+  font-size: 1.04rem;
+  line-height: 1.7;
+}
+
+.logic-hero-actions {
+  display: flex;
+  margin-top: 30px;
+  gap: 10px;
+}
+
+.logic-primary,
+.logic-secondary {
+  min-height: 46px;
+  padding: 0 18px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  border-radius: 11px;
+  cursor: pointer;
+}
+
+.logic-primary {
+  color: white;
+  border: 1px solid var(--logic-teal);
+  background: var(--logic-teal);
+  box-shadow: 0 8px 20px rgba(8, 127, 116, 0.2);
+}
+
+.logic-secondary {
+  color: var(--logic-teal-dark);
+  border: 1px solid #bddbd5;
+  background: white;
+}
+
+.logic-thesis {
+  display: flex;
+  padding: 34px;
+  justify-content: center;
+  flex-direction: column;
+  color: white;
+  border-color: var(--logic-navy);
+  background:
+    radial-gradient(circle at 90% 15%, rgba(39, 184, 164, 0.28), transparent 34%),
+    var(--logic-navy);
+}
+
+.logic-thesis > span {
+  color: #a9d8d0;
+  font-size: 0.73rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.logic-thesis > strong {
+  display: block;
+  margin-top: 11px;
+  font-size: clamp(1.35rem, 2.4vw, 2rem);
+  line-height: 1.28;
+}
+
+.logic-equation {
+  display: flex;
+  margin-top: 28px;
+  padding: 14px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.logic-equation i {
+  padding: 7px 9px;
+  color: var(--logic-navy);
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: 800;
+  border-radius: 7px;
+  background: white;
+}
+
+.logic-equation b {
+  color: #a9d8d0;
+  font-size: 0.77rem;
+}
+
+.logic-thesis small {
+  margin-top: 14px;
+  color: #bfdbd7;
+  line-height: 1.55;
+}
+
+.logic-timeline-card {
+  padding: 28px 30px;
+  grid-column: 1 / -1;
+}
+
+.logic-story-card {
+  padding: 28px 30px;
+  grid-column: 1 / -1;
+  background:
+    radial-gradient(circle at 100% 0, rgba(225, 134, 48, 0.12), transparent 34%),
+    white;
+}
+
+.logic-quick-decisions {
+  display: grid;
+  padding: 24px 28px;
+  align-items: center;
+  grid-column: 1 / -1;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 28px;
+  color: white;
+  border-radius: 18px;
+  background: var(--logic-navy);
+  box-shadow: 0 14px 34px rgba(20, 68, 62, 0.12);
+}
+
+.logic-quick-decisions .logic-section-no {
+  color: #9cd3ca;
+}
+
+.logic-quick-decisions h2 {
+  margin: 8px 0 0;
+  font-size: clamp(1.35rem, 2.5vw, 2rem);
+}
+
+.logic-quick-decisions ol {
+  margin: 0;
+  padding-left: 24px;
+}
+
+.logic-quick-decisions li {
+  padding: 8px 0;
+  color: #d2e5e1;
+  line-height: 1.45;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.logic-quick-decisions li:last-child {
+  border-bottom: 0;
+}
+
+.logic-quick-decisions b {
+  color: white;
+}
+
+.logic-story-card header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.logic-story-card h2 {
+  margin: 7px 0 0;
+  font-size: clamp(1.35rem, 2.5vw, 2rem);
+  letter-spacing: -0.025em;
+}
+
+.logic-story-months {
+  display: grid;
+  margin-top: 24px;
+  align-items: center;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  gap: 14px;
+}
+
+.logic-story-months > b {
+  color: #9aaca8;
+  font-size: 1.4rem;
+}
+
+.logic-story-months article {
+  min-height: 144px;
+  padding: 20px;
+  text-align: center;
+  border: 1px solid #cfe0dd;
+  border-radius: 14px;
+  background: #f4faf8;
+}
+
+.logic-story-months article.empty {
+  border-color: #e5c58f;
+  background: var(--logic-orange-soft);
+}
+
+.logic-story-months article.rebound {
+  border-color: #e1aaa5;
+  background: var(--logic-red-soft);
+}
+
+.logic-story-months span,
+.logic-story-months strong,
+.logic-story-months small {
+  display: block;
+}
+
+.logic-story-months span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.logic-story-months strong {
+  margin-top: 6px;
+  font-size: 2.6rem;
+  letter-spacing: -0.04em;
+}
+
+.logic-story-months small {
+  margin-top: 8px;
+  color: #64787d;
+  font-size: 0.67rem;
+  line-height: 1.45;
+}
+
+.logic-story-choices {
+  display: grid;
+  margin-top: 14px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.logic-story-choices div {
+  padding: 14px 16px;
+  border-left: 4px solid var(--logic-teal);
+  border-radius: 8px;
+  background: #f5f8f7;
+}
+
+.logic-story-choices b,
+.logic-story-choices span {
+  display: block;
+}
+
+.logic-story-choices b {
+  font-size: 0.73rem;
+}
+
+.logic-story-choices span {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 0.67rem;
+  line-height: 1.45;
+}
+
+.logic-say {
+  margin: 18px 0 0;
+  padding: 14px 16px;
+  color: #315b63;
+  font-size: 0.76rem;
+  line-height: 1.6;
+  border: 1px solid #bcdad5;
+  border-radius: 11px;
+  background: var(--logic-mint);
+}
+
+.logic-say b {
+  color: var(--logic-teal-dark);
+}
+
+.logic-timeline-card header,
+.logic-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+.logic-timeline-card h2,
+.logic-section-head h2 {
+  margin: 7px 0 0;
+  font-size: clamp(1.35rem, 2.5vw, 2rem);
+  letter-spacing: -0.025em;
+}
+
+.logic-status {
+  padding: 7px 10px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.logic-status.caution {
+  color: #84580d;
+  background: var(--logic-orange-soft);
+}
+
+.logic-timeline {
+  margin-top: 28px;
+}
+
+.logic-time-track {
+  position: relative;
+  display: grid;
+  min-height: 92px;
+  grid-template-columns: 1fr 1fr;
+  overflow: visible;
+  border-radius: 14px;
+  background: #edf3f2;
+}
+
+.logic-contract {
+  display: flex;
+  padding: 20px;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.logic-contract b,
+.logic-contract span {
+  display: block;
+}
+
+.logic-contract b {
+  font-size: 0.86rem;
+}
+
+.logic-contract span {
+  margin-top: 5px;
+  font-size: 0.73rem;
+}
+
+.logic-contract.old {
+  color: #315b66;
+  border-radius: 14px 0 0 14px;
+  background: #e8f1f4;
+}
+
+.logic-contract.new {
+  color: #0b5b51;
+  border-radius: 0 14px 14px 0;
+  background: #dff4ee;
+}
+
+.logic-cutoff {
+  position: absolute;
+  top: -13px;
+  bottom: -13px;
+  left: 16.667%;
+  display: flex;
+  width: 90px;
+  align-items: center;
+  flex-direction: column;
+  transform: translateX(-50%);
+}
+
+.logic-cutoff i {
+  width: 3px;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--logic-orange);
+}
+
+.logic-cutoff b,
+.logic-cutoff span {
+  position: absolute;
+  left: 12px;
+  color: #8a5615;
+  white-space: nowrap;
+}
+
+.logic-cutoff b {
+  top: 16px;
+  font-size: 0.68rem;
+}
+
+.logic-cutoff span {
+  top: 34px;
+  font-size: 0.64rem;
+}
+
+.logic-time-labels {
+  display: flex;
+  margin-top: 10px;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+
+.logic-date-warning {
+  margin-top: 20px;
+  padding: 13px 15px;
+  color: #79551c;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  border-radius: 10px;
+  background: var(--logic-orange-soft);
+}
+
+.logic-chapter:not(.logic-hero) {
+  padding: clamp(24px, 4vw, 42px);
+}
+
+.logic-section-head > p {
+  max-width: 470px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+
+.logic-stat-grid {
+  display: grid;
+  margin-top: 26px;
+  grid-template-columns: repeat(6, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+}
+
+.logic-stat-grid article {
+  min-height: 116px;
+  padding: 20px 16px;
+  border-right: 1px solid var(--line-soft);
+  background: #fbfdfc;
+}
+
+.logic-stat-grid article:last-child {
+  border-right: 0;
+}
+
+.logic-stat-grid article.accent {
+  color: white;
+  background: var(--logic-teal);
+}
+
+.logic-stat-grid strong,
+.logic-stat-grid span {
+  display: block;
+}
+
+.logic-stat-grid strong {
+  font-size: 1.8rem;
+  letter-spacing: -0.03em;
+}
+
+.logic-stat-grid span {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.logic-stat-grid .accent span {
+  color: #d7f3ed;
+}
+
+.logic-pattern-card {
+  display: grid;
+  margin-top: 18px;
+  padding: 22px;
+  align-items: center;
+  grid-template-columns: 210px 1fr;
+  gap: 28px;
+  border-radius: 16px;
+  background: #f7faf9;
+}
+
+.logic-donut {
+  position: relative;
+  width: 180px;
+  height: 180px;
+}
+
+.logic-donut svg {
+  width: 180px;
+  height: 180px;
+  transform: rotate(-90deg);
+}
+
+.logic-donut circle {
+  fill: none;
+  stroke-width: 22;
+}
+
+.donut-base {
+  stroke: #e7eeec;
+}
+
+.donut-smooth {
+  stroke: #62bfae;
+  stroke-dasharray: 19.7 389.6;
+}
+
+.donut-erratic {
+  stroke: #4d91ba;
+  stroke-dasharray: 27.8 389.6;
+  stroke-dashoffset: -19.7;
+}
+
+.donut-intermittent {
+  stroke: #d8a44a;
+  stroke-dasharray: 202.9 389.6;
+  stroke-dashoffset: -47.5;
+}
+
+.donut-lumpy {
+  stroke: #be5d59;
+  stroke-dasharray: 139.2 389.6;
+  stroke-dashoffset: -250.4;
+}
+
+.logic-donut > div {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.logic-donut strong {
+  font-size: 1.7rem;
+}
+
+.logic-donut span {
+  max-width: 80px;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.62rem;
+  text-align: center;
+}
+
+.logic-pattern-copy h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.logic-pattern-copy p {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.65;
+}
+
+.logic-legend {
+  display: flex;
+  margin-top: 14px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.logic-legend span {
+  display: flex;
+  padding: 6px 8px;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  border-radius: 7px;
+  background: white;
+}
+
+.logic-legend i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.logic-legend .smooth { background: #62bfae; }
+.logic-legend .erratic { background: #4d91ba; }
+.logic-legend .intermittent { background: #d8a44a; }
+.logic-legend .lumpy { background: #be5d59; }
+
+.logic-local-proof {
+  display: grid;
+  margin-top: 18px;
+  padding: 18px 20px;
+  align-items: center;
+  grid-template-columns: 180px 1fr;
+  gap: 22px;
+  color: #2e5963;
+  border: 1px solid #cadee3;
+  border-radius: 13px;
+  background: #f0f7f9;
+}
+
+.logic-local-proof > span {
+  font-size: 0.7rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.logic-local-proof p {
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.6;
+}
+
+.logic-abc-visual {
+  margin-top: 26px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #f8fbfa;
+}
+
+.logic-abc-money {
+  display: grid;
+  min-height: 118px;
+  grid-template-columns: 70fr 25fr 5fr;
+  overflow: hidden;
+  color: white;
+  border-radius: 12px;
+}
+
+.logic-abc-money > div {
+  display: flex;
+  min-width: 0;
+  padding: 16px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+}
+
+.logic-abc-money .a { background: var(--logic-teal); }
+.logic-abc-money .b { background: #d39536; }
+.logic-abc-money .c { background: #b85b58; }
+
+.logic-abc-money b,
+.logic-abc-money span {
+  display: block;
+}
+
+.logic-abc-money b {
+  font-size: clamp(0.75rem, 1.7vw, 1.2rem);
+  white-space: nowrap;
+}
+
+.logic-abc-money span {
+  margin-top: 5px;
+  font-size: 0.65rem;
+}
+
+.logic-abc-money .c {
+  padding-right: 4px;
+  padding-left: 4px;
+}
+
+.logic-abc-money .c b {
+  font-size: 0.7rem;
+  white-space: normal;
+}
+
+.logic-abc-items {
+  display: grid;
+  margin-top: 12px;
+  grid-template-columns: 1fr 2fr 7fr;
+  gap: 8px;
+}
+
+.logic-abc-items span {
+  display: flex;
+  min-height: 54px;
+  padding: 9px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #50656a;
+  font-size: 0.65rem;
+  font-weight: 750;
+  text-align: center;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: white;
+}
+
+.logic-abc-items i {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--logic-teal);
+}
+
+.logic-abc-items span:nth-child(2) i { background: #d39536; }
+.logic-abc-items span:nth-child(3) i { background: #b85b58; }
+
+.logic-abc-buttons {
+  display: grid;
+  margin-top: 14px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+}
+
+.logic-abc-buttons button {
+  display: grid;
+  min-height: 62px;
+  padding: 10px 14px;
+  align-items: center;
+  grid-template-columns: 38px 1fr;
+  gap: 10px;
+  color: var(--logic-navy);
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: white;
+  cursor: pointer;
+}
+
+.logic-abc-buttons button:hover {
+  border-color: #89bfb7;
+}
+
+.logic-abc-buttons button.active {
+  color: white;
+  border-color: var(--logic-teal);
+  background: var(--logic-teal);
+}
+
+.logic-abc-buttons b {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  font-size: 1rem;
+  border-radius: 9px;
+  background: var(--logic-mint);
+}
+
+.logic-abc-buttons button.active b {
+  color: var(--logic-teal-dark);
+}
+
+.logic-abc-buttons span {
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.logic-abc-detail {
+  display: grid;
+  margin-top: 12px;
+  padding: 20px;
+  align-items: start;
+  grid-template-columns: 42px 1fr;
+  gap: 13px;
+  border: 1px solid #b9d8d2;
+  border-radius: 13px;
+  background: #f2faf8;
+}
+
+.logic-abc-detail > span {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  color: white;
+  font-size: 1rem;
+  font-weight: 900;
+  border-radius: 9px;
+}
+
+.logic-abc-detail h3,
+.logic-abc-detail strong {
+  display: block;
+}
+
+.logic-abc-detail h3 {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.logic-abc-detail strong {
+  margin-top: 6px;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.logic-abc-detail p {
+  margin: 11px 0 0;
+  color: #52696e;
+  font-size: 0.74rem;
+  line-height: 1.6;
+}
+
+.logic-abc-warning,
+.logic-abc-current {
+  margin-top: 12px;
+  padding: 16px 18px;
+  border-radius: 12px;
+}
+
+.logic-abc-warning {
+  border: 1px solid #e4b0aa;
+  background: var(--logic-red-soft);
+}
+
+.logic-abc-warning strong,
+.logic-abc-warning p {
+  display: block;
+}
+
+.logic-abc-warning strong {
+  color: #8d3d3d;
+  font-size: 0.72rem;
+}
+
+.logic-abc-warning p {
+  margin: 6px 0 0;
+  color: #775354;
+  font-size: 0.71rem;
+  line-height: 1.55;
+}
+
+.logic-abc-current {
+  color: #74551f;
+  font-size: 0.71rem;
+  line-height: 1.55;
+  border: 1px solid #e5c58f;
+  background: var(--logic-orange-soft);
+}
+
+.logic-flow-grid {
+  display: flex;
+  margin-top: 28px;
+  align-items: center;
+  gap: 8px;
+}
+
+.logic-node {
+  min-width: 0;
+  min-height: 130px;
+  padding: 14px 12px;
+  flex: 1;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: white;
+  cursor: pointer;
+  transition: 160ms ease;
+}
+
+.logic-node:hover {
+  border-color: #9ccbc4;
+  transform: translateY(-2px);
+}
+
+.logic-node.active {
+  color: white;
+  border-color: var(--logic-teal);
+  background: var(--logic-teal);
+  box-shadow: 0 10px 24px rgba(8, 127, 116, 0.2);
+}
+
+.logic-node span,
+.logic-node strong,
+.logic-node small {
+  display: block;
+}
+
+.logic-node span {
+  color: var(--logic-teal);
+  font-size: 0.66rem;
+  font-weight: 900;
+}
+
+.logic-node strong {
+  margin-top: 10px;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.logic-node small {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.59rem;
+  line-height: 1.35;
+}
+
+.logic-node.active span,
+.logic-node.active small {
+  color: #d6f4ef;
+}
+
+.logic-arrow {
+  color: #9bb2ad;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.logic-step-detail {
+  margin-top: 22px;
+  overflow: hidden;
+  border: 1px solid #c9ddd9;
+  border-radius: 17px;
+  background: #fbfdfc;
+}
+
+.logic-step-intro {
+  display: grid;
+  padding: 20px 22px;
+  align-items: center;
+  grid-template-columns: 54px 1fr;
+  gap: 15px;
+  color: white;
+  background: var(--logic-navy);
+}
+
+.logic-step-intro > span {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  color: var(--logic-navy);
+  font-size: 0.78rem;
+  font-weight: 900;
+  border-radius: 13px;
+  background: #a8e1d8;
+}
+
+.logic-step-intro small,
+.logic-step-intro strong {
+  display: block;
+}
+
+.logic-step-intro small {
+  color: #9cc9c2;
+  font-size: 0.63rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.logic-step-intro strong {
+  margin-top: 4px;
+  font-size: 1.05rem;
+  line-height: 1.4;
+}
+
+.logic-step-question {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--line);
+  background: var(--logic-mint);
+}
+
+.logic-step-question small,
+.logic-step-question b {
+  display: block;
+}
+
+.logic-step-question small,
+.logic-step-fields small {
+  color: var(--logic-teal-dark);
+  font-size: 0.61rem;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.logic-step-question b {
+  margin-top: 5px;
+  font-size: 0.84rem;
+}
+
+.logic-step-fields {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.logic-step-fields > div {
+  min-height: 130px;
+  padding: 18px;
+  border-right: 1px solid var(--line);
+}
+
+.logic-step-fields > div:last-child {
+  border-right: 0;
+}
+
+.logic-step-fields p {
+  margin: 8px 0 0;
+  color: #50656a;
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.logic-step-fields .risk {
+  background: var(--logic-red-soft);
+}
+
+.logic-step-fields .risk small {
+  color: var(--logic-red);
+}
+
+.logic-flow-summary {
+  display: flex;
+  margin-top: 18px;
+  padding: 14px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-radius: 12px;
+  background: #f1f6f5;
+}
+
+.logic-flow-summary div {
+  padding: 7px 9px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  border-radius: 7px;
+  background: white;
+}
+
+.logic-flow-summary b {
+  color: var(--logic-teal);
+}
+
+.logic-reason-table {
+  margin-top: 12px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.logic-reason-details {
+  margin-top: 24px;
+  padding: 14px;
+  border: 1px solid #bad8d2;
+  border-radius: 13px;
+  background: #f4faf8;
+}
+
+.logic-reason-details > summary {
+  padding: 4px 6px;
+  color: var(--logic-teal-dark);
+  font-size: 0.86rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.logic-table-head,
+.logic-table-row {
+  display: grid;
+  grid-template-columns: 1fr 1.45fr 1.25fr;
+}
+
+.logic-table-head {
+  color: white;
+  background: var(--logic-navy);
+}
+
+.logic-table-head span,
+.logic-table-row > * {
+  padding: 13px 15px;
+  border-right: 1px solid var(--line);
+}
+
+.logic-table-head span:last-child,
+.logic-table-row > *:last-child {
+  border-right: 0;
+}
+
+.logic-table-head span {
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.logic-table-row {
+  border-bottom: 1px solid var(--line);
+  background: white;
+}
+
+.logic-table-row:last-child {
+  border-bottom: 0;
+}
+
+.logic-table-row strong,
+.logic-table-row span {
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.logic-table-row span:last-child {
+  color: var(--logic-red);
+  background: #fff9f8;
+}
+
+.logic-episode {
+  margin-top: 18px;
+  padding: 20px;
+  border-radius: 14px;
+  background: var(--logic-orange-soft);
+}
+
+.logic-episode header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.logic-episode header span {
+  color: #8b5e19;
+  font-size: 0.67rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.logic-episode header strong {
+  font-size: 0.77rem;
+}
+
+.logic-episode > div {
+  display: flex;
+  margin-top: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.logic-episode > div span {
+  padding: 8px 10px;
+  font-size: 0.67rem;
+  font-weight: 750;
+  border-radius: 8px;
+  background: white;
+}
+
+.logic-episode > div b {
+  color: var(--logic-orange);
+}
+
+.logic-output-grid {
+  display: grid;
+  margin-top: 26px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.logic-output-grid article {
+  position: relative;
+  min-height: 205px;
+  padding: 22px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: #fbfdfc;
+}
+
+.logic-output-grid article > span {
+  position: absolute;
+  top: 5px;
+  right: 12px;
+  color: #d9e8e5;
+  font-size: 3.2rem;
+  font-weight: 900;
+}
+
+.logic-output-grid h3 {
+  position: relative;
+  margin: 38px 0 0;
+  font-size: 0.96rem;
+}
+
+.logic-output-grid p {
+  position: relative;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.73rem;
+  line-height: 1.5;
+}
+
+.logic-output-grid small {
+  position: absolute;
+  right: 20px;
+  bottom: 18px;
+  left: 20px;
+  color: var(--logic-teal-dark);
+  font-size: 0.62rem;
+  font-weight: 750;
+}
+
+.logic-four-numbers {
+  display: grid;
+  margin-top: 22px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.logic-four-numbers article {
+  position: relative;
+  min-height: 190px;
+  padding: 20px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fbfdfc;
+}
+
+.logic-four-numbers article > span {
+  position: absolute;
+  top: 4px;
+  right: 12px;
+  color: #d9e8e5;
+  font-size: 3rem;
+  font-weight: 900;
+}
+
+.logic-four-numbers h3 {
+  position: relative;
+  margin: 34px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.logic-four-numbers p {
+  position: relative;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.logic-four-numbers small {
+  display: block;
+  margin-top: 12px;
+  color: var(--logic-teal-dark);
+  font-size: 0.62rem;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.logic-no-double {
+  margin-top: 12px;
+  padding: 15px 17px;
+  color: #7b5620;
+  font-size: 0.73rem;
+  line-height: 1.55;
+  border: 1px solid #e5c58f;
+  border-radius: 11px;
+  background: var(--logic-orange-soft);
+}
+
+.logic-formula-board {
+  display: grid;
+  margin-top: 18px;
+  grid-template-columns: 1fr 1fr 1fr;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+}
+
+.logic-formula-board > div {
+  padding: 20px;
+  border-right: 1px solid var(--line);
+  background: #f8fbfa;
+}
+
+.logic-formula-board > div:last-child {
+  border-right: 0;
+}
+
+.logic-formula-board .bridge {
+  background: var(--logic-orange-soft);
+}
+
+.logic-formula-board span,
+.logic-formula-board code,
+.logic-formula-board small {
+  display: block;
+}
+
+.logic-formula-board span {
+  font-size: 0.67rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.logic-formula-board code {
+  margin-top: 10px;
+  color: var(--logic-teal-dark);
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.logic-formula-board small {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.logic-details {
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+}
+
+.logic-details summary {
+  padding: 15px 17px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.logic-model-grid {
+  display: grid;
+  padding: 0 17px 17px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+}
+
+.logic-model-grid p {
+  margin: 0;
+  padding: 12px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.45;
+  border-radius: 9px;
+  background: #f5f8f7;
+}
+
+.logic-simulator {
+  display: grid;
+  margin-top: 26px;
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.65fr);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+}
+
+.logic-demo-main {
+  min-width: 0;
+  padding: 22px;
+  background: #fbfdfc;
+}
+
+.logic-demo-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.logic-demo-title span,
+.logic-demo-title strong {
+  display: block;
+}
+
+.logic-demo-title span {
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.logic-demo-title strong {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.64rem;
+}
+
+.logic-chart-legend {
+  display: flex;
+  gap: 12px;
+}
+
+.logic-chart-legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.logic-chart-legend i {
+  width: 12px;
+  height: 4px;
+  border-radius: 4px;
+}
+
+.logic-chart-legend .observed {
+  height: 10px;
+  background: #93b5ae;
+}
+
+.logic-chart-legend .corrected {
+  background: var(--logic-orange);
+}
+
+#logic-demo-chart {
+  width: 100%;
+  height: auto;
+  margin-top: 8px;
+  overflow: visible;
+}
+
+#logic-demo-chart .demo-grid {
+  stroke: #e4edeb;
+  stroke-width: 1;
+}
+
+#logic-demo-chart .demo-axis,
+#logic-demo-chart .demo-month {
+  fill: #7b8f8b;
+  font-size: 10px;
+}
+
+#logic-demo-chart .demo-bar {
+  fill: #9fc4bd;
+  stroke: none;
+}
+
+#logic-demo-chart .demo-bar.episode {
+  fill: #d6a762;
+}
+
+#logic-demo-chart .demo-episode-zone {
+  fill: rgba(225, 134, 48, 0.08);
+  stroke: rgba(225, 134, 48, 0.34);
+  stroke-dasharray: 5 5;
+}
+
+#logic-demo-chart .demo-episode-label {
+  fill: #9b651d;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+#logic-demo-chart .demo-corrected-line {
+  fill: none;
+  stroke: var(--logic-orange);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#logic-demo-chart .demo-dot {
+  fill: white;
+  stroke: var(--logic-orange);
+  stroke-width: 3;
+}
+
+.logic-scenario-note {
+  display: grid;
+  padding: 13px 15px;
+  grid-template-columns: minmax(170px, 0.7fr) 1.5fr;
+  gap: 16px;
+  border-radius: 10px;
+  background: var(--logic-orange-soft);
+}
+
+.logic-scenario-note b {
+  font-size: 0.7rem;
+}
+
+.logic-scenario-note span {
+  color: #765725;
+  font-size: 0.66rem;
+  line-height: 1.5;
+}
+
+.logic-controls {
+  padding: 20px;
+  border-left: 1px solid var(--line);
+  background: white;
+}
+
+.logic-controls fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.logic-controls fieldset + *,
+.logic-controls label + *,
+.logic-controls fieldset + fieldset {
+  margin-top: 18px;
+}
+
+.logic-controls legend,
+.logic-range > span,
+.logic-select > span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--logic-navy);
+  font-size: 0.68rem;
+  font-weight: 850;
+}
+
+.logic-choice {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 9px 10px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: white;
+  cursor: pointer;
+}
+
+.logic-choice.active {
+  color: var(--logic-teal-dark);
+  border-color: #82beb5;
+  background: var(--logic-mint);
+}
+
+.logic-choice b,
+.logic-choice span {
+  display: block;
+}
+
+.logic-choice b {
+  font-size: 0.65rem;
+}
+
+.logic-choice span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.57rem;
+}
+
+.logic-range {
+  display: block;
+}
+
+.logic-range input {
+  width: 100%;
+  accent-color: var(--logic-teal);
+}
+
+.logic-range b {
+  color: var(--logic-teal);
+}
+
+.logic-select {
+  display: block;
+}
+
+.logic-select select {
+  width: 100%;
+  height: 38px;
+  padding: 0 9px;
+  color: var(--logic-navy);
+  font-size: 0.68rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+}
+
+.logic-service {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 5px;
+}
+
+.logic-service legend {
+  grid-column: 1 / -1;
+}
+
+.logic-service button {
+  min-height: 44px;
+  padding: 6px;
+  color: var(--muted);
+  font-size: 0.59rem;
+  font-weight: 750;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+}
+
+.logic-service button.active {
+  color: white;
+  border-color: var(--logic-teal);
+  background: var(--logic-teal);
+}
+
+.logic-result-strip {
+  display: grid;
+  margin-top: 16px;
+  grid-template-columns: repeat(5, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.logic-result-strip article {
+  padding: 16px;
+  border-right: 1px solid var(--line);
+  background: #fbfdfc;
+}
+
+.logic-result-strip article:last-child {
+  border-right: 0;
+}
+
+.logic-result-strip .final {
+  color: white;
+  background: var(--logic-teal);
+}
+
+.logic-result-strip span,
+.logic-result-strip strong,
+.logic-result-strip small {
+  display: block;
+}
+
+.logic-result-strip span {
+  color: var(--muted);
+  font-size: 0.61rem;
+  font-weight: 750;
+}
+
+.logic-result-strip strong {
+  margin-top: 6px;
+  font-size: 1.45rem;
+}
+
+.logic-result-strip small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.57rem;
+}
+
+.logic-result-strip .final span,
+.logic-result-strip .final small {
+  color: #d7f1ec;
+}
+
+.logic-live-equation {
+  display: flex;
+  margin-top: 14px;
+  padding: 13px 16px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-radius: 10px;
+  background: #f2f7f6;
+}
+
+.logic-live-equation span {
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.logic-live-equation code {
+  color: var(--logic-teal-dark);
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.logic-live-equation b {
+  font-size: 0.72rem;
+}
+
+.logic-sim-disclaimer {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.65rem;
+  line-height: 1.5;
+}
+
+.logic-evidence-grid {
+  display: grid;
+  margin-top: 26px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.logic-evidence-card {
+  display: block;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  color: inherit;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: #fbfdfc;
+  transition: 160ms ease;
+}
+
+.logic-evidence-card:hover {
+  border-color: #8abfb7;
+  box-shadow: 0 12px 26px rgba(20, 68, 62, 0.09);
+  transform: translateY(-3px);
+}
+
+.logic-evidence-card > summary {
+  min-height: 148px;
+  padding: 20px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.logic-evidence-card > summary::-webkit-details-marker {
+  display: none;
+}
+
+.logic-evidence-card > summary > span {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 5px 7px;
+  color: var(--logic-teal-dark);
+  font-size: 0.58rem;
+  font-weight: 800;
+  border-radius: 6px;
+  background: var(--logic-mint);
+  text-transform: uppercase;
+}
+
+.logic-evidence-card h3 {
+  margin: 15px 0 0;
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.logic-evidence-card > summary > small {
+  display: block;
+  margin-top: 12px;
+  color: var(--logic-teal);
+  font-weight: 800;
+}
+
+.logic-evidence-card > div {
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--line);
+}
+
+.logic-evidence-card p {
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 0.71rem;
+  line-height: 1.55;
+}
+
+.logic-evidence-card small {
+  display: block;
+  margin-top: 12px;
+  color: #42656d;
+  font-size: 0.63rem;
+  line-height: 1.45;
+}
+
+.logic-evidence-card a {
+  display: inline-block;
+  margin-top: 14px;
+  color: var(--logic-teal-dark);
+  font-size: 0.8rem;
+  font-weight: 850;
+}
+
+.logic-council {
+  display: grid;
+  margin-top: 20px;
+  padding: 26px;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: 30px;
+  color: white;
+  border-radius: 17px;
+  background: var(--logic-navy);
+}
+
+.logic-council .logic-section-no {
+  color: #98ccc4;
+}
+
+.logic-council h2 {
+  margin: 9px 0 0;
+  font-size: 1.4rem;
+}
+
+.logic-council ol {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.logic-council li {
+  padding: 7px 0;
+  color: #c8dbd8;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logic-council li:last-child {
+  border-bottom: 0;
+}
+
+.logic-council li b {
+  color: white;
+}
+
+.logic-minimum-data {
+  margin-top: 16px;
+  padding: 19px;
+  border: 1px solid #e9c98f;
+  border-radius: 13px;
+  background: var(--logic-orange-soft);
+}
+
+.logic-minimum-data strong,
+.logic-minimum-data code,
+.logic-minimum-data p {
+  display: block;
+}
+
+.logic-minimum-data strong {
+  color: #7d5313;
+  font-size: 0.75rem;
+}
+
+.logic-minimum-data code {
+  margin-top: 9px;
+  padding: 10px;
+  color: #70490f;
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 750;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.logic-minimum-data p {
+  margin: 8px 0 0;
+  color: #785b2b;
+  font-size: 0.65rem;
+  line-height: 1.5;
+}
+
+/* Cỡ chữ nội dung dành cho người đọc không chuyên. */
+.logic-page p,
+.logic-page small,
+.logic-page li {
+  font-size: clamp(0.875rem, 0.2vw + 0.75rem, 0.95rem);
+}
+
+.logic-story-choices b,
+.logic-stat-grid span,
+.logic-legend span,
+.logic-table-row strong,
+.logic-table-row span,
+.logic-scenario-note b,
+.logic-scenario-note span,
+.logic-result-strip span,
+.logic-result-strip small,
+.logic-controls legend,
+.logic-range > span,
+.logic-select > span,
+.logic-choice b,
+.logic-choice span,
+.logic-service button,
+.logic-evidence-card a,
+.logic-minimum-data code {
+  font-size: 0.82rem;
+}
+
+.logic-deck-top {
+  position: fixed;
+  top: 12px;
+  right: 18px;
+  left: 18px;
+  z-index: 100;
+  display: flex;
+  min-height: 54px;
+  padding: 8px 10px;
+  align-items: center;
+  justify-content: space-between;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  background: rgba(21, 53, 66, 0.94);
+  box-shadow: 0 12px 30px rgba(9, 30, 38, 0.26);
+  backdrop-filter: blur(14px);
+}
+
+.logic-deck-top[hidden] {
+  display: none;
+}
+
+.logic-deck-top button {
+  min-height: 36px;
+  padding: 0 12px;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 800;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+}
+
+.logic-deck-top button:disabled {
+  opacity: 0.35;
+}
+
+.logic-deck-top > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logic-deck-top span {
+  min-width: 50px;
+  font-size: 0.68rem;
+  text-align: center;
+}
+
+.logic-presenting {
+  overflow: auto;
+  background: var(--paper);
+}
+
+.logic-presenting .site-header {
+  display: none;
+}
+
+.logic-presenting .page {
+  width: min(1440px, calc(100% - 32px));
+  padding: 80px 0 20px;
+}
+
+.logic-presenting .logic-chapter {
+  display: none;
+  min-height: calc(100vh - 110px);
+  margin: 0;
+}
+
+.logic-presenting .logic-chapter.is-present {
+  display: grid;
+  align-content: start;
+}
+
+.logic-presenting .logic-hero.is-present {
+  grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.8fr);
+}
+
+@media (max-width: 1150px) {
+  .logic-flow-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .logic-arrow {
+    display: none;
+  }
+
+  .logic-stat-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .logic-stat-grid article:nth-child(3) {
+    border-right: 0;
+  }
+
+  .logic-stat-grid article:nth-child(-n + 3) {
+    border-bottom: 1px solid var(--line-soft);
+  }
+}
+
+@media (max-width: 860px) {
+  .logic-hero,
+  .logic-presenting .logic-hero.is-present {
+    grid-template-columns: 1fr;
+  }
+
+  .logic-timeline-card {
+    grid-column: auto;
+  }
+
+  .logic-section-head {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .logic-section-head > p {
+    max-width: none;
+  }
+
+  .logic-step-fields,
+  .logic-output-grid,
+  .logic-four-numbers,
+  .logic-result-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .logic-step-fields > div:nth-child(2),
+  .logic-output-grid article:nth-child(2),
+  .logic-four-numbers article:nth-child(2),
+  .logic-result-strip article:nth-child(2),
+  .logic-result-strip article:nth-child(4) {
+    border-right: 0;
+  }
+
+  .logic-step-fields > div:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .logic-formula-board,
+  .logic-simulator,
+  .logic-council {
+    grid-template-columns: 1fr;
+  }
+
+  .logic-formula-board > div {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .logic-controls {
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+
+  .logic-evidence-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .logic-result-strip .final {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .main-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    overflow: hidden;
+  }
+
+  .tab-button {
+    width: auto;
+    min-width: 0;
+    padding: 0 3px;
+    font-size: 0.68rem;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  .logic-chapter {
+    margin-bottom: 20px;
+  }
+
+  .logic-hero-copy,
+  .logic-thesis,
+  .logic-story-card,
+  .logic-timeline-card,
+  .logic-chapter:not(.logic-hero) {
+    border-radius: 16px;
+  }
+
+  .logic-hero-copy,
+  .logic-thesis,
+  .logic-story-card,
+  .logic-timeline-card,
+  .logic-chapter:not(.logic-hero) {
+    padding: 22px 18px;
+  }
+
+  .logic-hero h1 {
+    font-size: 2.2rem;
+  }
+
+  .logic-hero-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .logic-hero-actions button {
+    width: 100%;
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .logic-equation {
+    align-items: stretch;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .logic-equation b {
+    align-self: center;
+  }
+
+  .logic-timeline-card header {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .logic-time-track {
+    min-height: 118px;
+  }
+
+  .logic-contract {
+    padding: 14px 10px;
+  }
+
+  .logic-cutoff b,
+  .logic-cutoff span {
+    display: none;
+  }
+
+  .logic-stat-grid,
+  .logic-flow-grid,
+  .logic-step-fields,
+  .logic-output-grid,
+  .logic-four-numbers,
+  .logic-result-strip,
+  .logic-evidence-grid,
+  .logic-model-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .logic-stat-grid article,
+  .logic-step-fields > div,
+  .logic-result-strip article {
+    min-height: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .logic-pattern-card,
+  .logic-local-proof,
+  .logic-quick-decisions {
+    grid-template-columns: 1fr;
+  }
+
+  .logic-story-card header,
+  .logic-story-months {
+    display: flex;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .logic-story-months > b {
+    align-self: center;
+    transform: rotate(90deg);
+  }
+
+  .logic-story-choices,
+  .logic-abc-buttons,
+  .logic-abc-items {
+    grid-template-columns: 1fr;
+  }
+
+  .logic-abc-money {
+    min-height: 92px;
+    grid-template-columns: 7fr 2.5fr 1.3fr;
+  }
+
+  .logic-abc-money > div {
+    padding: 9px 5px;
+  }
+
+  .logic-abc-money b {
+    font-size: 0.72rem;
+  }
+
+  .logic-abc-money span {
+    font-size: 0.56rem;
+  }
+
+  .logic-donut {
+    margin: 0 auto;
+  }
+
+  .logic-node {
+    min-height: 0;
+  }
+
+  .logic-table-head {
+    display: none;
+  }
+
+  .logic-table-row {
+    display: block;
+    padding: 12px;
+  }
+
+  .logic-table-row > * {
+    display: block;
+    padding: 6px;
+    border: 0;
+  }
+
+  .logic-table-row span:last-child::before {
+    content: "Không được: ";
+    font-weight: 850;
+  }
+
+  .logic-episode header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .logic-demo-title,
+  .logic-scenario-note {
+    display: block;
+  }
+
+  .logic-chart-legend {
+    margin-top: 10px;
+  }
+
+  .logic-scenario-note span {
+    display: block;
+    margin-top: 7px;
+  }
+
+  .logic-result-strip .final {
+    grid-column: auto;
+  }
+
+  .logic-minimum-data code {
+    overflow-wrap: anywhere;
+  }
+
+  .logic-presenting .page {
+    width: calc(100% - 16px);
+    padding-top: 126px;
+  }
+
+  .logic-deck-top {
+    top: 8px;
+    right: 8px;
+    left: 8px;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .logic-deck-top > div {
+    justify-content: space-between;
+  }
+}

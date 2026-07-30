@@ -19,3 +19,6 @@ dist/
 
 .DS_Store
 .Rhistory
+
+# Graphify (đồ thị sinh ra từ code, dựng lại được bất cứ lúc nào)
+graphify-out/

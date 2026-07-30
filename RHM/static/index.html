@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Bảng xác nhận số lượng đề xuất đi thầu của Khoa Răng Hàm Mặt"
+    />
+    <title>RHM · Xác nhận số lượng đề xuất</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/logic-view.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="#proposals" aria-label="Về bảng đề xuất">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48">
+              <path d="M14.4 7.8c3.2-1.8 6.3-.4 9.6-.4s6.4-1.4 9.6.4c4.5 2.5 5.7 8.6 3.8 14.2-1.2 3.7-3.4 6.1-4.5 10.4-1.2 4.7-2.3 8.1-5.1 8.1-2.3 0-2.2-3.6-3.8-7.1-1.6 3.5-1.5 7.1-3.8 7.1-2.8 0-3.9-3.4-5.1-8.1-1.1-4.3-3.3-6.7-4.5-10.4-1.9-5.6-.7-11.7 3.8-14.2Z" />
+            </svg>
+          </span>
+          <span>
+            <strong>Khoa Răng Hàm Mặt</strong>
+            <small>Xác nhận số lượng đi thầu</small>
+          </span>
+        </a>
+
+        <nav class="main-tabs" aria-label="Nội dung chính">
+          <button class="tab-button active" data-view="proposals">
+            Bảng đề xuất
+          </button>
+          <button class="tab-button" data-view="history">
+            Lịch sử sử dụng
+          </button>
+          <button class="tab-button" data-view="formula">
+            Công thức tính
+          </button>
+          <button class="tab-button" data-view="logic">
+            Cách ra số
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main id="view-root" class="page">
+      <div class="loading">
+        <span class="spinner"></span>
+        <strong>Đang mở bảng đề xuất…</strong>
+      </div>
+    </main>
+
+    <div class="modal-backdrop" id="modal-backdrop" hidden>
+      <section
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+      >
+        <button class="modal-close" data-close-modal aria-label="Đóng">×</button>
+        <div id="modal-content"></div>
+      </section>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="/logic-view.js" defer></script>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

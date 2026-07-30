@@ -1,0 +1,22 @@
+# Chặn Graphify đọc dữ liệu nhạy cảm.
+# Xoá file này = Graphify sẽ đọc mọi thứ .gitignore không chặn.
+
+# Bí mật
+.env
+.env.*
+backend/.env.local
+
+# Dữ liệu bệnh viện: giá chào thầu, nhà cung cấp, lịch sử sử dụng
+*.xlsx
+*.xls
+*.docx
+*.csv
+RHM/data/
+
+# Rác
+backend/.venv/
+node_modules/
+frontend/dist/
+__pycache__/
+*.pyc
+.DS_Store
