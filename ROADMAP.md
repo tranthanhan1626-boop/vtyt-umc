@@ -28,11 +28,17 @@ Ký hiệu: `- [ ]` chưa làm · `- [~]` đang làm · `- [x]` xong
 
 **Bản nháp cấu trúc tab** (chờ chủ dự án duyệt trước khi code):
 
+**Cấu trúc tab — ĐÃ DUYỆT 30/07/2026:**
+
 ```
-ĐVSD:  [Đề xuất danh mục]  [Đề xuất của tôi]  [Xuất hồ sơ]
-PĐD:   [Chờ duyệt ●]  [Đề xuất các khoa]  [Tổng hợp đi thầu]  [Xuất hồ sơ]  [Danh mục]
+ĐVSD:  [Đề xuất danh mục] [Đề xuất của tôi] [Tiến độ gói thầu] [Xuất hồ sơ]
+PĐD:   [Chờ duyệt ●] [Đề xuất các khoa] [Tổng hợp đi thầu] [Tiến độ gói thầu]
+       [Xuất hồ sơ] [Danh mục]
 Admin: như PĐD + [Người dùng]
 ```
+
+`Tiến độ gói thầu` **dùng chung một màn hình cho cả hai vai trò**, chỉ khác
+phạm vi dữ liệu được thấy.
 
 ### A.0 — Chuẩn bị (chặn mọi việc sau)
 
@@ -61,7 +67,17 @@ Admin: như PĐD + [Người dùng]
 - [ ] **A.3b** Word cam kết số lượng đề xuất thầu
 - [ ] **A.3c** Excel danh mục đề xuất của ĐVSD
 - [ ] **A.3d** Word đề nghị mua thầu
-- [ ] **A.3e** Excel danh mục tổng hợp đi thầu của PĐD (tổng hợp sau duyệt)
+- [ ] **A.3e** Excel danh mục tổng hợp đi thầu của PĐD — **tổng hợp từ file A.3b + A.3c**
+      (Word cam kết số lượng + Excel danh mục ĐVSD), sau khi PĐD đã duyệt
+
+### A.4 — Tab "Tiến độ gói thầu" (dùng chung ĐVSD + PĐD)
+
+- [ ] **A.4a** Bảng `goi_thau_tien_do` — gói thầu + 3 mốc, và kết quả **theo từng mã**
+      (không phải theo cả gói: một gói có mã trúng, mã trượt kèm lý do riêng)
+- [ ] **A.4b** Màn hình xem tiến độ: 3 mốc + danh sách mã kèm kết quả/lý do
+- [ ] **A.4c** PĐD cập nhật mốc và kết quả từng mã; ĐVSD chỉ xem
+- [ ] **A.4d** Phạm vi dữ liệu theo vai trò (RLS): PĐD/admin thấy mọi gói;
+      ĐVSD — **chờ chốt**, xem câu hỏi mở ở cuối file
 
 ---
 
@@ -170,3 +186,14 @@ Không có ba thứ này thì Phase 5 dở dang, mà chúng không nằm trong t
 - [ ] Đơn giá từng mã (→ ABC theo tiền)
 - [ ] Tồn kho theo ngày + hạn dùng theo lô
 - [ ] Ngày hẹn giao vs ngày nhận thực tế của PO (→ lead time thật, Q cầu nối)
+
+---
+
+## ❓ Câu hỏi mở — cần chủ dự án chốt trước khi code phần liên quan
+
+1. **Ba mốc gói thầu** — tạm dùng `Sau chào giá` → `Sau mở thầu` →
+   `Sau đánh giá/lựa chọn` (lấy từ nhánh V2). Đúng với quy trình bệnh viện chưa,
+   hay cần thêm mốc ký hợp đồng / giao hàng đợt đầu? *(chặn A.4a)*
+2. **ĐVSD thấy gì ở tab Tiến độ** — cả gói thầu, hay chỉ những mã của khoa mình?
+   *(chặn A.4d)*
+3. **Mẫu 4 file** A.3b–A.3e. *(chặn A.3)*
