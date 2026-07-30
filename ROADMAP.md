@@ -14,6 +14,48 @@ Ký hiệu: `- [ ]` chưa làm · `- [~]` đang làm · `- [x]` xong
 
 ---
 
+## Bản đồ toàn dự án — 7 phase
+
+| Phase | Làm gì | Xong khi nào | Trạng thái |
+|---|---|---|---|
+| **A** | Luồng đề xuất → duyệt → xuất 5 hồ sơ | T8/2026 | 🟢 17/18 miếng |
+| **B** | Hạ tầng an toàn + chốt số gốc kỳ 1/2027 | T8/2026 | ⚪ chưa |
+| **C** | Ba sổ ghi: thiếu hàng · sự kiện nhu cầu · đóng kỳ | T9–11/2026 | ⚪ chưa |
+| **D** | Chạy thử 3–5 khoa pilot | T12/2026 | ⚪ chưa |
+| 🚩 | **01/01/2027 — GO-LIVE, đồng hồ dữ liệu bắt đầu chạy** | | |
+| **E** | Vận hành nhịp tháng: cảnh báo, tùy chọn 30% | Q1/2027 | ⚪ chưa |
+| **F** | Báo cáo hội đồng giữa kỳ (6 tháng dữ liệu) | T7/2027 | ⚪ chưa |
+| **G** | Số nền P50–P90 cho kỳ thầu kế tiếp | Q4/2027 | ⚪ chưa |
+
+**Đường đi của một đề xuất qua hệ thống:**
+
+```
+ĐVSD khai danh mục ──► PĐD duyệt / trả lại kèm lý do ──► Tổng hợp đi thầu
+   (Phase A)              (Phase A, cổng chặn ở DB)         (Phase A)
+                                                                │
+                                    ┌───────────────────────────┘
+                                    ▼
+                          Xuất 5 hồ sơ ──► Theo dõi 5 mốc gói thầu
+                            (Phase A)         (Phase A)
+                                                    │
+                     ┌──────────────────────────────┘
+                     ▼
+      Trong kỳ: khoa báo thiếu hàng + khai sự kiện nhu cầu
+                     (Phase C, chạy suốt 18 tháng)
+                                    │
+                                    ▼
+              Cuối kỳ: đối chiếu số đã chốt vs thực dùng
+                        (Phase F → Phase G)
+```
+
+**Quy tắc phụ thuộc — không nhảy cóc:**
+
+- Phase B **chặn** mọi thứ đụng database production (chưa tách staging thật thì không deploy)
+- Phase C **phải xong trước 01/01/2027**, không lùi được (QĐ-02)
+- Phase G **chỉ bắt đầu khi có đủ 12 tháng dữ liệu có ghi số ngày hết hàng** (QĐ-06)
+
+---
+
 ## ⏸ Hoãn có điều kiện — theo dõi, KHÔNG phải quên
 
 - [ ] **K.1** Vá SMTP (Brevo) — **hoãn theo QĐ-13**. Cửa thoát tạm: `dev_login_link.py`.
@@ -86,7 +128,7 @@ phạm vi dữ liệu được thấy.
 
 ---
 
-## Phase 0 — Chốt sổ gốc (T8/2026)
+## Phase B — Hạ tầng an toàn + chốt sổ gốc
 
 > Nếu bỏ qua phase này, tháng 6/2028 không có gì để so sánh.
 
@@ -103,11 +145,11 @@ phạm vi dữ liệu được thấy.
 - [ ] **0.6** Xác nhận host Cloudflare Pages (băng thông không giới hạn, cho phép
       dùng tổ chức — xem QĐ-12) đang trỏ đúng, chưa nằm trên Vercel Hobby
 
-**Xong Phase 0 =** điểm xuất phát đã đóng băng, mọi thứ sau đó đo được.
+**Xong Phase B =** điểm xuất phát đã đóng băng, mọi thứ sau đó đo được.
 
 ---
 
-## Phase 1 — Ba sổ bắt buộc (T9–11/2026)
+## Phase C — Ba sổ ghi (thiếu hàng · sự kiện · đóng kỳ)
 
 ### Sổ thiếu hàng — ưu tiên tuyệt đối
 
@@ -139,7 +181,7 @@ phạm vi dữ liệu được thấy.
 
 ---
 
-## Phase 2 — Chạy thử (T12/2026)
+## Phase D — Chạy thử với khoa pilot
 
 - [ ] **2.1** Bài kiểm tra hồi quy chạy trước mỗi lần deploy (đăng nhập / tạo đề xuất / xoá)
 - [ ] **2.2** Pilot 3–5 khoa. **Đo đúng một chỉ số: thời gian điền một báo cáo thiếu hàng.**
@@ -152,23 +194,23 @@ phạm vi dữ liệu được thấy.
 
 ---
 
-## Phase 3 — Nhịp tháng (Q1/2027)
+## Phase E — Vận hành nhịp tháng
 
 - [ ] **3.1** Bảng theo dõi: thực dùng vs số đã chốt, luỹ kế
 - [ ] **3.2** Cảnh báo mã sắp hết trước lô giao kế tiếp
 - [ ] **3.3** Mốc quyết định tùy chọn 30% — nhắc tự động ở tháng thứ 6 của kỳ
 
-## Phase 4 — Báo cáo hội đồng giữa kỳ (T7/2027)
+## Phase F — Báo cáo hội đồng giữa kỳ
 
 - [ ] **4.1** Báo cáo 6 tháng: lượt báo thiếu, ca bị hoãn, mã lệch >30% kèm lý do đã phân loại
 
-## Phase 5 — Số nền cho kỳ sau (Q4/2027)
+## Phase G — Số nền cho kỳ thầu kế tiếp
 
 - [ ] **5.1** Tiêu thụ hiệu chỉnh theo số ngày hết hàng (phương pháp WHO/MSH)
 - [ ] **5.2** Phân 4 dạng nhu cầu, ra dải P50–P90
 - [ ] **5.3** Bảng đề xuất 3 cột cho kỳ thầu kế tiếp
 
-> **Không đụng vào công thức/model trước Phase 5.** Xem QĐ-06.
+> **Không đụng vào công thức/model trước Phase G.** Xem QĐ-06.
 
 ---
 
@@ -186,7 +228,7 @@ Làm được lúc nào cũng tốt, không cần chờ 2027. Không có màn h�
 
 ## Ngoài phạm vi ĐD ↔ ĐVSD — nhưng phải xin sớm và xin nhiều lần
 
-Không có ba thứ này thì Phase 5 dở dang, mà chúng không nằm trong tay Phòng ĐD:
+Không có ba thứ này thì Phase G dở dang, mà chúng không nằm trong tay Phòng ĐD:
 
 - [ ] Đơn giá từng mã (→ ABC theo tiền)
 - [ ] Tồn kho theo ngày + hạn dùng theo lô
