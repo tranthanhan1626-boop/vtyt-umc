@@ -22,3 +22,6 @@ dist/
 
 # Graphify (đồ thị sinh ra từ code, dựng lại được bất cứ lúc nào)
 graphify-out/
+
+# Dữ liệu xuất từ production để nạp sang staging — KHÔNG commit
+backend/du_lieu_staging/
