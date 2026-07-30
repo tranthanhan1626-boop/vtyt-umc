@@ -51,11 +51,17 @@ phạm vi dữ liệu được thấy.
       1 form 2 chế độ, có ô tìm nhóm. Không đổi schema (`la_nhom_moi` đã có sẵn).
       ⚠️ Còn 1 ràng buộc chặn, xem câu hỏi mở #4
 - [ ] **A.1b** Khai mã mới hoàn toàn — dùng lại luồng "+ Thêm mã kỹ thuật" hiện có
-- [ ] **A.1c** Form đổi theo phương thức: chỉ định thầu (nội dung/lý do/danh mục)
-      vs rộng rãi + bổ sung (đề xuất/danh mục/số lượng/thời gian sử dụng)
+- [x] **A.1c** Form đổi theo phương thức — ✅ 30/07/2026. Chỉ định thầu bắt buộc
+      ô "Nội dung & căn cứ", thiếu thì khoá nút gửi. Rộng rãi/bổ sung giữ nguyên.
+      ⚠️ Giải trình đang gộp vào `ghi_chu` kèm nhãn `[CHỈ ĐỊNH THẦU]` — tách thành
+      cột riêng khi có staging (phải sửa RPC `submit_proposal_group`)
 - [ ] **A.1d** Nhánh "điều chỉnh nhiều": thêm nội dung · lý do · số lượng · danh mục
 
 ### A.2 — Cổng phê duyệt của PĐD
+
+> 🚧 **CHẶN tới khi có staging.** A.2c cần đổi trigger/RLS trên database — hiện
+> local vẫn dùng chung DB với production. Xem `HUONG_DAN_STAGING.md` bước 1–2
+> (chủ dự án tự bấm), xong là làm được ngay.
 
 - [ ] **A.2a** Tab "Chờ duyệt" + đếm số việc đang chờ
 - [ ] **A.2b** Duyệt / trả lại kèm lý do; ĐVSD thấy trạng thái và lý do trả lại
