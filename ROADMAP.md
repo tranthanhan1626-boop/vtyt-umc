@@ -26,8 +26,6 @@ Ký hiệu: `- [ ]` chưa làm · `- [~]` đang làm · `- [x]` xong
 > Trọng tâm sản phẩm. Mỗi luồng một tab riêng, không chồng chéo.
 > **Chưa làm công thức tính số lượng** — QĐ-01 và QĐ-06 vẫn hiệu lực.
 
-**Bản nháp cấu trúc tab** (chờ chủ dự án duyệt trước khi code):
-
 **Cấu trúc tab — ĐÃ DUYỆT 30/07/2026:**
 
 ```
@@ -45,7 +43,7 @@ phạm vi dữ liệu được thấy.
 - [ ] **A.0a** Chủ dự án gửi **mẫu 4 file** còn thiếu (Word cam kết SL · Excel danh
       mục ĐVSD · Word đề nghị mua thầu · Excel tổng hợp đi thầu). **Không tự bịa
       form văn bản hành chính.**
-- [ ] **A.0b** Chốt cấu trúc tab ở trên bằng ảnh chụp màn hình nháp
+- [x] **A.0b** Chốt cấu trúc tab — ✅ duyệt 30/07/2026, có bổ sung tab "Tiến độ gói thầu"
 
 ### A.1 — Tab ĐVSD "Đề xuất danh mục" (gánh cả 2 tình huống, QĐ-15)
 
