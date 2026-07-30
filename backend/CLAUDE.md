@@ -4,6 +4,27 @@ File context cho Claude Code. Đọc hết trước khi sửa gì — phần l�
 đây đã chốt SAU KHI đo/test thật, và nhiều chỗ trông "vô lý" thực ra là kết quả
 của một lần sửa bug cụ thể. Đừng tự ý đổi lại nếu không có lý do mới.
 
+> ## ⚠️ ĐỌC 4 FILE NÀY TRƯỚC — chúng THẮNG file này khi mâu thuẫn
+>
+> File này ghi **bẫy kỹ thuật**. Quyết định nghiệp vụ nằm ở nơi khác và **mới
+> hơn**. Một số mục dưới đây đã bị đảo bởi quyết định sau — chỗ nào bị đảo đều
+> có ghi chú tại chỗ.
+>
+> | File (ở gốc repo) | Nội dung |
+> |---|---|
+> | `QUYET_DINH.md` | **Luật cao nhất.** 16 quyết định nghiệp vụ đã chốt, kèm lý do |
+> | `ROADMAP.md` | Việc gì làm trước, mốc cứng 01/01/2027 |
+> | `LOOP_ENGINEERING.md` | Quy trình build: cổng an toàn, Definition of Done |
+> | `Hướng dẫn build web app/` | Bản sao đóng gói cho đội dev |
+>
+> **Trọng tâm hiện tại (QĐ-14, QĐ-16):** luồng *ĐVSD đề xuất → PĐD phê duyệt →
+> xuất 5 file hồ sơ*. **KHÔNG làm công thức tính số lượng** (QĐ-01, QĐ-06 vẫn
+> hiệu lực).
+>
+> **Nhánh git:** `main` là bản đang chạy. `v2-cong-thuc-phan-vi` là một đợt build
+> ngày 30/07/2026 đi theo hướng công thức phân vị P50/P90 — **lệch hướng, giữ để
+> tham khảo, không dùng tiếp, không merge**.
+
 Tổ chức file theo CHỦ ĐỀ, không theo thời gian. Mục "Bẫy đã gặp" là phần đáng
 đọc nhất — toàn bộ là lỗi thật đã tốn công chẩn đoán.
 
@@ -61,7 +82,13 @@ Web app quản lý dự trù vật tư y tế (VTYT) cho Bệnh viện Đại h�
      MỚI HOÀN TOÀN** (chưa có trong danh mục). Bắt buộc: tên vật tư, tên thương
      mại, tiêu chí kỹ thuật, ký mã hiệu, hãng, nước SX, số lượng, gói thầu, kỳ.
      Tùy chọn (ẩn trong `<details>`): mã hàng, mã kỹ thuật, tên mã kỹ thuật.
-     **Đã BỎ chế độ "gán nhóm có sẵn"** (chốt 22/07/2026). Đề nghị chờ duyệt.
+     ~~**Đã BỎ chế độ "gán nhóm có sẵn"** (chốt 22/07/2026).~~ Đề nghị chờ duyệt.
+     🔄 **ĐÃ ĐẢO — xem QĐ-15 (30/07/2026).** Chế độ gộp mã tương đương vào mã
+     quản lý có sẵn được **mở lại**: khoa gặp mã hàng *tương đương về chức năng*
+     (khác quy cách đóng gói vẫn tính là tương đương) thì gộp vào nhóm sẵn có;
+     chỉ mã **mới hoàn toàn** mới đi đường khai mới. Một tab gánh cả hai.
+     **Đừng gỡ tính năng này lần nữa** — nó đã bị gỡ một lần vào 22/07 rồi phải
+     làm lại.
 3. Bấm dòng mã hàng → bung **bar chart theo năm** (trên) + **line chart theo
    tháng** (dưới). Cả 2 CHỈ ĐỂ XEM, không tương tác. Dòng mã hàng hiện sẵn
    **gói thầu** của nó (`vat_tu.goi` từ danh mục).
@@ -451,3 +478,41 @@ Khi hệ thống đã chạy thật với nhiều khoa nhập liệu, **nên tá
 - PHẦN II trên web xếp 3 phòng NẰM NGANG cho gọn màn hình, còn file Word xuất
   ra xếp DỌC đúng mẫu giấy — **cố ý khác nhau**, chưa ai yêu cầu đồng bộ.
 - Supabase free tier pause sau 7 ngày không hoạt động.
+
+### Cập nhật 30/07/2026 — trạng thái hạ tầng đã audit
+
+- **Chồng công nghệ đã kiểm là free vĩnh viễn** (QĐ-12): Supabase free +
+  Cloudflare Pages (cho phép dùng cho tổ chức, băng thông không giới hạn) +
+  GitHub Actions (2.000 phút/tháng, cron backup dùng <5%). **KHÔNG dùng Supabase
+  Storage** — file xuất sinh thẳng trong trình duyệt, không lưu lên server.
+- **500 MB database là đủ**: bảng nặng nhất `usage_history_current` ~30 MB và bị
+  **ghi đè** mỗi lần nạp, không cộng dồn.
+- ⚠️ **Email đang là điểm yếu chưa vá** (QĐ-13): hệ thống dùng SMTP mặc định của
+  Supabase — **2 email/giờ cho CẢ dự án**, không phải 2/giờ mỗi người. Supabase
+  ghi rõ dịch vụ này chỉ dành cho thử nghiệm. Đăng ký không đụng email (đã tắt
+  "Confirm email") nên chỉ ảnh hưởng **"Quên mật khẩu"**. Cửa thoát tạm:
+  `scripts/dev_login_link.py <email>` sinh link đăng nhập gửi tay.
+  **Vá bằng Brevo (300 email/ngày, free) NGAY khi có ≥1 khoa báo lỗi thật.**
+- **Chưa tách staging** — `main` và production vẫn dùng chung project Supabase
+  `jttucjnkqxckphmmilaa`. Mọi `update`/`delete` lúc dev là sửa dữ liệu thật:
+  chạy `select` xem trước, xác nhận, rồi mới chạy.
+- **Không xoá cứng dữ liệu nghiệp vụ** (QĐ-11): sổ đang chạy chỉ được **ẩn khỏi
+  báo cáo** kèm lý do + người + thời điểm. Excel là bản **xuất ra**, không phải
+  bản nạp ngược đè lên hệ thống.
+
+### Sắp làm — Phase A (QĐ-14)
+
+5 file phải xuất được. Chỉ file (1) đã có; 4 file còn lại **chờ mẫu thật từ chủ
+dự án**, dựng trước bằng renderer nháp có đóng dấu "BẢN NHÁP — CHƯA ĐÚNG MẪU":
+
+| # | File | Trạng thái |
+|---|---|---|
+| 1 | Word đề xuất mua chỉ định thầu | ✅ `lib/xuatWordPhieu.js` |
+| 2 | Word cam kết số lượng đề xuất thầu | ⏳ chờ mẫu |
+| 3 | Excel danh mục đề xuất của ĐVSD | ⏳ chờ mẫu |
+| 4 | Word đề nghị mua thầu | ⏳ chờ mẫu |
+| 5 | Excel danh mục tổng hợp đi thầu (PĐD) | ⏳ chờ mẫu |
+
+**Nguyên tắc kiến trúc cho phần xuất file:** tách **lớp gom dữ liệu** (chọn dòng
+nào, gom nhóm gì, ai được thấy) khỏi **lớp dựng file** (bố cục Word/Excel). Lớp
+gom dữ liệu không phụ thuộc mẫu giấy — có mẫu thật thì chỉ thay lớp dựng.
