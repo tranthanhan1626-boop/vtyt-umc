@@ -132,7 +132,10 @@ phạm vi dữ liệu được thấy.
 
 > Nếu bỏ qua phase này, tháng 6/2028 không có gì để so sánh.
 
-- [ ] **0.1** Tách staging DB — dựng project Supabase thứ 2 từ `schema.sql` + `rls_policies.sql`
+- [x] **B.1** Tách staging DB — ✅ 30/07. Project `ihgfafubwyxnbubmppbj`, đã chép
+      **đủ dữ liệu production**: 66 khoa · 878 nhóm · 3085 vật tư · 149.999 dòng lịch sử.
+      ⚠️ Bài học: bỏ qua `usage_history_current` làm staging chỉ có 4 khoa — 3 view
+      (`v_don_vi`, `v_danh_sach_khoa`, `v_don_vi_nhom`) đều suy từ bảng đó
 - [ ] **0.2** Chống mất dữ liệu — **giữ Supabase free** (xem QĐ-10). Gồm 4 phần:
       (a) script `pg_dump` — nhịp dày cho nhóm không dựng lại được, nhịp thưa cho nhóm nạp lại được từ Excel HIS
       (b) **cảnh báo khi backup KHÔNG chạy** quá N ngày (chống hỏng trong im lặng)

@@ -27,8 +27,11 @@ from supabase import create_client
 THU_MUC = Path(__file__).resolve().parent.parent / "du_lieu_staging"
 
 # Thứ tự QUAN TRỌNG: bảng cha trước, bảng con sau (khoá ngoại).
-# usage_history_current cố ý KHÔNG có ở đây — 150k dòng, nạp lại từ Excel HIS
-# bằng ingest_cli.py nhanh và sạch hơn nhiều (xem QĐ-10, nhóm "dựng lại được").
+#
+# usage_history_current (150k dòng) BẮT BUỘC phải chép: v_don_vi,
+# v_danh_sach_khoa và v_don_vi_nhom đều suy từ nó. Thiếu nó thì staging chỉ có
+# vài khoa thay vì 66, và không có số mã hàng/mã quản lý từng dùng của mỗi khoa
+# -> không test được đúng hành vi thật. (Đã bỏ qua 1 lần và phải sửa lại.)
 BANG = [
     "nhom_ky_thuat",
     "vat_tu",
@@ -38,6 +41,10 @@ BANG = [
     "proposal_reasons",
     "bieu_mau",
     "phieu_de_nghi",
+    # import_batches PHẢI đứng trước usage_history_current:
+    # usage_history_current.last_batch_id là khoá ngoại trỏ vào nó.
+    "import_batches",
+    "usage_history_current",
 ]
 
 TRANG = 1000  # PostgREST cắt 1000 dòng/lượt và KHÔNG báo lỗi (CLAUDE.md 5.1)
