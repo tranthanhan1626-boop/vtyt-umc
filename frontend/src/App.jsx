@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { TrendingUp, ClipboardList, ListChecks, BadgeCheck, LogOut } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { TrendingUp, ClipboardList, ListChecks, BadgeCheck, Inbox, LogOut } from "lucide-react";
 import { useAuth } from "./auth/useAuth";
 import Login from "./auth/Login";
 import DatLaiMatKhau from "./auth/DatLaiMatKhau";
@@ -7,6 +7,7 @@ import Function1 from "./features/Function1";
 import DeXuatTongHop from "./features/DeXuatTongHop";
 import DeXuatCuaToi from "./features/DeXuatCuaToi";
 import DuyetNhomKyThuat from "./features/DuyetNhomKyThuat";
+import ChoDuyet, { demViecChoDuyet } from "./features/ChoDuyet";
 import PhieuDeNghi from "./features/PhieuDeNghi";
 
 export default function App() {
@@ -15,6 +16,18 @@ export default function App() {
     signIn, signUp, sendPasswordReset, updatePassword, signOut,
   } = useAuth();
   const [tab, setTab] = useState("f1");
+
+  // Đếm việc chờ duyệt -> huy hiệu đỏ trên tab (A.2a).
+  // BẮT BUỘC khai ở đây, TRƯỚC các early return bên dưới (loading/recovery/
+  // !session). Đặt sau early return -> số hook mỗi lần render khác nhau ->
+  // React ném "change in the order of Hooks" và App trắng trang. Đã mắc 1 lần.
+  const [soChoDuyet, setSoChoDuyet] = useState(0);
+  const laPdd = profile?.role === "admin" || profile?.role === "dieu_duong";
+  const capNhatDem = useCallback(() => {
+    if (!laPdd) return;
+    demViecChoDuyet().then(setSoChoDuyet).catch(() => {});
+  }, [laPdd]);
+  useEffect(() => { capNhatDem(); }, [capNhatDem]);
   // ?phieu=<id> — mở trang điền biểu mẫu ở tab riêng (link từ 2 tab đề xuất).
   // Đọc 1 lần lúc mount là đủ: mỗi tab trình duyệt chỉ mở đúng 1 phiếu.
   const [phieuId] = useState(() => new URLSearchParams(window.location.search).get("phieu"));
@@ -77,6 +90,17 @@ export default function App() {
             <TrendingUp size={15} /> Đề xuất số lượng
           </button>
           {xemDuocTongHop && (
+            <button onClick={() => setTab("choduyet")}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${tab === "choduyet" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
+              <Inbox size={15} /> Chờ duyệt
+              {soChoDuyet > 0 && (
+                <span className="bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 leading-none min-w-[18px] text-center">
+                  {soChoDuyet}
+                </span>
+              )}
+            </button>
+          )}
+          {xemDuocTongHop && (
             <button onClick={() => setTab("tonghop")}
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${tab === "tonghop" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
               <ClipboardList size={15} /> Đề xuất từ các khoa
@@ -96,7 +120,8 @@ export default function App() {
           )}
         </div>
 
-        {tab === "tonghop" && xemDuocTongHop ? <DeXuatTongHop profile={profile} />
+        {tab === "choduyet" && xemDuocTongHop ? <ChoDuyet onDoiSoLuong={capNhatDem} />
+          : tab === "tonghop" && xemDuocTongHop ? <DeXuatTongHop profile={profile} />
           : tab === "cuatoi" && xemDuocCuaToi ? <DeXuatCuaToi />
           : tab === "duyetnhom" && xemDuocTongHop ? <DuyetNhomKyThuat />
           : <Function1 profile={profile} />}

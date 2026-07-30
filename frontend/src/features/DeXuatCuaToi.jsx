@@ -58,7 +58,9 @@ export default function DeXuatCuaToi() {
     });
     return [...m.values()].map((g) => {
       const tt = [...new Set(g.items.map((i) => i.trang_thai))];
-      return { ...g, trangThai: tt.length === 1 ? tt[0] : "hon_hop" };
+      // Lý do PĐD trả lại — hiện NGAY trên thẻ, không bắt khoa bấm vào mới thấy.
+      const lyDo = [...new Set(g.items.map((i) => i.ly_do_tra_lai).filter(Boolean))];
+      return { ...g, trangThai: tt.length === 1 ? tt[0] : "hon_hop", lyDoTraLai: lyDo };
     });
   }, [rows]);
 
@@ -99,6 +101,16 @@ export default function DeXuatCuaToi() {
                   </a>
                 )}
               </div>
+              {g.lyDoTraLai?.length > 0 && (
+                <div className="px-4 py-2.5 bg-red-50 border-b border-red-100">
+                  <p className="text-xs font-medium text-red-800 mb-0.5">
+                    Phòng Điều dưỡng trả lại — cần sửa rồi gửi lại
+                  </p>
+                  {g.lyDoTraLai.map((l, i) => (
+                    <p key={i} className="text-xs text-red-700 whitespace-pre-line leading-snug">{l}</p>
+                  ))}
+                </div>
+              )}
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <tbody>

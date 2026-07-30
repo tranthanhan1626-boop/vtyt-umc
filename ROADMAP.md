@@ -63,9 +63,10 @@ phạm vi dữ liệu được thấy.
 > local vẫn dùng chung DB với production. Xem `HUONG_DAN_STAGING.md` bước 1–2
 > (chủ dự án tự bấm), xong là làm được ngay.
 
-- [ ] **A.2a** Tab "Chờ duyệt" + đếm số việc đang chờ
-- [ ] **A.2b** Duyệt / trả lại kèm lý do; ĐVSD thấy trạng thái và lý do trả lại
-- [ ] **A.2c** Chặn ở DB (trigger/RLS), không chỉ ẩn nút ở giao diện
+- [x] **A.2a** Tab "Chờ duyệt" + huy hiệu đếm — ✅ 30/07, verify trên staging
+- [x] **A.2b** Duyệt / trả lại kèm lý do — ✅ 30/07. Khoa đọc lý do ở tab "Đề xuất của tôi"
+- [x] **A.2c** Chặn ở DB — ✅ 30/07. `patch_a2_cong_phe_duyet.sql` đã chạy trên staging;
+      3 phép thử lách quyền đều bị chặn. ⚠️ CHƯA gộp vào baseline, CHƯA chạy production
 
 ### A.3 — Năm file xuất
 
