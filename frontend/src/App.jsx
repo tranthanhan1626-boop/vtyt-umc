@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { TrendingUp, ClipboardList, ListChecks, BadgeCheck, Inbox, Activity, Download, AlertTriangle, LogOut } from "lucide-react";
+import { TrendingUp, ClipboardList, ListChecks, BadgeCheck, Inbox, Activity, Download, AlertTriangle, CalendarPlus, LogOut } from "lucide-react";
 import { useAuth } from "./auth/useAuth";
 import Login from "./auth/Login";
 import DatLaiMatKhau from "./auth/DatLaiMatKhau";
@@ -11,6 +11,7 @@ import ChoDuyet, { demViecChoDuyet } from "./features/ChoDuyet";
 import TienDoGoiThau from "./features/TienDoGoiThau";
 import XuatHoSo from "./features/XuatHoSo";
 import SoThieuHang from "./features/SoThieuHang";
+import SoSuKienNhuCau from "./features/SoSuKienNhuCau";
 import PhieuDeNghi from "./features/PhieuDeNghi";
 
 export default function App() {
@@ -119,6 +120,10 @@ export default function App() {
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${tab === "thieuhang" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
             <AlertTriangle size={15} /> Sổ thiếu hàng
           </button>
+          <button onClick={() => setTab("sukien")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${tab === "sukien" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
+            <CalendarPlus size={15} /> Sự kiện nhu cầu
+          </button>
           <button onClick={() => setTab("tiendo")}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${tab === "tiendo" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
             <Activity size={15} /> Tiến độ gói thầu
@@ -136,6 +141,7 @@ export default function App() {
         </div>
 
         {tab === "thieuhang" ? <SoThieuHang profile={profile} />
+          : tab === "sukien" ? <SoSuKienNhuCau profile={profile} />
           : tab === "tiendo" ? <TienDoGoiThau profile={profile} />
           : tab === "xuathoso" ? <XuatHoSo profile={profile} />
           : tab === "choduyet" && xemDuocTongHop ? <ChoDuyet onDoiSoLuong={capNhatDem} />

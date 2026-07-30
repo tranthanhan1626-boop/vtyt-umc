@@ -162,15 +162,15 @@ phạm vi dữ liệu được thấy.
       Nút tên là *"Báo Phòng Điều dưỡng: không lĩnh được hàng"*, không phải *"Ghi nhận dữ liệu"*
 - [x] **C.2** PĐD xác nhận + trạng thái trả ngược cho khoa — ✅ 30/07.
       Mới báo → Đang xử lý → Đã xử lý, khoa thấy ngay trên dòng của mình
-- [ ] **1.3** Nhắc cuối tháng: danh sách mã khoa thường dùng + nút "Tháng này không thiếu gì"
-      (để **im lặng cũng thành dữ liệu**)
+- [x] **C.3** Nhắc cuối tháng + nút "Tháng này khoa không thiếu gì" — ✅ 30/07.
+      Không bấm thì ghi là **chưa phản hồi**, không phải "không thiếu" (QĐ-05)
 
 ### Sổ sự kiện nhu cầu
 
-- [ ] **1.4** Bảng tra `ma_ly_do` (nhóm A/B/C/D) — sửa được từ giao diện, không cần code
-- [ ] **1.5** Màn hình khoa khai sự kiện — mở rộng luồng "+ Thêm mã kỹ thuật" đã có
-      Bắt buộc định lượng: `%` HOẶC `SL/tháng` HOẶC `số ca × định mức/ca`
-- [ ] **1.6** Màn hình Phòng ĐD duyệt sự kiện
+- [x] **C.4** Bảng `ma_ly_do` — ✅ 20 mã A/B/C/D nạp sẵn, sửa được không cần code
+- [x] **C.5** Màn hình khoa khai sự kiện — ✅ 30/07. Tab riêng "Sự kiện nhu cầu".
+      Định lượng bắt buộc, **trigger DB chặn** nếu thiếu (không chỉ khoá nút FE)
+- [x] **C.6** PĐD duyệt / trả lại kèm lý do — ✅ 30/07
 
 ### Sổ đóng kỳ
 

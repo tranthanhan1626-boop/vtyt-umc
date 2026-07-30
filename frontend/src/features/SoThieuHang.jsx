@@ -41,6 +41,9 @@ export default function SoThieuHang({ profile }) {
   const [slYeuCau, setSlYeuCau] = useState("");
   const [slDuocCap, setSlDuocCap] = useState("");
   const [hoanCa, setHoanCa] = useState(false);
+  // C.3 — nhắc cuối tháng. QĐ-05: im lặng KHÔNG được hiểu là "không thiếu".
+  // Khoa phải bấm xác nhận thì tháng đó mới thành dữ liệu "đủ hàng".
+  const [daXacNhanThang, setDaXacNhanThang] = useState(null);
 
   const tai = useCallback(async () => {
     setDangTai(true);
@@ -48,8 +51,15 @@ export default function SoThieuHang({ profile }) {
       .select("*").eq("an_khoi_bao_cao", false)
       .order("ngay_bao", { ascending: false }).range(f, t));
     setRows(r.error ? [] : r.data || []);
+    if (!laPdd) {
+      const nay = new Date();
+      const x = await supabase.from("xac_nhan_thang").select("id")
+        .eq("don_vi", profile.khoa).eq("thang", nay.getMonth() + 1)
+        .eq("nam", nay.getFullYear()).maybeSingle();
+      setDaXacNhanThang(!!x.data);
+    }
     setDangTai(false);
-  }, []);
+  }, [laPdd, profile.khoa]);
   useEffect(() => { tai(); }, [tai]);
 
   // Tìm mã ở SERVER, debounce 250ms — không tải sẵn 3000 mã lúc mở trang (bẫy 5.1).
@@ -96,6 +106,15 @@ export default function SoThieuHang({ profile }) {
     if (error) setLoi(error.message);
     else if (!count) setLoi("Không đổi được — kiểm tra quyền.");
     else await tai();
+  };
+
+  const xacNhanThang = async () => {
+    const nay = new Date();
+    const { error } = await supabase.from("xac_nhan_thang").insert({
+      don_vi: profile.khoa, thang: nay.getMonth() + 1, nam: nay.getFullYear(),
+    });
+    if (error) setLoi(error.message);
+    else { setDaXacNhanThang(true); setXong(true); setTimeout(() => setXong(false), 3500); }
   };
 
   const chuaXuLy = useMemo(() => rows.filter((r) => r.trang_thai_xu_ly === "moi_bao").length, [rows]);
@@ -185,6 +204,28 @@ export default function SoThieuHang({ profile }) {
               className="px-4 py-3 rounded-md border border-slate-300 text-slate-600">Huỷ</button>
           </div>
         </div>
+      )}
+
+      {!laPdd && !moForm && (
+        daXacNhanThang ? (
+          <p className="text-xs text-teal-700 flex items-center gap-1.5">
+            <CheckCircle2 size={13} /> Đã xác nhận tháng này. Cảm ơn khoa.
+          </p>
+        ) : (
+          <div className="border border-slate-200 bg-white rounded-lg p-3">
+            <p className="text-sm text-slate-700 mb-2">
+              Tháng này khoa có mã nào <b>không lĩnh đủ</b> mà chưa báo không?
+            </p>
+            <button onClick={xacNhanThang}
+              className="px-3 py-2 text-sm rounded-md border border-teal-300 text-teal-800 hover:bg-teal-50">
+              Tháng này khoa không thiếu gì
+            </button>
+            <p className="text-xs text-slate-400 mt-1.5">
+              Bấm xác nhận thì tháng này mới được tính là “đủ hàng”. Không bấm thì
+              hệ thống ghi là <b>chưa phản hồi</b>, không phải “không thiếu”.
+            </p>
+          </div>
+        )
       )}
 
       {laPdd && chuaXuLy > 0 && (
