@@ -86,7 +86,14 @@ const MAC_DINH_NHAP = () => ({
   // Lý do là RIÊNG cho từng mã hàng (chốt 21/07/2026) — 1 đơn vị đề xuất nhiều
   // mặt hàng ở nhiều nhóm khác nhau, mỗi thứ một lý do khác nhau.
   loaiLyDo: "theo_lich_su", tenKyThuatMoi: "", uocCaThang: "", ghiChu: "",
+  // Chỉ dùng cho phương thức "Chỉ định thầu" (QĐ-14). Chỉ định thầu là ngoại lệ
+  // pháp lý (mua nhanh, hạn chế dùng) nên bắt buộc giải trình bằng chữ, không
+  // cho chọn lý do trong dropdown rồi thôi.
+  noiDungChiDinh: "",
 });
+
+// Phương thức mua sắm nào bắt buộc giải trình bằng chữ.
+const CAN_GIAI_TRINH = (goiThau) => goiThau === "chi_dinh_thau";
 
 // --- Giỏ đề xuất lưu ở localStorage, TÁCH RIÊNG THEO KHOA ------------------
 // Trước đây giỏ chỉ nằm trong state React nên mất sạch mỗi khi F5, đóng/mở tab,
@@ -580,9 +587,12 @@ export default function Function1({ profile }) {
     [nhapLieu]
   );
 
-  // Dòng đã nhập số lượng nhưng thiếu gói thầu / kỳ sai / thiếu tên kỹ thuật mới.
+  // Dòng đã nhập số lượng nhưng thiếu gói thầu / kỳ sai / thiếu tên kỹ thuật mới
+  // / thiếu giải trình bắt buộc của chỉ định thầu (A.1c).
   const dongThieuThongTin = gioHang.filter(
-    (n) => doDaiKy(n) < 1 || !n.goiThau || (n.loaiLyDo === "ky_thuat_moi" && !n.tenKyThuatMoi.trim())
+    (n) => doDaiKy(n) < 1 || !n.goiThau
+        || (n.loaiLyDo === "ky_thuat_moi" && !n.tenKyThuatMoi.trim())
+        || (CAN_GIAI_TRINH(n.goiThau) && !(n.noiDungChiDinh || "").trim())
   );
 
   const gioTheoNhom = useMemo(() => {
@@ -687,7 +697,15 @@ export default function Function1({ profile }) {
       loai_ly_do: nhap.loaiLyDo,
       ten_ky_thuat_moi: nhap.loaiLyDo === "ky_thuat_moi" ? nhap.tenKyThuatMoi.trim() : null,
       uoc_ca_thang: nhap.uocCaThang || null,
-      ghi_chu: nhap.ghiChu?.trim() || null,
+      // Giải trình chỉ định thầu gộp vào ghi_chu — RPC submit_proposal_group
+      // nhận cố định bộ trường này, thêm trường mới phải sửa cả hàm SQL (chạy
+      // trên DB dùng chung production). Gắn nhãn rõ để tách lại được về sau.
+      ghi_chu: [
+        CAN_GIAI_TRINH(nhap.goiThau) && (nhap.noiDungChiDinh || "").trim()
+          ? `[CHỈ ĐỊNH THẦU] ${nhap.noiDungChiDinh.trim()}`
+          : null,
+        nhap.ghiChu?.trim() || null,
+      ].filter(Boolean).join("\n") || null,
     }));
     const { error } = await supabase.rpc("submit_proposal_group", {
       p_don_vi: khoaHienTai,
@@ -1001,6 +1019,32 @@ export default function Function1({ profile }) {
                                     </div>
                                   </div>
                                 </div>
+
+                                {/* Chỉ định thầu = ngoại lệ pháp lý, mua nhanh
+                                    nhưng dễ bị soi. Bắt giải trình bằng chữ NGAY
+                                    tại dòng, không cho chỉ chọn lý do rồi thôi. */}
+                                {CAN_GIAI_TRINH(nhap.goiThau) && (
+                                  <div className="border border-amber-300 bg-amber-50 rounded-md p-2.5">
+                                    <div className="flex items-start gap-1.5 mb-2">
+                                      <AlertTriangle size={13} className="text-amber-700 mt-0.5 shrink-0" />
+                                      <p className="text-xs text-amber-900 leading-snug">
+                                        Chỉ định thầu là ngoại lệ, hạn chế dùng. Hồ sơ phải nêu rõ
+                                        nội dung và căn cứ — Phòng Điều dưỡng sẽ trả lại nếu để trống.
+                                      </p>
+                                    </div>
+                                    <label className="text-xs text-amber-900 block mb-1">
+                                      Nội dung &amp; căn cứ chỉ định thầu <span className="text-red-600">*</span>
+                                    </label>
+                                    <textarea rows={3}
+                                      value={nhap.noiDungChiDinh || ""}
+                                      onChange={(e) => capNhatNhap(m, "noiDungChiDinh", e.target.value)}
+                                      className="w-full border border-amber-300 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                      placeholder="Vật tư dùng cho việc gì, vì sao không kịp chờ đấu thầu rộng rãi, hậu quả nếu chậm..." />
+                                    {!(nhap.noiDungChiDinh || "").trim() && (
+                                      <p className="text-xs text-red-700 mt-1">Chưa nhập — dòng này chưa gửi được.</p>
+                                    )}
+                                  </div>
+                                )}
 
                                 {/* Lý do RIÊNG cho từng mã hàng — 1 bản đề xuất
                                     có nhiều mặt hàng, mỗi thứ một lý do khác. */}
