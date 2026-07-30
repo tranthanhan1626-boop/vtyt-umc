@@ -184,6 +184,73 @@ can thiệp thủ công mỗi lần — không tự phục vụ được như h�
 
 ---
 
+## QĐ-14 · 30/07/2026 · Trọng tâm sản phẩm là LUỒNG PHÊ DUYỆT + XUẤT HỒ SƠ
+
+**Chốt:** việc chính của web là đưa trọn vòng *ĐVSD đề xuất → PĐD phê duyệt →
+xuất hồ sơ* lên hệ thống. **Không phải** tính số lượng đề xuất.
+
+Ba vai trò (đã có sẵn): `admin` thấy toàn bộ · `dvsd` chỉ khoa mình ·
+`dieu_duong` như admin **cộng quyền phê duyệt**.
+
+**Cổng phê duyệt bắt buộc:** ĐVSD gửi bất cứ thứ gì cũng dừng chờ PĐD duyệt mới
+đi tiếp. Không có đường tắt nào để ĐVSD tự đi thẳng tới xuất hồ sơ.
+
+**Nội dung ĐVSD nhập, khác nhau theo phương thức mua sắm** (3 phương thức đã có
+sẵn trong `loai_mua_sam`, không thêm mới):
+
+| Phương thức | Nhập gì |
+|---|---|
+| Chỉ định thầu (có hàng trong 1 tháng; **hạn chế dùng vì vướng pháp lý**) | Nội dung · Lý do · Danh mục |
+| Mua sắm rộng rãi · Mua sắm bổ sung | Đề xuất · Danh mục · Số lượng · Thời gian sử dụng |
+| — khi điều chỉnh nhiều | Thêm: Nội dung · Lý do · Số lượng · Danh mục |
+
+**Năm file phải xuất được:** (1) Word đề xuất mua chỉ định thầu — đã có trong
+`xuatWordPhieu.js`; (2) Word cam kết số lượng đề xuất thầu; (3) Excel danh mục
+đề xuất của ĐVSD; (4) Word đề nghị mua thầu; (5) Excel danh mục tổng hợp đi
+thầu của PĐD, tổng hợp từ file của ĐVSD sau khi duyệt.
+
+**Mỗi luồng một tab riêng, không chồng chéo** — người dùng không rành công nghệ.
+
+**Vì sao ghi lại:** ngày 30/07 có một đợt build (công cụ khác) đi theo hướng
+công thức phân vị P50/P75/P90 và state machine "đợt", lệch khỏi nhu cầu thật.
+Giữ ở nhánh `v2-cong-thuc-phan-vi` để tham khảo, không dùng tiếp. **QĐ-01 và
+QĐ-06 vẫn giữ nguyên hiệu lực: chưa làm công thức/dự báo.**
+
+---
+
+## QĐ-15 · 30/07/2026 · Mở lại chế độ "gộp mã tương đương vào mã quản lý có sẵn"
+
+**Đảo quyết định 22/07/2026** đã ghi ở `backend/CLAUDE.md` mục 2
+(*"Đã BỎ chế độ gán nhóm có sẵn"*).
+
+**Chốt:** một tab của ĐVSD gánh cả hai tình huống:
+1. Mã hàng **tương đương chức năng** với mã đã có → xếp chung **1 mã quản lý**.
+   Tương đương xét theo **chức năng**, khác quy cách đóng gói vẫn được gộp.
+2. Mã hàng **mới hoàn toàn**, chưa từng có trong lịch sử → khai mới (luồng
+   "+ Thêm mã kỹ thuật" hiện có).
+
+**Vì sao đảo:** thực tế nghiệp vụ cần gộp mã tương đương để đấu thầu theo nhóm.
+Bỏ hẳn chế độ này khiến khoa phải khai mới cả những mã vốn đã có nhóm phù hợp,
+làm danh mục phình giả tạo — đúng vấn đề "mã cũ đổi số" đã nêu trong
+`cong-thuc-dat-so-luong-VTYT.md` mục 8.
+
+**Cảnh báo cho người đọc `CLAUDE.md`:** mục 2 của file đó vẫn ghi "đã BỎ" theo
+mốc 22/07. Quyết định này mới hơn và thắng. Đừng gỡ tính năng lần nữa.
+
+---
+
+## QĐ-16 · 30/07/2026 · Luồng đề xuất làm trước Sổ thiếu hàng
+
+**Chốt:** ưu tiên số 1 là luồng đề xuất + 5 file xuất (QĐ-14). Sổ thiếu hàng lùi
+lại, nhưng **vẫn phải chạy trước 01/01/2027** — QĐ-02 không đổi.
+
+**Vì sao:** luồng đề xuất là việc lặp đi lặp lại mỗi kỳ và đang tốn công nhất
+của Phòng ĐD; nó cũng là thứ tạo ra hồ sơ trình hội đồng ngay trong kỳ này. Sổ
+thiếu hàng tạo giá trị ở kỳ sau, nên chịu được việc lùi vài tháng — miễn không
+lùi qua mốc go-live.
+
+---
+
 ## QĐ-09 · 30/07/2026 · Cách làm việc với Claude Code
 
 **Chốt:** vòng lặp 5 bước, đơn vị công việc là **một màn hình dùng được**, mỗi

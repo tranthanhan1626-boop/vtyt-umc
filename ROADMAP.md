@@ -21,6 +21,50 @@ Ký hiệu: `- [ ]` chưa làm · `- [~]` đang làm · `- [x]` xong
 
 ---
 
+## Phase A — Luồng đề xuất + 5 file xuất ⭐ ƯU TIÊN 1 (QĐ-14, QĐ-16)
+
+> Trọng tâm sản phẩm. Mỗi luồng một tab riêng, không chồng chéo.
+> **Chưa làm công thức tính số lượng** — QĐ-01 và QĐ-06 vẫn hiệu lực.
+
+**Bản nháp cấu trúc tab** (chờ chủ dự án duyệt trước khi code):
+
+```
+ĐVSD:  [Đề xuất danh mục]  [Đề xuất của tôi]  [Xuất hồ sơ]
+PĐD:   [Chờ duyệt ●]  [Đề xuất các khoa]  [Tổng hợp đi thầu]  [Xuất hồ sơ]  [Danh mục]
+Admin: như PĐD + [Người dùng]
+```
+
+### A.0 — Chuẩn bị (chặn mọi việc sau)
+
+- [ ] **A.0a** Chủ dự án gửi **mẫu 4 file** còn thiếu (Word cam kết SL · Excel danh
+      mục ĐVSD · Word đề nghị mua thầu · Excel tổng hợp đi thầu). **Không tự bịa
+      form văn bản hành chính.**
+- [ ] **A.0b** Chốt cấu trúc tab ở trên bằng ảnh chụp màn hình nháp
+
+### A.1 — Tab ĐVSD "Đề xuất danh mục" (gánh cả 2 tình huống, QĐ-15)
+
+- [ ] **A.1a** Gộp mã tương đương vào mã quản lý có sẵn — mở lại chế độ đã bỏ 22/07
+- [ ] **A.1b** Khai mã mới hoàn toàn — dùng lại luồng "+ Thêm mã kỹ thuật" hiện có
+- [ ] **A.1c** Form đổi theo phương thức: chỉ định thầu (nội dung/lý do/danh mục)
+      vs rộng rãi + bổ sung (đề xuất/danh mục/số lượng/thời gian sử dụng)
+- [ ] **A.1d** Nhánh "điều chỉnh nhiều": thêm nội dung · lý do · số lượng · danh mục
+
+### A.2 — Cổng phê duyệt của PĐD
+
+- [ ] **A.2a** Tab "Chờ duyệt" + đếm số việc đang chờ
+- [ ] **A.2b** Duyệt / trả lại kèm lý do; ĐVSD thấy trạng thái và lý do trả lại
+- [ ] **A.2c** Chặn ở DB (trigger/RLS), không chỉ ẩn nút ở giao diện
+
+### A.3 — Năm file xuất
+
+- [ ] **A.3a** Word đề xuất mua chỉ định thầu — **đã có**, chỉ nối vào luồng mới
+- [ ] **A.3b** Word cam kết số lượng đề xuất thầu
+- [ ] **A.3c** Excel danh mục đề xuất của ĐVSD
+- [ ] **A.3d** Word đề nghị mua thầu
+- [ ] **A.3e** Excel danh mục tổng hợp đi thầu của PĐD (tổng hợp sau duyệt)
+
+---
+
 ## Phase 0 — Chốt sổ gốc (T8/2026)
 
 > Nếu bỏ qua phase này, tháng 6/2028 không có gì để so sánh.
