@@ -50,7 +50,7 @@ Tối thiểu:
 - test đường thành công và ít nhất một ngoại lệ;
 - kiểm dữ liệu trước/sau;
 - ảnh chụp màn hình;
-- với mobile workflow, chụp thêm 430px;
+- giao diện gọn gàng, dễ thao tác (không đặt ngưỡng thời gian — QĐ-18);
 - kiểm tra production/staging không dùng nhầm database.
 
 ### 5. Nghiệm thu, ghi bài học và chọn vòng tiếp

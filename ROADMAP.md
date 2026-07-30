@@ -156,9 +156,12 @@ phạm vi dữ liệu được thấy.
 
 ### Sổ thiếu hàng — ưu tiên tuyệt đối
 
-- [ ] **1.1** Màn hình khoa báo thiếu hàng — **chạy trên điện thoại, dưới 30 giây/lượt**
+- [x] **C.1** Màn hình khoa báo thiếu hàng — ✅ 30/07. Nút "Báo Phòng Điều dưỡng:
+      không lĩnh được hàng"; 4 bước: chọn mã · 3 nút tình trạng · SL (không bắt
+      buộc) · ô ca hoãn. Verify RLS bằng phiên thật
       Nút tên là *"Báo Phòng Điều dưỡng: không lĩnh được hàng"*, không phải *"Ghi nhận dữ liệu"*
-- [ ] **1.2** Màn hình Phòng ĐD xác nhận + trạng thái xử lý trả ngược về cho khoa thấy
+- [x] **C.2** PĐD xác nhận + trạng thái trả ngược cho khoa — ✅ 30/07.
+      Mới báo → Đang xử lý → Đã xử lý, khoa thấy ngay trên dòng của mình
 - [ ] **1.3** Nhắc cuối tháng: danh sách mã khoa thường dùng + nút "Tháng này không thiếu gì"
       (để **im lặng cũng thành dữ liệu**)
 
@@ -187,8 +190,8 @@ phạm vi dữ liệu được thấy.
 ## Phase D — Chạy thử với khoa pilot
 
 - [ ] **2.1** Bài kiểm tra hồi quy chạy trước mỗi lần deploy (đăng nhập / tạo đề xuất / xoá)
-- [ ] **2.2** Pilot 3–5 khoa. **Đo đúng một chỉ số: thời gian điền một báo cáo thiếu hàng.**
-      Trên 60 giây thì sửa form, không sửa con người
+- [ ] **2.2** Pilot 3–5 khoa. Hỏi khoa: **có chỗ nào rối, thừa bước, hay khó hiểu không?**
+      Sửa theo phản hồi thật, không sửa theo chỉ số tự đặt (QĐ-18)
 - [ ] **2.3** Chốt `ma_ly_do` v1.0, khoá cho cả kỳ
 
 ---

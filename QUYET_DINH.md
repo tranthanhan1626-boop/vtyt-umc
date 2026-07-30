@@ -279,6 +279,25 @@ trước, để trống không phải lỗi.
 
 ---
 
+## QĐ-18 · 30/07/2026 · Bỏ ngưỡng "30 giây", tiêu chí là ĐƠN GIẢN DỄ THAO TÁC
+
+**Chốt:** điều kiện nghiệm thu của mọi màn hình là **đơn giản, dễ thao tác** —
+ít bước, nhãn rõ, không bắt nhập thứ không cần. **Không có ngưỡng thời gian.**
+
+Sản phẩm hiện tại là **WEB**. App điện thoại là việc của giai đoạn sau, không
+phải điều kiện nghiệm thu bây giờ. Layout vẫn để co giãn được cho màn hình nhỏ
+(rẻ, không hại), nhưng không dùng làm cổng chặn.
+
+**Vì sao đảo:** ngưỡng "dưới 30 giây" là do Claude Code TỰ ĐẶT, xuất phát từ
+một giả định chưa bao giờ được chủ dự án xác nhận (điều dưỡng ghi bằng điện
+thoại tại kho). Giả định đó bị đóng băng thành điều kiện bắt buộc trong 4 file.
+
+**Bài học chung — áp cho mọi việc sau:** Claude Code **không được tự đặt chỉ số
+nghiệm thu** (ngưỡng thời gian, tỷ lệ, KPI) rồi coi như đã chốt. Đề xuất thì
+được, nhưng phải hỏi và chờ chủ dự án duyệt mới ghi vào roadmap.
+
+---
+
 ## QĐ-09 · 30/07/2026 · Cách làm việc với Claude Code
 
 **Chốt:** vòng lặp 5 bước, đơn vị công việc là **một màn hình dùng được**, mỗi
