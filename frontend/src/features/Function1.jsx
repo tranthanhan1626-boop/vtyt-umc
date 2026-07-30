@@ -107,6 +107,13 @@ const ghiGio = (khoa, gio) => {
 };
 
 const FORM_NHOM_TRONG = {
+  // Chế độ khai báo (QĐ-15) — 1 form gánh 2 tình huống:
+  //   "gop" = mã hàng TƯƠNG ĐƯƠNG CHỨC NĂNG với mã đã có -> gộp vào mã quản lý
+  //           sẵn có (khác quy cách đóng gói vẫn gộp). Ghi la_nhom_moi=false.
+  //   "moi" = mã MỚI HOÀN TOÀN, chưa từng có trong lịch sử. Ghi la_nhom_moi=true.
+  // Backend đã hỗ trợ sẵn cả 2 (fn_tao_de_xuat_tu_nhom_khoa dùng
+  // `on conflict (ma_quan_ly) do nothing`), không cần đổi schema.
+  che_do: "gop",
   // BẮT BUỘC
   ten_vat_tu_moi: "", ten_thuong_mai: "", tieu_chi_ky_thuat: "",
   ky_ma_hieu: "", hang: "", nuoc_san_xuat: "", so_luong: "", goi: "",
@@ -116,20 +123,101 @@ const FORM_NHOM_TRONG = {
   ghi_chu: "",
 };
 
-/** Form đề nghị "mã kỹ thuật MỚI hoàn toàn" — thu đủ đặc tả + số lượng để duyệt
- *  xong tự tạo đề xuất (luồng A). Đã bỏ chế độ "gán nhóm có sẵn". */
-function FormNhomKyThuat({ giaTri, doiGiaTri, onLuu, onHuy, dangLuu, loi }) {
+/** Form khai báo vật tư — 1 form, 2 chế độ (QĐ-15):
+ *  - "gop": mã tương đương chức năng -> gộp vào mã quản lý CÓ SẴN
+ *  - "moi": mã mới hoàn toàn -> tạo nhóm mới
+ *  Thu đủ đặc tả + số lượng để duyệt xong tự tạo đề xuất (luồng A). */
+function FormNhomKyThuat({ giaTri, doiGiaTri, onLuu, onHuy, dangLuu, loi, dsNhom }) {
   const f = giaTri;
   const set = (k, v) => doiGiaTri({ ...f, [k]: v });
   const cls = "w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500";
   const dvKy = doDaiKy(f);
+  const laGop = f.che_do === "gop";
+
+  const [timNhom, setTimNhom] = useState("");
+  const nhomKhop = useMemo(() => {
+    const q = timNhom.trim().toLowerCase();
+    if (!q) return [];
+    return (dsNhom || [])
+      .filter((n) => n.ma_quan_ly.toLowerCase().includes(q)
+                  || (n.ten_quan_ly || "").toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [timNhom, dsNhom]);
+  const nhomDaChon = useMemo(
+    () => (dsNhom || []).find((n) => n.ma_quan_ly === f.ma_quan_ly),
+    [dsNhom, f.ma_quan_ly]
+  );
+
+  const nutCheDo = (gt, nhan, mo_ta) => (
+    <button type="button" onClick={() => doiGiaTri({ ...f, che_do: gt, ma_quan_ly: "", ten_quan_ly_moi: "" })}
+      className={`flex-1 text-left px-3 py-2 rounded-md border text-xs transition ${
+        f.che_do === gt
+          ? "border-teal-600 bg-white ring-1 ring-teal-600"
+          : "border-slate-300 bg-white/60 hover:bg-white"}`}>
+      <span className={`block font-medium ${f.che_do === gt ? "text-teal-800" : "text-slate-700"}`}>{nhan}</span>
+      <span className="block text-slate-500 leading-snug mt-0.5">{mo_ta}</span>
+    </button>
+  );
 
   return (
     <div className="border border-teal-200 bg-teal-50/40 rounded-lg p-3 space-y-3">
-      <p className="text-xs text-slate-500">
-        Khai báo vật tư mới chưa có trong danh mục. Phòng Điều dưỡng duyệt xong sẽ
-        tự tạo đề xuất cho khoa với số lượng bên dưới.
-      </p>
+      <div className="flex gap-2">
+        {nutCheDo("gop", "Tương đương mã đã có",
+          "Cùng chức năng với vật tư đang dùng — gộp vào mã quản lý sẵn có")}
+        {nutCheDo("moi", "Mã mới hoàn toàn",
+          "Chưa từng có trong danh mục của bệnh viện")}
+      </div>
+
+      {laGop ? (
+        <div>
+          <label className="text-xs text-slate-500 block mb-1">
+            Gộp vào mã quản lý <span className="text-red-500">*</span>
+          </label>
+          {nhomDaChon ? (
+            <div className="flex items-center gap-2 border border-teal-300 bg-white rounded-md px-2 py-1.5">
+              <Check size={14} className="text-teal-700 shrink-0" />
+              <span className="font-mono text-xs text-teal-800">{nhomDaChon.ma_quan_ly}</span>
+              <span className="text-xs text-slate-600 truncate flex-1">{nhomDaChon.ten_quan_ly}</span>
+              <button type="button" onClick={() => { set("ma_quan_ly", ""); setTimNhom(""); }}
+                className="text-slate-400 hover:text-red-600 shrink-0" title="Chọn lại">
+                <X size={13} />
+              </button>
+            </div>
+          ) : (
+            <>
+              <input value={timNhom} onChange={(e) => setTimNhom(e.target.value)} className={cls}
+                placeholder="Gõ mã hoặc tên nhóm, vd: gạc phẫu thuật" />
+              {nhomKhop.length > 0 && (
+                <div className="mt-1 border border-slate-200 bg-white rounded-md divide-y max-h-52 overflow-y-auto">
+                  {nhomKhop.map((n) => (
+                    <button type="button" key={n.ma_quan_ly}
+                      onClick={() => set("ma_quan_ly", n.ma_quan_ly)}
+                      className="w-full text-left px-2 py-1.5 hover:bg-teal-50 flex items-baseline gap-2">
+                      <span className="font-mono text-xs text-teal-700 shrink-0">{n.ma_quan_ly}</span>
+                      <span className="text-xs text-slate-700 leading-tight">{n.ten_quan_ly}</span>
+                      <span className="text-xs text-slate-400 ml-auto shrink-0">{n.so_ma_hang} mã</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {timNhom.trim() && nhomKhop.length === 0 && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Không tìm thấy nhóm nào khớp. Nếu vật tư này thật sự chưa từng có,
+                  chọn <span className="font-medium">“Mã mới hoàn toàn”</span> ở trên.
+                </p>
+              )}
+            </>
+          )}
+          <p className="text-xs text-slate-400 mt-1">
+            Tương đương xét theo <span className="font-medium">chức năng</span> — khác quy cách đóng gói vẫn gộp chung.
+          </p>
+        </div>
+      ) : (
+        <p className="text-xs text-slate-500">
+          Khai báo vật tư mới chưa có trong danh mục. Phòng Điều dưỡng duyệt xong sẽ
+          tự tạo đề xuất cho khoa với số lượng bên dưới.
+        </p>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <div>
@@ -196,24 +284,32 @@ function FormNhomKyThuat({ giaTri, doiGiaTri, onLuu, onHuy, dangLuu, loi }) {
           : <p className="text-xs mt-1 text-slate-400">Khoảng đã chọn: {dvKy} tháng</p>}
       </div>
 
-      {/* Không bắt buộc — để trống thì hệ thống tự sinh mã hàng khi duyệt */}
+      {/* Không bắt buộc — để trống thì hệ thống tự sinh mã hàng khi duyệt.
+          Chế độ "gop" KHÔNG hiện ô mã/tên kỹ thuật: đã chọn nhóm ở trên rồi,
+          để lộ ra đây thì người dùng gõ đè vào là hỏng liên kết nhóm. */}
       <details className="text-xs">
-        <summary className="cursor-pointer text-slate-500 select-none">Mã hàng / mã kỹ thuật (không bắt buộc)</summary>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+        <summary className="cursor-pointer text-slate-500 select-none">
+          {laGop ? "Mã hàng (không bắt buộc)" : "Mã hàng / mã kỹ thuật (không bắt buộc)"}
+        </summary>
+        <div className={`grid grid-cols-1 gap-2 mt-2 ${laGop ? "" : "sm:grid-cols-3"}`}>
           <div>
             <label className="text-xs text-slate-500 block mb-1">Mã hàng</label>
             <input value={f.ma_hang_moi} onChange={(e) => set("ma_hang_moi", e.target.value)}
               className={cls + " font-mono"} placeholder="để trống = tự sinh" />
           </div>
-          <div>
-            <label className="text-xs text-slate-500 block mb-1">Mã kỹ thuật</label>
-            <input value={f.ma_quan_ly} onChange={(e) => set("ma_quan_ly", e.target.value)}
-              className={cls + " font-mono"} placeholder="vd N01.01.020.99" />
-          </div>
-          <div>
-            <label className="text-xs text-slate-500 block mb-1">Tên mã kỹ thuật</label>
-            <input value={f.ten_quan_ly_moi} onChange={(e) => set("ten_quan_ly_moi", e.target.value)} className={cls} />
-          </div>
+          {!laGop && (
+            <>
+              <div>
+                <label className="text-xs text-slate-500 block mb-1">Mã kỹ thuật</label>
+                <input value={f.ma_quan_ly} onChange={(e) => set("ma_quan_ly", e.target.value)}
+                  className={cls + " font-mono"} placeholder="vd N01.01.020.99" />
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 block mb-1">Tên mã kỹ thuật</label>
+                <input value={f.ten_quan_ly_moi} onChange={(e) => set("ten_quan_ly_moi", e.target.value)} className={cls} />
+              </div>
+            </>
+          )}
         </div>
       </details>
 
@@ -511,14 +607,22 @@ export default function Function1({ profile }) {
     if (batBuoc.length) { setLoiNhom(`Thiếu: ${batBuoc.join(", ")}.`); return; }
     if (!(Number(f.so_luong) > 0)) { setLoiNhom("Số lượng đề xuất phải > 0."); return; }
     if (doDaiKy(f) < 1) { setLoiNhom("Mốc kết thúc phải sau mốc bắt đầu."); return; }
+    // Chế độ "gộp" BẮT BUỘC có mã quản lý — không có thì nó thành mã mới trá hình,
+    // đúng thứ làm danh mục phình giả tạo mà QĐ-15 muốn chặn.
+    const laGop = f.che_do === "gop";
+    if (laGop && !f.ma_quan_ly.trim()) {
+      setLoiNhom("Chưa chọn mã quản lý để gộp vào. Nếu vật tư chưa từng có, chuyển sang “Mã mới hoàn toàn”.");
+      return;
+    }
 
     setDangGuiNhom(true);
-    // Mã hàng để trống -> khi duyệt hệ thống tự sinh (MOI-<id>). ma_quan_ly có
-    // thể null (mã mới chưa cần gắn nhóm kỹ thuật). la_nhom_moi luôn true giờ.
+    // Mã hàng để trống -> khi duyệt hệ thống tự sinh (MOI-<id>).
+    // la_nhom_moi phân biệt 2 chế độ (QĐ-15): false = gộp vào nhóm CÓ SẴN,
+    // true = nhóm mới. Chế độ "moi" vẫn cho ma_quan_ly null (chưa gắn nhóm).
     const { error } = await supabase.from("khoa_nhom_ky_thuat").insert({
       don_vi: khoaHienTai,
-      ma_quan_ly: f.ma_quan_ly.trim() || null,  // mã mới có thể chưa gắn nhóm kỹ thuật
-      la_nhom_moi: true,
+      ma_quan_ly: f.ma_quan_ly.trim() || null,
+      la_nhom_moi: !laGop,
       ten_quan_ly_moi: f.ten_quan_ly_moi.trim() || null,
       ma_hang_moi: f.ma_hang_moi.trim() || null,
       ten_vat_tu_moi: f.ten_vat_tu_moi.trim(),
@@ -702,6 +806,7 @@ export default function Function1({ profile }) {
                 giaTri={formNhom} doiGiaTri={setFormNhom}
                 onLuu={guiDeNghiNhom} onHuy={() => { setMoFormThem(false); setFormNhom(FORM_NHOM_TRONG); setLoiNhom(""); }}
                 dangLuu={dangGuiNhom} loi={loiNhom}
+                dsNhom={dsNhom}
               />
             )}
 

@@ -251,6 +251,34 @@ lùi qua mốc go-live.
 
 ---
 
+## QĐ-17 · 30/07/2026 · Tab "Tiến độ gói thầu": 5 mốc, ĐVSD chỉ thấy khoa mình
+
+**Năm mốc theo dõi** (mở rộng từ 3 mốc của nhánh V2):
+
+1. Sau chào giá
+2. Sau mở thầu
+3. Sau đánh giá / lựa chọn
+4. Ký hợp đồng
+5. Hàng về đợt đầu
+
+Hai mốc cuối thêm vào vì câu hỏi thật của khoa là *"bao giờ có hàng?"*, không
+phải *"mở thầu chưa?"*.
+
+**Kết quả ghi theo TỪNG MÃ, không theo cả gói.** Một gói 42 mã có thể ra 38 mã
+trúng + 4 mã trượt với lý do khác nhau. Trạng thái ở cấp gói sẽ làm 4 mã trượt
+biến mất khỏi hồ sơ — mà chính chúng sinh ra gói bổ sung kỳ sau và là dữ liệu
+quý nhất để trình hội đồng.
+
+**Phạm vi dữ liệu:**
+- `dieu_duong` / `admin`: thấy **toàn bộ** mọi gói, mọi khoa.
+- `dvsd`: **chỉ thấy mã của khoa mình**, kể cả khi nằm chung gói với khoa khác.
+  Số lượng đề xuất của một khoa là thông tin nội bộ của khoa đó.
+
+**Dữ liệu tiến độ nhập sau** — chủ dự án sẽ đổ vào khi có. Xây màn hình và bảng
+trước, để trống không phải lỗi.
+
+---
+
 ## QĐ-09 · 30/07/2026 · Cách làm việc với Claude Code
 
 **Chốt:** vòng lặp 5 bước, đơn vị công việc là **một màn hình dùng được**, mỗi
