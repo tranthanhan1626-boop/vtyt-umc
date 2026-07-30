@@ -335,6 +335,28 @@ qua SQL — đã báo người dùng, KHÔNG được đoán/tự "sửa" bằng
 
 ---
 
+### 5.16 Danh sách khoa suy từ MỘT nguồn — khoa mới không bao giờ xuất hiện
+
+`v_don_vi` / `v_danh_sach_khoa` ban đầu chỉ `select distinct don_vi from
+usage_history_current`. Hệ quả: khoa chưa có lịch sử xuất kho thì Phòng Điều
+dưỡng **không chọn được**, người khoa đó **không đăng ký được**, và trên môi
+trường chưa nạp lịch sử thì dropdown **rỗng hoàn toàn**. Đã vá bằng cách hợp 4
+nguồn (`usage_history_current` ∪ `users.khoa` ∪ `proposals.don_vi` ∪
+`khoa_nhom_ky_thuat.don_vi`) — xem `patch_a5_danh_sach_khoa.sql`.
+
+**Bẫy con bên trong:** bản vá đầu tiên giữ `security_invoker = true` trên
+`v_don_vi`. Nhưng RLS bảng `users` là `email = auth.email() OR role = 'admin'`
+— `dieu_duong` chỉ đọc được dòng CỦA CHÍNH MÌNH. View chạy bằng quyền người
+gọi nên Phòng Điều dưỡng **vẫn** chỉ thấy khoa mình: bản vá không sửa được đúng
+người cần sửa. Phải BỎ `security_invoker` (như `v_danh_sach_khoa`, mục 5.13).
+An toàn vì view chỉ lộ TÊN KHOA.
+
+→ Bài học chung: view hợp nhiều bảng mà có `security_invoker` thì kết quả bị
+RLS của **từng bảng nguồn** cắt. Luôn hỏi "vai trò nào đọc được bảng nào" trước
+khi tin view trả đủ dữ liệu.
+
+---
+
 ## 6. Vận hành: nạp dữ liệu HIS (2 lần/tuần)
 
 File nguồn: Excel export từ HIS qua Power BI, sheet tên **"Export"**, cột:
