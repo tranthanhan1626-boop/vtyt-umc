@@ -95,6 +95,11 @@ const MAC_DINH_NHAP = () => ({
 // Phương thức mua sắm nào bắt buộc giải trình bằng chữ.
 const CAN_GIAI_TRINH = (goiThau) => goiThau === "chi_dinh_thau";
 
+// A.1d — lý do KHÁC "theo lịch sử" nghĩa là khoa đang điều chỉnh so với nền cũ,
+// phải nói rõ điều chỉnh cái gì. Không bắt thì dropdown thành nút một chạm,
+// đúng thứ QĐ-04 muốn chặn.
+const CAN_NOI_RO_DIEU_CHINH = (loaiLyDo) => loaiLyDo && loaiLyDo !== "theo_lich_su";
+
 // --- Giỏ đề xuất lưu ở localStorage, TÁCH RIÊNG THEO KHOA ------------------
 // Trước đây giỏ chỉ nằm trong state React nên mất sạch mỗi khi F5, đóng/mở tab,
 // hoặc HMR lúc dev — người dùng báo "giỏ không giữ được 2 nhóm" chính là do
@@ -593,6 +598,7 @@ export default function Function1({ profile }) {
     (n) => doDaiKy(n) < 1 || !n.goiThau
         || (n.loaiLyDo === "ky_thuat_moi" && !n.tenKyThuatMoi.trim())
         || (CAN_GIAI_TRINH(n.goiThau) && !(n.noiDungChiDinh || "").trim())
+        || (CAN_NOI_RO_DIEU_CHINH(n.loaiLyDo) && !(n.ghiChu || "").trim())
   );
 
   const gioTheoNhom = useMemo(() => {
@@ -1079,7 +1085,12 @@ export default function Function1({ profile }) {
                                     </div>
                                   )}
                                   <div className="sm:col-span-2">
-                                    <label className="text-xs text-slate-500 block mb-1">Ghi chú (không bắt buộc)</label>
+                                    <label className="text-xs text-slate-500 block mb-1">
+                                      {CAN_NOI_RO_DIEU_CHINH(nhap.loaiLyDo)
+                                        ? <>Nêu rõ điều chỉnh <span className="text-red-500">*</span>{" "}
+                                           <span className="text-slate-400">— thay đổi gì so với lịch sử, căn cứ nào</span></>
+                                        : "Ghi chú (không bắt buộc)"}
+                                    </label>
                                     <textarea rows={2} value={nhap.ghiChu}
                                       onChange={(e) => capNhatNhap(m, "ghiChu", e.target.value)}
                                       className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />

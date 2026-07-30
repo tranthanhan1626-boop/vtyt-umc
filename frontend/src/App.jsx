@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { TrendingUp, ClipboardList, ListChecks, BadgeCheck, Inbox, LogOut } from "lucide-react";
+import { TrendingUp, ClipboardList, ListChecks, BadgeCheck, Inbox, Activity, Download, LogOut } from "lucide-react";
 import { useAuth } from "./auth/useAuth";
 import Login from "./auth/Login";
 import DatLaiMatKhau from "./auth/DatLaiMatKhau";
@@ -8,6 +8,8 @@ import DeXuatTongHop from "./features/DeXuatTongHop";
 import DeXuatCuaToi from "./features/DeXuatCuaToi";
 import DuyetNhomKyThuat from "./features/DuyetNhomKyThuat";
 import ChoDuyet, { demViecChoDuyet } from "./features/ChoDuyet";
+import TienDoGoiThau from "./features/TienDoGoiThau";
+import XuatHoSo from "./features/XuatHoSo";
 import PhieuDeNghi from "./features/PhieuDeNghi";
 
 export default function App() {
@@ -112,6 +114,14 @@ export default function App() {
               <ListChecks size={15} /> Đề xuất của tôi
             </button>
           )}
+          <button onClick={() => setTab("tiendo")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${tab === "tiendo" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
+            <Activity size={15} /> Tiến độ gói thầu
+          </button>
+          <button onClick={() => setTab("xuathoso")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${tab === "xuathoso" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
+            <Download size={15} /> Xuất hồ sơ
+          </button>
           {xemDuocTongHop && (
             <button onClick={() => setTab("duyetnhom")}
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${tab === "duyetnhom" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
@@ -120,7 +130,9 @@ export default function App() {
           )}
         </div>
 
-        {tab === "choduyet" && xemDuocTongHop ? <ChoDuyet onDoiSoLuong={capNhatDem} />
+        {tab === "tiendo" ? <TienDoGoiThau profile={profile} />
+          : tab === "xuathoso" ? <XuatHoSo profile={profile} />
+          : tab === "choduyet" && xemDuocTongHop ? <ChoDuyet onDoiSoLuong={capNhatDem} />
           : tab === "tonghop" && xemDuocTongHop ? <DeXuatTongHop profile={profile} />
           : tab === "cuatoi" && xemDuocCuaToi ? <DeXuatCuaToi />
           : tab === "duyetnhom" && xemDuocTongHop ? <DuyetNhomKyThuat />

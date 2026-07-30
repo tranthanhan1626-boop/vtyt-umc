@@ -50,12 +50,13 @@ phạm vi dữ liệu được thấy.
 - [x] **A.1a** Gộp mã tương đương vào mã quản lý có sẵn — ✅ 30/07/2026.
       1 form 2 chế độ, có ô tìm nhóm. Không đổi schema (`la_nhom_moi` đã có sẵn).
       ⚠️ Còn 1 ràng buộc chặn, xem câu hỏi mở #4
-- [ ] **A.1b** Khai mã mới hoàn toàn — dùng lại luồng "+ Thêm mã kỹ thuật" hiện có
+- [x] **A.1b** Khai mã mới hoàn toàn — ✅ chế độ "moi" của A.1a
 - [x] **A.1c** Form đổi theo phương thức — ✅ 30/07/2026. Chỉ định thầu bắt buộc
       ô "Nội dung & căn cứ", thiếu thì khoá nút gửi. Rộng rãi/bổ sung giữ nguyên.
       ⚠️ Giải trình đang gộp vào `ghi_chu` kèm nhãn `[CHỈ ĐỊNH THẦU]` — tách thành
       cột riêng khi có staging (phải sửa RPC `submit_proposal_group`)
-- [ ] **A.1d** Nhánh "điều chỉnh nhiều": thêm nội dung · lý do · số lượng · danh mục
+- [x] **A.1d** Điều chỉnh nhiều — ✅ 30/07. Lý do khác "theo lịch sử" thì ô ghi chú
+      thành BẮT BUỘC, đổi nhãn thành "Nêu rõ điều chỉnh"
 
 ### A.2 — Cổng phê duyệt của PĐD
 
@@ -70,21 +71,18 @@ phạm vi dữ liệu được thấy.
 
 ### A.3 — Năm file xuất
 
-- [ ] **A.3a** Word đề xuất mua chỉ định thầu — **đã có**, chỉ nối vào luồng mới
-- [ ] **A.3b** Word cam kết số lượng đề xuất thầu
-- [ ] **A.3c** Excel danh mục đề xuất của ĐVSD
-- [ ] **A.3d** Word đề nghị mua thầu
-- [ ] **A.3e** Excel danh mục tổng hợp đi thầu của PĐD — **tổng hợp từ file A.3b + A.3c**
-      (Word cam kết số lượng + Excel danh mục ĐVSD), sau khi PĐD đã duyệt
+- [x] **A.3a** Word đề xuất mua chỉ định thầu — ✅ đúng mẫu chính thức
+- [x] **A.3b** Word cam kết số lượng — ✅ bản nháp, chờ mẫu
+- [x] **A.3c** Excel danh mục ĐVSD — ✅ bản nháp, đã test tải thật (7 dòng, có dấu BẢN NHÁP)
+- [x] **A.3d** Word đề nghị mua thầu — ✅ bản nháp, chờ mẫu
+- [x] **A.3e** Excel tổng hợp đi thầu — ✅ bản nháp, mỗi gói 1 sheet riêng
 
 ### A.4 — Tab "Tiến độ gói thầu" (dùng chung ĐVSD + PĐD)
 
-- [ ] **A.4a** Bảng `goi_thau_tien_do` — gói thầu + 3 mốc, và kết quả **theo từng mã**
-      (không phải theo cả gói: một gói có mã trúng, mã trượt kèm lý do riêng)
-- [ ] **A.4b** Màn hình xem tiến độ: 3 mốc + danh sách mã kèm kết quả/lý do
-- [ ] **A.4c** PĐD cập nhật mốc và kết quả từng mã; ĐVSD chỉ xem
-- [ ] **A.4d** Phạm vi dữ liệu theo vai trò (RLS): PĐD/admin thấy mọi gói;
-      ĐVSD — **chờ chốt**, xem câu hỏi mở ở cuối file
+- [x] **A.4a** 3 bảng + RPC `tao_goi_thau` (5 mốc) — ✅ patch đã chạy staging
+- [x] **A.4b** Màn hình tiến độ 5 mốc + kết quả từng mã — ✅ 30/07
+- [x] **A.4c** PĐD cập nhật mốc/kết quả, ĐVSD chỉ xem — ✅ verify bằng phiên thật
+- [x] **A.4d** RLS phạm vi — ✅ PĐD thấy 2/2 mã, dvsd1 chỉ thấy 1/2 (khoa mình)
 
 ---
 
