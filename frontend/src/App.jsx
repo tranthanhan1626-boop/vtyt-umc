@@ -129,6 +129,7 @@ export default function App() {
     makythuat: "Mã kỹ thuật khoa tự thêm",
     quanlydot: "Quản lý đợt đề xuất",
     choduyet: "Công việc chờ duyệt",
+    ketquathau: "Tổng hợp kết quả thầu",
   };
 
   const noiDungChung = chon.man === "tongquan"
@@ -138,6 +139,7 @@ export default function App() {
     : chon.man === "tiendo" ? <TienDoGoiThau profile={profile} />
     : chon.man === "lichsu" ? <LichSuXuatHoSo profile={profile} />
     : chon.man === "makythuat" ? <NhomKyThuatCuaKhoa profile={profile} />
+    : chon.man === "ketquathau" && xemDuocTongHop ? <TongHopKetQuaThau profile={profile} />
     : chon.man === "quanlydot" && xemDuocTongHop ? <QuanLyDot />
     : chon.man === "choduyet" && xemDuocTongHop ? <ChoDuyet onDoiSoLuong={capNhatDem} />
     : <TrangDungChung doiChon={setChon} laPdd={xemDuocTongHop} soChoDuyet={soChoDuyet} dotTheoGoi={dotTheoGoi} />;
