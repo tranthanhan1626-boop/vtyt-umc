@@ -15,6 +15,7 @@ const NHAN_TT = {
 
 export default function XuatHoSo({ profile }) {
   const [rows, setRows] = useState([]);
+  const [usage, setUsage] = useState({});   // {ma_hang: {nam: tổng}} cho cột lịch sử
   const [dangTai, setDangTai] = useState(true);
   const [locTrangThai, setLocTrangThai] = useState("xet_duyet");
   const [locGoi, setLocGoi] = useState("");
@@ -27,7 +28,19 @@ export default function XuatHoSo({ profile }) {
     setDangTai(true);
     const r = await fetchAllRows((f, t) =>
       supabase.from("v_de_xuat_tong_hop").select("*").order("created_at", { ascending: false }).range(f, t));
-    setRows(r.error ? [] : r.data || []);
+    const ds = r.error ? [] : r.data || [];
+    setRows(ds);
+    const codes = [...new Set(ds.map((x) => x.ma_hang))];
+    if (codes.length) {
+      const u = await fetchAllRows((f, t) => supabase.from("v_usage_monthly")
+        .select("ma_hang, nam, so_luong").in("ma_hang", codes).range(f, t));
+      const acc = {};
+      (u.data || []).forEach((x) => {
+        acc[x.ma_hang] = acc[x.ma_hang] || {};
+        acc[x.ma_hang][x.nam] = (acc[x.ma_hang][x.nam] || 0) + Number(x.so_luong);
+      });
+      setUsage(acc);
+    }
     setDangTai(false);
   }, []);
   useEffect(() => { tai(); }, [tai]);
@@ -45,13 +58,13 @@ export default function XuatHoSo({ profile }) {
       await xuatHoSo(ma, rowsLoc, {
         don_vi: laPdd ? "Toàn viện" : profile.khoa,
         nguoi_lap: profile.ho_ten || profile.email,
-      });
+      }, usage);
     } catch (e) { setLoi(e.message); }
     setDangXuat(null);
   };
 
   // File 5 là việc của PĐD (tổng hợp mọi khoa), khoa không xuất được.
-  const dsHoSo = Object.values(HO_SO).filter((h) => laPdd || h.ma !== "tong_hop_thau");
+  const dsHoSo = Object.values(HO_SO).filter((h) => laPdd || h.ai === "dvsd");
 
   if (dangTai) return <p className="text-sm text-slate-500">Đang tải...</p>;
 
@@ -91,9 +104,9 @@ export default function XuatHoSo({ profile }) {
                 : <Sheet size={15} className="text-green-700 mt-0.5 shrink-0" />}
               <span className="text-sm font-medium text-slate-800 leading-snug">{h.ten}</span>
             </div>
-            {h.coMau
-              ? <span className="text-xs text-teal-700 mb-2">Đúng mẫu chính thức</span>
-              : <span className="text-xs text-amber-700 mb-2">Bản nháp — chưa có mẫu chính thức</span>}
+            <span className="text-xs text-teal-700 mb-2">
+              Theo khung cột biểu mẫu chính thức
+            </span>
             <button onClick={() => chay(h.ma)} disabled={dangXuat === h.ma || rowsLoc.length === 0}
               className="mt-auto flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs rounded-md bg-teal-700 text-white hover:bg-teal-800 disabled:opacity-40 font-medium">
               <Download size={13} />
@@ -106,8 +119,9 @@ export default function XuatHoSo({ profile }) {
       {loi && <p className="text-sm text-red-600">{loi}</p>}
 
       <p className="text-xs text-slate-400">
-        File nháp có dòng chữ đỏ “BẢN NHÁP — CHƯA ĐÚNG MẪU” ở đầu trang để không ai
-        lỡ nộp nhầm. Có mẫu chính thức thì chỉ thay phần bố cục, dữ liệu giữ nguyên.
+        File xuất theo đúng khung cột biểu mẫu bệnh viện. Cột nào hệ thống chưa có dữ
+        liệu (mã thông tư, quy cách đóng gói, mã kỹ thuật…) để <b>trống đúng vị trí</b>
+        cho điền tay — không bỏ cột, tránh sai bố cục.
       </p>
     </div>
   );

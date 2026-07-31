@@ -326,6 +326,48 @@ trống gói thầu.
 
 ---
 
+## QĐ-20 · 31/07/2026 · Tổ chức app theo GÓI THẦU, không theo chức năng
+
+**Đảo cấu trúc tab đã duyệt ở QĐ-14.** Lý do: một đề xuất luôn thuộc **đúng một
+gói**, mỗi gói có **biểu mẫu riêng**. Tổ chức theo chức năng làm tab "Xuất hồ sơ"
+gom lẫn mã của nhiều gói khác nhau vào một file — sai nghiệp vụ.
+
+**Cấu trúc mới — menu DỌC bên trái, 2 nhóm:**
+
+```
+NHÓM 1 — theo gói thầu (mỗi gói 3 màn hình con):
+  ▸ Đề xuất gói 18 tháng      (dau_thau_rong_rai)
+  ▸ Đề xuất gói bổ sung       (mua_sam_bo_sung — 3 đợt/năm: T1, T5, T9)
+  ▸ Đề xuất gói chỉ định thầu (chi_dinh_thau)
+      └─ mỗi gói có: 1. Đề xuất số lượng · 2. Đề xuất của tôi · 3. Kiểm tra biểu mẫu
+
+NHÓM 2 — dùng chung, không thuộc gói nào:
+  Sổ thiếu hàng · Sự kiện nhu cầu · Tiến độ gói thầu · Lịch sử xuất hồ sơ
+```
+
+Ba gói khớp đúng 3 giá trị `loai_mua_sam` đã có sẵn — không phải chuyển đổi dữ
+liệu cũ.
+
+**Ba quyết định kèm theo:**
+
+1. **Phương thức mua sắm do TAB quyết định.** Đang ở tab nào thì mã gửi đi thuộc
+   gói đó. **BỎ ô "Gói thầu muốn mua" trong giỏ** — đỡ một bước, và không thể
+   chọn nhầm mã sang gói khác.
+
+2. **Đợt của gói bổ sung do PHÒNG ĐIỀU DƯỠNG mở/đóng.** PĐD bật đợt nào thì khoa
+   gửi vào đợt đó; đóng rồi không gửi được nữa. Chặt hơn tự tính theo ngày, đổi
+   lại PĐD phải nhớ mở/đóng — chấp nhận vì đây là mốc hành chính có thật.
+
+3. **"Lịch sử xuất hồ sơ" lưu THÔNG TIN lần xuất, không lưu file.** Ghi: ai xuất,
+   lúc nào, gói nào, gồm những mã nào. Bấm tải lại thì **dựng lại file** từ đúng
+   danh sách mã đó. Không dùng Supabase Storage (QĐ-12).
+
+   ⚠️ **Đánh đổi đã biết:** nếu dữ liệu gốc đổi sau khi xuất, file dựng lại sẽ
+   KHÁC file đã nộp. Vì vậy bản ghi lịch sử phải lưu **danh sách mã + số lượng
+   tại thời điểm xuất**, không chỉ lưu điều kiện lọc.
+
+---
+
 ## QĐ-09 · 30/07/2026 · Cách làm việc với Claude Code
 
 **Chốt:** vòng lặp 5 bước, đơn vị công việc là **một màn hình dùng được**, mỗi

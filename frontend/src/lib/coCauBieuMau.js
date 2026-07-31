@@ -1,0 +1,155 @@
+// KHUNG CỘT CỦA 5 BIỂU MẪU THẬT — trích từ thư mục `Form biểu mẫu/` (31/07/2026).
+//
+// Tách riêng khỏi phần dựng file để: đổi mẫu chỉ sửa đúng file này, và người
+// không đọc code vẫn dò được cột nào lấy từ đâu.
+//
+// `lay: null` = hệ thống CHƯA có dữ liệu cho cột đó -> xuất ra ô TRỐNG đúng vị
+// trí để điền tay. Cố ý giữ cột trống thay vì bỏ đi: bỏ cột là sai bố cục mẫu,
+// người nhận hồ sơ sẽ phải căn lại tay.
+
+const n = (v) => (v == null || v === "" ? "" : Number(v).toLocaleString("vi-VN"));
+const nam = (d, y) => d.theoNam?.[y] || "";
+
+/** File 1 — Word "Chỉ định thầu": bảng 9 cột. */
+export const CHI_DINH_THAU = [
+  { ten: "Stt",                          lay: (_d, i) => i + 1 },
+  { ten: "Tên vật tư",                   lay: (d) => d.ten_vat_tu },
+  { ten: "Tên thương mại",               lay: (d) => d.ten_thuong_mai },
+  { ten: "Đặc tính kỹ thuật",            lay: (d) => d.tieu_chi_ky_thuat },
+  { ten: "Đvt",                          lay: (d) => d.dvt },
+  { ten: "Ký mã hiệu",                   lay: (d) => d.ky_ma_hieu },
+  { ten: "Hãng/ nước sản xuất",          lay: (d) => [d.hang, d.nuoc_san_xuat].filter(Boolean).join("/ ") },
+  { ten: "SL",                           lay: (d) => n(d.so_luong) },
+  { ten: "Giải trình lý do cụ thể",      lay: (d) => d.can_cu_chi_dinh || d.ghi_chu },
+];
+
+/** File 3 — Excel "Danh mục đề xuất" của ĐVSD: 34 cột. */
+export const DANH_MUC_DVSD = [
+  { ten: "Stt",                                    lay: (_d, i) => i + 1 },
+  { ten: "stt cố định",                            lay: null },
+  { ten: "HIS QĐ1599 (2025)",                      lay: (d) => d.ma_hang },
+  { ten: "HIS QĐ957",                              lay: null },
+  { ten: "Mã thông tư 04",                         lay: null },
+  { ten: "Tên thông tư",                           lay: null },
+  { ten: "Mã nhóm",                                lay: (d) => d.ma_quan_ly },
+  { ten: "Tên nhóm quản lý",                       lay: (d) => d.ten_quan_ly },
+  { ten: "MÃ HIS 2023",                            lay: null },
+  { ten: "Đề xuất phân nhóm TT 14 2023",           lay: null },
+  { ten: "Tên vật tư mời thầu 2025-2026",          lay: null },
+  { ten: "Tên vật tư mời thầu 2026-2027",          lay: (d) => d.ten_vat_tu },
+  { ten: "Mô tả và đặc tính kỹ thuật 2025-2026",   lay: null },
+  { ten: "Mô tả và đặc tính kỹ thuật 2026-2027",   lay: (d) => d.tieu_chi_ky_thuat },
+  { ten: "Quy cách đóng gói",                      lay: null },
+  { ten: "Đơn vị tính",                            lay: (d) => d.dvt },
+  { ten: "Số lượng đã sử dụng năm 2022",           lay: (d) => nam(d, 2022) },
+  { ten: "Số lượng đã sử dụng năm 2023",           lay: (d) => nam(d, 2023) },
+  { ten: "Số lượng đã sử dụng năm 2024",           lay: (d) => nam(d, 2024) },
+  { ten: "Số lượng đã sử dụng năm 2025",           lay: (d) => nam(d, 2025) },
+  { ten: "Số lượng Khoa/ĐV ĐỀ XUẤT 18 tháng",      lay: (d) => n(d.so_luong) },
+  { ten: "Tùy chọn mua thêm 30% (18 tháng)",       lay: (d) => n(Math.round((Number(d.so_luong) || 0) * 0.3)) },
+  { ten: "Lý do rớt thầu DC 2025",                 lay: null },
+  { ten: "Lý do rớt thầu DC 2025 (cụ thể)",        lay: null },
+  { ten: "Giải trình đề xuất 2026-2027 (18 tháng)", lay: (d) => d.can_cu_chi_dinh || d.ghi_chu },
+  { ten: "Tên thương mại tham khảo 2025-2026",     lay: null },
+  { ten: "Mã sản phẩm",                            lay: null },
+  { ten: "Hãng sản xuất",                          lay: null },
+  { ten: "Nước sản xuất",                          lay: null },
+  { ten: "Tên thương mại tham khảo 2026-2027",     lay: (d) => d.ten_thuong_mai },
+  { ten: "Mã sản phẩm",                            lay: (d) => d.ky_ma_hieu },
+  { ten: "Hãng sản xuất",                          lay: (d) => d.hang },
+  { ten: "Nước sản xuất",                          lay: (d) => d.nuoc_san_xuat },
+  { ten: "Mã kỹ thuật",                            lay: null },
+];
+
+/** File 5 — Excel "Danh mục tổng hợp đi thầu" của PĐD: 32 cột có tên. */
+export const TONG_HOP_PDD = [
+  { ten: "Stt",                                    lay: (_d, i) => i + 1 },
+  { ten: "cố định 276/TB",                         lay: null },
+  { ten: "HIS QĐ1599 (2025)",                      lay: (d) => d.ma_hang },
+  { ten: "HIS 957",                                lay: null },
+  { ten: "Mã kỹ thuật",                            lay: null },
+  { ten: "Mã thông tư 04",                         lay: null },
+  { ten: "Tên thông tư",                           lay: null },
+  { ten: "Mã nhóm",                                lay: (d) => d.ma_quan_ly },
+  { ten: "Tên nhóm quản lý",                       lay: (d) => d.ten_quan_ly },
+  { ten: "Đề xuất phân nhóm TT 14 2023",           lay: null },
+  { ten: "Tên vật tư mời thầu 2026-2027",          lay: (d) => d.ten_vat_tu },
+  { ten: "Mô tả và đặc tính kỹ thuật 2026-2027",   lay: (d) => d.tieu_chi_ky_thuat },
+  { ten: "Quy cách đóng gói",                      lay: null },
+  { ten: "Đơn vị tính",                            lay: (d) => d.dvt },
+  { ten: "Số lượng đã sử dụng năm 2019",           lay: (d) => nam(d, 2019) },
+  { ten: "Số lượng đã sử dụng năm 2020",           lay: (d) => nam(d, 2020) },
+  { ten: "Số lượng đã sử dụng năm 2021",           lay: (d) => nam(d, 2021) },
+  { ten: "Số lượng đã sử dụng năm 2022",           lay: (d) => nam(d, 2022) },
+  { ten: "Số lượng đã sử dụng năm 2023",           lay: (d) => nam(d, 2023) },
+  { ten: "Số lượng đã sử dụng năm 2024",           lay: (d) => nam(d, 2024) },
+  { ten: "Số lượng đã sử dụng năm 2025",           lay: (d) => nam(d, 2025) },
+  { ten: "Theo 18 tháng/ 2024",                    lay: null },
+  { ten: "Theo 18 tháng/ 2025",                    lay: null },
+  { ten: "Số lượng đề xuất (2026-2027)",           lay: (d) => n(d.so_luong) },
+  { ten: "Tùy chọn mua thêm 30%",                  lay: (d) => n(Math.round((Number(d.so_luong) || 0) * 0.3)) },
+  { ten: "Giải trình đề xuất mua sắm",             lay: (d) => d.can_cu_chi_dinh || d.ghi_chu },
+  { ten: "Tên thương mại tham khảo 2026-2027",     lay: (d) => d.ten_thuong_mai },
+  { ten: "Mã sản phẩm",                            lay: (d) => d.ky_ma_hieu },
+  { ten: "Hãng sản xuất",                          lay: (d) => d.hang },
+  { ten: "Nước sản xuất",                          lay: (d) => d.nuoc_san_xuat },
+  { ten: "Khoa đề xuất",                           lay: (d) => d.don_vi },
+  { ten: "Gói thầu",                               lay: (d) => d.goi },
+];
+
+/** File 2 — Word "Bản cam kết": văn bản có chỗ trống. */
+export const CAM_KET = (m) => [
+  { canh: "giua", dam: false, chu: "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM" },
+  { canh: "giua", dam: true,  chu: "Độc lập – Tự do – Hạnh phúc" },
+  { chu: "" },
+  { canh: "giua", dam: true, co: 30, chu: "BẢN CAM KẾT" },
+  { chu: "" },
+  { chu: "Kính gửi:  Hội đồng Mua sắm" },
+  { chu: "                 Phòng Điều dưỡng" },
+  { chu: "" },
+  { chu: `Tôi tên: ${m.nguoi_lap || "……………………………………………………………"}` },
+  { chu: `Nơi công tác: ${m.don_vi || "…………………………"} - Bệnh viện Đại học Y Dược Thành phố Hồ Chí Minh` },
+  { chu: "Chức vụ: ……………………………………………………………………………………" },
+  { chu: "" },
+  { chu: "Thực hiện Quyết định 3132/QĐ-BVĐHYD ngày 14/12/2022 của Giám đốc Bệnh viện Đại học Y Dược TP.HCM;" },
+  { chu: "Căn cứ nhu cầu thực tế sử dụng VTYTTH đáp ứng công tác điều trị, chăm sóc người bệnh," },
+  { chu: "" },
+  { chu: "Tôi hiểu rõ quy định của Bệnh viện về nguyên tắc đề xuất mua sắm và cam kết:" },
+  { chu: `1. Số lượng đề xuất dựa trên nhu cầu sử dụng thực tế tại ${m.don_vi || "…………………"}` },
+  { chu: "2. Đảm bảo sử dụng đạt 80% số lượng đã đề xuất;" },
+  { chu: "" },
+  { chu: `Tổng số danh mục đề xuất: ${m.so_dong} mã hàng.` },
+  { chu: "" },
+  { canh: "phai", chu: `Ngày ...... tháng ...... năm ${new Date().getFullYear()}` },
+  { canh: "phai", dam: true, chu: "NGƯỜI CAM KẾT" },
+];
+
+/** File 4 — Word "Phiếu đề nghị" của Phòng Điều dưỡng. */
+export const DE_NGHI_MUA = (m) => [
+  { chu: "BỆNH VIỆN ĐẠI HỌC Y DƯỢC TP HỒ CHÍ MINH" },
+  { dam: true, chu: "PHÒNG ĐIỀU DƯỠNG" },
+  { chu: "Số:        /ĐN-ĐD" },
+  { canh: "phai", chu: `Ngày ...... tháng ...... năm ${new Date().getFullYear()}` },
+  { chu: "" },
+  { canh: "giua", dam: true, co: 30, chu: "PHIẾU ĐỀ NGHỊ" },
+  { canh: "giua", chu: "Về việc đề xuất các danh mục, số lượng, yêu cầu kỹ thuật" },
+  { canh: "giua", chu: "vật tư y tế tiêu hao (vật tư dùng chung)" },
+  { chu: "" },
+  { chu: "Căn cứ Quyết định số 1599/QĐ-BVĐHYD ngày 11/06/2025 của Giám đốc Bệnh viện Đại học Y Dược TP.HCM;" },
+  { chu: "Theo tiến độ thực hiện của gói thầu đấu thầu rộng rãi Cung cấp vật tư y tế tiêu hao;" },
+  { chu: "Xét các Đề nghị của các Đơn vị sử dụng về việc đề xuất mua sắm danh mục, số lượng, yêu cầu kỹ thuật;" },
+  { chu: "" },
+  { chu: "Phòng Điều dưỡng kính đề nghị như sau:" },
+  { chu: `- Tổng số danh mục đề xuất: ${m.so_dong} mã hàng, thuộc ${m.so_khoa} đơn vị sử dụng.` },
+  { chu: "- Chi tiết theo danh mục đính kèm." },
+  { chu: "" },
+  { chu: "Kính đề nghị Phòng Vật tư thiết bị tiếp tục thực hiện tiến độ mua sắm nhằm đáp ứng nhu cầu chuyên môn." },
+  { chu: "Trân trọng./." },
+  { chu: "" },
+  { dam: true, chu: "Nơi nhận:" },
+  { chu: "- Phòng VTTB (để thực hiện);" },
+  { chu: "- Đơn vị QLĐT (để biết);" },
+  { chu: "- Lưu: ĐD." },
+  { chu: "" },
+  { canh: "phai", dam: true, chu: "TRƯỞNG PHÒNG" },
+];
