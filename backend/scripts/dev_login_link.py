@@ -18,13 +18,37 @@ Cần biến môi trường SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY.
 """
 import os
 import sys
+from urllib.parse import urlparse
 
 from supabase import create_client
+
+PRODUCTION_PROJECT_REF = "jttucjnkqxckphmmilaa"
 
 
 def main(email: str):
     supabase_url = os.environ["SUPABASE_URL"]
     service_key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+    host = urlparse(supabase_url).hostname or ""
+    project_ref = host.split(".")[0]
+
+    # Máy local hiện có thể giữ .env production để backup/khôi phục trong khi
+    # frontend lại chạy staging. Chặn mặc định để một lệnh test đăng nhập không
+    # vô tình tạo magic-link ở Auth production.
+    if (
+        project_ref == PRODUCTION_PROJECT_REF
+        and os.environ.get("ALLOW_PRODUCTION_DEV_LOGIN") != "YES"
+    ):
+        print(
+            "LỖI AN TOÀN: SUPABASE_URL đang trỏ PRODUCTION. "
+            "Script dev_login_link mặc định từ chối chạy."
+        )
+        print(
+            "Nếu thật sự cần xử lý sự cố production, đặt "
+            "ALLOW_PRODUCTION_DEV_LOGIN=YES một cách tường minh."
+        )
+        sys.exit(2)
+
+    print(f"Supabase project: {project_ref or '(không xác định)'}")
     db = create_client(supabase_url, service_key)
 
     user = db.table("users").select("email, role, khoa").eq("email", email).maybe_single().execute().data

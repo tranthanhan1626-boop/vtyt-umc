@@ -37,7 +37,7 @@ export function fmtNgayGio(iso) {
 // trước tính năng gộp) nhom_de_xuat=null nên mỗi dòng tự đứng 1 nhóm theo id.
 export const khoaNhom = (r) => r.nhom_de_xuat || `le:${r.id}`;
 
-export default function DeXuatTongHop({ profile }) {
+export default function DeXuatTongHop({ profile, goi }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loi, setLoi] = useState("");
@@ -52,11 +52,14 @@ export default function DeXuatTongHop({ profile }) {
   const [dsBieuMau, setDsBieuMau] = useState([]);   // danh mục biểu mẫu
   const [phieuTheoNhom, setPhieuTheoNhom] = useState({}); // {khoaNhom: phieu}
   const [xacNhanXoa, setXacNhanXoa] = useState(null);   // key nhóm chờ xác nhận xoá
+  const [lyDoXoa, setLyDoXoa] = useState("");
 
   const taiDuLieu = async () => {
     setLoading(true);
     const { data, error } = await fetchAllRows((f, t) =>
-      supabase.from("v_de_xuat_tong_hop").select("*").order("created_at", { ascending: false }).range(f, t)
+      supabase.from("v_de_xuat_tong_hop").select("*")
+        .eq("loai_mua_sam", goi)
+        .order("created_at", { ascending: false }).range(f, t)
     );
     if (error) { setLoi("Không đọc được v_de_xuat_tong_hop — kiểm tra view/RLS trong Supabase (schema hiện tại xem backend/sql/schema.sql)."); setLoading(false); return; }
     setRows(data); setLoi("");
@@ -73,7 +76,7 @@ export default function DeXuatTongHop({ profile }) {
     setLoading(false);
   };
 
-  useEffect(() => { taiDuLieu(); }, []);
+  useEffect(() => { taiDuLieu(); }, [goi]);
 
   const dsKhoa = useMemo(() => [...new Set(rows.map((r) => r.don_vi))].sort(), [rows]);
   const dsGoi = useMemo(() => [...new Set(rows.map((r) => r.goi).filter(Boolean))].sort(), [rows]);
@@ -140,22 +143,30 @@ export default function DeXuatTongHop({ profile }) {
     if (data?.[0]) setPhieuTheoNhom((p) => ({ ...p, [g.key]: data[0] }));
   };
 
-  // Xoá cả nhóm — xoá mọi mã hàng trong nhóm (kéo theo lý do + phiếu qua CASCADE,
-  // vì phiếu neo vào 1 mã hàng của nhóm). Kiểm count để bắt RLS chặn âm thầm.
+  // "Xoá" trên UI nhưng DB chỉ đánh dấu đã rút, giữ nguyên dữ liệu + phiếu để
+  // truy vết. RPC xử lý nguyên nhóm trong một transaction.
   const xoaNhom = async (g) => {
+    if (!lyDoXoa.trim()) {
+      setLoiCapNhat((p) => ({ ...p, [g.key]: "Phải ghi lý do rút đề xuất." }));
+      return;
+    }
     setDangCapNhat(g.key);
     setLoiCapNhat((p) => ({ ...p, [g.key]: "" }));
     const ids = g.items.map((i) => i.id);
-    const { error, count } = await supabase
-      .from("proposals").delete({ count: "exact" }).in("id", ids);
+    const { error } = await supabase.rpc("rut_nhom_de_xuat", {
+      p_nhom: g.nhom_de_xuat || null,
+      p_proposal_id: g.nhom_de_xuat ? null : g.items[0]?.id,
+      p_ly_do: lyDoXoa.trim(),
+    });
     if (error) {
-      setLoiCapNhat((p) => ({ ...p, [g.key]: error.message }));
-    } else if (!count) {
-      setLoiCapNhat((p) => ({ ...p, [g.key]: "Không xoá được (thiếu quyền hoặc dòng không còn tồn tại)." }));
+      const chuaPatch = error.code === "PGRST202" || /rut_nhom_de_xuat/i.test(error.message || "");
+      setLoiCapNhat((p) => ({ ...p, [g.key]: chuaPatch
+        ? "Staging chưa chạy patch_i_rut_va_tong_hop.sql."
+        : error.message }));
     } else {
       const idSet = new Set(ids);
       setRows((prev) => prev.filter((r) => !idSet.has(r.id)));
-      setPhieuTheoNhom((p) => { const n = { ...p }; delete n[g.key]; return n; });
+      setLyDoXoa("");
     }
     setXacNhanXoa(null);
     setDangCapNhat(null);
@@ -397,25 +408,36 @@ export default function DeXuatTongHop({ profile }) {
                   </div>
 
                   <div className="ml-auto">
+                    {g.trangThai === "hoan_thanh" ? (
+                      <p className="text-xs text-slate-400">Đã hoàn thành — không thể xoá</p>
+                    ) : (
+                    <>
                     {xacNhanXoa === g.key ? (
-                      <div className="text-right">
-                        <p className="text-xs text-red-700 leading-tight mb-1">Xoá cả {g.items.length} mã hàng + phiếu đính kèm?</p>
+                      <div className="w-full min-w-[280px] text-right">
+                        <p className="text-xs text-red-700 leading-tight mb-1">
+                          Rút cả {g.items.length} mã hàng? Dữ liệu và phiếu vẫn được lưu để truy vết.
+                        </p>
+                        <textarea value={lyDoXoa} onChange={(e) => setLyDoXoa(e.target.value)}
+                          rows={2} placeholder="Lý do rút đề xuất…"
+                          className="mb-1.5 w-full rounded-md border border-red-200 px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-100" />
                         <div className="flex gap-1 justify-end">
                           <button onClick={() => xoaNhom(g)} disabled={dangCapNhat === g.key}
                             className="px-2 py-1 text-xs rounded-md bg-red-600 text-white hover:bg-red-700 disabled:opacity-40">
-                            {dangCapNhat === g.key ? "Đang xoá..." : "Xoá"}
+                            {dangCapNhat === g.key ? "Đang xử lý..." : "Xác nhận rút"}
                           </button>
-                          <button onClick={() => setXacNhanXoa(null)}
+                          <button onClick={() => { setXacNhanXoa(null); setLyDoXoa(""); }}
                             className="px-2 py-1 text-xs rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50">
                             Huỷ
                           </button>
                         </div>
                       </div>
                     ) : (
-                      <button onClick={() => setXacNhanXoa(g.key)} title="Xoá cả đề xuất"
+                      <button onClick={() => { setXacNhanXoa(g.key); setLyDoXoa(""); }} title="Rút cả đề xuất"
                         className="flex items-center gap-1 text-xs text-slate-300 hover:text-red-600 transition-colors">
                         <Trash2 size={14} /> Xoá đề xuất
                       </button>
+                    )}
+                    </>
                     )}
                   </div>
 

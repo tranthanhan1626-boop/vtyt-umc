@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { Download, FileText, Sheet, History } from "lucide-react";
+import { Download, FileText, Sheet, History, ShieldCheck } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
-import { HO_SO, xuatHoSo } from "../lib/xuatHoSo";
+import { HO_SO, xuatBanThaoHoSo, xuatHoSo } from "../lib/xuatHoSo";
 import { GOI } from "./KhungGoiThau";
 
 // H.7 — Lịch sử xuất hồ sơ (QĐ-20). Đây là SỔ LƯU, không phải nút xuất.
@@ -33,7 +33,8 @@ export default function LichSuXuatHoSo({ profile }) {
     setDangDung(r.id); setLoi("");
     try {
       const nd = r.noi_dung || {};
-      await xuatHoSo(r.ma_ho_so, nd.rows || [], nd.meta || {}, nd.usage || {});
+      if (nd.ban_thao) await xuatBanThaoHoSo(r.ma_ho_so, nd.ban_thao);
+      else await xuatHoSo(r.ma_ho_so, nd.rows || [], nd.meta || {}, nd.usage || {});
     } catch (e) { setLoi(e.message); }
     setDangDung(null);
   };
@@ -43,10 +44,10 @@ export default function LichSuXuatHoSo({ profile }) {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-base font-semibold text-slate-900">Lịch sử xuất hồ sơ</h2>
+        <h2 className="text-base font-semibold text-slate-900">Lịch sử hồ sơ đề xuất</h2>
         <p className="text-sm text-slate-500 mt-0.5">
-          Mỗi lần xuất được lưu lại kèm <b>đúng danh sách mã tại thời điểm đó</b>.
-          Tải lại sẽ ra file giống hệt bản đã nộp, kể cả khi đề xuất sau này có đổi.
+          Mỗi lần tải bản đã chốt được lưu cùng <b>nội dung Word/Excel đúng tại thời điểm duyệt</b>.
+          Tải lại sẽ dựng đúng các chỉnh sửa trực tuyến của phiên bản đó.
         </p>
       </div>
 
@@ -77,6 +78,12 @@ export default function LichSuXuatHoSo({ profile }) {
                     {" · "}{new Date(r.ngay_xuat).toLocaleString("vi-VN")}
                     {" · "}{r.nguoi_xuat}
                   </p>
+                  {r.noi_dung?.trang_thai_cong_tac === "da_duyet" && (
+                    <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700">
+                      <ShieldCheck size={11} />
+                      PĐD đã duyệt · phiên bản #{r.noi_dung?.revision_cong_tac}
+                    </p>
+                  )}
                 </div>
                 <button onClick={() => taiLaiFile(r)} disabled={dangDung === r.id}
                   className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md border border-teal-300 text-teal-800 hover:bg-teal-50 disabled:opacity-40">

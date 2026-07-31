@@ -378,3 +378,51 @@ Quy trình 5 bước, cổng an toàn và Definition of Done được cụ thể
 
 **Vì sao:** chủ dự án không đọc được code, nên "tôi đã làm xong" là câu không
 kiểm chứng được. Chỉ có thứ nhìn thấy mới phán đúng/sai được.
+
+---
+
+## QĐ-21 · 31/07/2026 · Rút đề xuất có dấu vết và tổng hợp PĐD theo snapshot
+
+**Chốt theo xác nhận của chủ dự án:**
+
+1. Nút "Xoá đề xuất" có ở cả 3 luồng. Người tạo được rút hồ sơ khi chưa
+   `hoan_thanh`; nếu đang `xet_duyet` phải ghi lý do. Giao diện ẩn hồ sơ nhưng
+   database **không hard-delete**: giữ người rút, lúc rút và lý do.
+2. Gói 18 tháng và gói bổ sung của ĐVSD có một bộ 2 tài liệu bắt buộc:
+   Word cam kết số lượng + Excel danh mục đề xuất. Hai file lấy cùng một nguồn
+   `dot_id + loai_mua_sam + hoan_thanh`.
+3. PĐD có trang riêng trong từng gói để xem theo khoa hoặc tổng hợp tự động.
+   Cộng an toàn ở cấp `ma_hang + dvt`; mã quản lý có nhiều ĐVT phải được kiểm
+   tra/xác nhận, không cộng chéo.
+4. Khi PĐD bấm chốt, hệ thống lưu snapshot bất biến. Word đề nghị mua thầu và
+   Excel danh mục tổng hợp cùng sinh từ snapshot này; dữ liệu mới về sau phải
+   tạo phiên bản mới.
+
+**Vì sao:** dữ liệu thao tác trên web của khoa phải là nguồn duy nhất cho hồ sơ
+PĐD, nhưng file đã nộp phải tái lập được và không được thay đổi ngầm khi khoa
+gửi thêm hoặc rút đề xuất sau đó.
+
+---
+
+## QĐ-22 · 31/07/2026 · Word/Excel là hồ sơ cộng tác trực tuyến, không trao đổi qua Zalo
+
+**Chốt theo xác nhận của chủ dự án:**
+
+1. “Hồ sơ của khoa” và “Tổng hợp hồ sơ PĐD” hiển thị nội dung ngay trên web,
+   tách thành tab Word và Excel rõ ràng. Người dùng sửa từng dòng Word hoặc từng
+   ô Excel trực tiếp; Excel chỉ là bản xuất, không có luồng nạp file ngược.
+2. Nội dung đề xuất nguồn vẫn bất biến. Phần sửa tài liệu nằm trong một sổ hồ
+   sơ cộng tác riêng và mỗi lần lưu/gửi/sửa/duyệt đều tạo revision có người,
+   thời điểm và hành động; không sửa đè mất lịch sử.
+3. ĐVSD lưu nháp rồi gửi PĐD. PĐD thấy hồ sơ từng khoa, được sửa trực tiếp, để
+   lại ghi chú và duyệt. Cả hai bên cùng thấy trạng thái “chờ PĐD / PĐD đã sửa /
+   đã duyệt”; bản đã duyệt khóa chiều sửa của ĐVSD.
+4. Hồ sơ tổng hợp PĐD tiếp tục neo vào snapshot bất biến. Mỗi snapshot có bộ
+   Word/Excel cộng tác riêng, không tái sử dụng nhầm nội dung của snapshot cũ.
+5. Chỉ bản đã duyệt mới tải chính thức. Khi tải, snapshot đúng nội dung đã chỉnh
+   được ghi vào “Lịch sử hồ sơ đề xuất”; file vẫn sinh trong trình duyệt, không
+   dùng Supabase Storage.
+
+**Vì sao:** trao đổi bản sửa qua Zalo làm mất dấu vết ai sửa, bản nào là bản
+cuối và khoa có đang xem đúng bản PĐD duyệt hay không. Web phải là một nơi làm
+việc chung và là nguồn sự thật duy nhất của hồ sơ.

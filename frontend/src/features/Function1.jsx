@@ -1,5 +1,5 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
-import { Search, ChevronDown, Check, Package, ChevronRight, AlertTriangle, Plus, Trash2, X, Clock } from "lucide-react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Search, ChevronDown, ChevronLeft, Check, Package, ChevronRight, AlertTriangle, X } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import ChartDongBo, { BarChartNam, LegendItem, fmt, kyHieuNam, mauNam } from "../components/ChartDongBo";
 
@@ -39,7 +39,7 @@ export const NHAN_TT_NHOM = {
   da_duyet: "Đã duyệt",
   tu_choi: "Từ chối",
 };
-const MAU_TT_NHOM = {
+export const MAU_TT_NHOM = {
   cho_duyet: "bg-amber-100 text-amber-800",
   da_duyet: "bg-teal-100 text-teal-800",
   tu_choi: "bg-red-100 text-red-700",
@@ -72,7 +72,7 @@ function ChonKyThang({ gtThang, gtNam, doiThang, doiNam }) {
 // tháng vì dù sao cũng phải kéo sử dụng từ tháng nào tới tháng nào nên không
 // cần phải nhập số tháng sử dụng". Nên giờ hàm này là NGUỒN TÍNH THẬT của
 // so_thang_du_kien, không còn chỉ để đối chiếu.
-const doDaiKy = (n) => {
+export const doDaiKy = (n) => {
   const a = Number(n.tuNam) * 12 + Number(n.tuThang);
   const b = Number(n.denNam) * 12 + Number(n.denThang);
   if (!Number.isFinite(a) || !Number.isFinite(b)) return 0;
@@ -105,20 +105,20 @@ const CAN_NOI_RO_DIEU_CHINH = (loaiLyDo) => loaiLyDo && loaiLyDo !== "theo_lich_
 // hoặc HMR lúc dev — người dùng báo "giỏ không giữ được 2 nhóm" chính là do
 // đường này chứ không phải do đổi nhóm. Tách khoá theo khoa để đổi khoa là đổi
 // giỏ (không trộn dữ liệu 2 khoa) mà vẫn không mất giỏ khoa cũ.
-const KHOA_GIO = (khoa) => `vtyt_gio_${NAM_DE_XUAT}_${khoa}`;
-const docGio = (khoa) => {
-  try { return JSON.parse(localStorage.getItem(KHOA_GIO(khoa)) || "{}"); }
+const KHOA_GIO = (khoa, dotId) => `vtyt_gio_${khoa}_${dotId || "khong_dot"}`;
+const docGio = (khoa, dotId) => {
+  try { return JSON.parse(localStorage.getItem(KHOA_GIO(khoa, dotId)) || "{}"); }
   catch { return {}; }   // JSON hỏng / chế độ ẩn danh chặn storage
 };
-const ghiGio = (khoa, gio) => {
+const ghiGio = (khoa, dotId, gio) => {
   try {
     if (!khoa) return;
-    if (Object.keys(gio).length === 0) localStorage.removeItem(KHOA_GIO(khoa));
-    else localStorage.setItem(KHOA_GIO(khoa), JSON.stringify(gio));
+    if (Object.keys(gio).length === 0) localStorage.removeItem(KHOA_GIO(khoa, dotId));
+    else localStorage.setItem(KHOA_GIO(khoa, dotId), JSON.stringify(gio));
   } catch { /* hết quota hoặc storage bị chặn — giỏ vẫn chạy trong phiên */ }
 };
 
-const FORM_NHOM_TRONG = {
+export const FORM_NHOM_TRONG = {
   // Chế độ khai báo (QĐ-15) — 1 form gánh 2 tình huống:
   //   "gop" = mã hàng TƯƠNG ĐƯƠNG CHỨC NĂNG với mã đã có -> gộp vào mã quản lý
   //           sẵn có (khác quy cách đóng gói vẫn gộp). Ghi la_nhom_moi=false.
@@ -139,7 +139,7 @@ const FORM_NHOM_TRONG = {
  *  - "gop": mã tương đương chức năng -> gộp vào mã quản lý CÓ SẴN
  *  - "moi": mã mới hoàn toàn -> tạo nhóm mới
  *  Thu đủ đặc tả + số lượng để duyệt xong tự tạo đề xuất (luồng A). */
-function FormNhomKyThuat({ giaTri, doiGiaTri, onLuu, onHuy, dangLuu, loi, dsNhom }) {
+export function FormNhomKyThuat({ giaTri, doiGiaTri, onLuu, onHuy, dangLuu, loi, dsNhom }) {
   const f = giaTri;
   const set = (k, v) => doiGiaTri({ ...f, [k]: v });
   const cls = "w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500";
@@ -345,17 +345,18 @@ function FormNhomKyThuat({ giaTri, doiGiaTri, onLuu, onHuy, dangLuu, loi, dsNhom
   );
 }
 
-export default function Function1({ profile, goi, dot, dsDot = [] }) {
+export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = false }) {
   const [dsNhom, setDsNhom] = useState([]);          // [{ma_quan_ly, ten_quan_ly, so_ma_hang}]
   const [dsVatTu, setDsVatTu] = useState([]);        // kết quả tìm mã hàng ở server
   const [tuKhoa, setTuKhoa] = useState("");
+  const [trangNhom, setTrangNhom] = useState(1);
   const [nhomChon, setNhomChon] = useState(null);    // ma_quan_ly
   const [maHangTrongNhom, setMaHangTrongNhom] = useState([]);
   // GIỎ ĐỀ XUẤT — {ma_hang: {soLuong, goiThau, kỳ, lý do, + metadata tự chứa}}.
   // KHÔNG reset khi đổi nhóm (chốt 21/07/2026: 1 bản đề xuất gồm nhiều mã hàng
   // ở nhiều nhóm kỹ thuật khác nhau). Đổi KHOA thì ĐỔI GIỎ chứ không xoá —
   // giỏ nằm ở localStorage tách theo khoa (xem docGio/ghiGio).
-  const [nhapLieu, setNhapLieu] = useState(() => docGio(profile.khoa || ""));
+  const [nhapLieu, setNhapLieu] = useState({});
   const [lichSuThang, setLichSuThang] = useState({}); // {ma_hang: {nam: number[12]}}
   const [dangTaiLichSu, setDangTaiLichSu] = useState(false);
   const [maMoRong, setMaMoRong] = useState(null);     // mã hàng đang bung chart + nhập
@@ -368,13 +369,6 @@ export default function Function1({ profile, goi, dot, dsDot = [] }) {
   // khi khoa đề xuất kỹ thuật MỚI, thứ chưa từng xuất kho nên bị bộ lọc ẩn đi.
   const [hienCaChuaDung, setHienCaChuaDung] = useState(false);
 
-  // Đề nghị thêm mã kỹ thuật của khoa (bảng khoa_nhom_ky_thuat)
-  const [dsDeNghi, setDsDeNghi] = useState([]);
-  const [moFormThem, setMoFormThem] = useState(false);
-  const [formNhom, setFormNhom] = useState(FORM_NHOM_TRONG);
-  const [dangGuiNhom, setDangGuiNhom] = useState(false);
-  const [loiNhom, setLoiNhom] = useState("");
-
   const [loading, setLoading] = useState(true);
   const [loiView, setLoiView] = useState("");
   const [loiLuu, setLoiLuu] = useState("");
@@ -386,6 +380,14 @@ export default function Function1({ profile, goi, dot, dsDot = [] }) {
   // chỉ được chọn khoa đó, phòng điều dưỡng được coi tất cả các khoa và toàn viện").
   const chonDuocDonVi = profile.role === "admin" || profile.role === "dieu_duong";
   const khoaHienTai = donVi || profile.khoa;
+
+  // QĐ-20: khoa chỉ gửi được khi Phòng Điều dưỡng đã MỞ đợt cho gói này.
+  const chuaMoDot = !dangTaiDot && !dot;
+  // Gói bổ sung có 3 đợt/năm nên phải CHỌN. Gói khác chỉ 1 đợt -> tự lấy.
+  const [dotChon, setDotChon] = useState(null);
+  const dotDung = dsDot.length > 1 ? dsDot.find((d) => d.id === dotChon) : dot;
+  useEffect(() => { setDotChon(null); }, [goi]);
+
   // Toàn viện = cộng gộp số liệu 66 khoa, CHỈ ĐỂ XEM. Không gửi đề xuất được
   // vì mỗi đề xuất bắt buộc thuộc về đúng 1 khoa (proposals.don_vi NOT NULL).
   const toanVien = khoaHienTai === TOAN_VIEN;
@@ -448,7 +450,6 @@ export default function Function1({ profile, goi, dot, dsDot = [] }) {
       fetchAllRows((f, t) => supabase.from("v_don_vi_nhom").select("ma_quan_ly").eq("don_vi", khoa).range(f, t)),
       supabase.from("khoa_nhom_ky_thuat").select("*").eq("don_vi", khoa).order("created_at", { ascending: false }),
     ]);
-    setDsDeNghi(deNghi.error ? [] : deNghi.data || []);
     // Thiếu view => để null = không lọc, thà hiện thừa còn hơn chặn hết.
     if (lichSu.error || !lichSu.data) { setNhomCuaKhoa(null); return; }
     const tap = new Set(lichSu.data.map((d) => d.ma_quan_ly));
@@ -457,7 +458,7 @@ export default function Function1({ profile, goi, dot, dsDot = [] }) {
   }, []);
 
   useEffect(() => {
-    if (toanVien || !khoaHienTai) { setNhomCuaKhoa(null); setDsDeNghi([]); return; }
+    if (toanVien || !khoaHienTai) { setNhomCuaKhoa(null); return; }
     let huy = false;
     (async () => {
       const khoa = khoaHienTai;
@@ -467,14 +468,26 @@ export default function Function1({ profile, goi, dot, dsDot = [] }) {
     return () => { huy = true; };
   }, [khoaHienTai, toanVien, taiNhomCuaKhoa]);
 
-  // Đổi KHOA = nạp giỏ CỦA KHOA ĐÓ (mỗi khoa 1 giỏ riêng, không trộn, không mất).
+  // Đổi KHOA hoặc ĐỢT = nạp lại giỏ tương ứng. Hai tầng:
+  //   1) localStorage hiện NGAY -> không trắng màn hình
+  //   2) server ghi đè sau -> đây mới là nguồn thật, sống qua đăng xuất/đổi máy
   useEffect(() => {
     if (toanVien || !khoaHienTai) return;   // toàn viện chỉ để xem, không có giỏ
-    setNhapLieu(docGio(khoaHienTai));
+    const dotId = dotDung?.id;
+    setNhapLieu(docGio(khoaHienTai, dotId));
     setDaGui([]);
-    setMoFormThem(false);
     setLoiLuu("");
-  }, [khoaHienTai, toanVien]);
+    if (!dotId) return;
+    let huy = false;
+    (async () => {
+      const { data, error } = await supabase.from("gio_nhap")
+        .select("noi_dung").eq("don_vi", khoaHienTai).eq("dot_id", dotId).maybeSingle();
+      if (huy || error || !data?.noi_dung) return;
+      setNhapLieu(data.noi_dung);
+      ghiGio(khoaHienTai, dotId, data.noi_dung);
+    })();
+    return () => { huy = true; };
+  }, [khoaHienTai, toanVien, dotDung?.id]);
 
   // --- Mã hàng trong nhóm đang chọn + lịch sử dùng của khoa -----------------
   useEffect(() => {
@@ -516,14 +529,20 @@ export default function Function1({ profile, goi, dot, dsDot = [] }) {
   // nhóm có khi vài chục mã hàng.
   // Chỉ sắp lại SAU KHI lịch sử tải xong, tránh nhảy thứ tự giữa chừng.
   const maHangHienThi = useMemo(() => {
-    if (dangTaiLichSu) return maHangTrongNhom;
-    return [...maHangTrongNhom].sort((a, b) => {
+    // Miếng 2 — mã ĐANG trong giỏ thì ẩn khỏi bảng, tránh chọn trùng. Gửi xong
+    // giỏ rỗng nên mã hiện lại bình thường; rút khỏi giỏ cũng hiện lại ngay.
+    const trongGio = new Set(
+      Object.entries(nhapLieu).filter(([, v]) => Number(v.soLuong) > 0).map(([k]) => k)
+    );
+    const con = maHangTrongNhom.filter((m) => !trongGio.has(m.ma_hang));
+    if (dangTaiLichSu) return con;
+    return [...con].sort((a, b) => {
       const aDung = !!lichSuThang[a.ma_hang];
       const bDung = !!lichSuThang[b.ma_hang];
       if (aDung !== bDung) return aDung ? -1 : 1;
       return a.ma_hang.localeCompare(b.ma_hang);
     });
-  }, [maHangTrongNhom, lichSuThang, dangTaiLichSu]);
+  }, [maHangTrongNhom, lichSuThang, dangTaiLichSu, nhapLieu]);
 
   // Tổng ở cấp MÃ QUẢN LÝ — cộng mọi mã hàng trong nhóm. Đây là cấp ĐẤU THẦU,
   // nên là con số cần nhìn khi quyết định toàn viện.
@@ -564,7 +583,7 @@ export default function Function1({ profile, goi, dot, dsDot = [] }) {
     const dsNhom = dsNhomHienThi;   // che biến ngoài: mọi tìm kiếm bên dưới đều
                                     // chỉ chạy trong phạm vi đã lọc theo khoa
     const q = tuKhoa.trim().toLowerCase();
-    if (!q) return dsNhom.slice(0, 50);
+    if (!q) return dsNhom;
 
     const ketQua = new Map(); // ma_quan_ly -> {..., maHangKhop?: [...]}
     dsNhom.forEach((n) => {
@@ -581,8 +600,21 @@ export default function Function1({ profile, goi, dot, dsDot = [] }) {
       existing.maHangKhop = [...(existing.maHangKhop || []), v];
       ketQua.set(v.ma_quan_ly, existing);
     });
-    return [...ketQua.values()].slice(0, 50);
+    return [...ketQua.values()];
   }, [dsNhomHienThi, dsVatTu, tuKhoa]);
+
+  const SO_NHOM_MOI_TRANG = 50;
+  const tongTrangNhom = Math.max(1, Math.ceil(nhomLoc.length / SO_NHOM_MOI_TRANG));
+  const nhomTrang = useMemo(() => {
+    const trangHopLe = Math.min(trangNhom, tongTrangNhom);
+    const batDau = (trangHopLe - 1) * SO_NHOM_MOI_TRANG;
+    return nhomLoc.slice(batDau, batDau + SO_NHOM_MOI_TRANG);
+  }, [nhomLoc, trangNhom, tongTrangNhom]);
+
+  useEffect(() => { setTrangNhom(1); }, [tuKhoa, khoaHienTai, hienCaChuaDung]);
+  useEffect(() => {
+    if (trangNhom > tongTrangNhom) setTrangNhom(tongTrangNhom);
+  }, [trangNhom, tongTrangNhom]);
 
   const nhomDangChon = dsNhom.find((n) => n.ma_quan_ly === nhomChon);
 
@@ -591,8 +623,26 @@ export default function Function1({ profile, goi, dot, dsDot = [] }) {
   // Mọi thay đổi giỏ đi qua đây để state và localStorage không bao giờ lệch nhau.
   // Ghi ngay trong updater (thay vì useEffect riêng) để tránh cảnh giỏ đã đổi mà
   // storage chưa kịp ghi thì người dùng F5 mất dữ liệu.
+  // Giỏ lưu 2 tầng: localStorage hiện NGAY (không giật), server là nguồn thật
+  // để đăng xuất/đổi máy không mất. Ghi server có hoãn 800ms, gõ liên tục
+  // không bắn hàng chục request.
+  const hoanGhi = useRef(null);
   const datGio = (fn) =>
-    setNhapLieu((prev) => { const next = fn(prev); ghiGio(khoaHienTai, next); return next; });
+    setNhapLieu((prev) => {
+      const next = fn(prev);
+      ghiGio(khoaHienTai, dotDung?.id, next);
+      if (dotDung?.id && khoaHienTai) {
+        clearTimeout(hoanGhi.current);
+        hoanGhi.current = setTimeout(() => {
+          supabase.from("gio_nhap").upsert({
+            don_vi: khoaHienTai, dot_id: dotDung.id, loai_mua_sam: goi, noi_dung: next,
+          }, { onConflict: "don_vi,dot_id" }).then(({ error }) => {
+            if (error) console.warn("Không lưu được giỏ lên server:", error.message);
+          });
+        }, 800);
+      }
+      return next;
+    });
 
   // Nhận cả OBJECT mã hàng (không chỉ mã) để đính kèm metadata tự chứa: giỏ
   // phải render được cả khi nhóm chứa nó không còn nằm trong maHangTrongNhom.
@@ -612,12 +662,6 @@ export default function Function1({ profile, goi, dot, dsDot = [] }) {
     datGio((prev) => { const n = { ...prev }; delete n[maHang]; return n; });
   const xoaCaGio = () => datGio(() => ({}));
 
-  // QĐ-20: khoa chỉ gửi được khi Phòng Điều dưỡng đã MỞ đợt cho gói này.
-  const chuaMoDot = !dot;
-  // Gói bổ sung có 3 đợt/năm nên phải CHỌN. Gói khác chỉ 1 đợt -> tự lấy.
-  const [dotChon, setDotChon] = useState(null);
-  const dotDung = dsDot.length > 1 ? dsDot.find((d) => d.id === dotChon) : dot;
-  useEffect(() => { setDotChon(null); }, [goi]);
 
   const gioHang = useMemo(
     () => Object.values(nhapLieu).filter((n) => Number(n.soLuong) > 0),
@@ -642,72 +686,6 @@ export default function Function1({ profile, goi, dot, dsDot = [] }) {
     });
     return [...m.entries()];
   }, [gioHang]);
-
-  // --- Đề nghị thêm mã kỹ thuật --------------------------------------------
-  const guiDeNghiNhom = async () => {
-    const f = formNhom;
-    setLoiNhom("");
-    const batBuoc = [
-      [f.ten_vat_tu_moi, "tên vật tư"], [f.ten_thuong_mai, "tên thương mại"],
-      [f.tieu_chi_ky_thuat, "tiêu chí kỹ thuật"], [f.ky_ma_hieu, "ký mã hiệu"],
-      [f.hang, "hãng"], [f.nuoc_san_xuat, "nước sản xuất"], [f.goi, "gói thầu"],
-    ].filter(([v]) => !String(v).trim()).map(([, ten]) => ten);
-    if (batBuoc.length) { setLoiNhom(`Thiếu: ${batBuoc.join(", ")}.`); return; }
-    if (!(Number(f.so_luong) > 0)) { setLoiNhom("Số lượng đề xuất phải > 0."); return; }
-    if (doDaiKy(f) < 1) { setLoiNhom("Mốc kết thúc phải sau mốc bắt đầu."); return; }
-    // Chế độ "gộp" BẮT BUỘC có mã quản lý — không có thì nó thành mã mới trá hình,
-    // đúng thứ làm danh mục phình giả tạo mà QĐ-15 muốn chặn.
-    const laGop = f.che_do === "gop";
-    if (laGop && !f.ma_quan_ly.trim()) {
-      setLoiNhom("Chưa chọn mã quản lý để gộp vào. Nếu vật tư chưa từng có, chuyển sang “Mã mới hoàn toàn”.");
-      return;
-    }
-
-    setDangGuiNhom(true);
-    // Mã hàng để trống -> khi duyệt hệ thống tự sinh (MOI-<id>).
-    // la_nhom_moi phân biệt 2 chế độ (QĐ-15): false = gộp vào nhóm CÓ SẴN,
-    // true = nhóm mới. Chế độ "moi" vẫn cho ma_quan_ly null (chưa gắn nhóm).
-    const { error } = await supabase.from("khoa_nhom_ky_thuat").insert({
-      don_vi: khoaHienTai,
-      ma_quan_ly: f.ma_quan_ly.trim() || null,
-      la_nhom_moi: !laGop,
-      ten_quan_ly_moi: f.ten_quan_ly_moi.trim() || null,
-      ma_hang_moi: f.ma_hang_moi.trim() || null,
-      ten_vat_tu_moi: f.ten_vat_tu_moi.trim(),
-      dvt_moi: f.dvt_moi.trim() || null,
-      ten_thuong_mai: f.ten_thuong_mai.trim(),
-      tieu_chi_ky_thuat: f.tieu_chi_ky_thuat.trim(),
-      ky_ma_hieu: f.ky_ma_hieu.trim(),
-      hang: f.hang.trim(),
-      nuoc_san_xuat: f.nuoc_san_xuat.trim(),
-      goi: f.goi,
-      so_luong: Math.round(Number(f.so_luong)),
-      tu_thang: Number(f.tuThang), tu_nam: Number(f.tuNam),
-      den_thang: Number(f.denThang), den_nam: Number(f.denNam),
-      ghi_chu: f.ghi_chu.trim() || null,
-      created_by: profile.email,
-      created_by_ho_ten: profile.ho_ten,
-    });
-    if (error) {
-      setLoiNhom(error.code === "23505" ? "Khoa đã đề nghị mã này rồi." : error.message);
-      setDangGuiNhom(false);
-      return;
-    }
-    setFormNhom(FORM_NHOM_TRONG);
-    setMoFormThem(false);
-    setDangGuiNhom(false);
-    // dieu_duong/admin tự tạo thì trigger duyệt luôn -> danh mục đổi ngay.
-    await Promise.all([taiDsNhom(), taiNhomCuaKhoa(khoaHienTai)]);
-  };
-
-  const xoaDeNghiNhom = async (id) => {
-    // Kiểm count: thiếu policy DELETE thì RLS chặn ÂM THẦM (204 nhưng 0 dòng).
-    const { error, count } = await supabase
-      .from("khoa_nhom_ky_thuat").delete({ count: "exact" }).eq("id", id);
-    if (error) { setLoiNhom(error.message); return; }
-    if (!count) { setLoiNhom("Không xoá được (thiếu quyền hoặc đã được duyệt)."); return; }
-    await taiNhomCuaKhoa(khoaHienTai);
-  };
 
   const submit = async () => {
     setLoiLuu("");
@@ -745,21 +723,33 @@ export default function Function1({ profile, goi, dot, dsDot = [] }) {
         nhap.ghiChu?.trim() || null,
       ].filter(Boolean).join("\n") || null,
     }));
-    const { error } = await supabase.rpc("submit_proposal_group", {
+    // Bản v2 lưu đề xuất + dot_id trong CÙNG transaction. Trong lúc staging
+    // chưa chạy patch_i, fallback về RPC cũ để localhost không bị chặn hoàn
+    // toàn; sau khi patch đã áp dụng đường fallback sẽ không còn chạy.
+    let { error } = await supabase.rpc("submit_proposal_group_v2", {
       p_don_vi: khoaHienTai,
       p_nam_de_xuat: NAM_DE_XUAT,
       p_items: items,
+      p_dot_id: dotDung?.id,
     });
+    let dungRpcCu = false;
+    if (error?.code === "PGRST202" || /submit_proposal_group_v2/i.test(error?.message || "")) {
+      dungRpcCu = true;
+      ({ error } = await supabase.rpc("submit_proposal_group", {
+        p_don_vi: khoaHienTai,
+        p_nam_de_xuat: NAM_DE_XUAT,
+        p_items: items,
+      }));
+    }
     if (error) {
       setLoiLuu(`Không gửi được giỏ đề xuất: ${error.message}`);
       setDangLuu(false);
       return;
     }
 
-    // Gắn đợt cho các dòng vừa tạo. RPC submit_proposal_group chưa nhận dot_id
-    // (sửa RPC phải chạy patch SQL), nên cập nhật ngay sau khi gửi. Lọc hẹp
-    // theo khoa + mã hàng vừa gửi + dot_id còn trống -> không đụng dòng cũ.
-    if (dotDung) {
+    // Chỉ còn dùng trong giai đoạn chuyển tiếp trước khi patch staging được áp
+    // dụng. RPC v2 đã gắn đợt nguyên tử nên không chạy UPDATE thứ hai.
+    if (dungRpcCu && dotDung) {
       const { error: eDot } = await supabase.from("proposals")
         .update({ dot_id: dotDung.id })
         .eq("don_vi", khoaHienTai)
@@ -783,7 +773,13 @@ export default function Function1({ profile, goi, dot, dsDot = [] }) {
     }));
 
     setDaGui(ketQua);
-    xoaCaGio();        // gửi xong dọn giỏ (cả storage), tránh gửi trùng lần 2
+    xoaCaGio();
+    if (dotDung?.id && khoaHienTai) {
+      // Giỏ là BẢN NHÁP nên xoá được (khác QĐ-11) — nội dung thật đã nằm ở
+      // proposals, không mất dấu vết. Không xoá thì lần sau mở lại thấy giỏ cũ.
+      await supabase.from("gio_nhap").delete()
+        .eq("don_vi", khoaHienTai).eq("dot_id", dotDung.id);
+    }        // gửi xong dọn giỏ (cả storage), tránh gửi trùng lần 2
     setDangLuu(false);
   };
 
@@ -824,7 +820,7 @@ export default function Function1({ profile, goi, dot, dsDot = [] }) {
           </div>
           <p className="text-xs text-slate-400 mb-2">
             {tuKhoa.trim() ? `${nhomLoc.length} nhóm khớp` : `${dsNhomHienThi.length} nhóm — gõ để tìm`}
-            {nhomLoc.length === 50 && " (hiện 50 đầu)"}
+            <span className="text-slate-300"> · 50 nhóm/trang</span>
             {!toanVien && nhomCuaKhoa && !hienCaChuaDung && (
               <span className="text-slate-300"> · đã lọc theo khoa (tổng {dsNhom.length})</span>
             )}
@@ -839,13 +835,13 @@ export default function Function1({ profile, goi, dot, dsDot = [] }) {
             </label>
           )}
           <div className="space-y-1 max-h-[60vh] overflow-y-auto">
-            {nhomLoc.map((n) => (
+            {nhomTrang.map((n) => (
               <button key={n.ma_quan_ly} onClick={() => setNhomChon(n.ma_quan_ly)}
-                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
                   n.ma_quan_ly === nhomChon ? "bg-teal-50 text-teal-900 border border-teal-200" : "hover:bg-slate-50 border border-transparent"
                 }`}>
-                <div className="font-mono text-xs text-slate-500">{n.ma_quan_ly}</div>
-                <div className="leading-tight">{n.ten_quan_ly}</div>
+                <div className="font-mono text-[15px] font-bold tracking-wide text-blue-700">{n.ma_quan_ly}</div>
+                <div className="mt-0.5 leading-snug text-slate-800">{n.ten_quan_ly}</div>
                 <div className="text-xs text-slate-400 mt-0.5">{n.so_ma_hang} mã hàng</div>
                 {n.maHangKhop && (
                   <div className="text-xs text-teal-700 mt-1 border-t border-teal-100 pt-1">
@@ -855,66 +851,31 @@ export default function Function1({ profile, goi, dot, dsDot = [] }) {
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Thêm mã kỹ thuật cho khoa — toàn viện không xác định được khoa nào */}
-        {!toanVien && (
-          <div className="bg-white border border-slate-200 rounded-lg p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-medium text-slate-600">Mã kỹ thuật khoa tự thêm</h3>
-              {!moFormThem && (
-                <button onClick={() => { setMoFormThem(true); setLoiNhom(""); }}
-                  className="flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-teal-300 text-teal-700 hover:bg-teal-50">
-                  <Plus size={12} /> Thêm mã kỹ thuật
-                </button>
-              )}
+          {nhomLoc.length > 0 && (
+            <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
+              <button type="button" onClick={() => setTrangNhom((p) => Math.max(1, p - 1))}
+                disabled={trangNhom <= 1}
+                className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-600 disabled:opacity-35">
+                <ChevronLeft size={13} /> Trước
+              </button>
+              <label className="flex items-center gap-2 text-xs text-slate-500">
+                Trang
+                <select value={Math.min(trangNhom, tongTrangNhom)} onChange={(e) => setTrangNhom(Number(e.target.value))}
+                  className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-blue-700">
+                  {Array.from({ length: tongTrangNhom }, (_, i) => i + 1).map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+                / {tongTrangNhom}
+              </label>
+              <button type="button" onClick={() => setTrangNhom((p) => Math.min(tongTrangNhom, p + 1))}
+                disabled={trangNhom >= tongTrangNhom}
+                className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-600 disabled:opacity-35">
+                Sau <ChevronRight size={13} />
+              </button>
             </div>
-
-            {moFormThem && (
-              <FormNhomKyThuat
-                giaTri={formNhom} doiGiaTri={setFormNhom}
-                onLuu={guiDeNghiNhom} onHuy={() => { setMoFormThem(false); setFormNhom(FORM_NHOM_TRONG); setLoiNhom(""); }}
-                dangLuu={dangGuiNhom} loi={loiNhom}
-                dsNhom={dsNhom}
-              />
-            )}
-
-            {dsDeNghi.length === 0 && !moFormThem && (
-              <p className="text-xs text-slate-400">
-                Chưa có. Dùng nút trên để xin bổ sung nhóm kỹ thuật vào danh mục của khoa.
-              </p>
-            )}
-
-            {dsDeNghi.map((d) => (
-              <div key={d.id} className="border border-slate-200 rounded-md p-2 text-xs space-y-1">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="text-slate-700 leading-tight">{d.ten_vat_tu_moi || d.ten_quan_ly_moi}</div>
-                    <div className="text-slate-400 mt-0.5">
-                      {d.so_luong ? `SL ${d.so_luong}${d.dvt_moi ? " " + d.dvt_moi : ""}` : ""}
-                      {d.goi ? ` · Gói: ${d.goi}` : ""}
-                      {d.ma_quan_ly ? ` · ${d.ma_quan_ly}` : ""}
-                    </div>
-                  </div>
-                  <span className={`shrink-0 px-1.5 py-0.5 rounded-full font-medium ${MAU_TT_NHOM[d.trang_thai]}`}>
-                    {NHAN_TT_NHOM[d.trang_thai]}
-                  </span>
-                </div>
-                {d.trang_thai === "tu_choi" && d.ly_do_tu_choi && (
-                  <p className="text-red-600">Lý do: {d.ly_do_tu_choi}</p>
-                )}
-                {d.trang_thai === "cho_duyet" && (
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <Clock size={11} /> Chờ Phòng Điều dưỡng duyệt
-                    <button onClick={() => xoaDeNghiNhom(d.id)} className="ml-auto hover:text-red-600" title="Rút đề nghị">
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Cột phải: nhập số lượng cho từng mã hàng trong nhóm */}
@@ -1259,6 +1220,11 @@ export default function Function1({ profile, goi, dot, dsDot = [] }) {
                     </select>
                   </div>
                 )}
+                {dangTaiDot && (
+                  <div className="mb-2 rounded-md border border-sky-200 bg-sky-50 px-2.5 py-2 text-xs text-sky-800">
+                    Đang kiểm tra trạng thái đợt trên staging…
+                  </div>
+                )}
                 {chuaMoDot && (
                   <div className="mb-2 flex items-start gap-1.5 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-2">
                     <AlertTriangle size={13} className="text-amber-700 mt-0.5 shrink-0" />
@@ -1268,7 +1234,7 @@ export default function Function1({ profile, goi, dot, dsDot = [] }) {
                     </p>
                   </div>
                 )}
-                <button onClick={submit} disabled={dangLuu || gioHang.length === 0 || chuaMoDot || !dotDung}
+                <button onClick={submit} disabled={dangLuu || dangTaiDot || gioHang.length === 0 || chuaMoDot || !dotDung}
                   className="px-4 py-2 bg-teal-700 text-white text-sm rounded-md hover:bg-teal-800 disabled:opacity-40 font-medium">
                   {dangLuu ? "Đang lưu..." : `Gửi đề xuất (${gioHang.length} mã hàng)`}
                 </button>
