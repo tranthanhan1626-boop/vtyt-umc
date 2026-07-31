@@ -389,10 +389,11 @@ liệu cũ.
 2. **Cho phép trúng MỘT PHẦN số lượng.** Đề xuất 1.000 có thể chỉ trúng 600.
    Lưu cả `so_luong_de_xuat` và `so_luong_trung` ở cấp `(ma_hang, don_vi)`.
 
-   ⚠️ **Chưa chốt:** khi tổng 1.000 (A=500, B=300, C=200) chỉ trúng 600 thì chia
-   ngược về 3 khoa thế nào — theo tỷ lệ hay PĐD phân bổ tay? **Schema cố ý không
-   ép chọn**: lưu số trúng theo từng khoa, PĐD chia tỷ lệ tự động hoặc gõ tay đều
-   được. Chốt cách chia sau, không phải sửa bảng.
+   ✅ **Đã chốt 31/07 — PĐD GÕ TAY từng khoa.** Không chia tự động theo tỷ lệ.
+   Vì sao: chia tỷ lệ là phép toán, còn phân bổ hàng khan hiếm là **quyết định
+   chuyên môn** — khoa cấp cứu và khoa mổ phiên không thể chia đều theo tỷ lệ
+   đề xuất. Hệ thống gợi ý số theo tỷ lệ để đỡ gõ, nhưng PĐD sửa được và số
+   PĐD gõ mới là số cuối. Tổng phân bổ không được vượt tổng trúng — chặn ở DB.
 
 3. **Báo khoa bằng thông báo nhỏ góc phải màn hình**: *"có N mã của khoa bị
    rớt"* → bấm vào **dẫn thẳng sang file Excel của khoa để xem chi tiết**.

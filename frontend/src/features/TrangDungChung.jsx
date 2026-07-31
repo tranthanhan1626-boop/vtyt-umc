@@ -18,7 +18,8 @@ export function QuayLaiDungChung({ onBack, tenTrang }) {
 export default function TrangDungChung({ doiChon, laPdd, soChoDuyet = 0, dotTheoGoi = {} }) {
   const soDotMo = Object.keys(dotTheoGoi).length;
   const muc = [
-    ...MUC_CHUNG,
+    // Mục gắn cờ chiPdd chỉ hiện với Phòng Điều dưỡng/admin — khoa không thấy.
+    ...MUC_CHUNG.filter((m) => !m.chiPdd || laPdd),
     ...(laPdd ? [{
       ma: "quanlydot",
       ten: "Quản lý đợt đề xuất",

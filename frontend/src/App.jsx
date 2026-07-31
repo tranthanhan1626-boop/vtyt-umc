@@ -14,6 +14,7 @@ import KhungGoiThau, { useDotDangMo } from "./features/KhungGoiThau";
 import QuanLyDot from "./features/QuanLyDot";
 import LichSuXuatHoSo from "./features/LichSuXuatHoSo";
 import ThongBaoRotThau from "./features/ThongBaoRotThau";
+import TongHopKetQuaThau from "./features/TongHopKetQuaThau";
 import SoThieuHang from "./features/SoThieuHang";
 import SoSuKienNhuCau from "./features/SoSuKienNhuCau";
 import PhieuDeNghi from "./features/PhieuDeNghi";

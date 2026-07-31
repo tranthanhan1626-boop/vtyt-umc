@@ -60,6 +60,8 @@ export const MUC_CHUNG = [
   { ma: "tiendo",    ten: "Tiến độ gói thầu", mo_ta: "Theo dõi các mốc thực hiện và kết quả từng mã", icon: ClipboardCheck },
   { ma: "lichsu",    ten: "Lịch sử hồ sơ đề xuất", mo_ta: "Tra cứu đúng bản Word/Excel đã duyệt và tải", icon: History },
   { ma: "makythuat", ten: "Mã kỹ thuật khoa tự thêm", mo_ta: "Khai mã tương đương hoặc mã mới hoàn toàn", icon: FileSearch },
+  // Chỉ PĐD/admin — App lọc theo vai trò khi dựng menu.
+  { ma: "ketquathau", ten: "Tổng hợp kết quả thầu", mo_ta: "Gộp theo mã hàng, bung ra từng khoa, nhập kết quả", icon: ClipboardCheck, chiPdd: true },
 ];
 
 /** Đợt đang MỞ của từng gói — khoa chỉ gửi được khi có đợt mở (QĐ-20). */
