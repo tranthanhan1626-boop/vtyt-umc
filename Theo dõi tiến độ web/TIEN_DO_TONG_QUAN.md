@@ -2,6 +2,9 @@
 
 **Cập nhật:** 30/07/2026 · **Mốc cứng:** 01/01/2027 (kỳ thầu 1/2027–6/2028 bắt đầu)
 
+> **Mở web trên máy:** bấm đúp `MO_WEB.command` ở thư mục gốc `9.vtyt`.
+> Lệnh Terminal đầy đủ và cách xử lý sự cố: xem `CACH_CHAY_WEB.md` cùng thư mục này.
+
 File này dành cho **người không đọc code**. Mỗi bước giải thích: *làm gì · vì sao
 làm · làm xong thì ai thấy gì*. Các bước đã xong vẫn giải thích đầy đủ để bạn
 kiểm lại được, và để người mới vào dự án hiểu tại sao mọi thứ như hiện tại.
