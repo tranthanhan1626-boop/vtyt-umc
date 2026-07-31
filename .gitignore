@@ -28,3 +28,6 @@ backend/du_lieu_staging/
 
 # Bản sao lưu — KHÔNG commit (chứa dữ liệu bệnh viện)
 backend/sao_luu/
+
+# Biểu mẫu thật của bệnh viện — không commit (dung lượng lớn, có dữ liệu khoa)
+Form biểu mẫu/
