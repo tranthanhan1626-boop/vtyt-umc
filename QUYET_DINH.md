@@ -368,6 +368,39 @@ liệu cũ.
 
 ---
 
+## QĐ-23 · 31/07/2026 · Kết quả thầu chảy NGƯỢC về từng khoa
+
+**Vòng khép kín của cả hệ thống.** Giá trị không nằm ở file Excel, mà ở chỗ
+**khoa biết sớm**: nếu chỉ phát hiện mã bị rớt lúc kho báo hết hàng thì đã muộn
+3–4 tháng — đúng nguyên nhân "gói bổ sung phát sinh liên tục".
+
+**Tổng hợp của PĐD giữ ĐỒNG THỜI hai tầng:**
+- Dòng gộp theo `ma_hang` (cộng an toàn — cùng mã hàng thì cùng ĐVT, không dính
+  bẫy 42 nhóm lệch đơn vị ở cấp mã quản lý)
+- Bung ra vẫn thấy **khoa nào đề xuất bao nhiêu**
+
+**Ba quyết định chốt 31/07:**
+
+1. **Ghi rõ mã rớt ở MỐC NÀO** (chào giá / mở thầu / đánh giá / ký hợp đồng /
+   hàng về đợt đầu). Rớt ở "chào giá" (không ai báo giá) khác hẳn rớt ở "đánh
+   giá" (có hàng nhưng không đạt) — khoa cần biết để quyết định tìm hàng thay
+   thế hay chỉ cần đợi.
+
+2. **Cho phép trúng MỘT PHẦN số lượng.** Đề xuất 1.000 có thể chỉ trúng 600.
+   Lưu cả `so_luong_de_xuat` và `so_luong_trung` ở cấp `(ma_hang, don_vi)`.
+
+   ⚠️ **Chưa chốt:** khi tổng 1.000 (A=500, B=300, C=200) chỉ trúng 600 thì chia
+   ngược về 3 khoa thế nào — theo tỷ lệ hay PĐD phân bổ tay? **Schema cố ý không
+   ép chọn**: lưu số trúng theo từng khoa, PĐD chia tỷ lệ tự động hoặc gõ tay đều
+   được. Chốt cách chia sau, không phải sửa bảng.
+
+3. **Báo khoa bằng thông báo nhỏ góc phải màn hình**: *"có N mã của khoa bị
+   rớt"* → bấm vào **dẫn thẳng sang file Excel của khoa để xem chi tiết**.
+   **KHÔNG tự đẩy khoa sang gói bổ sung** — đi bổ sung hay không là quyết định
+   của khoa, hệ thống chỉ báo tin.
+
+---
+
 ## QĐ-09 · 30/07/2026 · Cách làm việc với Claude Code
 
 **Chốt:** vòng lặp 5 bước, đơn vị công việc là **một màn hình dùng được**, mỗi

@@ -13,6 +13,7 @@ import XuatHoSo from "./features/XuatHoSo";
 import KhungGoiThau, { useDotDangMo } from "./features/KhungGoiThau";
 import QuanLyDot from "./features/QuanLyDot";
 import LichSuXuatHoSo from "./features/LichSuXuatHoSo";
+import ThongBaoRotThau from "./features/ThongBaoRotThau";
 import SoThieuHang from "./features/SoThieuHang";
 import SoSuKienNhuCau from "./features/SoSuKienNhuCau";
 import PhieuDeNghi from "./features/PhieuDeNghi";
@@ -216,6 +217,11 @@ export default function App() {
             </div>
           )}
         </KhungGoiThau>
+
+        <ThongBaoRotThau
+          profile={profile}
+          onXemChiTiet={() => setChon({ nhom: "goi", goi: "dau_thau_rong_rai", man: "bieu_mau" })}
+        />
       </div>
     </div>
   );
