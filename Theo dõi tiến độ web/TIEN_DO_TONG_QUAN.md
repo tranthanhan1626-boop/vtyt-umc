@@ -342,3 +342,30 @@ duy nhất có sẵn mà không phải chờ 18 tháng.
 7. **Test xong trên staging mới đưa lên production**
 
 > Đọc chi tiết từng quyết định ở `QUYET_DINH.md` (18 mục, có ghi lý do và bối cảnh).
+
+---
+
+## CẬP NHẬT 31/07/2026 — việc làm thêm sau bản gốc
+
+| Phase | Nội dung | Trạng thái |
+|---|---|---|
+| **H** | Tổ chức lại theo GÓI THẦU — menu dọc, 3 gói, quản lý đợt (QĐ-20) | ✅ 8/8 |
+| **I** | Rút đề xuất có dấu vết + tổng hợp PĐD theo snapshot (QĐ-21) | ✅ |
+| **K** | Word/Excel cộng tác trực tuyến, có revision (QĐ-22) | ✅ |
+| **L** | Giỏ đề xuất lưu server, sống qua đăng xuất | ✅ |
+| **M** | Kết quả thầu chảy ngược về khoa (QĐ-23) | ✅ |
+| **N** | Điều chỉnh tiêu chí kỹ thuật, ĐVSD đề nghị → PĐD duyệt | ✅ |
+
+**Quyết định mới:** QĐ-19 → QĐ-23. Xem `QUYET_DINH.md`.
+
+**Tài liệu mới trong thư mục này:**
+- `DUNG_LUONG_SUPABASE.md` — đo thật 38/500 MB, cách giữ free vĩnh viễn
+- `KHOI_PHUC.md` — sao lưu và phục hồi
+- `DOI_CHIEU_5_BIEU_MAU.md` — khung cột 5 biểu mẫu thật
+
+**Còn chờ chủ dự án** (chặn phần lớn việc còn lại):
+1. Dữ liệu cho các cột mẫu chưa có: mã thông tư 04, quy cách đóng gói, mã kỹ
+   thuật chi tiết, mã HIS các đợt cũ
+2. File số lượng đã chốt kỳ 1/2027
+3. Chọn 3–5 khoa pilot
+
