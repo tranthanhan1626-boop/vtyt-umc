@@ -525,6 +525,31 @@ export default function Function1({ profile }) {
     });
   }, [maHangTrongNhom, lichSuThang, dangTaiLichSu]);
 
+  // Tổng ở cấp MÃ QUẢN LÝ — cộng mọi mã hàng trong nhóm. Đây là cấp ĐẤU THẦU,
+  // nên là con số cần nhìn khi quyết định toàn viện.
+  //
+  // ⚠️ 42/878 nhóm gộp nhiều ĐVT khác nhau (vd Cây + Sợi + Tép). Cộng qua ĐVT
+  // khác nhau ra số VÔ NGHĨA — báo cáo backtest đã cảnh báo. Không giấu số,
+  // nhưng phải gắn cờ để người đọc biết không dùng làm căn cứ được.
+  const tongNhom = useMemo(() => {
+    const theoNam = {};
+    maHangTrongNhom.forEach((m) => {
+      const ls = lichSuThang[m.ma_hang] || {};
+      Object.entries(ls).forEach(([nam, thang]) => {
+        theoNam[nam] = (theoNam[nam] || 0) + thang.reduce((a, b) => a + b, 0);
+      });
+    });
+    const dvt = [...new Set(maHangTrongNhom.map((m) => (m.dvt || "").trim()).filter(Boolean))];
+    const nam = Object.keys(theoNam).sort();
+    return {
+      theoNam, nam,
+      dvt,
+      lechDvt: dvt.length > 1,                       // cờ: cộng qua nhiều ĐVT
+      soMaHang: maHangTrongNhom.length,
+      soMaCoDung: maHangTrongNhom.filter((m) => Object.keys(lichSuThang[m.ma_hang] || {}).length > 0).length,
+    };
+  }, [maHangTrongNhom, lichSuThang]);
+
   // Tìm theo mã/tên nhóm kỹ thuật LẪN mã/tên vật tư (mã hàng) — gõ mã hàng
   // (vd "66510") sẽ trỏ về đúng nhóm chứa nó, hiện kèm ghi chú mã hàng khớp.
   // Danh mục nhóm SAU KHI lọc theo khoa. Toàn viện hoặc tick "hiện cả mã chưa
@@ -890,6 +915,46 @@ export default function Function1({ profile }) {
             </div>
 
             <div className="bg-white border border-slate-200 rounded-lg overflow-x-auto">
+              {tongNhom.nam.length > 0 && (
+                <div className="mb-3 border border-teal-200 bg-teal-50/50 rounded-lg p-3">
+                  <div className="flex items-baseline gap-2 flex-wrap mb-2">
+                    <span className="text-sm font-medium text-teal-900">
+                      Tổng theo mã quản lý {nhomChon}
+                    </span>
+                    <span className="text-xs text-slate-600">
+                      {tongNhom.soMaCoDung}/{tongNhom.soMaHang} mã hàng có phát sinh
+                      {toanVien ? " · toàn viện" : ` · ${khoaHienTai}`}
+                    </span>
+                  </div>
+
+                  <div className="flex gap-4 flex-wrap">
+                    {tongNhom.nam.map((n) => (
+                      <div key={n}>
+                        <div className="text-xs text-slate-500">{n}</div>
+                        <div className="text-lg font-semibold text-teal-900 tabular-nums leading-tight">
+                          {fmt(tongNhom.theoNam[n])}
+                          {!tongNhom.lechDvt && (
+                            <span className="text-xs font-normal text-slate-500 ml-1">{tongNhom.dvt[0]}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {tongNhom.lechDvt && (
+                    <div className="flex items-start gap-1.5 mt-2 pt-2 border-t border-teal-200">
+                      <AlertTriangle size={13} className="text-amber-700 mt-0.5 shrink-0" />
+                      <p className="text-xs text-amber-900 leading-snug">
+                        <b>Nhóm này gộp nhiều đơn vị tính khác nhau ({tongNhom.dvt.join(" + ")}).</b>{" "}
+                        Con số trên là phép cộng thô qua các ĐVT khác nhau nên{" "}
+                        <b>không dùng làm căn cứ đấu thầu được</b> — cần bảng quy đổi
+                        đơn vị trước. Xem chi tiết từng mã hàng bên dưới.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-slate-400 text-xs border-b border-slate-100">
