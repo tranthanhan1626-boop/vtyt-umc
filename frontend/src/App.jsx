@@ -15,6 +15,7 @@ import QuanLyDot from "./features/QuanLyDot";
 import LichSuXuatHoSo from "./features/LichSuXuatHoSo";
 import ThongBaoRotThau from "./features/ThongBaoRotThau";
 import TongHopKetQuaThau from "./features/TongHopKetQuaThau";
+import DieuChinhTieuChi from "./features/DieuChinhTieuChi";
 import SoThieuHang from "./features/SoThieuHang";
 import SoSuKienNhuCau from "./features/SoSuKienNhuCau";
 import PhieuDeNghi from "./features/PhieuDeNghi";
@@ -130,6 +131,7 @@ export default function App() {
     quanlydot: "Quản lý đợt đề xuất",
     choduyet: "Công việc chờ duyệt",
     ketquathau: "Tổng hợp kết quả thầu",
+    tieuchi: "Điều chỉnh tiêu chí kỹ thuật",
   };
 
   const noiDungChung = chon.man === "tongquan"
@@ -140,6 +142,7 @@ export default function App() {
     : chon.man === "lichsu" ? <LichSuXuatHoSo profile={profile} />
     : chon.man === "makythuat" ? <NhomKyThuatCuaKhoa profile={profile} />
     : chon.man === "ketquathau" && xemDuocTongHop ? <TongHopKetQuaThau profile={profile} />
+    : chon.man === "tieuchi" ? <DieuChinhTieuChi profile={profile} />
     : chon.man === "quanlydot" && xemDuocTongHop ? <QuanLyDot />
     : chon.man === "choduyet" && xemDuocTongHop ? <ChoDuyet onDoiSoLuong={capNhatDem} />
     : <TrangDungChung doiChon={setChon} laPdd={xemDuocTongHop} soChoDuyet={soChoDuyet} dotTheoGoi={dotTheoGoi} />;
