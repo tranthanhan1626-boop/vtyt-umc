@@ -224,7 +224,11 @@ phạm vi dữ liệu được thấy.
 
 Làm được lúc nào cũng tốt, không cần chờ 2027. Không có màn hình, kết quả là file Excel.
 
-- [ ] **D1** Ghép mã cũ ↔ mã mới đổi số — **ưu tiên cao nhất**, đang bóp méo mọi con số khác
+- [ ] **D1** Phân loại mã KHÔNG có mã quản lý — ⚠️ **ĐỔI PHẠM VI theo QĐ-19**.
+      Không phải "ghép lại hết". Phải tách 2 loại trước: (a) **tách ra có chủ ý**
+      → GIỮ NGUYÊN, chỉ cần gán gói thầu riêng; (b) **mã cũ đổi số** → nối lại
+      lịch sử. Ghép nhầm loại (a) là xoá một quyết định chuyên môn.
+      **Cần Phòng ĐD/khoa xác nhận từng mã, không tự động hoá được**
 - [ ] **D2** Quy đổi ĐVT cho 68 mã nhiều đơn vị tính
 - [ ] **D3** Gom nhóm thay thế lâm sàng
 - [ ] **D4** Phân loại 382 dòng giải trình RHM → mã lý do (kiểm tra danh mục có phủ đủ không)

@@ -298,6 +298,34 @@ nghiệm thu** (ngưỡng thời gian, tỷ lệ, KPI) rồi coi như đã chố
 
 ---
 
+## QĐ-19 · 31/07/2026 · Mã hàng KHÔNG có mã quản lý có thể là CỐ Ý, không phải lỗi
+
+**Nghiệp vụ (chủ dự án xác nhận):** một mã hàng đứng riêng, không thuộc mã quản
+lý nào, thường là do **đã bị TÁCH RA có chủ ý**. Trước đây từng được coi là
+tương đương với các mã khác trong nhóm, nhưng qua quá trình sử dụng thực tế xác
+định là **không còn tương đương**, nên tách thành mã độc lập.
+
+**Hệ quả — sửa lại cách hiểu trước đó:**
+
+Trong dữ liệu, mã tách ra và mã "mồ côi do đổi số" **trông y hệt nhau**
+(`ma_quan_ly = NULL`). Nhưng ý nghĩa ngược nhau:
+
+| Trường hợp | Bản chất | Xử lý ĐÚNG |
+|---|---|---|
+| **Tách ra có chủ ý** | Quyết định chuyên môn | **GIỮ NGUYÊN.** Ghép lại là xoá một quyết định lâm sàng |
+| **Mã cũ đổi số** | Lỗi dữ liệu | Nối lại lịch sử với mã gốc |
+
+**Vì vậy KHÔNG được tự động ghép mã mồ côi vào nhóm dựa trên tên giống nhau.**
+Phân tích cũ (`cong-thuc-dat-so-luong-VTYT.md` mục 8) ghi *"43% sản lượng mồ côi
+có tên trùng gốc với vật tư đã gán mã"* và gợi ý ghép — con số đó **trộn cả hai
+trường hợp**, không phải bằng chứng cho việc ghép.
+
+**Kéo theo:** mã đứng riêng vẫn phải mua, nên vẫn cần **gói thầu riêng của nó** —
+không suy được từ nhóm vì nó không thuộc nhóm nào. Hiện 767 mã như vậy đang
+trống gói thầu.
+
+---
+
 ## QĐ-09 · 30/07/2026 · Cách làm việc với Claude Code
 
 **Chốt:** vòng lặp 5 bước, đơn vị công việc là **một màn hình dùng được**, mỗi
