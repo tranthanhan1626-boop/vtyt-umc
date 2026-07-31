@@ -52,7 +52,7 @@ export default function App() {
     session, profile, loading, profileError, recoveryMode,
     signIn, signUp, sendPasswordReset, updatePassword, signOut,
   } = useAuth();
-  const [chon, setChon] = useState({ nhom: "goi", goi: "dau_thau_rong_rai", man: "de_xuat" });
+  const [chon, setChon] = useState({ nhom: "chung", man: "tongquan" });
 
   // Đếm việc chờ duyệt -> huy hiệu đỏ trên tab (A.2a).
   // BẮT BUỘC khai ở đây, TRƯỚC các early return bên dưới (loading/recovery/

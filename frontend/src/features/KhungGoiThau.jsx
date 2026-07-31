@@ -60,8 +60,6 @@ export const MUC_CHUNG = [
   { ma: "tiendo",    ten: "Tiến độ gói thầu", mo_ta: "Theo dõi các mốc thực hiện và kết quả từng mã", icon: ClipboardCheck },
   { ma: "lichsu",    ten: "Lịch sử hồ sơ đề xuất", mo_ta: "Tra cứu đúng bản Word/Excel đã duyệt và tải", icon: History },
   { ma: "makythuat", ten: "Mã kỹ thuật khoa tự thêm", mo_ta: "Khai mã tương đương hoặc mã mới hoàn toàn", icon: FileSearch },
-  // Chỉ PĐD/admin — App lọc theo vai trò khi dựng menu.
-  { ma: "ketquathau", ten: "Tổng hợp kết quả thầu", mo_ta: "Gộp theo mã hàng, bung ra từng khoa, nhập kết quả", icon: ClipboardCheck, chiPdd: true },
 ];
 
 /** Đợt đang MỞ của từng gói — khoa chỉ gửi được khi có đợt mở (QĐ-20). */
@@ -196,6 +194,26 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
 
       <div className="umc-nav-label">Theo gói thầu</div>
       <div className="space-y-2">{GOI.map(nutGoi)}</div>
+
+      {laPdd && (
+        <button
+          type="button"
+          onClick={() => chuyenMan({ nhom: "chung", man: "ketquathau" })}
+          className={`umc-common-button mt-3 ${chon.man === "ketquathau" ? "is-active" : ""}`}
+        >
+          <ClipboardCheck size={16} />
+          <span>Tổng hợp kết quả thầu</span>
+        </button>
+      )}
+
+      <button
+        type="button"
+        onClick={() => chuyenMan({ nhom: "chung", man: "tieuchi" })}
+        className={`umc-common-button mt-2 ${chon.man === "tieuchi" ? "is-active" : ""}`}
+      >
+        <FileSearch size={16} />
+        <span>Điều chỉnh tiêu chí kỹ thuật</span>
+      </button>
 
       <div className="umc-nav-label mt-7">Dùng chung</div>
       <button
