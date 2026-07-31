@@ -13,14 +13,14 @@ const NHAN_TT = {
   de_xuat: "Mới gửi", xet_duyet: "Đã duyệt", hoan_thanh: "Hoàn thành", tu_choi: "Bị trả lại",
 };
 
-export default function XuatHoSo({ profile }) {
+export default function XuatHoSo({ profile, goi, dot }) {
   const [rows, setRows] = useState([]);
   const [usage, setUsage] = useState({});   // {ma_hang: {nam: tổng}} cho cột lịch sử
   const [dangTai, setDangTai] = useState(true);
   const [locTrangThai, setLocTrangThai] = useState("xet_duyet");
-  const [locGoi, setLocGoi] = useState("");
   const [dangXuat, setDangXuat] = useState(null);
   const [loi, setLoi] = useState("");
+  const [daGhi, setDaGhi] = useState(null);
 
   const laPdd = profile.role === "dieu_duong" || profile.role === "admin";
 
@@ -45,20 +45,30 @@ export default function XuatHoSo({ profile }) {
   }, []);
   useEffect(() => { tai(); }, [tai]);
 
-  const dsGoi = useMemo(
-    () => [...new Set(rows.map((r) => r.goi).filter(Boolean))].sort(), [rows]);
-
+  // Chỉ lấy mã CỦA GÓI ĐANG MỞ TAB — không gom lẫn gói khác (QĐ-20).
   const rowsLoc = useMemo(() => rows.filter((r) =>
-    (!locTrangThai || r.trang_thai === locTrangThai) && (!locGoi || r.goi === locGoi)
-  ), [rows, locTrangThai, locGoi]);
+    r.loai_mua_sam === goi && (!locTrangThai || r.trang_thai === locTrangThai)
+  ), [rows, goi, locTrangThai]);
 
   const chay = async (ma) => {
     setDangXuat(ma); setLoi("");
+    const meta = {
+      don_vi: laPdd ? "Toàn viện" : profile.khoa,
+      nguoi_lap: profile.ho_ten || profile.email,
+    };
     try {
-      await xuatHoSo(ma, rowsLoc, {
-        don_vi: laPdd ? "Toàn viện" : profile.khoa,
-        nguoi_lap: profile.ho_ten || profile.email,
-      }, usage);
+      await xuatHoSo(ma, rowsLoc, meta, usage);
+      // Ghi lịch sử kèm SNAPSHOT danh sách mã — để tải lại ra đúng file này,
+      // kể cả khi đề xuất sau đó bị sửa (QĐ-20).
+      const { error } = await supabase.from("lan_xuat_ho_so").insert({
+        ma_ho_so: ma, ten_ho_so: HO_SO[ma].ten,
+        dot_id: dot?.id ?? null, loai_mua_sam: goi,
+        don_vi: laPdd ? null : profile.khoa,
+        so_dong: rowsLoc.length,
+        noi_dung: { rows: rowsLoc, meta, usage },
+      });
+      if (error) setLoi(`Đã tải file nhưng KHÔNG ghi được lịch sử: ${error.message}`);
+      else setDaGhi(ma);
     } catch (e) { setLoi(e.message); }
     setDangXuat(null);
   };
@@ -77,11 +87,6 @@ export default function XuatHoSo({ profile }) {
             className="border border-slate-300 rounded-md px-2 py-1.5 text-sm">
             <option value="">Mọi trạng thái</option>
             {Object.entries(NHAN_TT).map(([v, n]) => <option key={v} value={v}>{n}</option>)}
-          </select>
-          <select value={locGoi} onChange={(e) => setLocGoi(e.target.value)}
-            className="border border-slate-300 rounded-md px-2 py-1.5 text-sm">
-            <option value="">Mọi gói thầu</option>
-            {dsGoi.map((g) => <option key={g} value={g}>{g}</option>)}
           </select>
           <span className="text-sm text-slate-600">
             → <span className="font-semibold text-teal-800">{rowsLoc.length}</span> mã hàng sẽ vào hồ sơ
@@ -117,6 +122,12 @@ export default function XuatHoSo({ profile }) {
       </div>
 
       {loi && <p className="text-sm text-red-600">{loi}</p>}
+      {daGhi && !loi && (
+        <p className="text-sm text-teal-800 bg-teal-50 border border-teal-200 rounded-md px-3 py-2">
+          Đã tải <b>{HO_SO[daGhi].ten}</b> và ghi vào <b>Lịch sử xuất hồ sơ</b>.
+          Tải lại từ đó sẽ ra đúng file này.
+        </p>
+      )}
 
       <p className="text-xs text-slate-400">
         File xuất theo đúng khung cột biểu mẫu bệnh viện. Cột nào hệ thống chưa có dữ

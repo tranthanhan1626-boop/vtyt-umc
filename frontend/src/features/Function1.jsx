@@ -81,7 +81,7 @@ const doDaiKy = (n) => {
 
 // Kỳ sử dụng dự kiến mặc định: cả năm tài chính được đề xuất.
 const MAC_DINH_NHAP = () => ({
-  soLuong: "", goiThau: "",
+  soLuong: "",
   tuThang: 1, tuNam: NAM_DE_XUAT, denThang: 12, denNam: NAM_DE_XUAT,
   // Lý do là RIÊNG cho từng mã hàng (chốt 21/07/2026) — 1 đơn vị đề xuất nhiều
   // mặt hàng ở nhiều nhóm khác nhau, mỗi thứ một lý do khác nhau.
@@ -345,7 +345,7 @@ function FormNhomKyThuat({ giaTri, doiGiaTri, onLuu, onHuy, dangLuu, loi, dsNhom
   );
 }
 
-export default function Function1({ profile }) {
+export default function Function1({ profile, goi, dot }) {
   const [dsNhom, setDsNhom] = useState([]);          // [{ma_quan_ly, ten_quan_ly, so_ma_hang}]
   const [dsVatTu, setDsVatTu] = useState([]);        // kết quả tìm mã hàng ở server
   const [tuKhoa, setTuKhoa] = useState("");
@@ -612,6 +612,9 @@ export default function Function1({ profile }) {
     datGio((prev) => { const n = { ...prev }; delete n[maHang]; return n; });
   const xoaCaGio = () => datGio(() => ({}));
 
+  // QĐ-20: khoa chỉ gửi được khi Phòng Điều dưỡng đã MỞ đợt cho gói này.
+  const chuaMoDot = !dot;
+
   const gioHang = useMemo(
     () => Object.values(nhapLieu).filter((n) => Number(n.soLuong) > 0),
     [nhapLieu]
@@ -620,9 +623,9 @@ export default function Function1({ profile }) {
   // Dòng đã nhập số lượng nhưng thiếu gói thầu / kỳ sai / thiếu tên kỹ thuật mới
   // / thiếu giải trình bắt buộc của chỉ định thầu (A.1c).
   const dongThieuThongTin = gioHang.filter(
-    (n) => doDaiKy(n) < 1 || !n.goiThau
+    (n) => doDaiKy(n) < 1 
         || (n.loaiLyDo === "ky_thuat_moi" && !n.tenKyThuatMoi.trim())
-        || (CAN_GIAI_TRINH(n.goiThau) && !(n.noiDungChiDinh || "").trim())
+        || (CAN_GIAI_TRINH(goi) && !(n.noiDungChiDinh || "").trim())
         || (CAN_NOI_RO_DIEU_CHINH(n.loaiLyDo) && !(n.ghiChu || "").trim())
   );
 
@@ -719,7 +722,7 @@ export default function Function1({ profile }) {
     const items = gioHang.map((nhap) => ({
       ma_hang: nhap.ma_hang,
       so_luong: Math.round(Number(nhap.soLuong)),
-      loai_mua_sam: nhap.goiThau,
+      loai_mua_sam: goi,
       goi: nhap.goi || null,
       tu_thang: Number(nhap.tuThang),
       tu_nam: Number(nhap.tuNam),
@@ -732,7 +735,7 @@ export default function Function1({ profile }) {
       // nhận cố định bộ trường này, thêm trường mới phải sửa cả hàm SQL (chạy
       // trên DB dùng chung production). Gắn nhãn rõ để tách lại được về sau.
       ghi_chu: [
-        CAN_GIAI_TRINH(nhap.goiThau) && (nhap.noiDungChiDinh || "").trim()
+        CAN_GIAI_TRINH(goi) && (nhap.noiDungChiDinh || "").trim()
           ? `[CHỈ ĐỊNH THẦU] ${nhap.noiDungChiDinh.trim()}`
           : null,
         nhap.ghiChu?.trim() || null,
@@ -755,7 +758,7 @@ export default function Function1({ profile }) {
       dvt: nhap.dvt,
       so_luong: Math.round(Number(nhap.soLuong)),
       so_thang: doDaiKy(nhap),
-      goi_thau: nhap.goiThau,
+      goi_thau: goi,
       loai_ly_do: nhap.loaiLyDo,
       ten_ky_thuat_moi: nhap.tenKyThuatMoi,
       ten_quan_ly: nhap.ten_quan_ly,
@@ -1011,7 +1014,7 @@ export default function Function1({ profile }) {
                                   {dvKy >= 1 && (
                                     <div>T{nhap.tuThang}/{nhap.tuNam} – T{nhap.denThang}/{nhap.denNam} ({dvKy} tháng)</div>
                                   )}
-                                  {nhap.goiThau && <div>{NHAN_GOI_THAU[nhap.goiThau]}</div>}
+                                  <div>{NHAN_GOI_THAU[goi]}</div>
                                 </div>
                               </div>
                             ) : (
@@ -1077,24 +1080,13 @@ export default function Function1({ profile }) {
                                       <p className="text-xs mt-1 text-slate-400">Khoảng đã chọn: {dvKy} tháng</p>
                                     )}
                                   </div>
-                                  <div>
-                                    <label className="text-xs text-slate-500 block mb-1">Gói thầu muốn mua <span className="text-red-500">*</span></label>
-                                    <div className="relative">
-                                      <select value={nhap.goiThau}
-                                        onChange={(e) => capNhatNhap(m, "goiThau", e.target.value)}
-                                        className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                        <option value="">— chọn gói thầu —</option>
-                                        {GOI_THAU_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                                      </select>
-                                      <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                    </div>
-                                  </div>
+                                  
                                 </div>
 
                                 {/* Chỉ định thầu = ngoại lệ pháp lý, mua nhanh
                                     nhưng dễ bị soi. Bắt giải trình bằng chữ NGAY
                                     tại dòng, không cho chỉ chọn lý do rồi thôi. */}
-                                {CAN_GIAI_TRINH(nhap.goiThau) && (
+                                {CAN_GIAI_TRINH(goi) && (
                                   <div className="border border-amber-300 bg-amber-50 rounded-md p-2.5">
                                     <div className="flex items-start gap-1.5 mb-2">
                                       <AlertTriangle size={13} className="text-amber-700 mt-0.5 shrink-0" />
@@ -1238,7 +1230,16 @@ export default function Function1({ profile }) {
               )}
 
               <div className="flex items-center gap-3 pt-1">
-                <button onClick={submit} disabled={dangLuu || gioHang.length === 0}
+                {chuaMoDot && (
+                  <div className="mb-2 flex items-start gap-1.5 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-2">
+                    <AlertTriangle size={13} className="text-amber-700 mt-0.5 shrink-0" />
+                    <p className="text-xs text-amber-900 leading-snug">
+                      <b>Phòng Điều dưỡng chưa mở đợt cho gói này.</b> Bạn vẫn nhập và
+                      giữ giỏ được, nhưng chưa gửi đi được cho tới khi đợt mở.
+                    </p>
+                  </div>
+                )}
+                <button onClick={submit} disabled={dangLuu || gioHang.length === 0 || chuaMoDot}
                   className="px-4 py-2 bg-teal-700 text-white text-sm rounded-md hover:bg-teal-800 disabled:opacity-40 font-medium">
                   {dangLuu ? "Đang lưu..." : `Gửi đề xuất (${gioHang.length} mã hàng)`}
                 </button>

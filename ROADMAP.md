@@ -144,17 +144,16 @@ NHÓM THEO GÓI (mỗi gói 3 màn hình con)      NHÓM DÙNG CHUNG
        Kiểm tra biểu mẫu
 ```
 
-- [ ] **H.1** Schema: `dot_de_xuat` (PĐD mở/đóng) + `lan_xuat_ho_so` (snapshot,
-      không lưu file) + `proposals.dot_id` — `patch_h_dot_va_lich_su_xuat.sql`
-- [ ] **H.2** Khung menu dọc bên trái, 2 nhóm, thay thanh tab ngang
-- [ ] **H.3** Gói 18 tháng: 3 màn hình con, phương thức do tab quyết định
-      (**bỏ ô "Gói thầu muốn mua" trong giỏ**)
+- [x] **H.1** Schema — ✅ 31/07, patch đã chạy staging (3 bảng/cột verify HTTP 200)
+- [x] **H.2** Khung menu dọc — ✅ 31/07. 3 gói + 4 mục dùng chung, trạng thái đợt
+      hiện ngay trên menu để khoa biết trước có gửi được không
+- [x] **H.3** Gói 18 tháng — ✅ 31/07. Đã gỡ ô "Gói thầu muốn mua"; phương thức
+      lấy từ tab. Chưa mở đợt thì khoá nút gửi + hiện băng cảnh báo
 - [ ] **H.4** Gói bổ sung: như H.3 + chọn đợt đang mở; đợt đóng thì khoá gửi
 - [ ] **H.5** Gói chỉ định thầu: như H.3, giữ ô "Nội dung & căn cứ" bắt buộc
-- [ ] **H.6** Màn hình PĐD mở/đóng đợt
-- [ ] **H.7** Tab "Lịch sử xuất hồ sơ": danh sách lần xuất + nút dựng lại file
-- [ ] **H.8** Sửa `XuatHoSo.jsx`: xuất xong **ghi 1 dòng vào `lan_xuat_ho_so`**,
-      và chuyển màn hình xuất vào trong từng gói (không còn tab chung)
+- [x] **H.6** Màn hình PĐD mở/đóng đợt — ✅ 31/07, có dấu vết ngày mở/đóng
+- [x] **H.7** Lịch sử xuất hồ sơ — ✅ 31/07, dựng lại file từ snapshot
+- [x] **H.8** Xuất theo gói + ghi lịch sử — ✅ 31/07. Chỉ lấy mã của gói đang mở tab
 
 **Xong Phase H =** mỗi gói thầu là một luồng khép kín, không lẫn mã giữa các gói.
 

@@ -10,6 +10,9 @@ import DuyetNhomKyThuat from "./features/DuyetNhomKyThuat";
 import ChoDuyet, { demViecChoDuyet } from "./features/ChoDuyet";
 import TienDoGoiThau from "./features/TienDoGoiThau";
 import XuatHoSo from "./features/XuatHoSo";
+import KhungGoiThau, { useDotDangMo } from "./features/KhungGoiThau";
+import QuanLyDot from "./features/QuanLyDot";
+import LichSuXuatHoSo from "./features/LichSuXuatHoSo";
 import SoThieuHang from "./features/SoThieuHang";
 import SoSuKienNhuCau from "./features/SoSuKienNhuCau";
 import PhieuDeNghi from "./features/PhieuDeNghi";
@@ -19,13 +22,14 @@ export default function App() {
     session, profile, loading, profileError, recoveryMode,
     signIn, signUp, sendPasswordReset, updatePassword, signOut,
   } = useAuth();
-  const [tab, setTab] = useState("f1");
+  const [chon, setChon] = useState({ nhom: "goi", goi: "dau_thau_rong_rai", man: "de_xuat" });
 
   // Đếm việc chờ duyệt -> huy hiệu đỏ trên tab (A.2a).
   // BẮT BUỘC khai ở đây, TRƯỚC các early return bên dưới (loading/recovery/
   // !session). Đặt sau early return -> số hook mỗi lần render khác nhau ->
   // React ném "change in the order of Hooks" và App trắng trang. Đã mắc 1 lần.
   const [soChoDuyet, setSoChoDuyet] = useState(0);
+  const { theoGoi: dotTheoGoi } = useDotDangMo();
   const laPdd = profile?.role === "admin" || profile?.role === "dieu_duong";
   const capNhatDem = useCallback(() => {
     if (!laPdd) return;
@@ -83,72 +87,35 @@ export default function App() {
               {profile.email} · {profile.role === "dvsd" ? profile.khoa : profile.role === "dieu_duong" ? "Phòng Điều dưỡng" : "Admin"}
             </p>
           </div>
+          {xemDuocTongHop && (
+            <button onClick={() => setChon({ nhom: "chung", man: "choduyet" })}
+              className="flex items-center gap-1.5 text-sm text-teal-800 bg-teal-50 border border-teal-200 rounded-md px-2.5 py-1 mr-3 hover:bg-teal-100">
+              <Inbox size={14} /> Chờ duyệt
+              {soChoDuyet > 0 && (
+                <span className="bg-red-600 text-white text-xs rounded-full px-1.5 leading-none py-0.5">{soChoDuyet}</span>
+              )}
+            </button>
+          )}
           <button onClick={signOut} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700">
             <LogOut size={14} /> Đăng xuất
           </button>
         </header>
 
-        <div className="flex gap-1 mb-6 border-b border-slate-200">
-          <button onClick={() => setTab("f1")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${tab === "f1" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
-            <TrendingUp size={15} /> Đề xuất số lượng
-          </button>
-          {xemDuocTongHop && (
-            <button onClick={() => setTab("choduyet")}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${tab === "choduyet" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
-              <Inbox size={15} /> Chờ duyệt
-              {soChoDuyet > 0 && (
-                <span className="bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 leading-none min-w-[18px] text-center">
-                  {soChoDuyet}
-                </span>
-              )}
-            </button>
-          )}
-          {xemDuocTongHop && (
-            <button onClick={() => setTab("tonghop")}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${tab === "tonghop" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
-              <ClipboardList size={15} /> Đề xuất từ các khoa
-            </button>
-          )}
-          {xemDuocCuaToi && (
-            <button onClick={() => setTab("cuatoi")}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${tab === "cuatoi" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
-              <ListChecks size={15} /> Đề xuất của tôi
-            </button>
-          )}
-          <button onClick={() => setTab("thieuhang")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${tab === "thieuhang" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
-            <AlertTriangle size={15} /> Sổ thiếu hàng
-          </button>
-          <button onClick={() => setTab("sukien")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${tab === "sukien" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
-            <CalendarPlus size={15} /> Sự kiện nhu cầu
-          </button>
-          <button onClick={() => setTab("tiendo")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${tab === "tiendo" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
-            <Activity size={15} /> Tiến độ gói thầu
-          </button>
-          <button onClick={() => setTab("xuathoso")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${tab === "xuathoso" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
-            <Download size={15} /> Xuất hồ sơ
-          </button>
-          {xemDuocTongHop && (
-            <button onClick={() => setTab("duyetnhom")}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${tab === "duyetnhom" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
-              <BadgeCheck size={15} /> Duyệt mã kỹ thuật
-            </button>
-          )}
-        </div>
-
-        {tab === "thieuhang" ? <SoThieuHang profile={profile} />
-          : tab === "sukien" ? <SoSuKienNhuCau profile={profile} />
-          : tab === "tiendo" ? <TienDoGoiThau profile={profile} />
-          : tab === "xuathoso" ? <XuatHoSo profile={profile} />
-          : tab === "choduyet" && xemDuocTongHop ? <ChoDuyet onDoiSoLuong={capNhatDem} />
-          : tab === "tonghop" && xemDuocTongHop ? <DeXuatTongHop profile={profile} />
-          : tab === "cuatoi" && xemDuocCuaToi ? <DeXuatCuaToi />
-          : tab === "duyetnhom" && xemDuocTongHop ? <DuyetNhomKyThuat />
-          : <Function1 profile={profile} />}
+        <KhungGoiThau chon={chon} doiChon={setChon} dotTheoGoi={dotTheoGoi} laPdd={xemDuocTongHop}>
+          {chon.nhom === "goi" ? (
+            chon.man === "de_xuat"  ? <Function1 profile={profile} goi={chon.goi} dot={dotTheoGoi[chon.goi]} />
+          : chon.man === "cua_toi" ? (xemDuocTongHop
+              ? <DeXuatTongHop profile={profile} goi={chon.goi} />
+              : <DeXuatCuaToi goi={chon.goi} />)
+          : <XuatHoSo profile={profile} goi={chon.goi} dot={dotTheoGoi[chon.goi]} />
+          ) : chon.man === "thieuhang" ? <SoThieuHang profile={profile} />
+            : chon.man === "sukien"    ? <SoSuKienNhuCau profile={profile} />
+            : chon.man === "tiendo"    ? <TienDoGoiThau profile={profile} />
+            : chon.man === "lichsu"    ? <LichSuXuatHoSo profile={profile} />
+            : chon.man === "quanlydot" && xemDuocTongHop ? <QuanLyDot />
+            : chon.man === "choduyet"  && xemDuocTongHop ? <ChoDuyet onDoiSoLuong={capNhatDem} />
+            : <SoThieuHang profile={profile} />}
+        </KhungGoiThau>
       </div>
     </div>
   );
