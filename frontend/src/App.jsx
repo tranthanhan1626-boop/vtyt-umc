@@ -29,7 +29,7 @@ export default function App() {
   // !session). Đặt sau early return -> số hook mỗi lần render khác nhau ->
   // React ném "change in the order of Hooks" và App trắng trang. Đã mắc 1 lần.
   const [soChoDuyet, setSoChoDuyet] = useState(0);
-  const { theoGoi: dotTheoGoi } = useDotDangMo();
+  const { theoGoi: dotTheoGoi, dsTheoGoi: dsDotTheoGoi } = useDotDangMo();
   const laPdd = profile?.role === "admin" || profile?.role === "dieu_duong";
   const capNhatDem = useCallback(() => {
     if (!laPdd) return;
@@ -101,9 +101,9 @@ export default function App() {
           </button>
         </header>
 
-        <KhungGoiThau chon={chon} doiChon={setChon} dotTheoGoi={dotTheoGoi} laPdd={xemDuocTongHop}>
+        <KhungGoiThau chon={chon} doiChon={setChon} dotTheoGoi={dotTheoGoi} dsDotTheoGoi={dsDotTheoGoi} laPdd={xemDuocTongHop}>
           {chon.nhom === "goi" ? (
-            chon.man === "de_xuat"  ? <Function1 profile={profile} goi={chon.goi} dot={dotTheoGoi[chon.goi]} />
+            chon.man === "de_xuat"  ? <Function1 profile={profile} goi={chon.goi} dot={dotTheoGoi[chon.goi]} dsDot={dsDotTheoGoi[chon.goi] || []} />
           : chon.man === "cua_toi" ? (xemDuocTongHop
               ? <DeXuatTongHop profile={profile} goi={chon.goi} />
               : <DeXuatCuaToi goi={chon.goi} />)

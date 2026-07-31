@@ -36,20 +36,29 @@ export function useDotDangMo() {
     setDot(data || []); setDangTai(false);
   }, []);
   useEffect(() => { tai(); }, [tai]);
-  const theoGoi = useMemo(() => {
+  // Gói bổ sung có thể MỞ NHIỀU ĐỢT cùng lúc (T1/T5/T9) -> giữ cả danh sách.
+  // theoGoi = đợt đầu tiên (để hiện nhãn trên menu); dsTheoGoi = đủ để chọn.
+  const dsTheoGoi = useMemo(() => {
     const m = {};
     dot.forEach((d) => {
-      if (d.trang_thai === "mo" && !m[d.loai_mua_sam]) m[d.loai_mua_sam] = d;
+      if (d.trang_thai !== "mo") return;
+      (m[d.loai_mua_sam] = m[d.loai_mua_sam] || []).push(d);
     });
     return m;
   }, [dot]);
-  return { dot, theoGoi, dangTai, taiLai: tai };
+  const theoGoi = useMemo(() => {
+    const m = {};
+    Object.entries(dsTheoGoi).forEach(([k, v]) => { m[k] = v[0]; });
+    return m;
+  }, [dsTheoGoi]);
+  return { dot, theoGoi, dsTheoGoi, dangTai, taiLai: tai };
 }
 
-export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, laPdd, children }) {
+export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, laPdd, children }) {
   const nutGoi = (g) => {
     const dangChon = chon.nhom === "goi" && chon.goi === g.ma;
     const dotMo = dotTheoGoi?.[g.ma];
+    const soDot = dsDotTheoGoi?.[g.ma]?.length || 0;
     return (
       <div key={g.ma}>
         <button onClick={() => doiChon({ nhom: "goi", goi: g.ma, man: chon.man || "de_xuat" })}
@@ -64,7 +73,7 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, laPdd, childre
           <span className={`inline-block mt-1 text-xs px-1.5 py-0.5 rounded ${
             dotMo ? (dangChon ? "bg-teal-600 text-white" : "bg-teal-100 text-teal-800")
                   : (dangChon ? "bg-teal-800 text-teal-200" : "bg-slate-200 text-slate-600")}`}>
-            {dotMo ? `Đang mở: ${dotMo.ten}` : "Chưa mở đợt"}
+            {dotMo ? (soDot > 1 ? `${soDot} đợt đang mở` : `Đang mở: ${dotMo.ten}`) : "Chưa mở đợt"}
           </span>
         </button>
 

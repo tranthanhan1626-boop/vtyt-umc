@@ -149,8 +149,11 @@ NHÓM THEO GÓI (mỗi gói 3 màn hình con)      NHÓM DÙNG CHUNG
       hiện ngay trên menu để khoa biết trước có gửi được không
 - [x] **H.3** Gói 18 tháng — ✅ 31/07. Đã gỡ ô "Gói thầu muốn mua"; phương thức
       lấy từ tab. Chưa mở đợt thì khoá nút gửi + hiện băng cảnh báo
-- [ ] **H.4** Gói bổ sung: như H.3 + chọn đợt đang mở; đợt đóng thì khoá gửi
-- [ ] **H.5** Gói chỉ định thầu: như H.3, giữ ô "Nội dung & căn cứ" bắt buộc
+- [x] **H.4** Gói bổ sung — ✅ 31/07. Nhiều đợt mở cùng lúc thì hiện ô CHỌN đợt
+      (menu ghi "3 đợt đang mở"); 1 đợt thì tự lấy. Gắn `dot_id` sau khi gửi
+      (RPC `submit_proposal_group` chưa nhận dot_id — sửa RPC cần patch SQL riêng)
+- [x] **H.5** Gói chỉ định thầu — ✅ 31/07, verify luồng thật: ô "Nội dung & căn cứ"
+      tự hiện theo tab, ô chọn gói đã biến mất, gửi lưu đúng `chi_dinh_thau` + `dot_id`
 - [x] **H.6** Màn hình PĐD mở/đóng đợt — ✅ 31/07, có dấu vết ngày mở/đóng
 - [x] **H.7** Lịch sử xuất hồ sơ — ✅ 31/07, dựng lại file từ snapshot
 - [x] **H.8** Xuất theo gói + ghi lịch sử — ✅ 31/07. Chỉ lấy mã của gói đang mở tab

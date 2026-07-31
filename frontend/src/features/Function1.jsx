@@ -345,7 +345,7 @@ function FormNhomKyThuat({ giaTri, doiGiaTri, onLuu, onHuy, dangLuu, loi, dsNhom
   );
 }
 
-export default function Function1({ profile, goi, dot }) {
+export default function Function1({ profile, goi, dot, dsDot = [] }) {
   const [dsNhom, setDsNhom] = useState([]);          // [{ma_quan_ly, ten_quan_ly, so_ma_hang}]
   const [dsVatTu, setDsVatTu] = useState([]);        // kết quả tìm mã hàng ở server
   const [tuKhoa, setTuKhoa] = useState("");
@@ -614,6 +614,10 @@ export default function Function1({ profile, goi, dot }) {
 
   // QĐ-20: khoa chỉ gửi được khi Phòng Điều dưỡng đã MỞ đợt cho gói này.
   const chuaMoDot = !dot;
+  // Gói bổ sung có 3 đợt/năm nên phải CHỌN. Gói khác chỉ 1 đợt -> tự lấy.
+  const [dotChon, setDotChon] = useState(null);
+  const dotDung = dsDot.length > 1 ? dsDot.find((d) => d.id === dotChon) : dot;
+  useEffect(() => { setDotChon(null); }, [goi]);
 
   const gioHang = useMemo(
     () => Object.values(nhapLieu).filter((n) => Number(n.soLuong) > 0),
@@ -750,6 +754,19 @@ export default function Function1({ profile, goi, dot }) {
       setLoiLuu(`Không gửi được giỏ đề xuất: ${error.message}`);
       setDangLuu(false);
       return;
+    }
+
+    // Gắn đợt cho các dòng vừa tạo. RPC submit_proposal_group chưa nhận dot_id
+    // (sửa RPC phải chạy patch SQL), nên cập nhật ngay sau khi gửi. Lọc hẹp
+    // theo khoa + mã hàng vừa gửi + dot_id còn trống -> không đụng dòng cũ.
+    if (dotDung) {
+      const { error: eDot } = await supabase.from("proposals")
+        .update({ dot_id: dotDung.id })
+        .eq("don_vi", khoaHienTai)
+        .eq("nam_de_xuat", NAM_DE_XUAT)
+        .is("dot_id", null)
+        .in("ma_hang", gioHang.map((n) => n.ma_hang));
+      if (eDot) setLoiLuu(`Đã gửi nhưng chưa gắn được đợt: ${eDot.message}`);
     }
 
     const ketQua = gioHang.map((nhap) => ({
@@ -1230,6 +1247,18 @@ export default function Function1({ profile, goi, dot }) {
               )}
 
               <div className="flex items-center gap-3 pt-1">
+                {dsDot.length > 1 && (
+                  <div className="mb-2">
+                    <label className="text-xs text-slate-500 block mb-1">
+                      Gửi vào đợt nào <span className="text-red-500">*</span>
+                    </label>
+                    <select value={dotChon ?? ""} onChange={(e) => setDotChon(Number(e.target.value) || null)}
+                      className="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm">
+                      <option value="">— chọn đợt —</option>
+                      {dsDot.map((d) => <option key={d.id} value={d.id}>{d.ten}</option>)}
+                    </select>
+                  </div>
+                )}
                 {chuaMoDot && (
                   <div className="mb-2 flex items-start gap-1.5 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-2">
                     <AlertTriangle size={13} className="text-amber-700 mt-0.5 shrink-0" />
@@ -1239,7 +1268,7 @@ export default function Function1({ profile, goi, dot }) {
                     </p>
                   </div>
                 )}
-                <button onClick={submit} disabled={dangLuu || gioHang.length === 0 || chuaMoDot}
+                <button onClick={submit} disabled={dangLuu || gioHang.length === 0 || chuaMoDot || !dotDung}
                   className="px-4 py-2 bg-teal-700 text-white text-sm rounded-md hover:bg-teal-800 disabled:opacity-40 font-medium">
                   {dangLuu ? "Đang lưu..." : `Gửi đề xuất (${gioHang.length} mã hàng)`}
                 </button>
