@@ -18,7 +18,8 @@ Ký hiệu: `- [ ]` chưa làm · `- [~]` đang làm · `- [x]` xong
 
 | Phase | Làm gì | Xong khi nào | Trạng thái |
 |---|---|---|---|
-| **A** | Luồng đề xuất → duyệt → xuất 5 hồ sơ | T8/2026 | 🟢 17/18 miếng |
+| **A** | Luồng đề xuất → duyệt → xuất 5 hồ sơ | T8/2026 | 🟢 17/18 · ⚠️ cấu trúc tab bị đảo bởi Phase H |
+| **H** | **Tổ chức lại theo gói thầu** (QĐ-20) | T8/2026 | 🔵 đang làm |
 | **B** | Hạ tầng an toàn + chốt số gốc kỳ 1/2027 | T8/2026 | ⚪ chưa |
 | **C** | Ba sổ ghi: thiếu hàng · sự kiện nhu cầu · đóng kỳ | T9–11/2026 | ⚪ chưa |
 | **D** | Chạy thử 3–5 khoa pilot | T12/2026 | ⚪ chưa |
@@ -125,6 +126,38 @@ phạm vi dữ liệu được thấy.
 - [x] **A.4b** Màn hình tiến độ 5 mốc + kết quả từng mã — ✅ 30/07
 - [x] **A.4c** PĐD cập nhật mốc/kết quả, ĐVSD chỉ xem — ✅ verify bằng phiên thật
 - [x] **A.4d** RLS phạm vi — ✅ PĐD thấy 2/2 mã, dvsd1 chỉ thấy 1/2 (khoa mình)
+
+---
+
+## Phase H — Tổ chức lại theo GÓI THẦU ⭐ ĐANG LÀM (QĐ-20)
+
+> Đảo cấu trúc tab của Phase A. Menu **dọc bên trái**, gói thầu là cấp trên cùng.
+> Màn hình đã build ở Phase A/C **giữ nguyên**, chỉ sắp xếp lại chỗ đứng.
+
+```
+NHÓM THEO GÓI (mỗi gói 3 màn hình con)      NHÓM DÙNG CHUNG
+  ▸ Đề xuất gói 18 tháng                      Sổ thiếu hàng
+  ▸ Đề xuất gói bổ sung (T1/T5/T9)            Sự kiện nhu cầu
+  ▸ Đề xuất gói chỉ định thầu                 Tiến độ gói thầu
+     └ Đề xuất số lượng                       Lịch sử xuất hồ sơ
+       Đề xuất của tôi
+       Kiểm tra biểu mẫu
+```
+
+- [ ] **H.1** Schema: `dot_de_xuat` (PĐD mở/đóng) + `lan_xuat_ho_so` (snapshot,
+      không lưu file) + `proposals.dot_id` — `patch_h_dot_va_lich_su_xuat.sql`
+- [ ] **H.2** Khung menu dọc bên trái, 2 nhóm, thay thanh tab ngang
+- [ ] **H.3** Gói 18 tháng: 3 màn hình con, phương thức do tab quyết định
+      (**bỏ ô "Gói thầu muốn mua" trong giỏ**)
+- [ ] **H.4** Gói bổ sung: như H.3 + chọn đợt đang mở; đợt đóng thì khoá gửi
+- [ ] **H.5** Gói chỉ định thầu: như H.3, giữ ô "Nội dung & căn cứ" bắt buộc
+- [ ] **H.6** Màn hình PĐD mở/đóng đợt
+- [ ] **H.7** Tab "Lịch sử xuất hồ sơ": danh sách lần xuất + nút dựng lại file
+- [ ] **H.8** Sửa `XuatHoSo.jsx`: xuất xong **ghi 1 dòng vào `lan_xuat_ho_so`**,
+      và chuyển màn hình xuất vào trong từng gói (không còn tab chung)
+
+**Xong Phase H =** mỗi gói thầu là một luồng khép kín, không lẫn mã giữa các gói.
+
 
 ---
 
