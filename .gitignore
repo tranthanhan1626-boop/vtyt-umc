@@ -25,3 +25,6 @@ graphify-out/
 
 # Dữ liệu xuất từ production để nạp sang staging — KHÔNG commit
 backend/du_lieu_staging/
+
+# Bản sao lưu — KHÔNG commit (chứa dữ liệu bệnh viện)
+backend/sao_luu/

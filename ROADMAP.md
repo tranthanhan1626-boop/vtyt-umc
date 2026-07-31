@@ -136,16 +136,16 @@ phạm vi dữ liệu được thấy.
       **đủ dữ liệu production**: 66 khoa · 878 nhóm · 3085 vật tư · 149.999 dòng lịch sử.
       ⚠️ Bài học: bỏ qua `usage_history_current` làm staging chỉ có 4 khoa — 3 view
       (`v_don_vi`, `v_danh_sach_khoa`, `v_don_vi_nhom`) đều suy từ bảng đó
-- [ ] **0.2** Chống mất dữ liệu — **giữ Supabase free** (xem QĐ-10). Gồm 4 phần:
-      (a) script `pg_dump` — nhịp dày cho nhóm không dựng lại được, nhịp thưa cho nhóm nạp lại được từ Excel HIS
-      (b) **cảnh báo khi backup KHÔNG chạy** quá N ngày (chống hỏng trong im lặng)
-      (c) cron ping mỗi 3 ngày chống pause
-      (d) `KHOI_PHUC.md` — quy trình phục hồi 1 trang
-- [ ] **0.2b** **Thử phục hồi thật một lần trong T12/2026**, lúc mất dữ liệu chưa có hậu quả
-- [ ] **0.3** Schema 3 bảng nền: `ky_thau`, `so_luong_ky`, `hop_dong`
-- [ ] **0.4** Script nạp số đã chốt kỳ 1/2027 từ Excel vào `so_luong_ky`
-- [ ] **0.5** Màn hình xem "Số đã chốt kỳ 1/2027" — để mắt thường kiểm được dữ liệu vào đúng
-- [ ] **0.6** Xác nhận host Cloudflare Pages (băng thông không giới hạn, cho phép
+- [x] **B.2** Chống mất dữ liệu — ✅ 31/07. `scripts/sao_luu.py` 2 nhịp (quý/nhẹ),
+      cảnh báo quá 3 ngày, **không ghi dấu vết khi có bảng lỗi** (chống hỏng trong
+      im lặng — đã test). Cảnh báo hiện ngay khi bấm `MO_WEB.command`.
+      `Theo dõi tiến độ web/KHOI_PHUC.md` = quy trình phục hồi 6 bước.
+      ⏸ Cron ping chống pause: chưa làm, chỉ cần khi để yên >7 ngày
+- [ ] **B.2b** **Thử phục hồi thật một lần trong T12/2026**, lúc mất dữ liệu chưa có hậu quả
+- [x] **B.3** Schema 3 bảng nền `ky_thau` / `so_luong_ky` / `hop_dong` — ✅ patch_bc đã chạy staging
+- [ ] **B.4** Script nạp số đã chốt kỳ 1/2027 từ Excel vào `so_luong_ky`
+- [ ] **B.5** Màn hình xem "Số đã chốt kỳ 1/2027" — để mắt thường kiểm được dữ liệu vào đúng
+- [ ] **B.6** Xác nhận host Cloudflare Pages (băng thông không giới hạn, cho phép
       dùng tổ chức — xem QĐ-12) đang trỏ đúng, chưa nằm trên Vercel Hobby
 
 **Xong Phase B =** điểm xuất phát đã đóng băng, mọi thứ sau đó đo được.

@@ -1,7 +1,8 @@
 #!/bin/bash
 # Bấm đúp file này để mở web VTYT trên máy.
 # Đóng cửa sổ Terminal (hoặc Control+C) để tắt web.
-cd "$(dirname "$0")/frontend" || exit 1
+GOC="$(cd "$(dirname "$0")" && pwd)"   # lấy TRƯỚC khi cd, nếu không $0 trỏ sai
+cd "$GOC/frontend" || exit 1
 
 echo "════════════════════════════════════════════════"
 echo "  WEB VTYT — đang khởi động"
@@ -22,6 +23,14 @@ if pgrep -f "vite --host" > /dev/null 2>&1; then
 fi
 
 [ -d node_modules ] || { echo "  Cài thư viện lần đầu, chờ chút..."; npm install; }
+
+# Cảnh báo nếu lâu chưa sao lưu. Sổ thiếu hàng mất là mất vĩnh viễn, nên nhắc
+# ngay lúc mở web — chỗ duy nhất chắc chắn bạn nhìn thấy mỗi ngày.
+BE="$GOC/backend"
+if [ -x "$BE/.venv/bin/python" ] && [ -f "$BE/.env.local" ]; then
+  ( cd "$BE" && set -a && . ./.env.local && set +a && \
+    .venv/bin/python scripts/sao_luu.py --kiem 2>/dev/null | grep -E "^🔴|^🟢" ) || true
+fi
 
 echo "  Địa chỉ:  http://localhost:5173"
 echo "  Tài khoản thử: pdd@umc.edu.vn / Test123456"
