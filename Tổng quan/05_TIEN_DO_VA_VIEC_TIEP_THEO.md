@@ -20,7 +20,7 @@ Cập nhật 04/08/2026.
 | Khả dụng/hợp đồng/mua thêm 30% trên màn đề xuất | Đã có |
 | Công thức TSB + P50/P75/P90/P95 | Đã backtest và build |
 | Năm biểu mẫu chính thức | Đã đưa vào `frontend/public/form-bieu-mau/` |
-| Xóa dữ liệu test ở mọi màn hình cho ĐVSD/PĐD | Đã có; patch ZA đã bổ sung cascade phiên tổng hợp, chờ áp dụng lại staging |
+| Xóa dữ liệu test ở mọi màn hình cho ĐVSD/PĐD | Đã có trên staging; patch ZA cascade sạch phiên tổng hợp |
 
 ## 2. Đã kiểm
 
@@ -69,8 +69,9 @@ Cập nhật 04/08/2026.
 Không chạy production trước khi bảy mục này đạt.
 
 Ngoài ra, production hiện vẫn ở schema nền và thiếu các bảng/RPC A2→Z. Không
-push `main` (Netlify sẽ tự deploy) trước khi đã migration production A2→Z,
-không chạy patch ZA trên production, rồi đối chiếu schema thành công.
+push `main` (Netlify sẽ tự deploy) trước khi đã chạy
+`patch_production_a2_z_20260804.sql`, không chạy patch ZA trên production, rồi
+đối chiếu schema thành công.
 
 ## 4. Dữ liệu đang chờ
 

@@ -103,6 +103,28 @@ Sau khi chạy patch, smoke test tối thiểu:
 4. Xóa đợt dọn hết dữ liệu workflow trong đợt.
 5. Số dòng HIS, `vat_tu`, `users`, `bieu_mau` không đổi.
 
+### Nâng schema production hiện tại
+
+Production đang ở schema nền trước A2. Chạy **một file duy nhất** trong
+Supabase SQL Editor production:
+
+```text
+backend/sql/patch_production_a2_z_20260804.sql
+```
+
+File gộp đủ 23 patch A2→Z trong một transaction; một lỗi sẽ rollback toàn bộ.
+Không chạy thêm từng patch nguồn sau khi file gộp đã thành công. File ZA không
+nằm trong bundle vì RPC xóa test bị khóa cứng theo JWT issuer staging và giao
+diện production cũng không hiện nút xóa.
+
+Khi patch nguồn thay đổi, sinh lại bundle bằng:
+
+```bash
+backend/.venv/bin/python backend/scripts/tao_patch_gop_production.py
+```
+
+Sau migration phải đối chiếu schema production rồi mới push `main`.
+
 ## 5. Sao lưu và phục hồi
 
 Backup dữ liệu quý:
