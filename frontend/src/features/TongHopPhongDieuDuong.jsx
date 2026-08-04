@@ -18,7 +18,7 @@ import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import HoSoTrucTuyen from "./HoSoTrucTuyen";
 
-const MOI_TRANG = 50;
+const NHOM_MOI_TRANG = 25;
 
 const danhSachKhoa = (rows) =>
   [...new Set(rows.map((r) => r.don_vi).filter(Boolean))].sort((a, b) => a.localeCompare(b, "vi"));
@@ -71,18 +71,31 @@ function timCanhBaoDvt(rows) {
     .map(([ma, dvts]) => ({ ma, dvts: [...dvts] }));
 }
 
-export default function TongHopPhongDieuDuong({ profile, goi, dot }) {
+export default function TongHopPhongDieuDuong({
+  profile,
+  goi,
+  dot,
+  dotIdKhoiTao = "",
+  donViKhoiTao = "",
+  nguonKeyKhoiTao = "",
+}) {
   const [rows, setRows] = useState([]);
   const [dots, setDots] = useState([]);
-  const [dotId, setDotId] = useState(dot?.id ? String(dot.id) : "");
+  const [dotId, setDotId] = useState(dotIdKhoiTao ? String(dotIdKhoiTao) : (dot?.id ? String(dot.id) : ""));
   const [usage, setUsage] = useState({});
   const [cheDo, setCheDo] = useState("khoa");
   const [khoaLoc, setKhoaLoc] = useState("");
   const [tuKhoa, setTuKhoa] = useState("");
   const [moDong, setMoDong] = useState(null);
+  const [nhomMo, setNhomMo] = useState(() => new Set());
   const [trang, setTrang] = useState(1);
   const [phien, setPhien] = useState(null);
   const [khoaHoSo, setKhoaHoSo] = useState("");
+  // nguon_key thật của bộ hồ sơ đang mở — KHÔNG được hard-code "current".
+  // ĐVSD tạo hồ sơ qua "Hồ sơ của khoa" dùng nguon_key="bo:<uuid>" riêng theo
+  // từng giỏ (patch T). "current" là quy ước CŨ trước patch T, chỉ còn dùng
+  // làm giá trị dự phòng khi một khoa chưa hề tạo bộ hồ sơ nào theo cách mới.
+  const [nguonKeyHoSo, setNguonKeyHoSo] = useState("");
   const [trangThaiHoSoKhoa, setTrangThaiHoSoKhoa] = useState([]);
   const [dangTai, setDangTai] = useState(true);
   const [dangChot, setDangChot] = useState(false);
@@ -90,7 +103,16 @@ export default function TongHopPhongDieuDuong({ profile, goi, dot }) {
   const [loi, setLoi] = useState("");
   const [thongBao, setThongBao] = useState("");
   const [chuaPatch, setChuaPatch] = useState(false);
+  const [dsKhoaToanVien, setDsKhoaToanVien] = useState([]);
   const giamChuyenDong = useReducedMotion();
+
+  // Danh sách khoa TOÀN VIỆN — để PĐD thấy được cả khoa CHƯA gửi gì (0 giỏ),
+  // không chỉ khoa đã có dữ liệu. Tải 1 lần, không phụ thuộc đợt/gói.
+  useEffect(() => {
+    supabase.from("v_don_vi").select("don_vi").then(({ data, error }) => {
+      if (!error) setDsKhoaToanVien((data || []).map((d) => d.don_vi).filter(Boolean));
+    });
+  }, []);
 
   const taiDuLieu = useCallback(async () => {
     setDangTai(true);
@@ -108,20 +130,27 @@ export default function TongHopPhongDieuDuong({ profile, goi, dot }) {
       setDangTai(false);
       return;
     }
-    const ds = deXuat.data || [];
+    let ds = deXuat.data || [];
     const dsDot = dotRes.data || [];
-    setRows(ds);
     setDots(dsDot);
     setDotId((cu) => {
       if (cu && dsDot.some((d) => String(d.id) === cu)) return cu;
+      if (dotIdKhoiTao && dsDot.some((d) => String(d.id) === String(dotIdKhoiTao))) return String(dotIdKhoiTao);
       if (dot?.id && dsDot.some((d) => d.id === dot.id)) return String(dot.id);
       return dsDot[0]?.id ? String(dsDot[0].id) : "";
     });
 
     const codes = [...new Set(ds.map((r) => r.ma_hang).filter(Boolean))];
     if (codes.length) {
-      const u = await fetchAllRows((f, t) => supabase.from("v_usage_monthly")
-        .select("ma_hang, nam, so_luong").in("ma_hang", codes).range(f, t));
+      const [u, vt] = await Promise.all([
+        fetchAllRows((f, t) => supabase.from("v_usage_monthly")
+          .select("ma_hang, nam, so_luong").in("ma_hang", codes).range(f, t)),
+        fetchAllRows((f, t) => supabase.from("vat_tu")
+          .select("ma_hang,ten_thuong_mai,ky_ma_hieu,hang,nuoc_san_xuat,tieu_chi_ky_thuat")
+          .in("ma_hang", codes).range(f, t)),
+      ]);
+      const thongTin = Object.fromEntries((vt.data || []).map((x) => [x.ma_hang, x]));
+      ds = ds.map((x) => ({ ...x, ...(thongTin[x.ma_hang] || {}) }));
       const acc = {};
       (u.data || []).forEach((x) => {
         acc[x.ma_hang] = acc[x.ma_hang] || {};
@@ -131,8 +160,9 @@ export default function TongHopPhongDieuDuong({ profile, goi, dot }) {
     } else {
       setUsage({});
     }
+    setRows(ds);
     setDangTai(false);
-  }, [goi, dot?.id]);
+  }, [goi, dot?.id, dotIdKhoiTao]);
 
   useEffect(() => { taiDuLieu(); }, [taiDuLieu]);
 
@@ -157,33 +187,41 @@ export default function TongHopPhongDieuDuong({ profile, goi, dot }) {
     taiPhien();
     setTrang(1);
     setKhoaLoc("");
-    setKhoaHoSo("");
+    setKhoaHoSo(donViKhoiTao || "");
+    // Tới từ "Công việc chờ duyệt" thì đã biết đúng nguon_key (patch T). Tới
+    // từ nơi khác (chưa chọn khoa) thì để trống, useEffect dưới sẽ tự suy ra
+    // bộ mới nhất của khoa này ngay khi trangThaiHoSoKhoa tải xong.
+    setNguonKeyHoSo(nguonKeyKhoiTao || "");
     setMoDong(null);
     setXacNhanDvt(false);
     setThongBao("");
-  }, [taiPhien]);
+  }, [taiPhien, donViKhoiTao, nguonKeyKhoiTao]);
 
   const taiTrangThaiHoSoKhoa = useCallback(async () => {
     if (!dotId) {
       setTrangThaiHoSoKhoa([]);
       return;
     }
+    // KHÔNG lọc theo nguon_key ở đây — mỗi khoa có thể có nhiều bộ hồ sơ (mỗi
+    // giỏ một bộ, nguon_key="bo:<uuid>" riêng, patch T). Lọc "current" cứng đã
+    // làm PĐD không bao giờ thấy bộ ĐVSD thật sự gửi. Lấy hết, suy ra bộ mới
+    // nhất của từng khoa ở nguonKeyTheoKhoa bên dưới.
     const { data, error } = await supabase.from("ho_so_cong_tac")
-      .select("don_vi,ma_ho_so,trang_thai,pdd_sua_boi,updated_at")
+      .select("don_vi,ma_ho_so,nguon_key,trang_thai,pdd_sua_boi,updated_at")
       .eq("dot_id", Number(dotId))
       .eq("loai_mua_sam", goi)
-      .eq("nguon_key", "current")
       .in("ma_ho_so", ["cam_ket_sl", "danh_muc_dvsd"]);
     setTrangThaiHoSoKhoa(error ? [] : data || []);
   }, [dotId, goi]);
 
   useEffect(() => { taiTrangThaiHoSoKhoa(); }, [taiTrangThaiHoSoKhoa]);
 
-  const daDuyet = useMemo(() => rows.filter((r) =>
-    r.trang_thai === "hoan_thanh"
-      && dotId
-      && String(r.dot_id) === dotId
+  const trongDot = useMemo(() => rows.filter((r) =>
+    dotId && String(r.dot_id) === dotId
   ), [rows, dotId]);
+  const daDuyet = useMemo(() => trongDot.filter((r) =>
+    r.trang_thai === "hoan_thanh"
+  ), [trongDot]);
 
   const khoa = useMemo(() => danhSachKhoa(daDuyet), [daDuyet]);
   const tongHop = useMemo(() => gomTheoMaHang(daDuyet), [daDuyet]);
@@ -195,28 +233,73 @@ export default function TongHopPhongDieuDuong({ profile, goi, dot }) {
 
   const theoKhoa = useMemo(() => {
     const map = new Map();
-    daDuyet.forEach((r) => {
+    trongDot.forEach((r) => {
       if (!map.has(r.don_vi)) map.set(r.don_vi, { don_vi: r.don_vi, rows: [], nhom: new Set() });
       const g = map.get(r.don_vi);
       g.rows.push(r);
       g.nhom.add(r.nhom_de_xuat || `le:${r.id}`);
     });
+    // Hợp thêm khoa TOÀN VIỆN chưa hề có dòng nào trong đợt này — hiện "0 giỏ"
+    // thay vì biến mất, để PĐD biết ngay khoa nào còn thiếu chứ không phải đoán.
+    dsKhoaToanVien.forEach((donVi) => {
+      if (!map.has(donVi)) map.set(donVi, { don_vi: donVi, rows: [], nhom: new Set() });
+    });
     return [...map.values()]
-      .map((g) => ({ ...g, soNhom: g.nhom.size }))
-      .sort((a, b) => a.don_vi.localeCompare(b.don_vi, "vi"));
-  }, [daDuyet]);
+      .map((g) => ({ ...g, soNhom: g.nhom.size, chuaGui: g.rows.length === 0 }))
+      .sort((a, b) => {
+        if (a.chuaGui !== b.chuaGui) return a.chuaGui ? 1 : -1; // khoa chưa gửi xuống cuối
+        return a.don_vi.localeCompare(b.don_vi, "vi");
+      });
+  }, [trongDot, dsKhoaToanVien]);
   const rowsKhoaDangMo = useMemo(
     () => theoKhoa.find((g) => g.don_vi === khoaHoSo)?.rows || [],
     [theoKhoa, khoaHoSo]
   );
+  // Bộ hồ sơ MỚI NHẤT của mỗi khoa (nguon_key -> updated_at lớn nhất trong 2
+  // tài liệu của bộ đó). Một khoa có thể có nhiều bộ nếu từng tạo lại/gửi
+  // nhiều giỏ riêng biệt (patch T) — chỉ bộ mới nhất mới là bộ PĐD cần xét.
+  const nguonKeyTheoKhoa = useMemo(() => {
+    const gomBo = new Map(); // "don_vi|nguon_key" -> updated_at lớn nhất
+    trangThaiHoSoKhoa.forEach((h) => {
+      const key = `${h.don_vi}|${h.nguon_key}`;
+      const t = h.updated_at || "";
+      if (!gomBo.has(key) || t > gomBo.get(key)) gomBo.set(key, t);
+    });
+    const moiNhat = new Map(); // don_vi -> {nguon_key, updated_at}
+    gomBo.forEach((updatedAt, key) => {
+      const i = key.lastIndexOf("|");
+      const donVi = key.slice(0, i), nguonKey = key.slice(i + 1);
+      const hienTai = moiNhat.get(donVi);
+      if (!hienTai || updatedAt > hienTai.updated_at) {
+        moiNhat.set(donVi, { nguon_key: nguonKey, updated_at: updatedAt });
+      }
+    });
+    return moiNhat;
+  }, [trangThaiHoSoKhoa]);
+
+  // CHỈ bù cho đúng 1 tình huống: mở thẳng khoa qua donViKhoiTao (prop) mà
+  // KHÔNG có nguonKeyKhoiTao đi kèm. Các lần bấm "Mở Word & Excel của khoa"
+  // sau đó đã tự set nguonKeyHoSo ngay tại onClick — effect này không được
+  // ghi đè lại, nếu không sẽ chạy mỗi khi trangThaiHoSoKhoa tải lại và xoá
+  // mất lựa chọn khoa mới mà người dùng vừa bấm.
+  useEffect(() => {
+    if (!donViKhoiTao || nguonKeyKhoiTao || khoaHoSo !== donViKhoiTao || nguonKeyHoSo) return;
+    const goiY = nguonKeyTheoKhoa.get(donViKhoiTao)?.nguon_key;
+    if (goiY) setNguonKeyHoSo(goiY);
+  }, [donViKhoiTao, nguonKeyKhoiTao, khoaHoSo, nguonKeyHoSo, nguonKeyTheoKhoa]);
+
   const trangThaiTheoKhoa = useMemo(() => {
     const map = new Map();
     trangThaiHoSoKhoa.forEach((h) => {
+      // Chỉ tính vào badge "x/2 file đã duyệt" của BỘ MỚI NHẤT — gộp cả bộ cũ
+      // vào sẽ đếm sai (vd 1 bộ cũ đã duyệt + 1 bộ mới chưa duyệt hiện "1/2"
+      // trong khi bộ đang cần xét thực ra là "0/2").
+      if (nguonKeyTheoKhoa.get(h.don_vi)?.nguon_key !== h.nguon_key) return;
       if (!map.has(h.don_vi)) map.set(h.don_vi, []);
       map.get(h.don_vi).push(h);
     });
     return map;
-  }, [trangThaiHoSoKhoa]);
+  }, [trangThaiHoSoKhoa, nguonKeyTheoKhoa]);
 
   const tongHopLoc = useMemo(() => {
     const q = tuKhoa.trim().toLowerCase();
@@ -228,8 +311,25 @@ export default function TongHopPhongDieuDuong({ profile, goi, dot }) {
     });
   }, [tongHop, khoaLoc, tuKhoa]);
 
-  const soTrang = Math.max(1, Math.ceil(tongHopLoc.length / MOI_TRANG));
-  const rowsTrang = tongHopLoc.slice((trang - 1) * MOI_TRANG, trang * MOI_TRANG);
+  // Gom CHỈ Ở LỚP HIỂN THỊ theo mã quản lý — KHÔNG đổi cấu trúc `tongHop`
+  // (snapshot chốt phiên và file Excel xuất ra vẫn dùng đúng mảng phẳng theo
+  // mã hàng như cũ, không phụ thuộc cách sổ xuống trên màn hình).
+  const nhomTongHop = useMemo(() => {
+    const map = new Map();
+    tongHopLoc.forEach((r) => {
+      const ma = r.ma_quan_ly || "";
+      if (!map.has(ma)) map.set(ma, { ma_quan_ly: ma, ten_quan_ly: r.ten_quan_ly, items: [] });
+      map.get(ma).items.push(r);
+    });
+    return [...map.values()].map((n) => ({
+      ...n,
+      tongSoLuong: n.items.reduce((s, r) => s + (Number(r.so_luong) || 0), 0),
+      soKhoa: new Set(n.items.flatMap((r) => r.khoa_de_xuat)).size,
+    }));
+  }, [tongHopLoc]);
+
+  const soTrang = Math.max(1, Math.ceil(nhomTongHop.length / NHOM_MOI_TRANG));
+  const nhomTrang = nhomTongHop.slice((trang - 1) * NHOM_MOI_TRANG, trang * NHOM_MOI_TRANG);
 
   useEffect(() => {
     setTrang(1);
@@ -276,6 +376,36 @@ export default function TongHopPhongDieuDuong({ profile, goi, dot }) {
     setDangChot(false);
   };
 
+  // Trạng thái BỘ HỒ SƠ (ho_so_cong_tac) và DANH SÁCH ĐỀ XUẤT NGUỒN
+  // (proposals -> daDuyet/tongHop) là hai nguồn tách biệt. "Hoàn thành cả bộ"
+  // đổi cả hai (RPC chuyen_trang_thai_bo_ho_so tự đồng bộ proposals.trang_thai
+  // sang hoan_thanh), nhưng chỉ gọi lại taiTrangThaiHoSoKhoa thì PĐD vẫn thấy
+  // "Khoa đã duyệt: 0" cho tới khi tự bấm "Làm mới dữ liệu". Gọi cả hai.
+  const lamMoiSauKhiLuuHoSoKhoa = (data) => {
+    taiTrangThaiHoSoKhoa();
+    taiDuLieu();
+    return data;
+  };
+
+  // Nối vào onSaved của bộ hồ sơ "Phòng Điều dưỡng" (nguonKey=phien:<id>).
+  // HoSoTrucTuyen gọi callback này sau MỌI hành động lưu (lưu nháp, gửi PĐD,
+  // bắt đầu xét duyệt, từ chối, hoàn thành) — chỉ khóa khi RPC
+  // chuyen_trang_thai_bo_ho_so vừa trả về trạng thái "da_duyet" (= vừa bấm
+  // "Hoàn thành cả bộ"), KHÔNG khóa ở các bước trung gian.
+  const khoaPhienDaDiThauNeuHoanThanh = async (data) => {
+    if (data?.trang_thai !== "da_duyet" || !phien?.id) return;
+    const { error } = await supabase.rpc("chot_phien_da_di_thau", { p_phien_id: phien.id });
+    if (error) {
+      const canPatch = error.code === "PGRST202" || /chot_phien_da_di_thau/i.test(error.message || "");
+      setLoi(canPatch
+        ? "Staging chưa có hàm khóa theo phiên. Cần chạy backend/sql/patch_y_khoa_da_di_thau_theo_phien.sql."
+        : `Đã hoàn thành hồ sơ nhưng CHƯA khóa được đề xuất nguồn: ${error.message}`);
+      return;
+    }
+    setThongBao((t) => `${t} Đã khóa các đề xuất nguồn trong gói này — không hiện lại để đề xuất trùng ở kỳ sau.`);
+    taiDuLieu();
+  };
+
   if (dangTai) return <p className="p-4 text-sm text-slate-500">Đang tổng hợp dữ liệu các khoa…</p>;
 
   return (
@@ -310,14 +440,15 @@ export default function TongHopPhongDieuDuong({ profile, goi, dot }) {
               <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
             {[
               ["Khoa đã duyệt", khoa.length],
+              ["Khoa chưa gửi", theoKhoa.filter((g) => g.chuaGui).length, true],
               ["Dòng nguồn", daDuyet.length],
               ["Mã sau gộp", tongHop.length],
               ["Cảnh báo ĐVT", canhBaoDvt.length],
-            ].map(([nhan, so]) => (
-              <div key={nhan} className="rounded-lg bg-slate-50 px-3 py-2">
+            ].map(([nhan, so, canhBao]) => (
+              <div key={nhan} className={`rounded-lg px-3 py-2 ${canhBao && so > 0 ? "bg-amber-50" : "bg-slate-50"}`}>
                 <p className="text-[11px] text-slate-500">{nhan}</p>
                 <p className="mt-0.5 text-lg font-bold text-[var(--umc-navy)]">{so}</p>
               </div>
@@ -367,7 +498,10 @@ export default function TongHopPhongDieuDuong({ profile, goi, dot }) {
           )}
         </div>
 
-        <AnimatePresence mode="wait" initial={false}>
+        {/* Không mode="wait": nếu animation exit của tab cũ không tick tới
+            cùng (máy chậm, tab mất focus...), tab mới chờ vô thời hạn và
+            không bao giờ hiện — đã xác nhận bằng bug thật ở KhungGoiThau. */}
+        <AnimatePresence initial={false}>
           <motion.div key={cheDo}
             initial={giamChuyenDong ? false : { opacity: 0, transform: "translateY(4px)" }}
             animate={{ opacity: 1, transform: "translateY(0px)" }}
@@ -376,6 +510,20 @@ export default function TongHopPhongDieuDuong({ profile, goi, dot }) {
               theoKhoa.length ? (
                 <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
                   {theoKhoa.map((g) => {
+                    if (g.chuaGui) {
+                      return (
+                        <div key={g.don_vi} className="rounded-lg border border-dashed border-slate-200 bg-slate-50/60 p-3">
+                          <div className="flex items-start gap-2">
+                            <span className="rounded-md bg-slate-100 p-1.5 text-slate-400"><Building2 size={15} /></span>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-slate-500">{g.don_vi}</p>
+                              <p className="mt-0.5 text-xs text-slate-400">Chưa gửi đề xuất nào trong đợt này</p>
+                            </div>
+                            <AlertTriangle size={16} className="ml-auto shrink-0 text-amber-500" />
+                          </div>
+                        </div>
+                      );
+                    }
                     const tt = trangThaiTheoKhoa.get(g.don_vi) || [];
                     const daDuyetHoSo = tt.filter((x) => x.trang_thai === "da_duyet").length;
                     const pddDaSua = tt.some((x) => x.pdd_sua_boi);
@@ -386,7 +534,7 @@ export default function TongHopPhongDieuDuong({ profile, goi, dot }) {
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-slate-800">{g.don_vi}</p>
                           <p className="mt-0.5 text-xs text-slate-500">
-                            {g.soNhom} hồ sơ · {g.rows.length} dòng đã hoàn thành
+                            {g.soNhom} giỏ đề xuất · {g.rows.length} dòng đã gửi
                           </p>
                         </div>
                         <CheckCircle2 size={16} className="ml-auto shrink-0 text-teal-600" />
@@ -403,7 +551,13 @@ export default function TongHopPhongDieuDuong({ profile, goi, dot }) {
                           </span>
                         )}
                       </div>
-                      <button type="button" onClick={() => setKhoaHoSo(g.don_vi)}
+                      <button type="button" onClick={() => {
+                        setKhoaHoSo(g.don_vi);
+                        // Tự tính ngay lúc bấm, không chờ effect — bấm sang
+                        // khoa KHÁC với khoa đã mở qua "Công việc chờ duyệt"
+                        // (nguonKeyKhoiTao) vẫn phải suy đúng bộ của khoa mới.
+                        setNguonKeyHoSo(nguonKeyTheoKhoa.get(g.don_vi)?.nguon_key || "current");
+                      }}
                         className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-800 hover:bg-blue-100">
                         <ExternalLink size={13} /> Mở Word & Excel của khoa
                       </button>
@@ -412,68 +566,93 @@ export default function TongHopPhongDieuDuong({ profile, goi, dot }) {
                   })}
                 </div>
               ) : (
-                <p className="p-8 text-center text-sm text-slate-400">Chưa có khoa nào hoàn thành duyệt trong đợt này.</p>
+                <p className="p-8 text-center text-sm text-slate-400">Chưa có khoa nào gửi đề xuất trong đợt này.</p>
               )
-            ) : tongHopLoc.length ? (
+            ) : nhomTongHop.length ? (
               <>
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[920px] text-sm">
-                    <thead className="bg-slate-50 text-left text-xs text-slate-500">
-                      <tr>
-                        <th className="px-4 py-2.5">Mã quản lý / mã hàng</th>
-                        <th className="px-4 py-2.5">Tên vật tư</th>
-                        <th className="px-4 py-2.5 text-right">Tổng số lượng</th>
-                        <th className="px-4 py-2.5">Khoa đề xuất</th>
-                        <th className="w-10 px-3 py-2.5"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rowsTrang.map((r) => {
-                        const key = `${r.ma_hang}-${r.dvt}`;
-                        return (
-                          <Fragment key={key}>
-                            <tr className="border-t border-slate-100 align-top">
-                              <td className="px-4 py-3">
-                                <p className="font-mono text-sm font-bold text-indigo-700">{r.ma_quan_ly || "Chưa gắn mã quản lý"}</p>
-                                <p className="mt-0.5 font-mono text-xs text-slate-500">{r.ma_hang}</p>
-                              </td>
-                              <td className="max-w-md px-4 py-3 text-xs text-slate-700">{r.ten_vat_tu}</td>
-                              <td className="px-4 py-3 text-right font-mono font-semibold text-slate-800">
-                                {fmt(r.so_luong)} <span className="text-xs font-normal text-slate-400">{r.dvt}</span>
-                              </td>
-                              <td className="px-4 py-3 text-xs text-slate-600">
-                                {r.khoa_de_xuat.length} khoa
-                                <p className="mt-0.5 max-w-xs truncate text-[11px] text-slate-400">{r.khoa_de_xuat.join(", ")}</p>
-                              </td>
-                              <td className="px-3 py-3">
-                                <button type="button" onClick={() => setMoDong(moDong === key ? null : key)}
-                                  className="text-slate-400 hover:text-teal-700" aria-label="Xem chi tiết theo khoa">
-                                  <ChevronDown size={16} className={moDong === key ? "rotate-180" : ""} />
-                                </button>
-                              </td>
-                            </tr>
-                            {moDong === key && (
-                              <tr>
-                                <td colSpan={5} className="bg-slate-50 px-4 py-3">
-                              <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
-                                {r.dong_nguon.map((n) => (
-                                  <div key={n.id} className="flex justify-between rounded-md bg-white px-2.5 py-1.5 text-xs">
-                                    <span className="truncate text-slate-600">{n.don_vi}</span>
-                                    <span className="ml-2 font-mono font-semibold text-slate-800">{fmt(n.so_luong)} {r.dvt}</span>
-                                  </div>
-                                ))}
-                              </div>
-                                </td>
-                              </tr>
-                            )}
-                          </Fragment>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                <div className="divide-y divide-slate-100">
+                  {nhomTrang.map((n) => {
+                    const moNhom = nhomMo.has(n.ma_quan_ly);
+                    return (
+                      <div key={n.ma_quan_ly || "(chưa gắn)"}>
+                        <button type="button"
+                          onClick={() => setNhomMo((p) => {
+                            const s = new Set(p);
+                            s.has(n.ma_quan_ly) ? s.delete(n.ma_quan_ly) : s.add(n.ma_quan_ly);
+                            return s;
+                          })}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
+                          <ChevronRight size={15} className={`shrink-0 text-slate-400 transition-transform ${moNhom ? "rotate-90" : ""}`} />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-mono text-sm font-bold text-indigo-700">
+                              {n.ma_quan_ly || "Chưa gắn mã quản lý"}
+                            </p>
+                            {n.ten_quan_ly && <p className="truncate text-xs text-slate-500">{n.ten_quan_ly}</p>}
+                          </div>
+                          <span className="shrink-0 text-xs text-slate-400">{n.items.length} mã hàng</span>
+                          <span className="shrink-0 text-xs text-slate-400">{n.soKhoa} khoa</span>
+                        </button>
+                        {moNhom && (
+                          <div className="overflow-x-auto border-t border-slate-100 bg-slate-50/40">
+                            <table className="w-full min-w-[820px] text-sm">
+                              <thead className="text-left text-xs text-slate-500">
+                                <tr>
+                                  <th className="px-4 py-2 pl-11">Mã hàng</th>
+                                  <th className="px-4 py-2">Tên vật tư</th>
+                                  <th className="px-4 py-2 text-right">Tổng số lượng</th>
+                                  <th className="px-4 py-2">Khoa đề xuất</th>
+                                  <th className="w-10 px-3 py-2"></th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {n.items.map((r) => {
+                                  const key = `${r.ma_hang}-${r.dvt}`;
+                                  return (
+                                    <Fragment key={key}>
+                                      <tr className="border-t border-slate-100 bg-white align-top">
+                                        <td className="px-4 py-3 pl-11 font-mono text-xs text-slate-600">{r.ma_hang}</td>
+                                        <td className="max-w-md px-4 py-3 text-xs text-slate-700">{r.ten_vat_tu}</td>
+                                        <td className="px-4 py-3 text-right font-mono font-semibold text-slate-800">
+                                          {fmt(r.so_luong)} <span className="text-xs font-normal text-slate-400">{r.dvt}</span>
+                                        </td>
+                                        <td className="px-4 py-3 text-xs text-slate-600">
+                                          {r.khoa_de_xuat.length} khoa
+                                          <p className="mt-0.5 max-w-xs truncate text-[11px] text-slate-400">{r.khoa_de_xuat.join(", ")}</p>
+                                        </td>
+                                        <td className="px-3 py-3">
+                                          <button type="button" onClick={() => setMoDong(moDong === key ? null : key)}
+                                            className="text-slate-400 hover:text-teal-700" aria-label="Xem chi tiết theo khoa">
+                                            <ChevronDown size={16} className={moDong === key ? "rotate-180" : ""} />
+                                          </button>
+                                        </td>
+                                      </tr>
+                                      {moDong === key && (
+                                        <tr>
+                                          <td colSpan={5} className="bg-slate-50 px-4 py-3">
+                                        <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
+                                          {r.dong_nguon.map((s) => (
+                                            <div key={s.id} className="flex justify-between rounded-md bg-white px-2.5 py-1.5 text-xs">
+                                              <span className="truncate text-slate-600">{s.don_vi}</span>
+                                              <span className="ml-2 font-mono font-semibold text-slate-800">{fmt(s.so_luong)} {r.dvt}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                          </td>
+                                        </tr>
+                                      )}
+                                    </Fragment>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
                 <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
-                  <span>Trang {trang}/{soTrang} · tối đa {MOI_TRANG} mã/trang</span>
+                  <span>Trang {trang}/{soTrang} · tối đa {NHOM_MOI_TRANG} mã quản lý/trang</span>
                   <div className="flex gap-1">
                     <button onClick={() => setTrang((p) => Math.max(1, p - 1))} disabled={trang === 1}
                       className="rounded border border-slate-200 p-1.5 disabled:opacity-30"><ChevronLeft size={14} /></button>
@@ -507,11 +686,12 @@ export default function TongHopPhongDieuDuong({ profile, goi, dot }) {
             </button>
           </div>
           <HoSoTrucTuyen
-            key={`${goi}-${dotId}-${khoaHoSo}`}
+            key={`${goi}-${dotId}-${khoaHoSo}-${nguonKeyHoSo}`}
             profile={profile}
             goi={goi}
             dotId={dotId}
             donVi={khoaHoSo}
+            nguonKey={nguonKeyHoSo || "current"}
             rows={rowsKhoaDangMo}
             usage={usage}
             taiLieu={[
@@ -522,7 +702,7 @@ export default function TongHopPhongDieuDuong({ profile, goi, dot }) {
               don_vi: khoaHoSo,
               nguoi_lap: khoaHoSo,
             }}
-            onSaved={taiTrangThaiHoSoKhoa}
+            onSaved={lamMoiSauKhiLuuHoSoKhoa}
             tieuDe="PĐD kiểm tra và chỉnh hồ sơ của khoa"
             moTa="Mọi chỉnh sửa và trạng thái duyệt xuất hiện ngay ở tài khoản khoa; không cần gửi bản sửa qua Zalo."
           />
@@ -603,8 +783,9 @@ export default function TongHopPhongDieuDuong({ profile, goi, dot }) {
             so_khoa: phien.so_khoa,
             phien_tong_hop_id: phien.id,
           }}
+          onSaved={khoaPhienDaDiThauNeuHoanThanh}
           tieuDe="Tổng hợp hồ sơ Phòng Điều dưỡng"
-          moTa={`Chỉnh trực tiếp trên bản Word và Excel từ snapshot #${phien.id}; duyệt & chốt trước khi tải bản chính thức.`}
+          moTa={`Chỉnh trực tiếp trên bản Word và Excel từ snapshot #${phien.id}; duyệt & chốt trước khi tải bản chính thức. Bấm "Hoàn thành cả bộ" sẽ khóa các đề xuất nguồn trong đúng gói này — khoa không đề xuất trùng mã ở kỳ sau, gói khác không bị ảnh hưởng.`}
         />
       ) : (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white/70 p-8 text-center">

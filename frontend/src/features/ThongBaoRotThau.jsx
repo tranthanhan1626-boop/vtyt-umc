@@ -7,12 +7,11 @@ import { supabase } from "../supabaseClient";
 // Vì sao có màn này: giá trị của cả vòng khép kín nằm ở chỗ KHOA BIẾT SỚM.
 // Phát hiện lúc kho báo hết hàng là đã muộn 3–4 tháng.
 //
-// CỐ Ý chỉ BÁO TIN, không đẩy khoa sang gói bổ sung — đi bổ sung hay không là
-// quyết định chuyên môn của khoa. Bấm vào chỉ dẫn sang hồ sơ để xem chi tiết.
+// Bấm xem chi tiết dẫn tới tab Tiến độ gói thầu, nơi khoa chủ động chọn đợt
+// bổ sung rồi đưa mã + số lượng đề xuất gốc vào giỏ để chỉnh sửa.
 
 const NHAN_MOC = {
   chao_gia: "chào giá", mo_thau: "mở thầu", danh_gia: "đánh giá",
-  ky_hop_dong: "ký hợp đồng", hang_ve_dot_dau: "hàng về đợt đầu",
 };
 
 export default function ThongBaoRotThau({ profile, onXemChiTiet }) {
@@ -40,7 +39,7 @@ export default function ThongBaoRotThau({ profile, onXemChiTiet }) {
   if (laPdd || an || rows.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-amber-300 bg-white shadow-lg">
+    <div className="pointer-events-auto w-full rounded-lg border border-amber-300 bg-white shadow-lg">
       <div className="flex items-start gap-2 border-b border-amber-200 bg-amber-50 px-3 py-2">
         <AlertTriangle size={15} className="mt-0.5 shrink-0 text-amber-700" />
         <p className="flex-1 text-sm font-medium text-amber-900">
@@ -71,7 +70,7 @@ export default function ThongBaoRotThau({ profile, onXemChiTiet }) {
       <div className="flex gap-2 border-t border-slate-100 px-3 py-2">
         <button onClick={() => { onXemChiTiet?.(); setAn(true); }}
           className="flex-1 rounded-md bg-teal-700 px-2 py-1.5 text-xs font-medium text-white hover:bg-teal-800">
-          Xem chi tiết trong hồ sơ
+          Xem mã rớt thầu
         </button>
         <button onClick={danhDauDaXem}
           className="rounded-md border border-slate-300 px-2 py-1.5 text-xs text-slate-600 hover:bg-slate-50">

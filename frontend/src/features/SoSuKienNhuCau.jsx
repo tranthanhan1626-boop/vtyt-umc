@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Search, X, Check, CheckCircle2 } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
+import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
 
 // Phase C — SỔ SỰ KIỆN NHU CẦU. Nơi khoa khai TRƯỚC những thay đổi mà lịch sử
 // xuất kho không bao giờ nhìn thấy: kỹ thuật mới, máy mới, đổi phác đồ, ngưng
@@ -259,6 +260,14 @@ export default function SoSuKienNhuCau({ profile }) {
                 <span className="text-sm font-medium text-slate-800">{ten}</span>
                 {laPdd && <span className="text-xs text-slate-500">{r.don_vi}</span>}
                 <span className={`text-xs px-2 py-0.5 rounded ml-auto ${mau}`}>{nhan}</span>
+                <NutXoaDuLieuTest
+                  loai="su_kien_nhu_cau"
+                  id={r.id}
+                  compact
+                  nhan="Xóa sự kiện nhu cầu test"
+                  moTa={`sự kiện nhu cầu ${r.ma_hang || r.ma_quan_ly || r.ma_ly_do} của ${r.don_vi}`}
+                  onDaXoa={() => setRows((cu) => cu.filter((x) => x.id !== r.id))}
+                />
               </div>
               <p className="text-xs text-slate-600 mt-0.5">
                 {moTaDinhLuong(r)} · từ T{r.tu_thang}/{r.tu_nam}

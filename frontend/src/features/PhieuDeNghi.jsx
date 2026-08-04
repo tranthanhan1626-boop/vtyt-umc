@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Check, Download, Plus, Trash2 } from "lucide-react";
 import { supabase } from "../supabaseClient";
+import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
 
 // Trang điền "Phiếu đề nghị mua sắm vật tư y tế" — mở qua ?phieu=<id> ở tab
 // riêng. Khoa (dvsd đúng khoa) VÀ dieu_duong/admin đều điền/sửa được (chốt
@@ -165,6 +166,18 @@ export default function PhieuDeNghi({ phieuId, profile }) {
             className="px-4 py-1.5 text-sm rounded-md bg-teal-700 text-white hover:bg-teal-800 disabled:opacity-40 font-medium">
             {dangLuu ? "Đang lưu..." : "Lưu phiếu"}
           </button>
+          <NutXoaDuLieuTest
+            loai="phieu_de_nghi"
+            id={phieu?.id}
+            nhan="Xóa phiếu test"
+            moTa={`phiếu đề nghị #${phieu?.id} của ${deXuat?.don_vi || nd?.khoa || "khoa"}`}
+            disabled={dangLuu}
+            onDaXoa={() => {
+              setPhieu(null);
+              setNd(null);
+              setLoi("Phiếu kiểm thử đã được xóa. Có thể đóng tab này.");
+            }}
+          />
         </div>
 
         {/* Phiếu */}

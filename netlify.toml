@@ -1,5 +1,5 @@
 # Cấu hình Netlify — để Netlify tự biết build thư mục frontend/, không cần
-# nhập tay trên dashboard. Đọc backend/CLAUDE.md mục 7 để hiểu bối cảnh deploy.
+# nhập tay trên dashboard. Đọc Tổng quan/04_VAN_HANH_KY_THUAT.md để hiểu deploy.
 
 [build]
   base = "frontend"          # code FE nằm trong frontend/, không phải gốc repo

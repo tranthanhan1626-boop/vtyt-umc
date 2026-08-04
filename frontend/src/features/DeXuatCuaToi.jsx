@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { FileText, ExternalLink, Package, Trash2, Undo2, X } from "lucide-react";
+import { FileText, Package, Sheet, Trash2, Undo2, X } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import { NHAN_TRANG_THAI, fmtNgayGio, khoaNhom } from "./DeXuatTongHop";
 import { NHAN_GOI_THAU } from "./Function1";
+import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
 
 const NHAN_LY_DO = {
   theo_lich_su: "Theo lịch sử sử dụng",
@@ -23,9 +24,8 @@ const MAU_TRANG_THAI = {
 // Không lọc theo don_vi ở FE — RLS của proposals đã tự giới hạn dvsd chỉ thấy
 // đúng khoa mình (policy "xem đề xuất theo phân quyền khoa"), không cần lặp
 // lại điều kiện đó ở đây.
-export default function DeXuatCuaToi({ profile, goi }) {
+export default function DeXuatCuaToi({ profile, goi, onMoHoSo }) {
   const [rows, setRows] = useState([]);
-  const [phieuTheoNhom, setPhieuTheoNhom] = useState({}); // {khoaNhom: phieu}
   const [tenDot, setTenDot] = useState({});
   const [loading, setLoading] = useState(true);
   const [loi, setLoi] = useState("");
@@ -48,12 +48,6 @@ export default function DeXuatCuaToi({ profile, goi }) {
       const { data: dots } = await supabase.from("dot_de_xuat")
         .select("id, ten").eq("loai_mua_sam", goi);
       setTenDot(Object.fromEntries((dots || []).map((d) => [d.id, d.ten])));
-      const { data: phieu } = await fetchAllRows((f, t) =>
-        supabase.from("phieu_de_nghi").select("id, proposal_id, nhom_de_xuat, trang_thai").range(f, t)
-      );
-      setPhieuTheoNhom(Object.fromEntries(
-        (phieu || []).map((p) => [p.nhom_de_xuat || `le:${p.proposal_id}`, p])
-      ));
       setLoading(false);
     })();
   }, [goi]);
@@ -130,9 +124,17 @@ export default function DeXuatCuaToi({ profile, goi }) {
       <div className="space-y-3">
         <AnimatePresence initial={false}>
         {nhomLoc.map((g) => {
-          const phieu = phieuTheoNhom[g.key];
-          const laNguoiTao = g.created_by === profile.email;
-          const coTheRut = laNguoiTao && g.trangThai !== "hoan_thanh" && g.trangThai !== "hon_hop";
+          // RLS đã giới hạn danh sách vào đúng khoa. Quyền rút cũng dựa trên
+          // khoa ở RPC, không còn khóa theo email của người bấm gửi ban đầu.
+          const cungKhoa = g.don_vi === profile.khoa;
+          const coTheRut = cungKhoa && g.trangThai !== "hoan_thanh" && g.trangThai !== "hon_hop";
+          const moHoSo = (maHoSo) => onMoHoSo?.({
+            dotId: g.dot_id,
+            donVi: g.don_vi,
+            nhomDeXuat: g.nhom_de_xuat,
+            proposalId: g.nhom_de_xuat ? null : g.items[0]?.id,
+            maHoSo,
+          });
           return (
             <motion.div
               layout={!giamChuyenDong}
@@ -152,11 +154,17 @@ export default function DeXuatCuaToi({ profile, goi }) {
                 <span className={`inline-block px-2 py-0.5 rounded-full font-medium ${MAU_TRANG_THAI[g.trangThai]}`}>
                   {g.trangThai === "hon_hop" ? "Hỗn hợp" : NHAN_TRANG_THAI[g.trangThai]}
                 </span>
-                {phieu && (
-                  <a href={`?phieu=${phieu.id}`} target="_blank" rel="noreferrer"
-                    className="ml-auto inline-flex items-center gap-1 text-teal-700 hover:text-teal-900 hover:underline">
-                    <FileText size={12} /> Mở phiếu <ExternalLink size={10} />
-                  </a>
+                {g.trangThai === "hoan_thanh" && goi !== "chi_dinh_thau" && (
+                  <div className="ml-auto flex flex-wrap items-center gap-2">
+                    <button type="button" onClick={() => moHoSo("cam_ket_sl")}
+                      className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-white px-2.5 py-1.5 font-medium text-blue-700 hover:bg-blue-50">
+                      <FileText size={13} /> Mở phiếu Word cam kết
+                    </button>
+                    <button type="button" onClick={() => moHoSo("danh_muc_dvsd")}
+                      className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-white px-2.5 py-1.5 font-medium text-emerald-700 hover:bg-emerald-50">
+                      <Sheet size={13} /> Mở phiếu Excel danh mục
+                    </button>
+                  </div>
                 )}
               </div>
               {g.lyDoTraLai?.length > 0 && (
@@ -248,10 +256,23 @@ export default function DeXuatCuaToi({ profile, goi }) {
                 ) : (
                   <p className="text-right text-xs text-slate-400">
                     {g.trangThai === "hoan_thanh"
-                      ? "Đề xuất đã hoàn thành duyệt — không thể xoá."
-                      : !laNguoiTao ? "Chỉ account đã tạo hồ sơ này mới được rút." : ""}
+                      ? "Đề xuất đã hoàn thành duyệt — mở Word hoặc Excel ở phía trên."
+                      : !cungKhoa ? "Chỉ tài khoản thuộc khoa này mới được điều chỉnh." : ""}
                   </p>
                 )}
+                <div className="mt-2 flex justify-end">
+                  <NutXoaDuLieuTest
+                    loai="nhom_de_xuat"
+                    id={g.key}
+                    nhan="Xóa hẳn dữ liệu test"
+                    moTa={`toàn bộ đề xuất ${g.items.length} mã, kèm phiếu và file Word/Excel liên quan`}
+                    disabled={dangRut === g.key}
+                    onDaXoa={() => {
+                      const ids = new Set(g.items.map((i) => i.id));
+                      setRows((cu) => cu.filter((r) => !ids.has(r.id)));
+                    }}
+                  />
+                </div>
               </div>
             </motion.div>
           );

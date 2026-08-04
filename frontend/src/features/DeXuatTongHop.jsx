@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, ChevronDown, Download, Check, X, PlayCircle, FileText, ExternalLink, Trash2, Package } from "lucide-react";
+import { Search, ChevronDown, Download, Check, X, PlayCircle, FileText, ExternalLink, Trash2, Package, Sheet, Combine } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import { NHAN_GOI_THAU } from "./Function1";
+import { taoBanThaoHoSo } from "../lib/xuatHoSo";
+import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
 
 const NHAN_LY_DO = {
   theo_lich_su: "Theo lịch sử sử dụng",
@@ -37,7 +39,7 @@ export function fmtNgayGio(iso) {
 // trước tính năng gộp) nhom_de_xuat=null nên mỗi dòng tự đứng 1 nhóm theo id.
 export const khoaNhom = (r) => r.nhom_de_xuat || `le:${r.id}`;
 
-export default function DeXuatTongHop({ profile, goi }) {
+export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loi, setLoi] = useState("");
@@ -53,6 +55,8 @@ export default function DeXuatTongHop({ profile, goi }) {
   const [phieuTheoNhom, setPhieuTheoNhom] = useState({}); // {khoaNhom: phieu}
   const [xacNhanXoa, setXacNhanXoa] = useState(null);   // key nhóm chờ xác nhận xoá
   const [lyDoXoa, setLyDoXoa] = useState("");
+  const [gioGop, setGioGop] = useState([]);
+  const [dangGop, setDangGop] = useState(false);
 
   const taiDuLieu = async () => {
     setLoading(true);
@@ -103,7 +107,7 @@ export default function DeXuatTongHop({ profile, goi }) {
         key: k, nhom_de_xuat: r.nhom_de_xuat, items: [],
         don_vi: r.don_vi, created_at: r.created_at,
         created_by: r.created_by, created_by_ho_ten: r.created_by_ho_ten,
-        nam_de_xuat: r.nam_de_xuat,
+        nam_de_xuat: r.nam_de_xuat, dot_id: r.dot_id,
       });
       m.get(k).items.push(r);
     });
@@ -114,6 +118,7 @@ export default function DeXuatTongHop({ profile, goi }) {
         ...g,
         trangThai: tt.length === 1 ? tt[0] : "hon_hop",
         goi: goiSet.length === 1 ? goiSet[0] : goiSet.length > 1 ? "(nhiều gói)" : null,
+        daDiThau: g.items.every((i) => !!i.da_di_thau),
       };
     });
     if (sapXep === "goi") {
@@ -187,6 +192,122 @@ export default function DeXuatTongHop({ profile, goi }) {
       setRows((prev) => prev.map((r) => (idSet.has(r.id) ? { ...r, trang_thai: trangThaiMoi } : r)));
     }
     setDangCapNhat(null);
+  };
+
+  const chonGioDeGop = (g) => {
+    if (g.trangThai !== "hoan_thanh" || g.daDiThau) return;
+    setLoiCapNhat((p) => ({ ...p, gop: "" }));
+    setGioGop((cu) => {
+      if (cu.includes(g.key)) return cu.filter((x) => x !== g.key);
+      const daChon = nhomLoc.filter((x) => cu.includes(x.key));
+      if (daChon.length && (
+        daChon[0].don_vi !== g.don_vi
+        || String(daChon[0].dot_id) !== String(g.dot_id)
+      )) {
+        setLoiCapNhat((p) => ({
+          ...p,
+          gop: "Chỉ gộp các giỏ của cùng khoa và cùng đợt đề xuất.",
+        }));
+        return cu;
+      }
+      return [...cu, g.key];
+    });
+  };
+
+  const gopExcelDaChon = async () => {
+    const dsGio = nhomLoc.filter((g) => gioGop.includes(g.key));
+    if (!dsGio.length || dangGop) return;
+    setDangGop(true);
+    setLoiCapNhat((p) => ({ ...p, gop: "" }));
+
+    const rowsGop = dsGio.flatMap((g) => g.items);
+    const codes = [...new Set(rowsGop.map((r) => r.ma_hang).filter(Boolean))];
+    const nguonKeys = dsGio.map((g) =>
+      g.nhom_de_xuat ? `gio:${g.nhom_de_xuat}` : `gio:le-${g.items[0]?.id}`
+    );
+    const [vt, us, hs] = await Promise.all([
+      fetchAllRows((f, t) => supabase.from("vat_tu")
+        .select("ma_hang,ten_thuong_mai,ky_ma_hieu,hang,nuoc_san_xuat,tieu_chi_ky_thuat")
+        .in("ma_hang", codes).range(f, t)),
+      fetchAllRows((f, t) => supabase.from("v_usage_monthly")
+        .select("ma_hang,nam,so_luong").in("ma_hang", codes).range(f, t)),
+      fetchAllRows((f, t) => supabase.from("ho_so_cong_tac")
+        .select("nguon_key,noi_dung").eq("ma_ho_so", "danh_muc_dvsd")
+        .in("nguon_key", nguonKeys).range(f, t)),
+    ]);
+    if (vt.error || us.error || hs.error) {
+      setLoiCapNhat((p) => ({
+        ...p,
+        gop: vt.error?.message || us.error?.message || hs.error?.message,
+      }));
+      setDangGop(false);
+      return;
+    }
+
+    const thongTin = Object.fromEntries((vt.data || []).map((x) => [x.ma_hang, x]));
+    const rowsDayDu = rowsGop.map((r) => ({ ...r, ...(thongTin[r.ma_hang] || {}) }));
+    const usage = {};
+    (us.data || []).forEach((x) => {
+      usage[x.ma_hang] = usage[x.ma_hang] || {};
+      usage[x.ma_hang][x.nam] = (usage[x.ma_hang][x.nam] || 0) + Number(x.so_luong);
+    });
+    const hoSoTheoNguon = Object.fromEntries((hs.data || []).map((x) => [x.nguon_key, x]));
+    const meta = {
+      don_vi: dsGio[0].don_vi,
+      nguoi_lap: dsGio[0].created_by_ho_ten || dsGio[0].created_by || dsGio[0].don_vi,
+    };
+    const banNen = taoBanThaoHoSo("danh_muc_dvsd", rowsDayDu, meta, usage);
+    const dongDaSua = [];
+    dsGio.forEach((g, i) => {
+      const nguon = nguonKeys[i];
+      const cu = hoSoTheoNguon[nguon]?.noi_dung?.ban_thao;
+      const rowsCuaGio = rowsDayDu.filter((r) => g.items.some((x) => x.id === r.id));
+      const cungCauTruc = cu?.bang_tinh?.headers
+        && JSON.stringify(cu.bang_tinh.headers) === JSON.stringify(banNen.bang_tinh.headers);
+      const ban = cungCauTruc
+        ? cu
+        : taoBanThaoHoSo("danh_muc_dvsd", rowsCuaGio, meta, usage);
+      dongDaSua.push(...(ban.bang_tinh?.rows || []));
+    });
+    // Cột 7 = mã quản lý, cột 3 = mã hàng trong biểu mẫu danh mục hiện tại.
+    dongDaSua.sort((a, b) =>
+      String(a[6] || "~~~~").localeCompare(String(b[6] || "~~~~"), "vi")
+      || String(a[2] || "").localeCompare(String(b[2] || ""), "vi")
+    );
+    const banGop = {
+      ...banNen,
+      bang_tinh: { ...banNen.bang_tinh, rows: dongDaSua },
+    };
+    const { data, error } = await supabase.rpc("gop_excel_danh_muc_de_xuat", {
+      p_proposal_ids: rowsDayDu.map((r) => r.id),
+      p_noi_dung: {
+        ban_thao: banGop,
+        rows: rowsDayDu,
+        meta,
+        usage,
+        source_ids: rowsDayDu.map((r) => r.id),
+        source_nguon_keys: nguonKeys,
+      },
+    });
+    if (error) {
+      const canPatch = error.code === "PGRST202" || /gop_excel_danh_muc_de_xuat/i.test(error.message || "");
+      setLoiCapNhat((p) => ({
+        ...p,
+        gop: canPatch
+          ? "Staging chưa có chức năng gộp Excel. Cần chạy lại patch_x_quyen_khoa_va_ho_so_theo_gio.sql."
+          : error.message,
+      }));
+      setDangGop(false);
+      return;
+    }
+    setGioGop([]);
+    setDangGop(false);
+    onMoHoSo?.({
+      dotId: dsGio[0].dot_id,
+      donVi: dsGio[0].don_vi,
+      nguonKey: data.nguon_key,
+      maHoSo: "danh_muc_dvsd",
+    });
   };
 
   const taiCSV = () => {
@@ -292,8 +413,20 @@ export default function DeXuatTongHop({ profile, goi }) {
       </div>
 
       <div className="text-sm text-slate-500 px-1">
-        {nhomLoc.length} đề xuất{" "}
-        <span className="text-slate-400">({rowsLoc.length} mã hàng{rowsLoc.length !== rows.length && `, lọc từ ${rows.length}`})</span>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span>
+            {nhomLoc.length} đề xuất{" "}
+            <span className="text-slate-400">({rowsLoc.length} mã hàng{rowsLoc.length !== rows.length && `, lọc từ ${rows.length}`})</span>
+          </span>
+          {goi !== "chi_dinh_thau" && (
+            <button type="button" onClick={gopExcelDaChon} disabled={!gioGop.length || dangGop}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-35">
+              <Combine size={14} />
+              {dangGop ? "Đang gộp…" : `Gộp Excel danh mục (${gioGop.length} giỏ)`}
+            </button>
+          )}
+        </div>
+        {loiCapNhat.gop && <p className="mt-2 text-xs text-red-600">{loiCapNhat.gop}</p>}
       </div>
 
       {nhomLoc.length === 0 ? (
@@ -308,6 +441,16 @@ export default function DeXuatTongHop({ profile, goi }) {
               <div key={g.key} className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                 {/* Đầu nhóm: thông tin chung của cả bản đề xuất */}
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5 bg-slate-50/70 border-b border-slate-100 text-xs">
+                  {goi !== "chi_dinh_thau" && (
+                    <input type="checkbox"
+                      checked={gioGop.includes(g.key)}
+                      disabled={g.trangThai !== "hoan_thanh" || g.daDiThau}
+                      onChange={() => chonGioDeGop(g)}
+                      title={g.daDiThau
+                        ? "Giỏ đã đi thầu và đã khóa"
+                        : g.trangThai !== "hoan_thanh" ? "PĐD cần hoàn thành duyệt giỏ trước" : "Chọn giỏ để gộp Excel"}
+                      className="rounded border-slate-300 text-emerald-700 focus:ring-emerald-500 disabled:opacity-35" />
+                  )}
                   <span className="inline-flex items-center gap-1.5 font-medium text-slate-700">
                     <Package size={13} className="text-teal-700" />
                     {g.don_vi}
@@ -319,6 +462,35 @@ export default function DeXuatTongHop({ profile, goi }) {
                   <span className={`ml-auto inline-block px-2 py-0.5 rounded-full font-medium ${MAU_TRANG_THAI[g.trangThai]}`}>
                     {g.trangThai === "hon_hop" ? "Hỗn hợp" : NHAN_TRANG_THAI[g.trangThai]}
                   </span>
+                  {g.daDiThau && (
+                    <span className="rounded-full bg-violet-100 px-2 py-0.5 font-semibold text-violet-800">
+                      Đã đi thầu · đã khóa
+                    </span>
+                  )}
+                  {g.trangThai === "hoan_thanh" && goi !== "chi_dinh_thau" && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button type="button" onClick={() => onMoHoSo?.({
+                        dotId: g.dot_id,
+                        donVi: g.don_vi,
+                        nhomDeXuat: g.nhom_de_xuat,
+                        proposalId: g.nhom_de_xuat ? null : g.items[0]?.id,
+                        maHoSo: "cam_ket_sl",
+                      })}
+                        className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-white px-2.5 py-1.5 font-medium text-blue-700 hover:bg-blue-50">
+                        <FileText size={13} /> Mở Word cam kết
+                      </button>
+                      <button type="button" onClick={() => onMoHoSo?.({
+                        dotId: g.dot_id,
+                        donVi: g.don_vi,
+                        nhomDeXuat: g.nhom_de_xuat,
+                        proposalId: g.nhom_de_xuat ? null : g.items[0]?.id,
+                        maHoSo: "danh_muc_dvsd",
+                      })}
+                        className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-white px-2.5 py-1.5 font-medium text-emerald-700 hover:bg-emerald-50">
+                        <Sheet size={13} /> Mở Excel danh mục
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Danh sách mã hàng trong nhóm */}
@@ -407,7 +579,7 @@ export default function DeXuatTongHop({ profile, goi }) {
                     </div>
                   </div>
 
-                  <div className="ml-auto">
+                  <div className="ml-auto flex flex-col items-end gap-2">
                     {g.trangThai === "hoan_thanh" ? (
                       <p className="text-xs text-slate-400">Đã hoàn thành — không thể xoá</p>
                     ) : (
@@ -439,6 +611,22 @@ export default function DeXuatTongHop({ profile, goi }) {
                     )}
                     </>
                     )}
+                    <NutXoaDuLieuTest
+                      loai="nhom_de_xuat"
+                      id={g.key}
+                      nhan="Xóa hẳn dữ liệu test"
+                      moTa={`toàn bộ đề xuất ${g.items.length} mã của ${g.don_vi}, kèm phiếu và Word/Excel liên quan`}
+                      disabled={dangCapNhat === g.key}
+                      onDaXoa={() => {
+                        const ids = new Set(g.items.map((i) => i.id));
+                        setRows((cu) => cu.filter((r) => !ids.has(r.id)));
+                        setPhieuTheoNhom((cu) => {
+                          const tiep = { ...cu };
+                          delete tiep[g.key];
+                          return tiep;
+                        });
+                      }}
+                    />
                   </div>
 
                   {loiCapNhat[g.key] && <p className="w-full text-xs text-red-600">{loiCapNhat[g.key]}</p>}

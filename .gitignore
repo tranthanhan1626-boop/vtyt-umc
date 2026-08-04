@@ -25,6 +25,7 @@ graphify-out/
 
 # Dữ liệu xuất từ production để nạp sang staging — KHÔNG commit
 backend/du_lieu_staging/
+frontend/src/data/kha-dung-hop-dong-staging.json
 
 # Bản sao lưu — KHÔNG commit (chứa dữ liệu bệnh viện)
 backend/sao_luu/

@@ -8,6 +8,7 @@ import {
   MAU_TT_NHOM,
   NHAN_TT_NHOM,
 } from "./Function1";
+import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
 
 export default function NhomKyThuatCuaKhoa({ profile }) {
   const chonDuocDonVi = profile.role === "admin" || profile.role === "dieu_duong";
@@ -220,6 +221,14 @@ export default function NhomKyThuatCuaKhoa({ profile }) {
                       <Trash2 size={15} />
                     </button>
                   )}
+                  <NutXoaDuLieuTest
+                    loai="khoa_nhom_ky_thuat"
+                    id={d.id}
+                    compact
+                    nhan="Xóa hẳn đề nghị mã test"
+                    moTa={`đề nghị mã ${d.ma_hang_moi || d.ma_quan_ly || d.ten_vat_tu_moi} của ${d.don_vi}`}
+                    onDaXoa={() => setDsDeNghi((cu) => cu.filter((x) => x.id !== d.id))}
+                  />
                 </div>
                 {d.trang_thai === "cho_duyet" && (
                   <p className="flex items-center gap-1 text-xs text-slate-400 md:col-span-3">

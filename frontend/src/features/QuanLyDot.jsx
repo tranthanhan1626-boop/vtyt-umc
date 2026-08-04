@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus, Lock, Unlock } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { GOI, useDotDangMo } from "./KhungGoiThau";
+import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
 
 // H.6 — Phòng Điều dưỡng mở/đóng đợt đề xuất (QĐ-20).
 // Đợt ĐÓNG thì khoa không gửi được nữa — chặn ở DB, không chỉ ẩn nút.
@@ -115,6 +116,14 @@ export default function QuanLyDot() {
                        : "border-teal-300 text-teal-800 hover:bg-teal-50"}`}>
                   {mo ? <><Lock size={12} /> Đóng đợt</> : <><Unlock size={12} /> Mở đợt</>}
                 </button>
+                <NutXoaDuLieuTest
+                  loai="dot_de_xuat"
+                  id={d.id}
+                  compact
+                  nhan="Xóa đợt và toàn bộ dữ liệu test trong đợt"
+                  moTa={`đợt ${d.ten}, toàn bộ giỏ, đề xuất, Word/Excel, phiên tổng hợp và gói thầu liên quan`}
+                  onDaXoa={taiLai}
+                />
               </div>
             );
           })}

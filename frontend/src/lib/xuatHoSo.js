@@ -9,6 +9,7 @@
 // trí để điền tay — KHÔNG bỏ cột, vì bỏ là sai bố cục mẫu.
 
 import { CHI_DINH_THAU, DANH_MUC_DVSD, TONG_HOP_PDD, CAM_KET, DE_NGHI_MUA } from "./coCauBieuMau.js";
+import { xuatExcelTheoMau, xuatWordTheoMau } from "./xuatTheoMau.js";
 
 export const HO_SO = {
   chi_dinh_thau: { ma: "chi_dinh_thau", ten: "Đề xuất mua chỉ định thầu", loai: "word", ai: "dvsd" },
@@ -47,127 +48,26 @@ export function chuanHoaDong(r, usage = {}) {
   };
 }
 
+/** Thứ tự hồ sơ: mã quản lý → mã hàng → thứ tự gửi trong cùng mã. */
+export function sapXepDongHoSo(rows) {
+  return [...rows].sort((a, b) =>
+    (a.ma_quan_ly || "~~~~").localeCompare(b.ma_quan_ly || "~~~~", "vi")
+    || (a.ma_hang || "").localeCompare(b.ma_hang || "", "vi")
+    || (a.created_at || "").localeCompare(b.created_at || "")
+    || Number(a.id || 0) - Number(b.id || 0)
+  );
+}
+
 // ---------------------------------------------------------------- LỚP 2: DỰNG FILE
-
-const esc = (v) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;")
-  .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-
-function taiXuong(blob, ten) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = ten; a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-/** Excel SpreadsheetML 2003 — mở được bằng Excel/LibreOffice, không cần thư viện. */
-function dungExcel(sheets, tenFile) {
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
-${sheets.map((s) => `<Worksheet ss:Name="${esc(s.ten.slice(0, 31))}"><Table>${
-  s.hang.map((h) => `<Row>${h.map((c) =>
-    `<Cell><Data ss:Type="String">${esc(c)}</Data></Cell>`).join("")}</Row>`).join("")
-}</Table></Worksheet>`).join("\n")}
-</Workbook>`;
-  taiXuong(new Blob(["﻿" + xml], { type: "application/vnd.ms-excel" }), tenFile);
-}
-
-/** Word từ danh sách đoạn văn (biểu mẫu dạng văn bản). */
-async function dungWordVanBan(doan, bang, cot, tenFile) {
-  const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-          AlignmentType, WidthType } = await import("docx");
-  const CANH = { giua: AlignmentType.CENTER, phai: AlignmentType.RIGHT };
-  const out = doan.map((p) => new Paragraph({
-    alignment: CANH[p.canh] || AlignmentType.LEFT,
-    children: [new TextRun({ text: p.chu, bold: !!p.dam, size: p.co || 24 })],
-  }));
-  if (bang?.length) {
-    const w = Math.floor(14000 / cot.length);
-    const o = (t, b) => new TableCell({
-      children: [new Paragraph({ children: [new TextRun({ text: String(t ?? ""), bold: b, size: 18 })] })],
-      width: { size: w, type: WidthType.DXA },
-    });
-    out.push(new Paragraph({ children: [new TextRun("")] }));
-    out.push(new Table({
-      rows: [
-        new TableRow({ children: cot.map((c) => o(c.ten, true)) }),
-        ...bang.map((d, i) => new TableRow({
-          children: cot.map((c) => o(c.lay ? c.lay(d, i) : "", false)) })),
-      ],
-      width: { size: 14000, type: WidthType.DXA },
-    }));
-  }
-  const doc = new Document({
-    sections: [{
-      properties: { page: { size: { orientation: bang?.length ? "landscape" : "portrait" } } },
-      children: out,
-    }],
-  });
-  taiXuong(await Packer.toBlob(doc), tenFile);
-}
-
-/** Word từ nội dung đã được người dùng chỉnh trực tiếp trên web. */
-async function dungWordDaChinhSua(banThao, tenFile) {
-  const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-          AlignmentType, WidthType } = await import("docx");
-  const CANH = { giua: AlignmentType.CENTER, phai: AlignmentType.RIGHT };
-  const out = (banThao.doan || []).map((p) => new Paragraph({
-    alignment: CANH[p.canh] || AlignmentType.LEFT,
-    children: [new TextRun({ text: String(p.chu || ""), bold: !!p.dam, size: p.co || 24 })],
-  }));
-  const bang = banThao.bang;
-  if (bang?.rows?.length || bang?.headers?.length) {
-    const soCot = Math.max(1, bang.headers?.length || bang.rows?.[0]?.length || 1);
-    const w = Math.floor(14000 / soCot);
-    const o = (t, dam) => new TableCell({
-      children: [new Paragraph({
-        children: [new TextRun({ text: String(t ?? ""), bold: dam, size: 18 })],
-      })],
-      width: { size: w, type: WidthType.DXA },
-    });
-    out.push(new Paragraph({ children: [new TextRun("")] }));
-    out.push(new Table({
-      rows: [
-        new TableRow({ children: (bang.headers || []).map((c) => o(c, true)) }),
-        ...(bang.rows || []).map((row) => new TableRow({
-          children: row.map((c) => o(c, false)),
-        })),
-      ],
-      width: { size: 14000, type: WidthType.DXA },
-    }));
-  }
-  const doc = new Document({
-    sections: [{
-      properties: { page: { size: { orientation: bang ? "landscape" : "portrait" } } },
-      children: out,
-    }],
-  });
-  taiXuong(await Packer.toBlob(doc), tenFile);
-}
-
-/** Dựng 1 sheet Excel theo khung cột: 3 dòng tiêu đề + hàng cột + dữ liệu. */
-function sheetTheoCot(tieuDe, cot, dong) {
-  return {
-    ten: "Danh muc",
-    hang: [
-      ["BỆNH VIỆN ĐẠI HỌC Y DƯỢC TP HỒ CHÍ MINH"],
-      [tieuDe.donVi],
-      [tieuDe.ten],
-      [],
-      cot.map((c) => c.ten),
-      ...dong.map((d, i) => cot.map((c) => (c.lay ? String(c.lay(d, i) ?? "") : ""))),
-    ],
-  };
-}
 
 export function tenFileHoSo(maHoSo) {
   const hau = new Date().toISOString().slice(0, 10);
   return {
     chi_dinh_thau: `chi-dinh-thau-${hau}.docx`,
     cam_ket_sl: `ban-cam-ket-${hau}.docx`,
-    danh_muc_dvsd: `danh-muc-de-xuat-${hau}.xls`,
+    danh_muc_dvsd: `danh-muc-de-xuat-${hau}.xlsx`,
     de_nghi_mua: `de-nghi-mua-thau-${hau}.docx`,
-    tong_hop_thau: `tong-hop-di-thau-${hau}.xls`,
+    tong_hop_thau: `tong-hop-di-thau-${hau}.xlsx`,
   }[maHoSo] || `ho-so-${hau}`;
 }
 
@@ -176,7 +76,7 @@ export function tenFileHoSo(maHoSo) {
  * và từng ô Excel, kể cả các cột hiện chưa có dữ liệu từ hệ thống.
  */
 export function taoBanThaoHoSo(maHoSo, rows, meta = {}, usage = {}) {
-  const dong = rows.map((r) => chuanHoaDong(r, usage));
+  const dong = sapXepDongHoSo(rows).map((r) => chuanHoaDong(r, usage));
   const m = {
     ...meta,
     so_dong: dong.length,
@@ -194,13 +94,16 @@ export function taoBanThaoHoSo(maHoSo, rows, meta = {}, usage = {}) {
       ...nen,
       doan: [
         { chu: "BỆNH VIỆN ĐẠI HỌC Y DƯỢC TP HỒ CHÍ MINH" },
-        { dam: true, chu: (m.don_vi || "").toUpperCase() },
-        { chu: "Số:        /ĐN-" },
-        { canh: "phai", chu: `Ngày ...... tháng ...... năm ${new Date().getFullYear()}` },
-        { chu: "" },
+        { dam: true, chu: (m.don_vi || "KHOA").toUpperCase() },
+        { chu: `Số:          /ĐN-                                                   Ngày       tháng        năm ${new Date().getFullYear()}` },
         { canh: "giua", dam: true, co: 30, chu: "PHIẾU ĐỀ NGHỊ" },
-        { canh: "giua", chu: "Về việc mua sắm vật tư y tế tiêu hao theo hình thức chỉ định thầu" },
-        { chu: "" },
+        { canh: "giua", chu: "Về việc mua sắm vật tư y tế" },
+        { dam: true, chu: "PHẦN I: NỘI DUNG" },
+        { chu: "Nơi nhận:                                                                                                                                           TRƯỞNG KHOA" },
+        { chu: "Phòng ĐD, KHTH (để xem xét)" },
+        { chu: "Phòng VTTB (để thực hiện)" },
+        { chu: `Lưu: ${m.don_vi || "Khoa"}.` },
+        { dam: true, chu: "PHẦN II: Ý KIẾN" },
       ],
       bang: {
         headers: CHI_DINH_THAU.map((c) => c.ten),
@@ -219,7 +122,8 @@ export function taoBanThaoHoSo(maHoSo, rows, meta = {}, usage = {}) {
         tieu_de: [
           "BỆNH VIỆN ĐẠI HỌC Y DƯỢC TP HỒ CHÍ MINH",
           (m.don_vi || "").toUpperCase(),
-          "ĐỀ XUẤT DANH MỤC, SỐ LƯỢNG VẬT TƯ Y TẾ TIÊU HAO",
+          "Số:",
+          "ĐỀ XUẤT DANH MỤC, SỐ LƯỢNG, YÊU CẦU KỸ THUẬT GÓI THẦU CUNG CẤP VẬT TƯ Y TẾ NĂM 2026-2027 (VẬT TƯ DÙNG CHUNG)\n(Kèm Đề nghị số 190/ĐN-KCC Ngày 30/08/2025)",
         ],
         headers: DANH_MUC_DVSD.map((c) => c.ten),
         rows: dong.map((d, i) => DANH_MUC_DVSD.map((c) => c.lay ? String(c.lay(d, i) ?? "") : "")),
@@ -232,9 +136,9 @@ export function taoBanThaoHoSo(maHoSo, rows, meta = {}, usage = {}) {
       ...nen,
       bang_tinh: {
         tieu_de: [
-          "BỆNH VIỆN ĐẠI HỌC Y DƯỢC TP HỒ CHÍ MINH",
+          "BỆNH VIỆN ĐẠI HỌC Y DƯỢC THÀNH PHỐ HỒ CHÍ MINH",
           "PHÒNG ĐIỀU DƯỠNG",
-          "DANH MỤC, SỐ LƯỢNG VẬT TƯ Y TẾ TIÊU HAO ĐỀ XUẤT MUA SẮM",
+          "DANH MỤC, SỐ LƯỢNG, YÊU CẦU KỸ THUẬT VẬT TƯ Y TẾ NĂM 2026-2027 (VẬT TƯ DÙNG CHUNG)\n(đính kèm Đề nghị số .../ĐN-ĐD ngày .../.../...)",
         ],
         headers: TONG_HOP_PDD.map((c) => c.ten),
         rows: dong.map((d, i) => TONG_HOP_PDD.map((c) => c.lay ? String(c.lay(d, i) ?? "") : "")),
@@ -249,18 +153,9 @@ export function taoBanThaoHoSo(maHoSo, rows, meta = {}, usage = {}) {
 export async function xuatBanThaoHoSo(maHoSo, banThao) {
   const tenFile = tenFileHoSo(maHoSo);
   if (HO_SO[maHoSo]?.loai === "word") {
-    return dungWordDaChinhSua(banThao, tenFile);
+    return xuatWordTheoMau(maHoSo, banThao, tenFile);
   }
-  const bang = banThao.bang_tinh || {};
-  return dungExcel([{
-    ten: "Danh muc",
-    hang: [
-      ...(bang.tieu_de || []).map((x) => [x]),
-      [],
-      bang.headers || [],
-      ...(bang.rows || []),
-    ],
-  }], tenFile);
+  return xuatExcelTheoMau(maHoSo, banThao, tenFile);
 }
 
 /** Xuất 1 hồ sơ. rows = v_de_xuat_tong_hop đã lọc; usage = lịch sử theo năm. */

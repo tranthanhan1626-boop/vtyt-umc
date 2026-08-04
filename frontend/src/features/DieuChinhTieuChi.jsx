@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronRight, ChevronDown, Search, Check, X, Clock } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
+import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
 
 // Điều chỉnh tiêu chí kỹ thuật — màn hình 2 CỘT.
 //   TRÁI  = nội dung hiện tại trong danh mục (chỉ đọc)
@@ -139,6 +140,16 @@ export default function DieuChinhTieuChi({ profile }) {
             <span className={`rounded px-2 py-0.5 text-xs ${NHAN_TT.cho_duyet[1]}`}>
               {NHAN_TT.cho_duyet[0]} · {cho.don_vi}
             </span>
+          )}
+          {cho && (
+            <NutXoaDuLieuTest
+              loai="de_nghi_sua_tieu_chi"
+              id={cho.id}
+              compact
+              nhan="Xóa đề nghị sửa tiêu chí test"
+              moTa={`đề nghị sửa ${cho.ma_hang || cho.ma_quan_ly} của ${cho.don_vi}`}
+              onDaXoa={() => setDeNghi((cu) => cu.filter((x) => x.id !== cho.id))}
+            />
           )}
           {!dangSua && !cho && (
             <button onClick={() => moSua(cap, cu, ma_quan_ly)}

@@ -7,6 +7,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   FileSearch,
+  Gauge,
   Grid2X2,
   History,
   LayoutList,
@@ -44,6 +45,7 @@ export function manHinhTheoVaiTro(goi, laPdd) {
   ];
   if (laPdd && goi !== "chi_dinh_thau") {
     ds.push({ ma: "tong_hop", ten: "Tổng hợp & xuất hồ sơ", icon: Files });
+    ds.push({ ma: "bieu_mau", ten: "Hồ sơ của khoa", icon: FileSearch });
   } else {
     ds.push({
       ma: "bieu_mau",
@@ -57,8 +59,6 @@ export function manHinhTheoVaiTro(goi, laPdd) {
 export const MUC_CHUNG = [
   { ma: "thieuhang", ten: "Sổ thiếu hàng", mo_ta: "Báo thiếu, theo dõi xử lý và xác nhận cuối tháng", icon: Archive },
   { ma: "sukien",    ten: "Sự kiện nhu cầu", mo_ta: "Ghi nhận thay đổi làm tăng hoặc giảm nhu cầu sử dụng", icon: CalendarClock },
-  { ma: "tiendo",    ten: "Tiến độ gói thầu", mo_ta: "Theo dõi các mốc thực hiện và kết quả từng mã", icon: ClipboardCheck },
-  { ma: "lichsu",    ten: "Lịch sử hồ sơ đề xuất", mo_ta: "Tra cứu đúng bản Word/Excel đã duyệt và tải", icon: History },
   { ma: "makythuat", ten: "Mã kỹ thuật khoa tự thêm", mo_ta: "Khai mã tương đương hoặc mã mới hoàn toàn", icon: FileSearch },
 ];
 
@@ -69,10 +69,20 @@ export function useDotDangMo(authKey = "mounted") {
   const [loi, setLoi] = useState("");
   const tai = useCallback(async () => {
     setDangTai(true);
-    const { data, error } = await supabase.from("dot_de_xuat").select("*")
+    const docDot = () => supabase.from("dot_de_xuat").select("*")
       .order("nam", { ascending: false }).order("thang_moc");
+    let { data, error } = await docDot();
+    // Access token có thể hết hạn trong lúc tab mở lâu. Làm mới phiên và thử
+    // lại một lần để không biến toàn bộ gói đang mở thành trạng thái lỗi giả.
     if (error) {
-      setDot([]);
+      const { error: loiLamMoi } = await supabase.auth.refreshSession();
+      if (!loiLamMoi) {
+        ({ data, error } = await docDot());
+      }
+    }
+    if (error) {
+      // Giữ dữ liệu tốt gần nhất. Một lỗi mạng tạm thời không được xoá trạng
+      // thái gói mà người dùng vừa đọc thành công.
       setLoi(error.message);
     } else {
       setDot(data || []);
@@ -90,6 +100,16 @@ export function useDotDangMo(authKey = "mounted") {
       return;
     }
     tai();
+  }, [tai, authKey]);
+  useEffect(() => {
+    if (!authKey) return undefined;
+    const thuLai = () => tai();
+    window.addEventListener("online", thuLai);
+    window.addEventListener("focus", thuLai);
+    return () => {
+      window.removeEventListener("online", thuLai);
+      window.removeEventListener("focus", thuLai);
+    };
   }, [tai, authKey]);
   // Gói bổ sung có thể MỞ NHIỀU ĐỢT cùng lúc (T1/T5/T9) -> giữ cả danh sách.
   // theoGoi = đợt đầu tiên (để hiện nhãn trên menu); dsTheoGoi = đủ để chọn.
@@ -146,9 +166,12 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
         <div className="pl-11">
           {/* Trạng thái đợt hiện NGAY trên menu — khoa biết trước có gửi được không,
               thay vì bấm vào rồi mới thấy nút gửi bị khoá. */}
-          <span className={`umc-round-status ${dotMo ? "is-open" : ""} ${loiDot ? "is-error" : ""}`}>
+          <span
+            className={`umc-round-status ${dotMo ? "is-open" : ""} ${loiDot && !dotMo ? "is-error" : ""}`}
+            title={loiDot || undefined}
+          >
             {dangTaiDot ? "Đang kiểm tra đợt…"
-              : loiDot ? "Không đọc được trạng thái"
+              : loiDot && !dotMo ? "Không đọc được trạng thái"
               : dotMo ? (soDot > 1 ? `${soDot} đợt đang mở` : `Đang mở: ${dotMo.ten}`)
               : "Chưa mở đợt"}
           </span>
@@ -193,7 +216,24 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
       </div>
 
       <div className="umc-nav-label">Theo gói thầu</div>
-      <div className="space-y-2">{GOI.map(nutGoi)}</div>
+      <div className="space-y-2">
+        {GOI.filter((g) => g.ma !== "chi_dinh_thau").map(nutGoi)}
+        <button
+          type="button"
+          onClick={() => chuyenMan({ nhom: "tuy_chon_mua_them", man: "tuy_chon_mua_them" })}
+          className={`umc-package-button ${chon.nhom === "tuy_chon_mua_them" ? "is-active" : ""}`}
+        >
+          <span className={`umc-package-icon ${chon.nhom === "tuy_chon_mua_them" ? "is-active" : ""}`}>
+            <PackagePlus size={17} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold leading-tight">Gói tùy chọn mua thêm</span>
+            <span className="mt-1 block text-[11px] leading-tight opacity-70">Kích hoạt tối đa 30% từ gói gốc</span>
+          </span>
+          <ChevronDown size={14} className={`mt-0.5 shrink-0 -rotate-90 ${chon.nhom === "tuy_chon_mua_them" ? "text-white" : ""}`} />
+        </button>
+        {GOI.filter((g) => g.ma === "chi_dinh_thau").map(nutGoi)}
+      </div>
 
       {laPdd && (
         <button
@@ -213,6 +253,33 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
       >
         <FileSearch size={16} />
         <span>Điều chỉnh tiêu chí kỹ thuật</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => chuyenMan({ nhom: "chung", man: "tiendosudung" })}
+        className={`umc-common-button mt-2 ${chon.man === "tiendosudung" ? "is-active" : ""}`}
+      >
+        <Gauge size={16} />
+        <span>Tiến độ sử dụng</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => chuyenMan({ nhom: "chung", man: "lichsu" })}
+        className={`umc-common-button mt-2 ${chon.man === "lichsu" ? "is-active" : ""}`}
+      >
+        <History size={16} />
+        <span>Lịch sử hồ sơ đề xuất</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => chuyenMan({ nhom: "chung", man: "tiendo" })}
+        className={`umc-common-button mt-2 ${chon.man === "tiendo" ? "is-active" : ""}`}
+      >
+        <ClipboardCheck size={16} />
+        <span>Tiến độ gói thầu</span>
       </button>
 
       <div className="umc-nav-label mt-7">Dùng chung</div>
@@ -268,7 +335,16 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
         )}
       </AnimatePresence>
 
-      <AnimatePresence mode="wait" initial={false}>
+      {/* KHÔNG dùng mode="wait": nó đợi animation exit của màn CŨ báo "xong" rồi
+          mới mount màn MỚI. Các màn con ở đây tự fetch dữ liệu và re-render
+          ngay khi mount (nhiều useEffect), nên trong lúc đang "exit" layout
+          bị đo lại giữa chừng và framer-motion không bao giờ nhận được tín
+          hiệu hoàn tất — kẹt vĩnh viễn ở màn cũ, mọi lượt chuyển màn sau đó
+          im lặng không có tác dụng. Đã xác nhận bằng cách đọc thẳng state
+          React qua fiber: `chon` đổi đúng nhưng cây fiber không bao giờ chứa
+          component màn mới. Bỏ mode="wait" -> màn mới mount ngay, chỉ mất
+          hiệu ứng "đợi màn cũ mờ hẳn rồi mới hiện màn mới", không mất fade. */}
+      <AnimatePresence initial={false}>
         <motion.main
           key={`${chon.nhom}-${chon.goi || "chung"}-${chon.man}`}
           className="umc-content"

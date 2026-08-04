@@ -1,0 +1,1859 @@
+{
+  "source": "backend/du_lieu_staging/usage_history_current.json",
+  "source_rows": 149999,
+  "series": 7974,
+  "source_period": [
+    "2022-01",
+    "2026-06"
+  ],
+  "training_window_months": 24,
+  "origins": {
+    "3": [
+      "2023-12",
+      "2024-03",
+      "2024-06",
+      "2024-09",
+      "2024-12",
+      "2025-03",
+      "2025-06",
+      "2025-09",
+      "2025-12",
+      "2026-03"
+    ],
+    "6": [
+      "2023-12",
+      "2024-03",
+      "2024-06",
+      "2024-09",
+      "2024-12",
+      "2025-03",
+      "2025-06",
+      "2025-09",
+      "2025-12"
+    ],
+    "12": [
+      "2023-12",
+      "2024-03",
+      "2024-06",
+      "2024-09",
+      "2024-12",
+      "2025-03",
+      "2025-06"
+    ]
+  },
+  "scores": {
+    "3": {
+      "all": {
+        "mean24": {
+          "pairs": 53914,
+          "actual": 80309441,
+          "forecast": 77951570,
+          "wape": 0.4243020148154188,
+          "forecast_actual": 0.9706401813331013,
+          "excess_forecast": 0.20344418237770492,
+          "shortage_actual": 0.22683091674115874,
+          "over_pairs": 0.6388507623251846,
+          "under_pairs": 0.36018473865786255
+        },
+        "mean12": {
+          "pairs": 53914,
+          "actual": 80309441,
+          "forecast": 79155156,
+          "wape": 0.35020769226870846,
+          "forecast_actual": 0.9856270385445716,
+          "excess_forecast": 0.1703660297860696,
+          "shortage_actual": 0.18229032686206845,
+          "over_pairs": 0.4767963794190748,
+          "under_pairs": 0.33592387876989277
+        },
+        "mean6": {
+          "pairs": 53914,
+          "actual": 80309441,
+          "forecast": 80121513,
+          "wape": 0.31808586489849927,
+          "forecast_actual": 0.9976599513374772,
+          "excess_forecast": 0.15824320491800997,
+          "shortage_actual": 0.16021295678051103,
+          "over_pairs": 0.38630040434766477,
+          "under_pairs": 0.31472344845494676
+        },
+        "weighted24": {
+          "pairs": 53914,
+          "actual": 80309441,
+          "forecast": 78555227,
+          "wape": 0.38242445651932805,
+          "forecast_actual": 0.9781568105889759,
+          "excess_forecast": 0.18431669810241283,
+          "shortage_actual": 0.20213382296518195,
+          "over_pairs": 0.6493860592795935,
+          "under_pairs": 0.3506139407204066
+        },
+        "seasonal_naive": {
+          "pairs": 53914,
+          "actual": 80309441,
+          "forecast": 77691034,
+          "wape": 0.4806692528217199,
+          "forecast_actual": 0.9673960250825304,
+          "excess_forecast": 0.231583170845686,
+          "shortage_actual": 0.25663661386959474,
+          "over_pairs": 0.3251289090032274,
+          "under_pairs": 0.35094780576473644
+        },
+        "blend_level_season": {
+          "pairs": 53914,
+          "actual": 80309441,
+          "forecast": 78423095,
+          "wape": 0.4014795657711028,
+          "forecast_actual": 0.976511531813551,
+          "excess_forecast": 0.19354154317187577,
+          "shortage_actual": 0.2124840169787759,
+          "over_pairs": 0.46785621545424194,
+          "under_pairs": 0.34603257038988017
+        },
+        "damped_trend24": {
+          "pairs": 53914,
+          "actual": 80309441,
+          "forecast": 79818287,
+          "wape": 0.34746544131879115,
+          "forecast_actual": 0.9938842313099447,
+          "excess_forecast": 0.17172506710305913,
+          "shortage_actual": 0.17679060500441673,
+          "over_pairs": 0.4841228623363134,
+          "under_pairs": 0.3307675186407983
+        },
+        "croston_sba_02": {
+          "pairs": 53914,
+          "actual": 80309441,
+          "forecast": 78454051,
+          "wape": 0.5122835108526701,
+          "forecast_actual": 0.9768969878202326,
+          "excess_forecast": 0.2503746581123191,
+          "shortage_actual": 0.26769326151622597,
+          "over_pairs": 0.6124754238231257,
+          "under_pairs": 0.3874689320028193
+        },
+        "tsb_01": {
+          "pairs": 53914,
+          "actual": 80309441,
+          "forecast": 77147202,
+          "wape": 0.3801003094958243,
+          "forecast_actual": 0.9606243192060316,
+          "excess_forecast": 0.1773454106301759,
+          "shortage_actual": 0.20973799514490107,
+          "over_pairs": 0.6499425010201432,
+          "under_pairs": 0.35005749897985683
+        },
+        "tsb_015": {
+          "pairs": 53914,
+          "actual": 80309441,
+          "forecast": 77830542,
+          "wape": 0.34256228353621837,
+          "forecast_actual": 0.96913315563394,
+          "excess_forecast": 0.16081146195346804,
+          "shortage_actual": 0.18671456395114372,
+          "over_pairs": 0.660589086322662,
+          "under_pairs": 0.339410913677338
+        },
+        "tsb_02": {
+          "pairs": 53914,
+          "actual": 80309441,
+          "forecast": 78381794,
+          "wape": 0.32312501439679137,
+          "forecast_actual": 0.9759972577310293,
+          "excess_forecast": 0.15323929947468498,
+          "shortage_actual": 0.17356387833287587,
+          "over_pairs": 0.6700114997959714,
+          "under_pairs": 0.32998850020402865
+        },
+        "tsb_025": {
+          "pairs": 53914,
+          "actual": 80309441,
+          "forecast": 78794902,
+          "wape": 0.31247606357243,
+          "forecast_actual": 0.9811412104360249,
+          "excess_forecast": 0.14963048686843344,
+          "shortage_actual": 0.1656674265682017,
+          "over_pairs": 0.6758726861297623,
+          "under_pairs": 0.3241273138702378
+        },
+        "tsb_03": {
+          "pairs": 53914,
+          "actual": 80309441,
+          "forecast": 79107192,
+          "wape": 0.306230197628436,
+          "forecast_actual": 0.9850297930477039,
+          "excess_forecast": 0.1478432392257784,
+          "shortage_actual": 0.16060020229036392,
+          "over_pairs": 0.6798605186037022,
+          "under_pairs": 0.32013948139629783
+        }
+      },
+      "smooth": {
+        "mean24": {
+          "pairs": 14912,
+          "actual": 65751955,
+          "forecast": 66851473,
+          "wape": 0.27340768042562386,
+          "forecast_actual": 1.016722213810981,
+          "excess_forecast": 0.14267903774282192,
+          "shortage_actual": 0.12834273330732143,
+          "over_pairs": 0.484375,
+          "under_pairs": 0.5144179184549357
+        },
+        "mean12": {
+          "pairs": 14912,
+          "actual": 65751955,
+          "forecast": 67781601,
+          "wape": 0.2492604782625855,
+          "forecast_actual": 1.0308682190514336,
+          "excess_forecast": 0.13587027523837286,
+          "shortage_actual": 0.10919612960557598,
+          "over_pairs": 0.5091201716738197,
+          "under_pairs": 0.4878621244635193
+        },
+        "mean6": {
+          "pairs": 14912,
+          "actual": 65751955,
+          "forecast": 67341574,
+          "wape": 0.2404936020533534,
+          "forecast_actual": 1.0241760035880303,
+          "excess_forecast": 0.12921099728667615,
+          "shortage_actual": 0.1081587992326616,
+          "over_pairs": 0.5172344420600858,
+          "under_pairs": 0.4721030042918455
+        },
+        "weighted24": {
+          "pairs": 14912,
+          "actual": 65751955,
+          "forecast": 67226983,
+          "wape": 0.2563068332609657,
+          "forecast_actual": 1.0224332146378043,
+          "excess_forecast": 0.13631210523492002,
+          "shortage_actual": 0.11693680931157925,
+          "over_pairs": 0.49637875536480686,
+          "under_pairs": 0.5036212446351931
+        },
+        "seasonal_naive": {
+          "pairs": 14912,
+          "actual": 65751955,
+          "forecast": 67883946,
+          "wape": 0.3280151746058349,
+          "forecast_actual": 1.032424754518706,
+          "excess_forecast": 0.1745599025725464,
+          "shortage_actual": 0.1477952100435645,
+          "over_pairs": 0.4945681330472103,
+          "under_pairs": 0.4965799356223176
+        },
+        "blend_level_season": {
+          "pairs": 14912,
+          "actual": 65751955,
+          "forecast": 67832773,
+          "wape": 0.27744897281000996,
+          "forecast_actual": 1.0316464867850696,
+          "excess_forecast": 0.1498068687067006,
+          "shortage_actual": 0.12290124301247013,
+          "over_pairs": 0.5046271459227468,
+          "under_pairs": 0.49429989270386265
+        },
+        "damped_trend24": {
+          "pairs": 14912,
+          "actual": 65751955,
+          "forecast": 67963374,
+          "wape": 0.24864147379806795,
+          "forecast_actual": 1.0336327494649813,
+          "excess_forecast": 0.13654473671096407,
+          "shortage_actual": 0.10750436216654347,
+          "over_pairs": 0.5187097639484979,
+          "under_pairs": 0.4812231759656652
+        },
+        "croston_sba_02": {
+          "pairs": 14912,
+          "actual": 65751955,
+          "forecast": 61655855,
+          "wape": 0.27128231193240165,
+          "forecast_actual": 0.9377037581669257,
+          "excess_forecast": 0.11143501787167115,
+          "shortage_actual": 0.16678927688273523,
+          "over_pairs": 0.39122854077253216,
+          "under_pairs": 0.6087714592274678
+        },
+        "tsb_01": {
+          "pairs": 14912,
+          "actual": 65751955,
+          "forecast": 66751097,
+          "wape": 0.25142616236262316,
+          "forecast_actual": 1.0151956265123958,
+          "excess_forecast": 0.13131547354620351,
+          "shortage_actual": 0.11811526792511313,
+          "over_pairs": 0.4946351931330472,
+          "under_pairs": 0.5053648068669528
+        },
+        "tsb_015": {
+          "pairs": 14912,
+          "actual": 65751955,
+          "forecast": 67268535,
+          "wape": 0.23869525671888653,
+          "forecast_actual": 1.0230651665596748,
+          "excess_forecast": 0.1279294964947325,
+          "shortage_actual": 0.10781504507960672,
+          "over_pairs": 0.5082483905579399,
+          "under_pairs": 0.4917516094420601
+        },
+        "tsb_02": {
+          "pairs": 14912,
+          "actual": 65751955,
+          "forecast": 67361015,
+          "wape": 0.2331512826911265,
+          "forecast_actual": 1.024471660342659,
+          "excess_forecast": 0.1257345385950529,
+          "shortage_actual": 0.10433981117423462,
+          "over_pairs": 0.5204533261802575,
+          "under_pairs": 0.4795466738197425
+        },
+        "tsb_025": {
+          "pairs": 14912,
+          "actual": 65751955,
+          "forecast": 67310166,
+          "wape": 0.23080306026805944,
+          "forecast_actual": 1.0236983209818877,
+          "excess_forecast": 0.12430487382544331,
+          "shortage_actual": 0.10355236964308702,
+          "over_pairs": 0.5244769313304721,
+          "under_pairs": 0.47552306866952787
+        },
+        "tsb_03": {
+          "pairs": 14912,
+          "actual": 65751955,
+          "forecast": 67224196,
+          "wape": 0.23003881992361155,
+          "forecast_actual": 1.0223908285074286,
+          "excess_forecast": 0.1234506616220119,
+          "shortage_actual": 0.10382399570809263,
+          "over_pairs": 0.5267569742489271,
+          "under_pairs": 0.47324302575107297
+        }
+      },
+      "intermittent": {
+        "mean24": {
+          "pairs": 15740,
+          "actual": 9279267,
+          "forecast": 8985895,
+          "wape": 1.0784761743573064,
+          "forecast_actual": 0.9683841272160829,
+          "excess_forecast": 0.5405191349960011,
+          "shortage_actual": 0.5550460235706117,
+          "over_pairs": 0.5850698856416773,
+          "under_pairs": 0.4134053367217281
+        },
+        "mean12": {
+          "pairs": 15740,
+          "actual": 9279267,
+          "forecast": 9357335,
+          "wape": 0.7228917165547667,
+          "forecast_actual": 1.0084131375894239,
+          "excess_forecast": 0.36260180816978893,
+          "shortage_actual": 0.3572392894826714,
+          "over_pairs": 0.5316391359593393,
+          "under_pairs": 0.3741423125794155
+        },
+        "mean6": {
+          "pairs": 15740,
+          "actual": 9279267,
+          "forecast": 9757274,
+          "wape": 0.5567869746608218,
+          "forecast_actual": 1.0515134438959457,
+          "excess_forecast": 0.28924994829498485,
+          "shortage_actual": 0.25263676538243807,
+          "over_pairs": 0.43500635324015247,
+          "under_pairs": 0.34326556543837355
+        },
+        "weighted24": {
+          "pairs": 15740,
+          "actual": 9279267,
+          "forecast": 9165055,
+          "wape": 0.9011405203536728,
+          "forecast_actual": 0.9876917413641572,
+          "excess_forecast": 0.449954284567682,
+          "shortage_actual": 0.45672438949475985,
+          "over_pairs": 0.6017789072426938,
+          "under_pairs": 0.3982210927573062
+        },
+        "seasonal_naive": {
+          "pairs": 15740,
+          "actual": 9279267,
+          "forecast": 8872081,
+          "wape": 1.186827580238827,
+          "forecast_actual": 0.9561187322231379,
+          "excess_forecast": 0.5977010354166064,
+          "shortage_actual": 0.6153544240078446,
+          "over_pairs": 0.4241423125794155,
+          "under_pairs": 0.40781448538754766
+        },
+        "blend_level_season": {
+          "pairs": 15740,
+          "actual": 9279267,
+          "forecast": 9114708,
+          "wape": 0.9232328237779989,
+          "forecast_actual": 0.9822659349062809,
+          "excess_forecast": 0.46092342537088715,
+          "shortage_actual": 0.470483444435859,
+          "over_pairs": 0.5139771283354511,
+          "under_pairs": 0.3928208386277001
+        },
+        "damped_trend24": {
+          "pairs": 15740,
+          "actual": 9279267,
+          "forecast": 9678591,
+          "wape": 0.7070447781245981,
+          "forecast_actual": 1.0430339732700253,
+          "excess_forecast": 0.35956582940584864,
+          "shortage_actual": 0.332005402427284,
+          "over_pairs": 0.5418678526048285,
+          "under_pairs": 0.36664548919949175
+        },
+        "croston_sba_02": {
+          "pairs": 15740,
+          "actual": 9279267,
+          "forecast": 10158057,
+          "wape": 1.307320684950933,
+          "forecast_actual": 1.0947046292257636,
+          "excess_forecast": 0.6403669431672591,
+          "shortage_actual": 0.6063080278625909,
+          "over_pairs": 0.577445997458704,
+          "under_pairs": 0.42255400254129605
+        },
+        "tsb_01": {
+          "pairs": 15740,
+          "actual": 9279267,
+          "forecast": 8314812,
+          "wape": 0.8793782315295111,
+          "forecast_actual": 0.896063483598359,
+          "excess_forecast": 0.43269351408780893,
+          "shortage_actual": 0.4916573739655761,
+          "over_pairs": 0.6044472681067344,
+          "under_pairs": 0.39555273189326556
+        },
+        "tsb_015": {
+          "pairs": 15740,
+          "actual": 9279267,
+          "forecast": 8708695,
+          "wape": 0.7235515965944246,
+          "forecast_actual": 0.938511056814291,
+          "excess_forecast": 0.3527196875314574,
+          "shortage_actual": 0.3925202698900672,
+          "over_pairs": 0.6200127064803049,
+          "under_pairs": 0.37998729351969507
+        },
+        "tsb_02": {
+          "pairs": 15740,
+          "actual": 9279267,
+          "forecast": 9036246,
+          "wape": 0.631494053751718,
+          "forecast_actual": 0.9738102822713021,
+          "excess_forecast": 0.3107917153078377,
+          "shortage_actual": 0.3288418857402075,
+          "over_pairs": 0.633418043202033,
+          "under_pairs": 0.36658195679796696
+        },
+        "tsb_025": {
+          "pairs": 15740,
+          "actual": 9279267,
+          "forecast": 9263573,
+          "wape": 0.5781292030641547,
+          "forecast_actual": 0.9983087226353483,
+          "excess_forecast": 0.28870724688140714,
+          "shortage_actual": 0.28991024021440576,
+          "over_pairs": 0.6432020330368488,
+          "under_pairs": 0.3567979669631512
+        },
+        "tsb_03": {
+          "pairs": 15740,
+          "actual": 9279267,
+          "forecast": 9406672,
+          "wape": 0.5450938083909652,
+          "forecast_actual": 1.0137300615248375,
+          "excess_forecast": 0.2756275517149167,
+          "shortage_actual": 0.26568187343306365,
+          "over_pairs": 0.6490470139771284,
+          "under_pairs": 0.35095298602287167
+        }
+      },
+      "sparse": {
+        "mean24": {
+          "pairs": 23262,
+          "actual": 5278219,
+          "forecast": 2114202,
+          "wape": 1.153968744002475,
+          "forecast_actual": 0.40055220330948754,
+          "excess_forecast": 0.6921956023838306,
+          "shortage_actual": 0.8767082703464938,
+          "over_pairs": 0.774267044966039,
+          "under_pairs": 0.22530306938354397
+        },
+        "mean12": {
+          "pairs": 23262,
+          "actual": 5278219,
+          "forecast": 2016221,
+          "wape": 0.9525400518621906,
+          "forecast_actual": 0.3819888867816966,
+          "excess_forecast": 0.43787784176437006,
+          "shortage_actual": 0.785275582540247,
+          "over_pairs": 0.41896655489639756,
+          "under_pairs": 0.2126644312612845
+        },
+        "mean6": {
+          "pairs": 23262,
+          "actual": 5278219,
+          "forecast": 3022664,
+          "wape": 0.8650263469552892,
+          "forecast_actual": 0.5726675039440386,
+          "excess_forecast": 0.3821535602115286,
+          "shortage_actual": 0.6461794215056252,
+          "over_pairs": 0.26940933711632703,
+          "under_pairs": 0.19452325681368757
+        },
+        "weighted24": {
+          "pairs": 23262,
+          "actual": 5278219,
+          "forecast": 2163189,
+          "wape": 1.0415815388008745,
+          "forecast_actual": 0.4098330454950231,
+          "excess_forecast": 0.550729851164953,
+          "shortage_actual": 0.8158742466529311,
+          "over_pairs": 0.7796836041612931,
+          "under_pairs": 0.2203163958387069
+        },
+        "seasonal_naive": {
+          "pairs": 23262,
+          "actual": 5278219,
+          "forecast": 935007,
+          "wape": 1.1408677813482162,
+          "forecast_actual": 0.17714441177980678,
+          "excess_forecast": 0.8976071836895338,
+          "shortage_actual": 0.9818616847842047,
+          "over_pairs": 0.1495142292150288,
+          "under_pairs": 0.21911271601753934
+        },
+        "blend_level_season": {
+          "pairs": 23262,
+          "actual": 5278219,
+          "forecast": 1475614,
+          "wape": 1.0292985664293202,
+          "forecast_actual": 0.2795666492807517,
+          "excess_forecast": 0.5523999670645575,
+          "shortage_actual": 0.8748659585742843,
+          "over_pairs": 0.4130771214856848,
+          "under_pairs": 0.21932765884274782
+        },
+        "damped_trend24": {
+          "pairs": 23262,
+          "actual": 5278219,
+          "forecast": 2176322,
+          "wape": 0.946386477266705,
+          "forecast_actual": 0.41232132994597276,
+          "excess_forecast": 0.43498575159775354,
+          "shortage_actual": 0.7670325736603661,
+          "over_pairs": 0.42287851431519213,
+          "under_pairs": 0.21004212879374087
+        },
+        "croston_sba_02": {
+          "pairs": 23262,
+          "actual": 5278219,
+          "forecast": 6640139,
+          "wape": 2.1167902152861027,
+          "forecast_actual": 1.258026458428728,
+          "excess_forecast": 0.9438659488453801,
+          "shortage_actual": 0.9293818784286936,
+          "over_pairs": 0.7780070501246669,
+          "under_pairs": 0.22186398418020806
+        },
+        "tsb_01": {
+          "pairs": 23262,
+          "actual": 5278219,
+          "forecast": 2081293,
+          "wape": 1.105277416813627,
+          "forecast_actual": 0.3943172161939607,
+          "excess_forecast": 0.6334933049966568,
+          "shortage_actual": 0.8554801003098307,
+          "over_pairs": 0.7802854440718768,
+          "under_pairs": 0.2197145559281231
+        },
+        "tsb_015": {
+          "pairs": 23262,
+          "actual": 5278219,
+          "forecast": 1853313,
+          "wape": 0.9666664583086869,
+          "forecast_actual": 0.3511245954735715,
+          "excess_forecast": 0.45253317181275765,
+          "shortage_actual": 0.8077709314175594,
+          "over_pairs": 0.7857020032671309,
+          "under_pairs": 0.21429799673286906
+        },
+        "tsb_02": {
+          "pairs": 23262,
+          "actual": 5278219,
+          "forecast": 1984534,
+          "wape": 0.9018259185436663,
+          "forecast_actual": 0.37598554734965584,
+          "excess_forecast": 0.3694443414801768,
+          "shortage_actual": 0.762920185597006,
+          "over_pairs": 0.7906456882469263,
+          "under_pairs": 0.20935431175307367
+        },
+        "tsb_025": {
+          "pairs": 23262,
+          "actual": 5278219,
+          "forecast": 2221163,
+          "wape": 0.86286876748484,
+          "forecast_actual": 0.42081676255604566,
+          "excess_forecast": 0.3370653872219598,
+          "shortage_actual": 0.7210260024643975,
+          "over_pairs": 0.7950305218811796,
+          "under_pairs": 0.20496947811882038
+        },
+        "tsb_03": {
+          "pairs": 23262,
+          "actual": 5278219,
+          "forecast": 2476324,
+          "wape": 0.8354338584439414,
+          "forecast_actual": 0.46915908429692704,
+          "excess_forecast": 0.3246158424037787,
+          "shortage_actual": 0.6831373870735078,
+          "over_pairs": 0.7988565041698908,
+          "under_pairs": 0.20114349583010918
+        }
+      }
+    },
+    "6": {
+      "all": {
+        "mean24": {
+          "pairs": 48215,
+          "actual": 141906064,
+          "forecast": 139546151,
+          "wape": 0.40026593930475024,
+          "forecast_actual": 0.9833698931992082,
+          "excess_forecast": 0.1950618150693386,
+          "shortage_actual": 0.20844802305277102,
+          "over_pairs": 0.6129420304884372,
+          "under_pairs": 0.38568910090220887
+        },
+        "mean12": {
+          "pairs": 48215,
+          "actual": 141906064,
+          "forecast": 141805863,
+          "wape": 0.3335195104840622,
+          "forecast_actual": 0.9992938920496026,
+          "excess_forecast": 0.16652428538867958,
+          "shortage_actual": 0.1671128092172298,
+          "over_pairs": 0.4620138960904283,
+          "under_pairs": 0.35696360053925125
+        },
+        "mean6": {
+          "pairs": 48215,
+          "actual": 141906064,
+          "forecast": 143441080,
+          "wape": 0.3128231081090375,
+          "forecast_actual": 1.010817127589417,
+          "excess_forecast": 0.16008842097396367,
+          "shortage_actual": 0.15100299025981018,
+          "over_pairs": 0.3837187597220782,
+          "under_pairs": 0.3351861453904387
+        },
+        "weighted24": {
+          "pairs": 48215,
+          "actual": 141906064,
+          "forecast": 140704267,
+          "wape": 0.36098599113919766,
+          "forecast_actual": 0.9915310418823008,
+          "excess_forecast": 0.17776399231650666,
+          "shortage_actual": 0.18472747462845512,
+          "over_pairs": 0.6258218396764492,
+          "under_pairs": 0.3741781603235508
+        },
+        "seasonal_naive": {
+          "pairs": 48215,
+          "actual": 141906064,
+          "forecast": 140170646,
+          "wape": 0.41664440781050766,
+          "forecast_actual": 0.987770656509788,
+          "excess_forecast": 0.20471101345997936,
+          "shortage_actual": 0.2144368756503598,
+          "over_pairs": 0.38075287773514466,
+          "under_pairs": 0.37258114694597116
+        },
+        "blend_level_season": {
+          "pairs": 48215,
+          "actual": 141906064,
+          "forecast": 140988254,
+          "wape": 0.36734690562624583,
+          "forecast_actual": 0.9935322742796954,
+          "excess_forecast": 0.18161422092079307,
+          "shortage_actual": 0.18690731567327523,
+          "over_pairs": 0.45195478585502435,
+          "under_pairs": 0.3686404645857098
+        },
+        "damped_trend24": {
+          "pairs": 48215,
+          "actual": 141906064,
+          "forecast": 144132339,
+          "wape": 0.33323152877017503,
+          "forecast_actual": 1.0156883679342417,
+          "excess_forecast": 0.17176523219127424,
+          "shortage_actual": 0.1587715804179726,
+          "over_pairs": 0.47559888001659234,
+          "under_pairs": 0.34655190293477134
+        },
+        "croston_sba_02": {
+          "pairs": 48215,
+          "actual": 141906064,
+          "forecast": 142103212,
+          "wape": 0.5000564223755266,
+          "forecast_actual": 1.0013892862809521,
+          "excess_forecast": 0.2503750117593071,
+          "shortage_actual": 0.24933356804729193,
+          "over_pairs": 0.5894846002281448,
+          "under_pairs": 0.4104739189049051
+        },
+        "tsb_01": {
+          "pairs": 48215,
+          "actual": 141906064,
+          "forecast": 138439442,
+          "wape": 0.36236656353404995,
+          "forecast_actual": 0.9755710092872094,
+          "excess_forecast": 0.1731998847875608,
+          "shortage_actual": 0.19339777712342163,
+          "over_pairs": 0.6255936949082236,
+          "under_pairs": 0.37438556465830136
+        },
+        "tsb_015": {
+          "pairs": 48215,
+          "actual": 141906064,
+          "forecast": 139670331,
+          "wape": 0.3264231576067307,
+          "forecast_actual": 0.9842449806617285,
+          "excess_forecast": 0.15782053471056473,
+          "shortage_actual": 0.17108908847250362,
+          "over_pairs": 0.6368557502851809,
+          "under_pairs": 0.36312350928134396
+        },
+        "tsb_02": {
+          "pairs": 48215,
+          "actual": 141906064,
+          "forecast": 140651136,
+          "wape": 0.31055460630775444,
+          "forecast_actual": 0.9911566253711157,
+          "excess_forecast": 0.15220159153247545,
+          "shortage_actual": 0.15969899046831493,
+          "over_pairs": 0.6444882298040029,
+          "under_pairs": 0.35549102976252206
+        },
+        "tsb_025": {
+          "pairs": 48215,
+          "actual": 141906064,
+          "forecast": 141383007,
+          "wape": 0.30323556303535754,
+          "forecast_actual": 0.9963140590394736,
+          "excess_forecast": 0.15032891454107236,
+          "shortage_actual": 0.15346075199794118,
+          "over_pairs": 0.648366690863839,
+          "under_pairs": 0.35161256870268587
+        },
+        "tsb_03": {
+          "pairs": 48215,
+          "actual": 141906064,
+          "forecast": 141938719,
+          "wape": 0.29961861299562165,
+          "forecast_actual": 1.0002301177104416,
+          "excess_forecast": 0.14988987303863244,
+          "shortage_actual": 0.14969424764258688,
+          "over_pairs": 0.6534688374987038,
+          "under_pairs": 0.34651042206782123
+        }
+      },
+      "smooth": {
+        "mean24": {
+          "pairs": 13292,
+          "actual": 117777940,
+          "forecast": 120000678,
+          "wape": 0.25890328655773737,
+          "forecast_actual": 1.0188722756570543,
+          "excess_forecast": 0.1363152030197596,
+          "shortage_actual": 0.12001550545034155,
+          "over_pairs": 0.48450195606379776,
+          "under_pairs": 0.5147457117062895
+        },
+        "mean12": {
+          "pairs": 13292,
+          "actual": 117777940,
+          "forecast": 122129953,
+          "wape": 0.23968841703293503,
+          "forecast_actual": 1.0369510028788074,
+          "excess_forecast": 0.13339078661563064,
+          "shortage_actual": 0.10136870707706384,
+          "over_pairs": 0.5164008426120975,
+          "under_pairs": 0.481266927475173
+        },
+        "mean6": {
+          "pairs": 13292,
+          "actual": 117777940,
+          "forecast": 122015989,
+          "wape": 0.2362668340098324,
+          "forecast_actual": 1.035983385343639,
+          "excess_forecast": 0.131397000765203,
+          "shortage_actual": 0.10014172433309668,
+          "over_pairs": 0.5288143244056576,
+          "under_pairs": 0.4623833885043635
+        },
+        "weighted24": {
+          "pairs": 13292,
+          "actual": 117777940,
+          "forecast": 120991351,
+          "wape": 0.24335399826831025,
+          "forecast_actual": 1.0272836432273984,
+          "excess_forecast": 0.1317248859552811,
+          "shortage_actual": 0.1080351775204569,
+          "over_pairs": 0.4986458019861571,
+          "under_pairs": 0.501354198013843
+        },
+        "seasonal_naive": {
+          "pairs": 13292,
+          "actual": 117777940,
+          "forecast": 122243917,
+          "wape": 0.28887123513961954,
+          "forecast_actual": 1.0379186204139756,
+          "excess_forecast": 0.15742556744152758,
+          "shortage_actual": 0.12547630736282192,
+          "over_pairs": 0.5083508877520313,
+          "under_pairs": 0.48600662052362326
+        },
+        "blend_level_season": {
+          "pairs": 13292,
+          "actual": 117777940,
+          "forecast": 122186935,
+          "wape": 0.25842966433272646,
+          "forecast_actual": 1.0374348116463914,
+          "excess_forecast": 0.142594249131464,
+          "shortage_actual": 0.11049742634316749,
+          "over_pairs": 0.5103069515498044,
+          "under_pairs": 0.48833885043635267
+        },
+        "damped_trend24": {
+          "pairs": 13292,
+          "actual": 117777940,
+          "forecast": 122929708,
+          "wape": 0.2406002564841432,
+          "forecast_actual": 1.0437413639637019,
+          "excess_forecast": 0.13621268173565007,
+          "shortage_actual": 0.09842944626022153,
+          "over_pairs": 0.5306951549804394,
+          "under_pairs": 0.46930484501956066
+        },
+        "croston_sba_02": {
+          "pairs": 13292,
+          "actual": 117777940,
+          "forecast": 111212282,
+          "wape": 0.2627668379221847,
+          "forecast_actual": 0.9442539209393807,
+          "excess_forecast": 0.10962133927684095,
+          "shortage_actual": 0.1592564584914004,
+          "over_pairs": 0.3912879927776106,
+          "under_pairs": 0.6087120072223894
+        },
+        "tsb_01": {
+          "pairs": 13292,
+          "actual": 117777940,
+          "forecast": 120218509,
+          "wape": 0.24314893182676486,
+          "forecast_actual": 1.0207217815145995,
+          "excess_forecast": 0.12925692295398056,
+          "shortage_actual": 0.11121357515608213,
+          "over_pairs": 0.4969154378573578,
+          "under_pairs": 0.5030845621426422
+        },
+        "tsb_015": {
+          "pairs": 13292,
+          "actual": 117777940,
+          "forecast": 121446045,
+          "wape": 0.23054158294212257,
+          "forecast_actual": 1.0311442441944474,
+          "excess_forecast": 0.1268909896020419,
+          "shortage_actual": 0.09969866937384038,
+          "over_pairs": 0.5150466445982546,
+          "under_pairs": 0.4849533554017454
+        },
+        "tsb_02": {
+          "pairs": 13292,
+          "actual": 117777940,
+          "forecast": 121800471,
+          "wape": 0.22683700088753828,
+          "forecast_actual": 1.0341535148568188,
+          "excess_forecast": 0.1261855768969118,
+          "shortage_actual": 0.09634174301536128,
+          "over_pairs": 0.522870899789347,
+          "under_pairs": 0.477129100210653
+        },
+        "tsb_025": {
+          "pairs": 13292,
+          "actual": 117777940,
+          "forecast": 121833342,
+          "wape": 0.22605538808541176,
+          "forecast_actual": 1.034432610556489,
+          "excess_forecast": 0.12590863628214824,
+          "shortage_actual": 0.09581138876446249,
+          "over_pairs": 0.5262563948239543,
+          "under_pairs": 0.47374360517604575
+        },
+        "tsb_03": {
+          "pairs": 13292,
+          "actual": 117777940,
+          "forecast": 121761087,
+          "wape": 0.22639350042688675,
+          "forecast_actual": 1.03381912726211,
+          "excess_forecast": 0.12585017089890957,
+          "shortage_actual": 0.09628718658238782,
+          "over_pairs": 0.5307703882034306,
+          "under_pairs": 0.46922961179656936
+        }
+      },
+      "intermittent": {
+        "mean24": {
+          "pairs": 14064,
+          "actual": 14800029,
+          "forecast": 15606028,
+          "wape": 1.0550121388275657,
+          "forecast_actual": 1.054459302072989,
+          "excess_forecast": 0.5260854727723564,
+          "shortage_actual": 0.5002764183772883,
+          "over_pairs": 0.5725967007963595,
+          "under_pairs": 0.42569681456200226
+        },
+        "mean12": {
+          "pairs": 14064,
+          "actual": 14800029,
+          "forecast": 15945044,
+          "wape": 0.7026251435047863,
+          "forecast_actual": 1.0773657605670908,
+          "excess_forecast": 0.36198983326763373,
+          "shortage_actual": 0.3126296914688478,
+          "over_pairs": 0.520193401592719,
+          "under_pairs": 0.3878697383390216
+        },
+        "mean6": {
+          "pairs": 14064,
+          "actual": 14800029,
+          "forecast": 15802816,
+          "wape": 0.5802559576065696,
+          "forecast_actual": 1.0677557456137416,
+          "excess_forecast": 0.3034456643676671,
+          "shortage_actual": 0.2562501059964139,
+          "over_pairs": 0.429820819112628,
+          "under_pairs": 0.36454778156996587
+        },
+        "weighted24": {
+          "pairs": 14064,
+          "actual": 14800029,
+          "forecast": 15685426,
+          "wape": 0.877086614281511,
+          "forecast_actual": 1.0598240181530512,
+          "excess_forecast": 0.4420123607253769,
+          "shortage_actual": 0.4086312980642328,
+          "over_pairs": 0.5878839590443686,
+          "under_pairs": 0.4121160409556314
+        },
+        "seasonal_naive": {
+          "pairs": 14064,
+          "actual": 14800029,
+          "forecast": 16087273,
+          "wape": 0.9898060334881776,
+          "forecast_actual": 1.08697577552044,
+          "excess_forecast": 0.4953108584655709,
+          "shortage_actual": 0.4514151289838689,
+          "over_pairs": 0.4753981797497156,
+          "under_pairs": 0.41517349260523323
+        },
+        "blend_level_season": {
+          "pairs": 14064,
+          "actual": 14800029,
+          "forecast": 16016159,
+          "wape": 0.829027750553732,
+          "forecast_actual": 1.0821707680437653,
+          "excess_forecast": 0.42100495850791936,
+          "shortage_actual": 0.37342849125498334,
+          "over_pairs": 0.5064704209328783,
+          "under_pairs": 0.4042946530147895
+        },
+        "damped_trend24": {
+          "pairs": 14064,
+          "actual": 14800029,
+          "forecast": 16952235,
+          "wape": 0.6970584237133707,
+          "forecast_actual": 1.1454190447282477,
+          "excess_forecast": 0.3677594991628159,
+          "shortage_actual": 0.2758196894925591,
+          "over_pairs": 0.541311149032992,
+          "under_pairs": 0.37066268486916953
+        },
+        "croston_sba_02": {
+          "pairs": 14064,
+          "actual": 14800029,
+          "forecast": 18163929,
+          "wape": 1.3183068879061661,
+          "forecast_actual": 1.2272900776401374,
+          "excess_forecast": 0.6296787506496468,
+          "shortage_actual": 0.5455084051330155,
+          "over_pairs": 0.5655574516496018,
+          "under_pairs": 0.4344425483503982
+        },
+        "tsb_01": {
+          "pairs": 14064,
+          "actual": 14800029,
+          "forecast": 14351565,
+          "wape": 0.8463317414035925,
+          "forecast_actual": 0.9696984198722979,
+          "excess_forecast": 0.42076492265675614,
+          "shortage_actual": 0.4383166607656461,
+          "over_pairs": 0.5917946530147895,
+          "under_pairs": 0.4082053469852105
+        },
+        "tsb_015": {
+          "pairs": 14064,
+          "actual": 14800029,
+          "forecast": 14795083,
+          "wape": 0.6924606084013367,
+          "forecast_actual": 0.9996658313302544,
+          "excess_forecast": 0.3461789020089723,
+          "shortage_actual": 0.3463973885355445,
+          "over_pairs": 0.607650739476678,
+          "under_pairs": 0.392349260523322
+        },
+        "tsb_02": {
+          "pairs": 14064,
+          "actual": 14800029,
+          "forecast": 15173628,
+          "wape": 0.6109781094818446,
+          "forecast_actual": 1.0252431538752116,
+          "excess_forecast": 0.310278230560362,
+          "shortage_actual": 0.29286747780331723,
+          "over_pairs": 0.6198094425483504,
+          "under_pairs": 0.3801905574516496
+        },
+        "tsb_025": {
+          "pairs": 14064,
+          "actual": 14800029,
+          "forecast": 15421100,
+          "wape": 0.569564932967239,
+          "forecast_actual": 1.0419641904831103,
+          "excess_forecast": 0.2934501631801799,
+          "shortage_actual": 0.2638003712420671,
+          "over_pairs": 0.6244311717861206,
+          "under_pairs": 0.37556882821387944
+        },
+        "tsb_03": {
+          "pairs": 14064,
+          "actual": 14800029,
+          "forecast": 15560176,
+          "wape": 0.5480399054648393,
+          "forecast_actual": 1.0513612134962114,
+          "excess_forecast": 0.2850595548259749,
+          "shortage_actual": 0.24833934598431345,
+          "over_pairs": 0.6312571103526735,
+          "under_pairs": 0.3687428896473265
+        }
+      },
+      "sparse": {
+        "mean24": {
+          "pairs": 20859,
+          "actual": 9328095,
+          "forecast": 3939445,
+          "wape": 1.1463067217904621,
+          "forecast_actual": 0.42232042019297616,
+          "excess_forecast": 0.6732176740632246,
+          "shortage_actual": 0.861993150798743,
+          "over_pairs": 0.7219905076945203,
+          "under_pairs": 0.27647538232897073
+        },
+        "mean12": {
+          "pairs": 20859,
+          "actual": 9328095,
+          "forecast": 3730866,
+          "wape": 0.932619200383358,
+          "forecast_actual": 0.3999600668732469,
+          "excess_forecast": 0.4157655911208807,
+          "shortage_actual": 0.7663295667550556,
+          "over_pairs": 0.38812982405676205,
+          "under_pairs": 0.2569154801284817
+        },
+        "mean6": {
+          "pairs": 20859,
+          "actual": 9328095,
+          "forecast": 5622275,
+          "wape": 0.8551231521548612,
+          "forecast_actual": 0.6027248864853971,
+          "excess_forecast": 0.3798151104312756,
+          "shortage_actual": 0.626199132834732,
+          "over_pairs": 0.2601754638285632,
+          "under_pairs": 0.23433529891174074
+        },
+        "weighted24": {
+          "pairs": 20859,
+          "actual": 9328095,
+          "forecast": 4027490,
+          "wape": 1.0273760320857654,
+          "forecast_actual": 0.4317591093096337,
+          "excess_forecast": 0.5317029004084556,
+          "shortage_actual": 0.7978084613880688,
+          "over_pairs": 0.7324416319094875,
+          "under_pairs": 0.2675583680905125
+        },
+        "seasonal_naive": {
+          "pairs": 20859,
+          "actual": 9328095,
+          "forecast": 1839456,
+          "wape": 1.1205450845001041,
+          "forecast_actual": 0.19719524726109672,
+          "excess_forecast": 0.8056490614616495,
+          "shortage_actual": 0.9616749186195037,
+          "over_pairs": 0.23562970420442014,
+          "under_pairs": 0.27158540677884846
+        },
+        "blend_level_season": {
+          "pairs": 20859,
+          "actual": 9328095,
+          "forecast": 2785161,
+          "wape": 1.010046022258564,
+          "forecast_actual": 0.2985776570671718,
+          "excess_forecast": 0.516823131304001,
+          "shortage_actual": 0.8557341825956961,
+          "over_pairs": 0.37801428639915624,
+          "under_pairs": 0.26832542307876694
+        },
+        "damped_trend24": {
+          "pairs": 20859,
+          "actual": 9328095,
+          "forecast": 4250396,
+          "wape": 0.9255573823650147,
+          "forecast_actual": 0.4556552784427299,
+          "excess_forecast": 0.41831256965857366,
+          "shortage_actual": 0.7349510519611414,
+          "over_pairs": 0.396183901433434,
+          "under_pairs": 0.25207344551512534
+        },
+        "croston_sba_02": {
+          "pairs": 20859,
+          "actual": 9328095,
+          "forecast": 12727002,
+          "wape": 2.1978680142657936,
+          "forecast_actual": 1.3643730860640912,
+          "excess_forecast": 0.9389811065979713,
+          "shortage_actual": 0.9167474641008543,
+          "over_pairs": 0.7319142816050626,
+          "under_pairs": 0.2679898365214056
+        },
+        "tsb_01": {
+          "pairs": 20859,
+          "actual": 9328095,
+          "forecast": 3869369,
+          "wape": 1.0997634711237774,
+          "forecast_actual": 0.4148080186973472,
+          "excess_forecast": 0.6202525826731564,
+          "shortage_actual": 0.8424777262132177,
+          "over_pairs": 0.7303801716285536,
+          "under_pairs": 0.26957188743468047
+        },
+        "tsb_015": {
+          "pairs": 20859,
+          "actual": 9328095,
+          "forecast": 3429203,
+          "wape": 0.9562805358932018,
+          "forecast_actual": 0.3676209343264399,
+          "excess_forecast": 0.44053730347687625,
+          "shortage_actual": 0.7943298007833833,
+          "over_pairs": 0.7341675056330601,
+          "under_pairs": 0.26578455343017404
+        },
+        "tsb_02": {
+          "pairs": 20859,
+          "actual": 9328095,
+          "forecast": 3677036,
+          "wape": 0.8909314730600738,
+          "forecast_actual": 0.3941894332057532,
+          "excess_forecast": 0.3616546795116649,
+          "shortage_actual": 0.7483710199271606,
+          "over_pairs": 0.7386260127522892,
+          "under_pairs": 0.2613260463109449
+        },
+        "tsb_025": {
+          "pairs": 20859,
+          "actual": 9328095,
+          "forecast": 4128564,
+          "wape": 0.8551638630688039,
+          "forecast_actual": 0.4425945972761139,
+          "excess_forecast": 0.33637832700334686,
+          "shortage_actual": 0.7062846328963459,
+          "over_pairs": 0.7423174648832638,
+          "under_pairs": 0.25763459417997026
+        },
+        "tsb_03": {
+          "pairs": 20859,
+          "actual": 9328095,
+          "forecast": 4617456,
+          "wape": 0.8300227932544928,
+          "forecast_actual": 0.49500519750259797,
+          "excess_forecast": 0.3283076545427393,
+          "shortage_actual": 0.667508797875946,
+          "over_pairs": 0.7466321491921952,
+          "under_pairs": 0.25331990987103886
+        }
+      }
+    },
+    "12": {
+      "all": {
+        "mean24": {
+          "pairs": 37160,
+          "actual": 212178958,
+          "forecast": 215046828,
+          "wape": 0.37708307060307084,
+          "forecast_actual": 1.0135162790270655,
+          "excess_forecast": 0.19269515335515666,
+          "shortage_actual": 0.1817833957880027,
+          "over_pairs": 0.5966092572658773,
+          "under_pairs": 0.40086114101184067
+        },
+        "mean12": {
+          "pairs": 37160,
+          "actual": 212178958,
+          "forecast": 218440408,
+          "wape": 0.3032443867501696,
+          "forecast_actual": 1.0295102306987483,
+          "excess_forecast": 0.16160821307383752,
+          "shortage_actual": 0.13686707802571074,
+          "over_pairs": 0.45129171151776104,
+          "under_pairs": 0.3708557588805167
+        },
+        "mean6": {
+          "pairs": 37160,
+          "actual": 212178958,
+          "forecast": 220483582,
+          "wape": 0.2986777416448619,
+          "forecast_actual": 1.0391397152586639,
+          "excess_forecast": 0.1625466970143836,
+          "shortage_actual": 0.129769013193099,
+          "over_pairs": 0.38170075349838534,
+          "under_pairs": 0.35931108719052746
+        },
+        "weighted24": {
+          "pairs": 37160,
+          "actual": 212178958,
+          "forecast": 216635976,
+          "wape": 0.33500051646733475,
+          "forecast_actual": 1.021005937880385,
+          "excess_forecast": 0.17434103032093715,
+          "shortage_actual": 0.15699728929347412,
+          "over_pairs": 0.6107104413347686,
+          "under_pairs": 0.3892895586652314
+        },
+        "seasonal_naive": {
+          "pairs": 37160,
+          "actual": 212178958,
+          "forecast": 218440408,
+          "wape": 0.3032443867501696,
+          "forecast_actual": 1.0295102306987483,
+          "excess_forecast": 0.16160821307383752,
+          "shortage_actual": 0.13686707802571074,
+          "over_pairs": 0.45129171151776104,
+          "under_pairs": 0.3708557588805167
+        },
+        "blend_level_season": {
+          "pairs": 37160,
+          "actual": 212178958,
+          "forecast": 218440408,
+          "wape": 0.3032443867501696,
+          "forecast_actual": 1.0295102306987483,
+          "excess_forecast": 0.16160821307383752,
+          "shortage_actual": 0.13686707802571074,
+          "over_pairs": 0.45129171151776104,
+          "under_pairs": 0.3708557588805167
+        },
+        "damped_trend24": {
+          "pairs": 37160,
+          "actual": 212178958,
+          "forecast": 225627889,
+          "wape": 0.3121130069834711,
+          "forecast_actual": 1.0633848466890865,
+          "excess_forecast": 0.17655783550126988,
+          "shortage_actual": 0.12436408014719724,
+          "over_pairs": 0.4773143164693219,
+          "under_pairs": 0.35158772874058125
+        },
+        "croston_sba_02": {
+          "pairs": 37160,
+          "actual": 212178958,
+          "forecast": 225649796,
+          "wape": 0.5023285459342183,
+          "forecast_actual": 1.0634880964148303,
+          "excess_forecast": 0.2660192644640258,
+          "shortage_actual": 0.21942022475969772,
+          "over_pairs": 0.578686759956943,
+          "under_pairs": 0.42117868675995696
+        },
+        "tsb_01": {
+          "pairs": 37160,
+          "actual": 212178958,
+          "forecast": 213562350,
+          "wape": 0.34161458498284286,
+          "forecast_actual": 1.006519931826689,
+          "excess_forecast": 0.17293970332893577,
+          "shortage_actual": 0.16754732657807186,
+          "over_pairs": 0.6066738428417653,
+          "under_pairs": 0.39329924650161463
+        },
+        "tsb_015": {
+          "pairs": 37160,
+          "actual": 212178958,
+          "forecast": 215611924,
+          "wape": 0.30390111710566453,
+          "forecast_actual": 1.0161795798154085,
+          "excess_forecast": 0.15749219098616843,
+          "shortage_actual": 0.14386076864513062,
+          "over_pairs": 0.6148815931108719,
+          "under_pairs": 0.38509149623250805
+        },
+        "tsb_02": {
+          "pairs": 37160,
+          "actual": 212178958,
+          "forecast": 217128958,
+          "wape": 0.29139286881044535,
+          "forecast_actual": 1.0233293636921268,
+          "excess_forecast": 0.15377367427778643,
+          "shortage_actual": 0.13403175255915611,
+          "over_pairs": 0.6206404736275565,
+          "under_pairs": 0.37933261571582344
+        },
+        "tsb_025": {
+          "pairs": 37160,
+          "actual": 212178958,
+          "forecast": 218187766,
+          "wape": 0.28923151609864534,
+          "forecast_actual": 1.0283195305377328,
+          "excess_forecast": 0.154402905520195,
+          "shortage_actual": 0.1304559927804571,
+          "over_pairs": 0.6245963401506996,
+          "under_pairs": 0.3753767491926803
+        },
+        "tsb_03": {
+          "pairs": 37160,
+          "actual": 212178958,
+          "forecast": 218941835,
+          "wape": 0.2904418535282634,
+          "forecast_actual": 1.0318734583012987,
+          "excess_forecast": 0.15617966972431357,
+          "shortage_actual": 0.12928419761348306,
+          "over_pairs": 0.6259956942949408,
+          "under_pairs": 0.3739773950484392
+        }
+      },
+      "smooth": {
+        "mean24": {
+          "pairs": 10211,
+          "actual": 180490633,
+          "forecast": 183292482,
+          "wape": 0.24788602464483572,
+          "forecast_actual": 1.0155235175002129,
+          "excess_forecast": 0.1296915027598036,
+          "shortage_actual": 0.11618125357231142,
+          "over_pairs": 0.48888453628439915,
+          "under_pairs": 0.5105278621094897
+        },
+        "mean12": {
+          "pairs": 10211,
+          "actual": 180490633,
+          "forecast": 188727237,
+          "wape": 0.22987222832777146,
+          "forecast_actual": 1.045634523316232,
+          "excess_forecast": 0.13174141896646321,
+          "shortage_actual": 0.09211885250576965,
+          "over_pairs": 0.5259034374693957,
+          "under_pairs": 0.47194202330819707
+        },
+        "mean6": {
+          "pairs": 10211,
+          "actual": 180490633,
+          "forecast": 188065222,
+          "wape": 0.2365732242736386,
+          "forecast_actual": 1.0419666598432284,
+          "excess_forecast": 0.13366065098415697,
+          "shortage_actual": 0.09730328221520504,
+          "over_pairs": 0.5360885319753207,
+          "under_pairs": 0.4581333855645872
+        },
+        "weighted24": {
+          "pairs": 10211,
+          "actual": 180490633,
+          "forecast": 185567542,
+          "wape": 0.2323112036695646,
+          "forecast_actual": 1.028128376759452,
+          "excess_forecast": 0.12665713072228107,
+          "shortage_actual": 0.10209141345505748,
+          "over_pairs": 0.5057291156595828,
+          "under_pairs": 0.4942708843404172
+        },
+        "seasonal_naive": {
+          "pairs": 10211,
+          "actual": 180490633,
+          "forecast": 188727237,
+          "wape": 0.22987222832777146,
+          "forecast_actual": 1.045634523316232,
+          "excess_forecast": 0.13174141896646321,
+          "shortage_actual": 0.09211885250576965,
+          "over_pairs": 0.5259034374693957,
+          "under_pairs": 0.47194202330819707
+        },
+        "blend_level_season": {
+          "pairs": 10211,
+          "actual": 180490633,
+          "forecast": 188727237,
+          "wape": 0.22987222832777146,
+          "forecast_actual": 1.045634523316232,
+          "excess_forecast": 0.13174141896646321,
+          "shortage_actual": 0.09211885250576965,
+          "over_pairs": 0.5259034374693957,
+          "under_pairs": 0.47194202330819707
+        },
+        "damped_trend24": {
+          "pairs": 10211,
+          "actual": 180490633,
+          "forecast": 192131772,
+          "wape": 0.23855822313312094,
+          "forecast_actual": 1.064497194538135,
+          "excess_forecast": 0.14234674324470625,
+          "shortage_actual": 0.0870305142974902,
+          "over_pairs": 0.5534227793555969,
+          "under_pairs": 0.4465772206444031
+        },
+        "croston_sba_02": {
+          "pairs": 10211,
+          "actual": 180490633,
+          "forecast": 171174594,
+          "wape": 0.25245860082629723,
+          "forecast_actual": 0.9483849182469337,
+          "excess_forecast": 0.10588713253922455,
+          "shortage_actual": 0.1520368412896834,
+          "over_pairs": 0.4001566937616296,
+          "under_pairs": 0.5998433062383703
+        },
+        "tsb_01": {
+          "pairs": 10211,
+          "actual": 180490633,
+          "forecast": 184068692,
+          "wape": 0.23705331864662543,
+          "forecast_actual": 1.0198240722793073,
+          "excess_forecast": 0.1259420119157484,
+          "shortage_actual": 0.10861462318365778,
+          "over_pairs": 0.5005386348056018,
+          "under_pairs": 0.4994613651943982
+        },
+        "tsb_015": {
+          "pairs": 10211,
+          "actual": 180490633,
+          "forecast": 186987403,
+          "wape": 0.22716768189945694,
+          "forecast_actual": 1.0359950513022067,
+          "excess_forecast": 0.12700964781196283,
+          "shortage_actual": 0.09558631529862764,
+          "over_pairs": 0.5189501517970816,
+          "under_pairs": 0.4810498482029184
+        },
+        "tsb_02": {
+          "pairs": 10211,
+          "actual": 180490633,
+          "forecast": 188034307,
+          "wape": 0.22753786073880244,
+          "forecast_actual": 1.0417953760719296,
+          "excess_forecast": 0.12926398167855438,
+          "shortage_actual": 0.09287124233343763,
+          "over_pairs": 0.5287435118989325,
+          "under_pairs": 0.47125648810106746
+        },
+        "tsb_025": {
+          "pairs": 10211,
+          "actual": 180490633,
+          "forecast": 188376150,
+          "wape": 0.23052054524547794,
+          "forecast_actual": 1.0436893398544185,
+          "excess_forecast": 0.13136566343493733,
+          "shortage_actual": 0.09341560269553031,
+          "over_pairs": 0.5331505239447655,
+          "under_pairs": 0.4668494760552345
+        },
+        "tsb_03": {
+          "pairs": 10211,
+          "actual": 180490633,
+          "forecast": 188476257,
+          "wape": 0.23398036474022169,
+          "forecast_actual": 1.0442439815190157,
+          "excess_forecast": 0.1332180750778761,
+          "shortage_actual": 0.09486819161060146,
+          "over_pairs": 0.5344236607580061,
+          "under_pairs": 0.46557633924199393
+        }
+      },
+      "intermittent": {
+        "mean24": {
+          "pairs": 10793,
+          "actual": 24955550,
+          "forecast": 25727097,
+          "wape": 1.0103306078207053,
+          "forecast_actual": 1.0309168501595838,
+          "excess_forecast": 0.5050103981805643,
+          "shortage_actual": 0.48970687883056074,
+          "over_pairs": 0.5633280830167702,
+          "under_pairs": 0.4347262114333364
+        },
+        "mean12": {
+          "pairs": 10793,
+          "actual": 24955550,
+          "forecast": 25262265,
+          "wape": 0.6269033942349498,
+          "forecast_actual": 1.0122904524244105,
+          "excess_forecast": 0.3157166231927343,
+          "shortage_actual": 0.3073064709052696,
+          "over_pairs": 0.5203372556286482,
+          "under_pairs": 0.40090799592328363
+        },
+        "mean6": {
+          "pairs": 10793,
+          "actual": 24955550,
+          "forecast": 26221086,
+          "wape": 0.5374604045993777,
+          "forecast_actual": 1.0507116052341063,
+          "excess_forecast": 0.279892221092597,
+          "shortage_actual": 0.24337439968263572,
+          "over_pairs": 0.4281478736217919,
+          "under_pairs": 0.3913647734642824
+        },
+        "weighted24": {
+          "pairs": 10793,
+          "actual": 24955550,
+          "forecast": 25612821,
+          "wape": 0.8233632255694993,
+          "forecast_actual": 1.026337687765155,
+          "excess_forecast": 0.4139480228894624,
+          "shortage_actual": 0.3985127689021718,
+          "over_pairs": 0.5774112850921894,
+          "under_pairs": 0.42258871490781064
+        },
+        "seasonal_naive": {
+          "pairs": 10793,
+          "actual": 24955550,
+          "forecast": 25262265,
+          "wape": 0.6269033942349498,
+          "forecast_actual": 1.0122904524244105,
+          "excess_forecast": 0.3157166231927343,
+          "shortage_actual": 0.3073064709052696,
+          "over_pairs": 0.5203372556286482,
+          "under_pairs": 0.40090799592328363
+        },
+        "blend_level_season": {
+          "pairs": 10793,
+          "actual": 24955550,
+          "forecast": 25262265,
+          "wape": 0.6269033942349498,
+          "forecast_actual": 1.0122904524244105,
+          "excess_forecast": 0.3157166231927343,
+          "shortage_actual": 0.3073064709052696,
+          "over_pairs": 0.5203372556286482,
+          "under_pairs": 0.40090799592328363
+        },
+        "damped_trend24": {
+          "pairs": 10793,
+          "actual": 24955550,
+          "forecast": 28222243,
+          "wape": 0.6304620540190017,
+          "forecast_actual": 1.1309004604099178,
+          "excess_forecast": 0.33661782848374855,
+          "shortage_actual": 0.24978079680454512,
+          "over_pairs": 0.554155471138701,
+          "under_pairs": 0.37227832854628
+        },
+        "croston_sba_02": {
+          "pairs": 10793,
+          "actual": 24955550,
+          "forecast": 30597435,
+          "wape": 1.301179730306828,
+          "forecast_actual": 1.2260773728908314,
+          "excess_forecast": 0.622822481258545,
+          "shortage_actual": 0.5375511787080018,
+          "over_pairs": 0.5547113870100991,
+          "under_pairs": 0.44528861298990086
+        },
+        "tsb_01": {
+          "pairs": 10793,
+          "actual": 24955550,
+          "forecast": 23654997,
+          "wape": 0.8107853164534127,
+          "forecast_actual": 0.9478852245456981,
+          "excess_forecast": 0.40019114200388894,
+          "shortage_actual": 0.4314500459538549,
+          "over_pairs": 0.5772259798017233,
+          "under_pairs": 0.42277402019827665
+        },
+        "tsb_015": {
+          "pairs": 10793,
+          "actual": 24955550,
+          "forecast": 24241662,
+          "wape": 0.645911495944258,
+          "forecast_actual": 0.9713936368501604,
+          "excess_forecast": 0.3177420097150773,
+          "shortage_actual": 0.3372589295470488,
+          "over_pairs": 0.5939961085889002,
+          "under_pairs": 0.40600389141109977
+        },
+        "tsb_02": {
+          "pairs": 10793,
+          "actual": 24955550,
+          "forecast": 24835829,
+          "wape": 0.5629746199797584,
+          "forecast_actual": 0.9952026357326298,
+          "excess_forecast": 0.2804339717717291,
+          "shortage_actual": 0.28388599212356536,
+          "over_pairs": 0.6029834151765033,
+          "under_pairs": 0.3970165848234967
+        },
+        "tsb_025": {
+          "pairs": 10793,
+          "actual": 24955550,
+          "forecast": 25267368,
+          "wape": 0.5290098662993795,
+          "forecast_actual": 1.0124949171126227,
+          "excess_forecast": 0.26741111202623763,
+          "shortage_actual": 0.2582574745933783,
+          "over_pairs": 0.6084499212452515,
+          "under_pairs": 0.39155007875474845
+        },
+        "tsb_03": {
+          "pairs": 10793,
+          "actual": 24955550,
+          "forecast": 25536152,
+          "wape": 0.5137131250976804,
+          "forecast_actual": 1.0232654557716028,
+          "excess_forecast": 0.26238478873713633,
+          "shortage_actual": 0.24522383466303724,
+          "over_pairs": 0.6083572686000185,
+          "under_pairs": 0.39164273139998146
+        }
+      },
+      "sparse": {
+        "mean24": {
+          "pairs": 16156,
+          "actual": 6732775,
+          "forecast": 6027248,
+          "wape": 1.4933859367051476,
+          "forecast_actual": 0.895210147376082,
+          "excess_forecast": 0.7755698972756806,
+          "shortage_actual": 0.7990878946645328,
+          "over_pairs": 0.6869274572914088,
+          "under_pairs": 0.3089254766031196
+        },
+        "mean12": {
+          "pairs": 16156,
+          "actual": 6732775,
+          "forecast": 4450906,
+          "wape": 1.0705206991173772,
+          "forecast_actual": 0.6610804608798007,
+          "excess_forecast": 0.5533374553405531,
+          "shortage_actual": 0.7047201191187883,
+          "over_pairs": 0.3580094082693736,
+          "under_pairs": 0.28689031938598664
+        },
+        "mean6": {
+          "pairs": 16156,
+          "actual": 6732775,
+          "forecast": 6197274,
+          "wape": 1.0784945286304681,
+          "forecast_actual": 0.9204635532896911,
+          "excess_forecast": 0.5426385859331054,
+          "shortage_actual": 0.5790154876703885,
+          "over_pairs": 0.25309482545184453,
+          "under_pairs": 0.2754394652141619
+        },
+        "weighted24": {
+          "pairs": 16156,
+          "actual": 6732775,
+          "forecast": 5455613,
+          "wape": 1.2777171621402024,
+          "forecast_actual": 0.8103067458500148,
+          "excess_forecast": 0.6713654511470698,
+          "shortage_actual": 0.7337052081450982,
+          "over_pairs": 0.6993067590987868,
+          "under_pairs": 0.3006932409012132
+        },
+        "seasonal_naive": {
+          "pairs": 16156,
+          "actual": 6732775,
+          "forecast": 4450906,
+          "wape": 1.0705206991173772,
+          "forecast_actual": 0.6610804608798007,
+          "excess_forecast": 0.5533374553405531,
+          "shortage_actual": 0.7047201191187883,
+          "over_pairs": 0.3580094082693736,
+          "under_pairs": 0.28689031938598664
+        },
+        "blend_level_season": {
+          "pairs": 16156,
+          "actual": 6732775,
+          "forecast": 4450906,
+          "wape": 1.0705206991173772,
+          "forecast_actual": 0.6610804608798007,
+          "excess_forecast": 0.5533374553405531,
+          "shortage_actual": 0.7047201191187883,
+          "over_pairs": 0.3580094082693736,
+          "under_pairs": 0.28689031938598664
+        },
+        "damped_trend24": {
+          "pairs": 16156,
+          "actual": 6732775,
+          "forecast": 5273873,
+          "wape": 1.1039668765366335,
+          "forecast_actual": 0.7833134583856757,
+          "excess_forecast": 0.5663635198805946,
+          "shortage_actual": 0.6603267090754783,
+          "over_pairs": 0.3778781876702154,
+          "under_pairs": 0.27772963604852685
+        },
+        "croston_sba_02": {
+          "pairs": 16156,
+          "actual": 6732775,
+          "forecast": 23877767,
+          "wape": 4.2397791344410285,
+          "forecast_actual": 3.5464970591789564,
+          "excess_forecast": 0.9567576231391348,
+          "shortage_actual": 0.846641037631033,
+          "over_pairs": 0.7075389948006933,
+          "under_pairs": 0.2921515226541223
+        },
+        "tsb_01": {
+          "pairs": 16156,
+          "actual": 6732775,
+          "forecast": 5838661,
+          "wape": 1.4056506623141334,
+          "forecast_actual": 0.8671997610906728,
+          "excess_forecast": 0.7338853632777479,
+          "shortage_actual": 0.7692254506117324,
+          "over_pairs": 0.6934265907402822,
+          "under_pairs": 0.30651151275068084
+        },
+        "tsb_015": {
+          "pairs": 16156,
+          "actual": 6732775,
+          "forecast": 4382859,
+          "wape": 1.0932649652971234,
+          "forecast_actual": 0.6509736798885914,
+          "excess_forecast": 0.5716349740231224,
+          "shortage_actual": 0.7211456427042657,
+          "over_pairs": 0.6894652141619213,
+          "under_pairs": 0.3104728893290418
+        },
+        "tsb_02": {
+          "pairs": 16156,
+          "actual": 6732775,
+          "forecast": 4258822,
+          "wape": 0.9965640436495405,
+          "forecast_actual": 0.632550777227421,
+          "excess_forecast": 0.49728404700922085,
+          "shortage_actual": 0.6820066332110601,
+          "over_pairs": 0.6905174548155484,
+          "under_pairs": 0.3094206486754147
+        },
+        "tsb_025": {
+          "pairs": 16156,
+          "actual": 6732775,
+          "forecast": 4544249,
+          "wape": 0.9743843224795147,
+          "forecast_actual": 0.6749444836816001,
+          "excess_forecast": 0.48102386334002295,
+          "shortage_actual": 0.6497199193989589,
+          "over_pairs": 0.6931790047041347,
+          "under_pairs": 0.30675909878682844
+        },
+        "tsb_03": {
+          "pairs": 16156,
+          "actual": 6732775,
+          "forecast": 4929426,
+          "wape": 0.9764758395536861,
+          "forecast_actual": 0.7321536357054681,
+          "excess_forecast": 0.48393495620379817,
+          "shortage_actual": 0.6221611019241079,
+          "over_pairs": 0.6956548650656103,
+          "under_pairs": 0.3042832384253528
+        }
+      }
+    }
+  },
+  "ranking": [
+    {
+      "method": "tsb_03",
+      "mean_wape": 0.29876355471744037,
+      "mean_abs_bias": 0.01569126098801214
+    },
+    {
+      "method": "tsb_025",
+      "mean_wape": 0.30164771423547765,
+      "mean_abs_bias": 0.016954753687411468
+    },
+    {
+      "method": "tsb_02",
+      "mean_wape": 0.30835749650499705,
+      "mean_abs_bias": 0.018725160196660595
+    },
+    {
+      "method": "mean6",
+      "mean_wape": 0.3098622382174662,
+      "mean_abs_bias": 0.017432297170201266
+    },
+    {
+      "method": "tsb_015",
+      "mean_wape": 0.32429551941620455,
+      "mean_abs_bias": 0.020933814506580013
+    },
+    {
+      "method": "mean12",
+      "mean_wape": 0.3289905298343134,
+      "mean_abs_bias": 0.014863100034858023
+    },
+    {
+      "method": "damped_trend24",
+      "mean_wape": 0.33093665902414576,
+      "mean_abs_bias": 0.02839632777112781
+    },
+    {
+      "method": "blend_level_season",
+      "mean_wape": 0.3573569527158394,
+      "mean_abs_bias": 0.019822141535167297
+    },
+    {
+      "method": "weighted24",
+      "mean_wape": 0.3594703213752868,
+      "mean_abs_bias": 0.01710602846970281
+    },
+    {
+      "method": "tsb_01",
+      "mean_wape": 0.36136048600423903,
+      "mean_abs_bias": 0.023441534444482676
+    },
+    {
+      "method": "seasonal_naive",
+      "mean_wape": 0.4001860157941324,
+      "mean_abs_bias": 0.024781183035476606
+    },
+    {
+      "method": "mean24",
+      "mean_wape": 0.4005503415744133,
+      "mean_abs_bias": 0.019835401498252025
+    },
+    {
+      "method": "croston_sba_02",
+      "mean_wape": 0.5048894930541383,
+      "mean_abs_bias": 0.02932679829184996
+    }
+  ]
+}

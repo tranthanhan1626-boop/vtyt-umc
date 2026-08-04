@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search, AlertTriangle, Check, X, Clock, CheckCircle2 } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
+import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
 
 // Phase C — SỔ THIẾU HÀNG. Sổ quan trọng nhất của cả dự án: đây là biến duy
 // nhất phá được Y = min(nhu cầu, khả năng cấp).
@@ -252,6 +253,14 @@ export default function SoThieuHang({ profile }) {
                       {r.ma_hang || r.ten_vat_tu_tu_do}
                     </span>
                     <span className={`text-xs px-2 py-0.5 rounded ${mauXl}`}>{nhanXl}</span>
+                    <NutXoaDuLieuTest
+                      loai="su_kien_thieu_hang"
+                      id={r.id}
+                      compact
+                      nhan="Xóa lượt báo thiếu test"
+                      moTa={`lượt báo thiếu ${r.ma_hang || r.ten_vat_tu_tu_do} của ${r.don_vi}`}
+                      onDaXoa={() => setRows((cu) => cu.filter((x) => x.id !== r.id))}
+                    />
                   </div>
                   <div className="flex items-center gap-2 flex-wrap mt-1 text-xs text-slate-500">
                     {laPdd && <span className="font-medium text-slate-700">{r.don_vi}</span>}

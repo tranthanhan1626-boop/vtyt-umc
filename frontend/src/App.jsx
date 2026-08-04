@@ -16,12 +16,16 @@ import LichSuXuatHoSo from "./features/LichSuXuatHoSo";
 import ThongBaoRotThau from "./features/ThongBaoRotThau";
 import TongHopKetQuaThau from "./features/TongHopKetQuaThau";
 import DieuChinhTieuChi from "./features/DieuChinhTieuChi";
+import TienDoSuDung from "./features/TienDoSuDung";
+import ThongBaoChamTienDo from "./features/ThongBaoChamTienDo";
 import SoThieuHang from "./features/SoThieuHang";
 import SoSuKienNhuCau from "./features/SoSuKienNhuCau";
 import PhieuDeNghi from "./features/PhieuDeNghi";
 import TrangDungChung, { QuayLaiDungChung } from "./features/TrangDungChung";
 import NhomKyThuatCuaKhoa from "./features/NhomKyThuatCuaKhoa";
 import TongHopPhongDieuDuong from "./features/TongHopPhongDieuDuong";
+import GoiTuyChonMuaThem from "./features/GoiTuyChonMuaThem";
+import QuanLyDuLieuTest from "./features/QuanLyDuLieuTest";
 
 const TEN_VAI_TRO = {
   dvsd: "Đơn vị sử dụng",
@@ -71,7 +75,24 @@ export default function App() {
     if (!laPdd) return;
     demViecChoDuyet().then(setSoChoDuyet).catch(() => {});
   }, [laPdd]);
-  useEffect(() => { capNhatDem(); }, [capNhatDem]);
+  useEffect(() => {
+    if (!laPdd) return undefined;
+    capNhatDem();
+    // Postgres Realtime không phải project nào cũng bật publication cho bảng
+    // hồ sơ. Poll nhẹ + cập nhật ngay khi quay lại tab giúp badge PĐD nhận việc
+    // mới trong tối đa 30 giây mà không phụ thuộc cấu hình ngoài source code.
+    const boDem = window.setInterval(capNhatDem, 30_000);
+    const khiQuayLai = () => {
+      if (document.visibilityState === "visible") capNhatDem();
+    };
+    window.addEventListener("focus", capNhatDem);
+    document.addEventListener("visibilitychange", khiQuayLai);
+    return () => {
+      window.clearInterval(boDem);
+      window.removeEventListener("focus", capNhatDem);
+      document.removeEventListener("visibilitychange", khiQuayLai);
+    };
+  }, [laPdd, capNhatDem]);
   // ?phieu=<id> — mở trang điền biểu mẫu ở tab riêng (link từ 2 tab đề xuất).
   // Đọc 1 lần lúc mount là đủ: mỗi tab trình duyệt chỉ mở đúng 1 phiếu.
   const [phieuId] = useState(() => new URLSearchParams(window.location.search).get("phieu"));
@@ -132,19 +153,43 @@ export default function App() {
     choduyet: "Công việc chờ duyệt",
     ketquathau: "Tổng hợp kết quả thầu",
     tieuchi: "Điều chỉnh tiêu chí kỹ thuật",
+    tiendosudung: "Tiến độ sử dụng theo cam kết",
   };
 
   const noiDungChung = chon.man === "tongquan"
     ? <TrangDungChung doiChon={setChon} laPdd={xemDuocTongHop} soChoDuyet={soChoDuyet} dotTheoGoi={dotTheoGoi} />
     : chon.man === "thieuhang" ? <SoThieuHang profile={profile} />
     : chon.man === "sukien" ? <SoSuKienNhuCau profile={profile} />
-    : chon.man === "tiendo" ? <TienDoGoiThau profile={profile} />
+    : chon.man === "tiendo" ? (
+      <TienDoGoiThau
+        profile={profile}
+        onChuyenGoiBoSung={(dotId) => setChon({
+          nhom: "goi",
+          goi: "mua_sam_bo_sung",
+          man: "de_xuat",
+          dotId,
+        })}
+      />
+    )
     : chon.man === "lichsu" ? <LichSuXuatHoSo profile={profile} />
     : chon.man === "makythuat" ? <NhomKyThuatCuaKhoa profile={profile} />
     : chon.man === "ketquathau" && xemDuocTongHop ? <TongHopKetQuaThau profile={profile} />
     : chon.man === "tieuchi" ? <DieuChinhTieuChi profile={profile} />
+    : chon.man === "tiendosudung" ? <TienDoSuDung profile={profile} />
     : chon.man === "quanlydot" && xemDuocTongHop ? <QuanLyDot />
-    : chon.man === "choduyet" && xemDuocTongHop ? <ChoDuyet onDoiSoLuong={capNhatDem} />
+    : chon.man === "choduyet" && xemDuocTongHop ? (
+      <ChoDuyet
+        onDoiSoLuong={capNhatDem}
+        onMoHoSo={(h) => setChon({
+          nhom: "goi",
+          goi: h.loai_mua_sam,
+          man: h.loai_mua_sam === "chi_dinh_thau" ? "bieu_mau" : "tong_hop",
+          dotId: h.dot_id,
+          donVi: h.don_vi,
+          nguonKey: h.nguon_key,
+        })}
+      />
+    )
     : <TrangDungChung doiChon={setChon} laPdd={xemDuocTongHop} soChoDuyet={soChoDuyet} dotTheoGoi={dotTheoGoi} />;
 
   return (
@@ -197,6 +242,7 @@ export default function App() {
             <button type="button" onClick={signOut} className="umc-icon-button" title="Đăng xuất" aria-label="Đăng xuất">
               <LogOut size={17} />
             </button>
+            <QuanLyDuLieuTest profile={profile} />
           </div>
         </div>
       </header>
@@ -206,14 +252,51 @@ export default function App() {
           dsDotTheoGoi={dsDotTheoGoi} dangTaiDot={dangTaiDot} loiDot={loiDot} laPdd={xemDuocTongHop}>
           {chon.nhom === "goi" ? (
             chon.man === "de_xuat"  ? <Function1 profile={profile} goi={chon.goi} dot={dotTheoGoi[chon.goi]}
-              dsDot={dsDotTheoGoi[chon.goi] || []} dangTaiDot={dangTaiDot} />
+              dsDot={dsDotTheoGoi[chon.goi] || []} dangTaiDot={dangTaiDot} dotIdKhoiTao={chon.dotId} />
           : chon.man === "cua_toi" ? (xemDuocTongHop
-              ? <DeXuatTongHop profile={profile} goi={chon.goi} />
-              : <DeXuatCuaToi profile={profile} goi={chon.goi} />)
+              ? <DeXuatTongHop
+                  profile={profile}
+                  goi={chon.goi}
+                  onMoHoSo={(h) => setChon({
+                    nhom: "goi",
+                    goi: chon.goi,
+                    man: "bieu_mau",
+                    ...h,
+                  })}
+                />
+              : <DeXuatCuaToi
+                  profile={profile}
+                  goi={chon.goi}
+                  onMoHoSo={(h) => setChon({
+                    nhom: "goi",
+                    goi: chon.goi,
+                    man: "bieu_mau",
+                    ...h,
+                  })}
+                />)
           : chon.man === "tong_hop" && xemDuocTongHop
-              ? <TongHopPhongDieuDuong profile={profile} goi={chon.goi} dot={dotTheoGoi[chon.goi]} />
-          : <XuatHoSo profile={profile} goi={chon.goi} dot={dotTheoGoi[chon.goi]} />
-          ) : chon.man === "tongquan" ? noiDungChung : (
+              ? <TongHopPhongDieuDuong
+                  profile={profile}
+                  goi={chon.goi}
+                  dot={dotTheoGoi[chon.goi]}
+                  dotIdKhoiTao={chon.dotId}
+                  donViKhoiTao={chon.donVi}
+                  nguonKeyKhoiTao={chon.nguonKey}
+                />
+          : <XuatHoSo
+              profile={profile}
+              goi={chon.goi}
+              dot={dotTheoGoi[chon.goi]}
+              dotIdKhoiTao={chon.dotId}
+              donViKhoiTao={chon.donVi}
+              nhomKhoiTao={chon.nhomDeXuat}
+              proposalIdKhoiTao={chon.proposalId}
+              maHoSoKhoiTao={chon.maHoSo}
+              nguonKeyKhoiTao={chon.nguonKey}
+            />
+          ) : chon.nhom === "tuy_chon_mua_them"
+            ? <GoiTuyChonMuaThem profile={profile} />
+          : chon.man === "tongquan" ? noiDungChung : (
             <div className="umc-linked-page">
               <QuayLaiDungChung
                 onBack={() => setChon({ nhom: "chung", man: "tongquan" })}
@@ -224,10 +307,18 @@ export default function App() {
           )}
         </KhungGoiThau>
 
-        <ThongBaoRotThau
-          profile={profile}
-          onXemChiTiet={() => setChon({ nhom: "goi", goi: "dau_thau_rong_rai", man: "bieu_mau" })}
-        />
+        {/* Hai thông báo góc phải xếp CHỒNG DỌC — trước đây mỗi cái tự `fixed`
+            vào cùng một góc nên cái sau che mất cái trước. */}
+        <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2">
+          <ThongBaoRotThau
+            profile={profile}
+            onXemChiTiet={() => setChon({ nhom: "chung", man: "tiendo" })}
+          />
+          <ThongBaoChamTienDo
+            profile={profile}
+            onXemChiTiet={() => setChon({ nhom: "chung", man: "tiendosudung" })}
+          />
+        </div>
       </div>
     </div>
   );

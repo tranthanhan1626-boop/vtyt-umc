@@ -1,42 +1,49 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, X, Inbox, Package, AlertTriangle } from "lucide-react";
+import { Inbox, Package, ExternalLink, Files } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 
-// Tab "Chờ duyệt" (A.2) — CỔNG phê duyệt của Phòng Điều dưỡng. Gom 2 loại việc
-// đang chặn khoa vào MỘT chỗ, để PĐD không phải đi lùng ở nhiều tab:
-//   1) Đề xuất số lượng mới gửi   (proposals.trang_thai = 'de_xuat')
-//   2) Đề nghị mã kỹ thuật mới    (khoa_nhom_ky_thuat.trang_thai = 'cho_duyet')
-//
-// Trả lại BẮT BUỘC có lý do — chặn thật ở DB (fn_kiem_tra_chuyen_trang_thai),
-// không chỉ khoá nút ở FE. Khoa đọc lý do đó ở tab "Đề xuất của tôi".
+// Tab "Chờ duyệt" — CỔNG việc của Phòng Điều dưỡng:
+//   1) Bộ hồ sơ Word/Excel khoa đã gửi (một bộ = một việc, không đếm từng file).
+//   2) Đề nghị mã kỹ thuật mới.
+// Giỏ đề xuất mới gửi nhưng khoa chưa gửi hồ sơ chỉ hiện nhắc thông tin, chưa
+// được tính là việc PĐD phải xét duyệt. Từ chối thực hiện bên trong hồ sơ và
+// bắt buộc có comment ở RPC chuyen_trang_thai_bo_ho_so.
 
 export async function demViecChoDuyet() {
-  const [dx, nhom] = await Promise.all([
-    supabase.from("v_de_xuat_tong_hop").select("id", { count: "exact", head: true }).eq("trang_thai", "de_xuat"),
+  const [hs, nhom] = await Promise.all([
+    supabase.from("ho_so_cong_tac")
+      .select("dot_id,loai_mua_sam,don_vi,nguon_key")
+      .eq("trang_thai", "cho_pdd"),
     supabase.from("khoa_nhom_ky_thuat").select("id", { count: "exact", head: true }).eq("trang_thai", "cho_duyet"),
   ]);
-  return (dx.count || 0) + (nhom.count || 0);
+  const bo = new Set((hs.data || []).map((x) =>
+    `${x.dot_id}|${x.loai_mua_sam}|${x.don_vi}|${x.nguon_key}`
+  ));
+  return bo.size + (nhom.count || 0);
 }
 
-export default function ChoDuyet({ onDoiSoLuong }) {
+export default function ChoDuyet({ onDoiSoLuong, onMoHoSo }) {
   const [rows, setRows] = useState([]);
+  const [hoSoCho, setHoSoCho] = useState([]);
   const [nhomMoi, setNhomMoi] = useState([]);
   const [dangTai, setDangTai] = useState(true);
-  const [dangXuLy, setDangXuLy] = useState(null);
-  const [loi, setLoi] = useState({});
-  const [moTraLai, setMoTraLai] = useState(null);   // key nhóm đang mở ô lý do
-  const [lyDo, setLyDo] = useState("");
 
   const tai = useCallback(async () => {
     setDangTai(true);
-    const [dx, nm] = await Promise.all([
+    const [dx, hs, nm] = await Promise.all([
       fetchAllRows((f, t) =>
         supabase.from("v_de_xuat_tong_hop").select("*").eq("trang_thai", "de_xuat")
           .order("created_at", { ascending: false }).range(f, t)),
+      fetchAllRows((f, t) =>
+        supabase.from("ho_so_cong_tac")
+          .select("id,dot_id,loai_mua_sam,don_vi,nguon_key,ma_ho_so,trang_thai,updated_at,updated_by")
+          .eq("trang_thai", "cho_pdd")
+          .order("updated_at", { ascending: false }).range(f, t)),
       supabase.from("khoa_nhom_ky_thuat").select("*").eq("trang_thai", "cho_duyet")
         .order("created_at", { ascending: false }),
     ]);
     setRows(dx.error ? [] : dx.data || []);
+    setHoSoCho(hs.error ? [] : hs.data || []);
     setNhomMoi(nm.error ? [] : nm.data || []);
     setDangTai(false);
     onDoiSoLuong?.();
@@ -50,39 +57,65 @@ export default function ChoDuyet({ onDoiSoLuong }) {
     const m = new Map();
     rows.forEach((r) => {
       const k = r.nhom_de_xuat || `don-${r.id}`;
-      if (!m.has(k)) m.set(k, { key: k, don_vi: r.don_vi, created_at: r.created_at,
-                                created_by_ho_ten: r.created_by_ho_ten, items: [] });
+      if (!m.has(k)) m.set(k, {
+        key: k,
+        dot_id: r.dot_id,
+        loai_mua_sam: r.loai_mua_sam,
+        don_vi: r.don_vi,
+        created_at: r.created_at,
+        created_by_ho_ten: r.created_by_ho_ten,
+        items: [],
+      });
       m.get(k).items.push(r);
     });
     return [...m.values()];
   }, [rows]);
 
-  const doiTrangThai = async (g, trangThai, lyDoTraLai) => {
-    setDangXuLy(g.key);
-    setLoi((p) => ({ ...p, [g.key]: "" }));
-    const ids = g.items.map((i) => i.id);
-    const patch = trangThai === "tu_choi"
-      ? { trang_thai: "tu_choi", ly_do_tra_lai: lyDoTraLai }
-      : { trang_thai: "xet_duyet" };
-    // Kiểm count — thiếu policy RLS thì UPDATE trả 204 nhưng 0 dòng (bẫy 5.5).
-    const { error, count } = await supabase
-      .from("proposals").update(patch, { count: "exact" }).in("id", ids);
-    if (error) setLoi((p) => ({ ...p, [g.key]: error.message }));
-    else if (!count) setLoi((p) => ({ ...p, [g.key]: "Không đổi được dòng nào — kiểm tra quyền." }));
-    else { setMoTraLai(null); setLyDo(""); await tai(); }
-    setDangXuLy(null);
-  };
+  const boHoSoCho = useMemo(() => {
+    const map = new Map();
+    hoSoCho.forEach((h) => {
+      const key = `${h.dot_id}|${h.loai_mua_sam}|${h.don_vi}|${h.nguon_key}`;
+      if (!map.has(key)) map.set(key, {
+        key,
+        dot_id: h.dot_id,
+        loai_mua_sam: h.loai_mua_sam,
+        don_vi: h.don_vi,
+        nguon_key: h.nguon_key,
+        updated_at: h.updated_at,
+        updated_by: h.updated_by,
+        tai_lieu: [],
+      });
+      map.get(key).tai_lieu.push(h.ma_ho_so);
+    });
+    return [...map.values()];
+  }, [hoSoCho]);
 
-  const tongViec = nhomDeXuat.length + nhomMoi.length;
+  const nhomChuaGuiHoSo = useMemo(() => {
+    const daCoHoSo = new Set(boHoSoCho.map((h) =>
+      `${h.dot_id}|${h.loai_mua_sam}|${h.don_vi}`
+    ));
+    return nhomDeXuat.filter((g) =>
+      !daCoHoSo.has(`${g.dot_id}|${g.loai_mua_sam}|${g.don_vi}`)
+    );
+  }, [boHoSoCho, nhomDeXuat]);
+
+  const tongViec = boHoSoCho.length + nhomMoi.length;
 
   if (dangTai) return <p className="text-sm text-slate-500">Đang tải...</p>;
 
   if (tongViec === 0) {
     return (
-      <div className="text-center py-12">
-        <Inbox size={32} className="mx-auto text-slate-300 mb-3" />
-        <p className="text-sm text-slate-600 font-medium">Không có việc nào chờ duyệt</p>
-        <p className="text-xs text-slate-400 mt-1">Khoa gửi đề xuất mới sẽ hiện ở đây.</p>
+      <div className="space-y-4">
+        <div className="text-center py-12">
+          <Inbox size={32} className="mx-auto text-slate-300 mb-3" />
+          <p className="text-sm text-slate-600 font-medium">Không có hồ sơ nào chờ duyệt</p>
+          <p className="text-xs text-slate-400 mt-1">Hồ sơ Word–Excel khoa gửi sẽ hiện ở đây.</p>
+        </div>
+        {nhomChuaGuiHoSo.length > 0 && (
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+            <b>{nhomChuaGuiHoSo.length} giỏ đề xuất</b> đã gửi nhưng khoa chưa gửi đủ bộ hồ sơ Word–Excel.
+          </div>
+        )}
       </div>
     );
   }
@@ -94,76 +127,34 @@ export default function ChoDuyet({ onDoiSoLuong }) {
         Khoa không đi tiếp được cho tới khi bạn duyệt hoặc trả lại.
       </p>
 
-      {nhomDeXuat.map((g) => (
-        <div key={g.key} className="border border-slate-200 rounded-lg bg-white overflow-hidden">
-          <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <span className="text-sm font-medium text-slate-800">{g.don_vi}</span>
-            <span className="text-xs text-slate-500">
-              {g.items.length} mã hàng · {g.created_by_ho_ten || "—"} ·{" "}
-              {new Date(g.created_at).toLocaleDateString("vi-VN")}
-            </span>
+      {boHoSoCho.map((h) => (
+        <div key={h.key} className="overflow-hidden rounded-xl border border-blue-200 bg-white">
+          <div className="flex flex-wrap items-start gap-3 bg-blue-50 px-4 py-3">
+            <span className="rounded-lg bg-white p-2 text-blue-700"><Files size={17} /></span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-blue-950">{h.don_vi}</p>
+              <p className="mt-0.5 text-xs text-blue-700">
+                {h.tai_lieu.length} tài liệu đã gửi · {new Date(h.updated_at).toLocaleString("vi-VN")}
+                {" · "}{h.updated_by}
+              </p>
+            </div>
+            <button type="button" onClick={() => onMoHoSo?.(h)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-700 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-800">
+              <ExternalLink size={13} /> Mở hồ sơ xét duyệt
+            </button>
           </div>
-
-          <div className="divide-y divide-slate-100">
-            {g.items.map((it) => {
-              const chiDinh = (it.ghi_chu || "").includes("[CHỈ ĐỊNH THẦU]");
-              return (
-                <div key={it.id} className="px-3 py-2">
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="font-mono text-xs text-slate-500">{it.ma_hang}</span>
-                    <span className="text-sm text-slate-800 flex-1 min-w-0">{it.ten_vat_tu}</span>
-                    <span className="text-sm font-medium text-slate-900 tabular-nums">
-                      {Number(it.so_luong).toLocaleString("vi-VN")} {it.dvt}
-                    </span>
-                  </div>
-                  {chiDinh && (
-                    <div className="mt-1.5 flex items-start gap-1.5 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
-                      <AlertTriangle size={12} className="text-amber-700 mt-0.5 shrink-0" />
-                      <p className="text-xs text-amber-900 whitespace-pre-line leading-snug">{it.ghi_chu}</p>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="px-3 py-2 border-t border-slate-200 bg-slate-50">
-            {moTraLai === g.key ? (
-              <div className="space-y-2">
-                <label className="text-xs text-slate-600 block">
-                  Lý do trả lại <span className="text-red-500">*</span> — khoa sẽ đọc được câu này
-                </label>
-                <textarea rows={2} value={lyDo} onChange={(e) => setLyDo(e.target.value)}
-                  className="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="vd: số lượng cao gấp 3 lần năm ngoái, đề nghị giải trình thêm" />
-                <div className="flex gap-2">
-                  <button onClick={() => doiTrangThai(g, "tu_choi", lyDo.trim())}
-                    disabled={!lyDo.trim() || dangXuLy === g.key}
-                    className="px-3 py-1.5 text-xs rounded-md bg-red-600 text-white hover:bg-red-700 disabled:opacity-40 font-medium">
-                    {dangXuLy === g.key ? "Đang gửi..." : "Xác nhận trả lại"}
-                  </button>
-                  <button onClick={() => { setMoTraLai(null); setLyDo(""); }}
-                    className="px-3 py-1.5 text-xs rounded-md border border-slate-300 text-slate-600 hover:bg-white">
-                    Huỷ
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex gap-2 items-center">
-                <button onClick={() => doiTrangThai(g, "xet_duyet")} disabled={dangXuLy === g.key}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md bg-teal-700 text-white hover:bg-teal-800 disabled:opacity-40 font-medium">
-                  <Check size={13} /> {dangXuLy === g.key ? "Đang duyệt..." : "Duyệt, cho đi tiếp"}
-                </button>
-                <button onClick={() => { setMoTraLai(g.key); setLyDo(""); }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-red-300 text-red-700 hover:bg-red-50">
-                  <X size={13} /> Trả lại kèm lý do
-                </button>
-                {loi[g.key] && <span className="text-xs text-red-600">{loi[g.key]}</span>}
-              </div>
-            )}
-          </div>
+          <p className="px-4 py-2 text-xs text-slate-500">
+            Mở đúng gói, đợt và khoa; chọn <b>Bắt đầu xét duyệt</b> trước khi chỉnh Word/Excel.
+          </p>
         </div>
       ))}
+
+      {nhomChuaGuiHoSo.length > 0 && (
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+          <b>{nhomChuaGuiHoSo.length} giỏ đề xuất</b> đã gửi nhưng chưa tạo/gửi đủ bộ hồ sơ Word–Excel.
+          Các giỏ này chưa vào hàng chờ xét duyệt của PĐD.
+        </div>
+      )}
 
       {nhomMoi.length > 0 && (
         <div className="border border-slate-200 rounded-lg bg-white p-3">

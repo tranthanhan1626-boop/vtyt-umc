@@ -1,7 +1,11 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Search, ChevronDown, ChevronLeft, Check, Package, ChevronRight, AlertTriangle, X } from "lucide-react";
+import { Search, ChevronDown, ChevronLeft, Check, Package, ChevronRight, AlertTriangle, ShoppingCart, X } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import ChartDongBo, { BarChartNam, LegendItem, fmt, kyHieuNam, mauNam } from "../components/ChartDongBo";
+import GoiYSoLuong from "./GoiYSoLuong";
+import { danhGiaSoLuong } from "../lib/congThucSoLuong";
+import { tinhTuyChonMuaThem30 } from "../lib/tuyChonMuaThem";
+import { docGioDeXuat, ghiGioDeXuat } from "../lib/gioDeXuat";
 
 const LY_DO_OPTIONS = [
   { value: "theo_lich_su", label: "Theo lịch sử sử dụng" },
@@ -98,26 +102,13 @@ const CAN_GIAI_TRINH = (goiThau) => goiThau === "chi_dinh_thau";
 // A.1d — lý do KHÁC "theo lịch sử" nghĩa là khoa đang điều chỉnh so với nền cũ,
 // phải nói rõ điều chỉnh cái gì. Không bắt thì dropdown thành nút một chạm,
 // đúng thứ QĐ-04 muốn chặn.
-const CAN_NOI_RO_DIEU_CHINH = (loaiLyDo) => loaiLyDo && loaiLyDo !== "theo_lich_su";
+const CO_GOI_Y_SO_LUONG = (goi) => goi !== "chi_dinh_thau";
 
 // --- Giỏ đề xuất lưu ở localStorage, TÁCH RIÊNG THEO KHOA ------------------
 // Trước đây giỏ chỉ nằm trong state React nên mất sạch mỗi khi F5, đóng/mở tab,
 // hoặc HMR lúc dev — người dùng báo "giỏ không giữ được 2 nhóm" chính là do
 // đường này chứ không phải do đổi nhóm. Tách khoá theo khoa để đổi khoa là đổi
 // giỏ (không trộn dữ liệu 2 khoa) mà vẫn không mất giỏ khoa cũ.
-const KHOA_GIO = (khoa, dotId) => `vtyt_gio_${khoa}_${dotId || "khong_dot"}`;
-const docGio = (khoa, dotId) => {
-  try { return JSON.parse(localStorage.getItem(KHOA_GIO(khoa, dotId)) || "{}"); }
-  catch { return {}; }   // JSON hỏng / chế độ ẩn danh chặn storage
-};
-const ghiGio = (khoa, dotId, gio) => {
-  try {
-    if (!khoa) return;
-    if (Object.keys(gio).length === 0) localStorage.removeItem(KHOA_GIO(khoa, dotId));
-    else localStorage.setItem(KHOA_GIO(khoa, dotId), JSON.stringify(gio));
-  } catch { /* hết quota hoặc storage bị chặn — giỏ vẫn chạy trong phiên */ }
-};
-
 export const FORM_NHOM_TRONG = {
   // Chế độ khai báo (QĐ-15) — 1 form gánh 2 tình huống:
   //   "gop" = mã hàng TƯƠNG ĐƯƠNG CHỨC NĂNG với mã đã có -> gộp vào mã quản lý
@@ -345,7 +336,14 @@ export function FormNhomKyThuat({ giaTri, doiGiaTri, onLuu, onHuy, dangLuu, loi,
   );
 }
 
-export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = false }) {
+export default function Function1({
+  profile,
+  goi,
+  dot,
+  dsDot = [],
+  dangTaiDot = false,
+  dotIdKhoiTao = null,
+}) {
   const [dsNhom, setDsNhom] = useState([]);          // [{ma_quan_ly, ten_quan_ly, so_ma_hang}]
   const [dsVatTu, setDsVatTu] = useState([]);        // kết quả tìm mã hàng ở server
   const [tuKhoa, setTuKhoa] = useState("");
@@ -357,9 +355,23 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
   // ở nhiều nhóm kỹ thuật khác nhau). Đổi KHOA thì ĐỔI GIỎ chứ không xoá —
   // giỏ nằm ở localStorage tách theo khoa (xem docGio/ghiGio).
   const [nhapLieu, setNhapLieu] = useState({});
+  // BẢN ĐANG SOẠN tách khỏi giỏ. Bấm P75/P90/P95 hay gõ số chỉ cập nhật đây;
+  // mã hàng chỉ đi vào nhapLieu sau khi người dùng bấm “Thêm vào giỏ”.
+  const [banNhap, setBanNhap] = useState({});
+  const [loiBanNhap, setLoiBanNhap] = useState({});
   const [lichSuThang, setLichSuThang] = useState({}); // {ma_hang: {nam: number[12]}}
   const [dangTaiLichSu, setDangTaiLichSu] = useState(false);
+  // Phân nhóm ABC toàn viện — CHỈ để hiện mốc đối chiếu của công thức hệ số k
+  // (QĐ-27). Không dùng để chọn mức phục vụ: Đề án Bảng 7 cấm gộp trục ABC vào
+  // trục thiết yếu lâm sàng. 878 dòng, tải một lần cho cả phiên.
+  const [abcTheoNhom, setAbcTheoNhom] = useState({});
+  // Nhu cầu KHÔNG được đáp ứng theo tháng -> phục hồi phần bị che trước khi
+  // tính μ/σ. {ma_hang: {"nam-thang": {...}}}
+  const [thieuTheoThang, setThieuTheoThang] = useState({});
   const [maMoRong, setMaMoRong] = useState(null);     // mã hàng đang bung chart + nhập
+  // Mã đã nằm trong BẤT KỲ giỏ đã gửi của khoa nhưng chưa được PĐD chốt
+  // "Đã đi thầu". Nguồn server giúp ẩn đúng qua nhiều giỏ, nhiều máy.
+  const [maDangChoDiThau, setMaDangChoDiThau] = useState(new Set());
 
   const [donVi, setDonVi] = useState(profile.khoa || "");
   const [dsDonVi, setDsDonVi] = useState([]);
@@ -383,14 +395,57 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
 
   // QĐ-20: khoa chỉ gửi được khi Phòng Điều dưỡng đã MỞ đợt cho gói này.
   const chuaMoDot = !dangTaiDot && !dot;
+  // Quyền tùy chọn mua thêm chỉ hình thành từ gói 18 tháng hoặc gói bổ sung.
+  const CO_TUY_CHON_30 = goi !== "chi_dinh_thau";
   // Gói bổ sung có 3 đợt/năm nên phải CHỌN. Gói khác chỉ 1 đợt -> tự lấy.
   const [dotChon, setDotChon] = useState(null);
   const dotDung = dsDot.length > 1 ? dsDot.find((d) => d.id === dotChon) : dot;
-  useEffect(() => { setDotChon(null); }, [goi]);
+  useEffect(() => {
+    setDotChon(dotIdKhoiTao ? Number(dotIdKhoiTao) : null);
+  }, [goi, dotIdKhoiTao]);
 
   // Toàn viện = cộng gộp số liệu 66 khoa, CHỈ ĐỂ XEM. Không gửi đề xuất được
   // vì mỗi đề xuất bắt buộc thuộc về đúng 1 khoa (proposals.don_vi NOT NULL).
   const toanVien = khoaHienTai === TOAN_VIEN;
+
+  useEffect(() => {
+    if (toanVien || !khoaHienTai) {
+      setMaDangChoDiThau(new Set());
+      return;
+    }
+    let huy = false;
+    (async () => {
+      const [r, gioKhac] = await Promise.all([
+        fetchAllRows((f, t) => supabase.from("proposals")
+          .select("ma_hang")
+          .eq("don_vi", khoaHienTai)
+          .eq("is_current", true)
+          .eq("da_rut", false)
+          .eq("da_di_thau", false)
+          .range(f, t)),
+        fetchAllRows((f, t) => {
+          let q = supabase.from("gio_nhap")
+            .select("noi_dung")
+            .eq("don_vi", khoaHienTai);
+          if (dotDung?.id) q = q.neq("dot_id", dotDung.id);
+          return q.range(f, t);
+        }),
+      ]);
+      if (huy) return;
+      // Trước khi patch X được chạy, cột da_di_thau chưa tồn tại: không khóa
+      // nhầm toàn bộ danh mục; UI sẽ hoạt động đầy đủ ngay sau migration.
+      const ma = new Set(r.error ? [] : (r.data || []).map((x) => x.ma_hang));
+      if (!gioKhac.error) {
+        (gioKhac.data || []).forEach((g) => {
+          Object.entries(g.noi_dung || {}).forEach(([maHang, nd]) => {
+            if (Number(nd?.soLuong) > 0) ma.add(maHang);
+          });
+        });
+      }
+      setMaDangChoDiThau(ma);
+    })();
+    return () => { huy = true; };
+  }, [khoaHienTai, toanVien, dotDung?.id]);
 
   // --- Danh sách nhóm kỹ thuật (chỉ nhóm thực sự có mã hàng) ----------------
   // Tách ra hàm riêng để gọi lại được sau khi duyệt/tạo nhóm mới.
@@ -438,6 +493,20 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
     })();
   }, [chonDuocDonVi, profile.khoa]);
 
+  // --- Phân nhóm ABC cho hệ số k -------------------------------------------
+  // Thiếu view thì chỉ mất khoảng gợi ý, KHÔNG chặn nhập đề xuất — công thức là
+  // thứ hỗ trợ, không phải điều kiện để khoa làm việc.
+  useEffect(() => {
+    let huy = false;
+    (async () => {
+      const r = await fetchAllRows((f, t) => supabase.from("v_abc_ma_quan_ly")
+        .select("ma_quan_ly, nhom_abc, he_so_k, canh_bao_abc").range(f, t));
+      if (huy || r.error || !r.data) return;
+      setAbcTheoNhom(Object.fromEntries(r.data.map((d) => [d.ma_quan_ly, d])));
+    })();
+    return () => { huy = true; };
+  }, []);
+
   // --- Danh mục nhóm kỹ thuật CỦA KHOA -------------------------------------
   // HỢP CỦA 2 NGUỒN, đừng bỏ nguồn nào:
   //   1) v_don_vi_nhom  — nhóm khoa ĐÃ/ĐANG dùng, suy từ lịch sử xuất kho. Rút
@@ -474,7 +543,9 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
   useEffect(() => {
     if (toanVien || !khoaHienTai) return;   // toàn viện chỉ để xem, không có giỏ
     const dotId = dotDung?.id;
-    setNhapLieu(docGio(khoaHienTai, dotId));
+    setNhapLieu(docGioDeXuat(khoaHienTai, dotId));
+    setBanNhap({});
+    setLoiBanNhap({});
     setDaGui([]);
     setLoiLuu("");
     if (!dotId) return;
@@ -482,9 +553,13 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
     (async () => {
       const { data, error } = await supabase.from("gio_nhap")
         .select("noi_dung").eq("don_vi", khoaHienTai).eq("dot_id", dotId).maybeSingle();
-      if (huy || error || !data?.noi_dung) return;
-      setNhapLieu(data.noi_dung);
-      ghiGio(khoaHienTai, dotId, data.noi_dung);
+      if (huy || error) return;
+      // Server là nguồn thật: không có dòng trên server nghĩa là giỏ rỗng.
+      // Nếu chỉ `return`, giỏ test cũ trong localStorage sẽ sống lại sau khi
+      // quản trị đã dọn database và có thể bị gửi nhầm thành đề xuất mới.
+      const noiDung = data?.noi_dung || {};
+      setNhapLieu(noiDung);
+      ghiGioDeXuat(khoaHienTai, dotId, noiDung);
     })();
     return () => { huy = true; };
   }, [khoaHienTai, toanVien, dotDung?.id]);
@@ -509,6 +584,7 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
       const codes = data.map((d) => d.ma_hang);
       if (codes.length === 0 || !khoaHienTai) { setLichSuThang({}); return; }
       setDangTaiLichSu(true);
+
       const { data: us } = await fetchAllRows((f, t) => {
         let q = supabase.from("v_usage_monthly").select("ma_hang, nam, thang, so_luong").in("ma_hang", codes);
         if (!toanVien) q = q.eq("don_vi", khoaHienTai);
@@ -521,6 +597,27 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
         acc[r.ma_hang][r.nam][r.thang - 1] += Number(r.so_luong);
       });
       setLichSuThang(acc);
+
+      // Sổ thiếu hàng của CHÍNH các mã này -> phục hồi nhu cầu bị che. Bảng
+      // nhỏ (chỉ các lần khoa báo thiếu), không phải 150k dòng lịch sử.
+      const { data: th } = await fetchAllRows((f, t) => {
+        let q = supabase.from("v_thieu_theo_thang")
+          .select("ma_hang, nam, thang, thieu_co_bang_chung, bi_nen").in("ma_hang", codes);
+        if (!toanVien) q = q.eq("don_vi", khoaHienTai);
+        return q.range(f, t);
+      });
+      const gomThieu = {};
+      (th || []).forEach((r) => {
+        gomThieu[r.ma_hang] = gomThieu[r.ma_hang] || {};
+        const o = gomThieu[r.ma_hang][`${r.nam}-${r.thang}`]
+          || { thieu_co_bang_chung: 0, bi_nen: false };
+        // Toàn viện = nhiều khoa cùng mã cùng tháng -> cộng phần thiếu lại.
+        o.thieu_co_bang_chung += Number(r.thieu_co_bang_chung || 0);
+        o.bi_nen = o.bi_nen || !!r.bi_nen;
+        gomThieu[r.ma_hang][`${r.nam}-${r.thang}`] = o;
+      });
+      setThieuTheoThang(gomThieu);
+
       setDangTaiLichSu(false);
     })();
   }, [nhomChon, khoaHienTai, toanVien]);
@@ -529,12 +626,14 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
   // nhóm có khi vài chục mã hàng.
   // Chỉ sắp lại SAU KHI lịch sử tải xong, tránh nhảy thứ tự giữa chừng.
   const maHangHienThi = useMemo(() => {
-    // Miếng 2 — mã ĐANG trong giỏ thì ẩn khỏi bảng, tránh chọn trùng. Gửi xong
-    // giỏ rỗng nên mã hiện lại bình thường; rút khỏi giỏ cũng hiện lại ngay.
+    // Mã trong giỏ nháp HOẶC đã gửi ở một giỏ khác đều bị ẩn. Chỉ khi PĐD
+    // chốt "Đã đi thầu" trên Excel chính thức, server mới giải phóng mã.
     const trongGio = new Set(
       Object.entries(nhapLieu).filter(([, v]) => Number(v.soLuong) > 0).map(([k]) => k)
     );
-    const con = maHangTrongNhom.filter((m) => !trongGio.has(m.ma_hang));
+    const con = maHangTrongNhom.filter((m) =>
+      !trongGio.has(m.ma_hang) && !maDangChoDiThau.has(m.ma_hang)
+    );
     if (dangTaiLichSu) return con;
     return [...con].sort((a, b) => {
       const aDung = !!lichSuThang[a.ma_hang];
@@ -542,7 +641,14 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
       if (aDung !== bDung) return aDung ? -1 : 1;
       return a.ma_hang.localeCompare(b.ma_hang);
     });
-  }, [maHangTrongNhom, lichSuThang, dangTaiLichSu, nhapLieu]);
+  }, [maHangTrongNhom, lichSuThang, dangTaiLichSu, nhapLieu, maDangChoDiThau]);
+  const soMaDangTamAn = useMemo(() => {
+    const tap = new Set(maDangChoDiThau);
+    Object.entries(nhapLieu).forEach(([maHang, nd]) => {
+      if (Number(nd?.soLuong) > 0) tap.add(maHang);
+    });
+    return tap.size;
+  }, [maDangChoDiThau, nhapLieu]);
 
   // Tổng ở cấp MÃ QUẢN LÝ — cộng mọi mã hàng trong nhóm. Đây là cấp ĐẤU THẦU,
   // nên là con số cần nhìn khi quyết định toàn viện.
@@ -618,7 +724,7 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
 
   const nhomDangChon = dsNhom.find((n) => n.ma_quan_ly === nhomChon);
 
-  const layNhap = (maHang) => nhapLieu[maHang] || MAC_DINH_NHAP();
+  const layNhap = (maHang) => banNhap[maHang] || MAC_DINH_NHAP();
 
   // Mọi thay đổi giỏ đi qua đây để state và localStorage không bao giờ lệch nhau.
   // Ghi ngay trong updater (thay vì useEffect riêng) để tránh cảnh giỏ đã đổi mà
@@ -630,7 +736,7 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
   const datGio = (fn) =>
     setNhapLieu((prev) => {
       const next = fn(prev);
-      ghiGio(khoaHienTai, dotDung?.id, next);
+      ghiGioDeXuat(khoaHienTai, dotDung?.id, next);
       if (dotDung?.id && khoaHienTai) {
         clearTimeout(hoanGhi.current);
         hoanGhi.current = setTimeout(() => {
@@ -644,37 +750,120 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
       return next;
     });
 
-  // Nhận cả OBJECT mã hàng (không chỉ mã) để đính kèm metadata tự chứa: giỏ
-  // phải render được cả khi nhóm chứa nó không còn nằm trong maHangTrongNhom.
+  // Thay đổi form chỉ ghi vào BẢN ĐANG SOẠN, tuyệt đối chưa đụng giỏ.
   const capNhatNhap = (m, field, value) => {
-    datGio((prev) => ({
-      ...prev,
-      [m.ma_hang]: {
+    setBanNhap((prev) => {
+      const tiep = {
         ...(prev[m.ma_hang] || MAC_DINH_NHAP()),
-        ma_hang: m.ma_hang, ten_vat_tu: m.ten_vat_tu, dvt: m.dvt,
-        ma_quan_ly: nhomChon, ten_quan_ly: nhomDangChon?.ten_quan_ly || "",
-        goi: m.goi || null,   // gói thầu tự lấy từ danh mục theo mã hàng
         [field]: value,
-      },
-    }));
+      };
+      const danhGia = CO_GOI_Y_SO_LUONG(goi)
+        ? danhGiaSoLuong(
+            lichSuThang[m.ma_hang],
+            thieuTheoThang[m.ma_hang],
+            doDaiKy(tiep),
+            tiep.soLuong
+          )
+        : null;
+      tiep.goiYTu = danhGia?.tu ?? null;
+      tiep.goiYDen = danhGia?.den ?? null;
+      tiep.ngoaiKhoang = !!danhGia?.ngoaiKhoang;
+      return { ...prev, [m.ma_hang]: tiep };
+    });
+    setLoiBanNhap((prev) => {
+      if (!prev[m.ma_hang]) return prev;
+      const next = { ...prev };
+      delete next[m.ma_hang];
+      return next;
+    });
+  };
+
+  // Chỉ nút này mới biến bản đang soạn thành một dòng trong giỏ bền vững.
+  const themVaoGio = (m) => {
+    const nhap = layNhap(m.ma_hang);
+    const danhGia = CO_GOI_Y_SO_LUONG(goi)
+      ? danhGiaSoLuong(
+          lichSuThang[m.ma_hang],
+          thieuTheoThang[m.ma_hang],
+          doDaiKy(nhap),
+          nhap.soLuong
+        )
+      : null;
+    const dong = {
+      ...nhap,
+      ma_hang: m.ma_hang, ten_vat_tu: m.ten_vat_tu, dvt: m.dvt,
+      ma_quan_ly: nhomChon, ten_quan_ly: nhomDangChon?.ten_quan_ly || "",
+      goi: m.goi || null,
+      goiYTu: danhGia?.tu ?? null,
+      goiYDen: danhGia?.den ?? null,
+      ngoaiKhoang: !!danhGia?.ngoaiKhoang,
+    };
+    let loi = "";
+    if (!(Number(dong.soLuong) > 0)) loi = "Vui lòng nhập số lượng lớn hơn 0.";
+    else if (doDaiKy(dong) < 1) loi = "Mốc kết thúc phải sau mốc bắt đầu.";
+    else if (dong.loaiLyDo === "ky_thuat_moi" && !(dong.tenKyThuatMoi || "").trim())
+      loi = "Vui lòng nhập tên kỹ thuật mới.";
+    else if (CAN_GIAI_TRINH(goi) && !(dong.noiDungChiDinh || "").trim())
+      loi = "Gói chỉ định thầu bắt buộc nhập nội dung và căn cứ.";
+    else if (CO_GOI_Y_SO_LUONG(goi) && dong.ngoaiKhoang && dong.loaiLyDo === "theo_lich_su")
+      loi = `Số lượng nằm ngoài khoảng ${fmt(dong.goiYTu)}–${fmt(dong.goiYDen)}; vui lòng chọn lý do giải trình.`;
+    if (loi) {
+      setLoiBanNhap((prev) => ({ ...prev, [m.ma_hang]: loi }));
+      return;
+    }
+
+    datGio((prev) => ({ ...prev, [m.ma_hang]: dong }));
+    setBanNhap((prev) => {
+      const next = { ...prev };
+      delete next[m.ma_hang];
+      return next;
+    });
+    setLoiBanNhap((prev) => {
+      const next = { ...prev };
+      delete next[m.ma_hang];
+      return next;
+    });
+    setMaMoRong(null);
   };
   const boKhoiGio = (maHang) =>
     datGio((prev) => { const n = { ...prev }; delete n[maHang]; return n; });
   const xoaCaGio = () => datGio(() => ({}));
 
 
+  // Luôn tính lại dải khi dựng giỏ. Bản nháp có thể được khôi phục từ server
+  // hoặc localStorage trước khi các trường goiYTu/goiYDen tồn tại; nếu chỉ tin
+  // dữ liệu cache thì một số ngoài khoảng cũ có thể lọt qua mà không chọn lý do.
   const gioHang = useMemo(
-    () => Object.values(nhapLieu).filter((n) => Number(n.soLuong) > 0),
-    [nhapLieu]
+    () => Object.values(nhapLieu)
+      .filter((n) => Number(n.soLuong) > 0)
+      .map((n) => {
+        if (!CO_GOI_Y_SO_LUONG(goi)) {
+          return { ...n, goiYTu: null, goiYDen: null, ngoaiKhoang: false };
+        }
+        const danhGia = danhGiaSoLuong(
+          lichSuThang[n.ma_hang],
+          thieuTheoThang[n.ma_hang],
+          doDaiKy(n),
+          n.soLuong
+        );
+        return {
+          ...n,
+          goiYTu: danhGia?.tu ?? null,
+          goiYDen: danhGia?.den ?? null,
+          ngoaiKhoang: !!danhGia?.ngoaiKhoang,
+        };
+      }),
+    [nhapLieu, goi, lichSuThang, thieuTheoThang]
   );
 
   // Dòng đã nhập số lượng nhưng thiếu gói thầu / kỳ sai / thiếu tên kỹ thuật mới
-  // / thiếu giải trình bắt buộc của chỉ định thầu (A.1c).
+  // / thiếu giải trình bắt buộc của chỉ định thầu / chọn ngoài khoảng nhưng
+  // chưa chọn lý do giải trình. Ghi chú thêm luôn là tùy chọn.
   const dongThieuThongTin = gioHang.filter(
     (n) => doDaiKy(n) < 1 
         || (n.loaiLyDo === "ky_thuat_moi" && !n.tenKyThuatMoi.trim())
         || (CAN_GIAI_TRINH(goi) && !(n.noiDungChiDinh || "").trim())
-        || (CAN_NOI_RO_DIEU_CHINH(n.loaiLyDo) && !(n.ghiChu || "").trim())
+        || (CO_GOI_Y_SO_LUONG(goi) && n.ngoaiKhoang && n.loaiLyDo === "theo_lich_su")
   );
 
   const gioTheoNhom = useMemo(() => {
@@ -694,7 +883,10 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
       return;
     }
     if (dongThieuThongTin.length > 0) {
-      setLoiLuu(`Mã ${dongThieuThongTin.map((n) => n.ma_hang).join(", ")} thiếu gói thầu, kỳ sử dụng hoặc tên kỹ thuật mới.`);
+      setLoiLuu(
+        `Mã ${dongThieuThongTin.map((n) => n.ma_hang).join(", ")} còn thiếu kỳ sử dụng, ` +
+        "giải trình chỉ định thầu, tên kỹ thuật mới hoặc lý do bắt buộc khi chọn ngoài khoảng."
+      );
       return;
     }
     setDangLuu(true);
@@ -764,6 +956,9 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
       ten_vat_tu: nhap.ten_vat_tu,
       dvt: nhap.dvt,
       so_luong: Math.round(Number(nhap.soLuong)),
+      tuy_chon_mua_them_30: CO_TUY_CHON_30
+        ? tinhTuyChonMuaThem30(Math.round(Number(nhap.soLuong)))
+        : null,
       so_thang: doDaiKy(nhap),
       goi_thau: goi,
       loai_ly_do: nhap.loaiLyDo,
@@ -773,6 +968,10 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
     }));
 
     setDaGui(ketQua);
+    setMaDangChoDiThau((cu) => new Set([
+      ...cu,
+      ...gioHang.map((n) => n.ma_hang),
+    ]));
     xoaCaGio();
     if (dotDung?.id && khoaHienTai) {
       // Giỏ là BẢN NHÁP nên xoá được (khác QĐ-11) — nội dung thật đã nằm ở
@@ -833,6 +1032,12 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
                 className="mt-0.5 rounded border-slate-300 text-teal-700 focus:ring-teal-500" />
               <span>Hiện cả mã chưa từng dùng ở khoa này <span className="text-slate-400">(để đề xuất kỹ thuật mới)</span></span>
             </label>
+          )}
+          {!toanVien && soMaDangTamAn > 0 && (
+            <p className="mb-3 rounded-md border border-violet-200 bg-violet-50 px-2.5 py-2 text-xs text-violet-800">
+              {soMaDangTamAn} mã hàng đang nằm trong giỏ/hồ sơ nên tạm ẩn.
+              Mã sẽ hiện lại sau khi PĐD khóa Excel “Đã đi thầu”.
+            </p>
           )}
           <div className="space-y-1 max-h-[60vh] overflow-y-auto">
             {nhomTrang.map((n) => (
@@ -942,7 +1147,10 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
                     <th className="text-left font-normal px-4 py-2">Mã hàng</th>
                     <th className="text-left font-normal px-4 py-2">Tên vật tư</th>
                     <th className="text-right font-normal px-4 py-2">Đã dùng (theo năm)</th>
-                    <th className="text-right font-normal px-4 py-2 w-36">Tổng đề xuất {NAM_DE_XUAT}</th>
+                    <th className="text-right font-normal px-4 py-2 w-36">Số lượng đề xuất {NAM_DE_XUAT}</th>
+                    {CO_TUY_CHON_30 && (
+                      <th className="text-right font-normal px-4 py-2">Trần tùy chọn 30%</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -999,10 +1207,20 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
                               <span className="text-slate-300">bấm để nhập</span>
                             )}
                           </td>
+                          {CO_TUY_CHON_30 && (
+                            <td className="px-4 py-2 text-right align-top whitespace-nowrap font-mono">
+                              {tong > 0 ? (
+                                <div>
+                                  <span className="font-medium text-sky-800">{fmt(tinhTuyChonMuaThem30(tong))}</span>
+                                  <div className="text-[10px] font-sans text-slate-400">tự tính · không sửa</div>
+                                </div>
+                              ) : <span className="text-slate-300">—</span>}
+                            </td>
+                          )}
                         </tr>
                         {dangMo && (
                           <tr className="border-b border-slate-100 bg-slate-50/60">
-                            <td colSpan={4} className="px-4 pb-4 pt-1" onClick={(e) => e.stopPropagation()}>
+                            <td colSpan={CO_TUY_CHON_30 ? 5 : 4} className="px-4 pb-4 pt-1" onClick={(e) => e.stopPropagation()}>
                               {coLichSu ? (
                                 <>
                                   <p className="text-xs text-slate-500 mb-2 mt-1">
@@ -1040,7 +1258,35 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
                                       onChange={(e) => capNhatNhap(m, "soLuong", e.target.value)}
                                       placeholder="vd 100"
                                       className="w-full text-right font-mono text-sm border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                                    {CO_GOI_Y_SO_LUONG(goi) ? (
+                                      <GoiYSoLuong
+                                        lichSu={lichSuThang[m.ma_hang]}
+                                        thieu={thieuTheoThang[m.ma_hang]}
+                                        H={dvKy >= 1 ? dvKy : 0}
+                                        abc={abcTheoNhom[m.ma_quan_ly || nhomChon]}
+                                        giaTri={nhap.soLuong}
+                                        onChon={(v) => capNhatNhap(m, "soLuong", String(v))}
+                                      />
+                                    ) : (
+                                      <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-2 text-[11px] leading-snug text-amber-900">
+                                        Gói chỉ định thầu không dùng khoảng công thức. Khoa tự chốt số lượng
+                                        và nhập đầy đủ nội dung, căn cứ ở phần dưới.
+                                      </p>
+                                    )}
                                   </div>
+                                  {CO_TUY_CHON_30 && (
+                                    <div>
+                                      <label className="text-xs text-slate-500 block mb-1">
+                                        Trần tùy chọn mua thêm 30% ({m.dvt || "đơn vị"})
+                                      </label>
+                                      <div className="w-full rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-right font-mono text-sm font-semibold text-sky-900">
+                                        {fmt(tinhTuyChonMuaThem30(Math.round(Number(nhap.soLuong))))}
+                                      </div>
+                                      <p className="mt-1 text-[11px] leading-snug text-slate-400">
+                                        Đây là quyền mua tối đa ở quyết định thứ hai; không tự động cộng vào số mua.
+                                      </p>
+                                    </div>
+                                  )}
                                   <div>
                                     <label className="text-xs text-slate-500 block mb-1">Dùng từ → đến <span className="text-red-500">*</span></label>
                                     <div className="flex items-center gap-1 flex-wrap">
@@ -1091,7 +1337,12 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
                                     có nhiều mặt hàng, mỗi thứ một lý do khác. */}
                                 <div className="border-t border-slate-100 pt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                                   <div>
-                                    <label className="text-xs text-slate-500 block mb-1">Lý do đề xuất</label>
+                                    <label className="text-xs text-slate-500 block mb-1">
+                                      Lý do đề xuất
+                                      {CO_GOI_Y_SO_LUONG(goi) && nhap.ngoaiKhoang && (
+                                        <> <span className="text-red-500">*</span></>
+                                      )}
+                                    </label>
                                     <div className="relative">
                                       <select value={nhap.loaiLyDo}
                                         onChange={(e) => capNhatNhap(m, "loaiLyDo", e.target.value)}
@@ -1100,6 +1351,12 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
                                       </select>
                                       <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                                     </div>
+                                    {CO_GOI_Y_SO_LUONG(goi) && nhap.ngoaiKhoang && nhap.loaiLyDo === "theo_lich_su" && (
+                                      <p className="mt-1 text-xs text-red-600">
+                                        Số {fmt(Number(nhap.soLuong) || 0)} nằm ngoài khoảng{" "}
+                                        {fmt(nhap.goiYTu)}–{fmt(nhap.goiYDen)}. Vui lòng chọn một lý do giải trình.
+                                      </p>
+                                    )}
                                   </div>
                                   {nhap.loaiLyDo === "ky_thuat_moi" && (
                                     <div>
@@ -1121,10 +1378,7 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
                                   )}
                                   <div className="sm:col-span-2">
                                     <label className="text-xs text-slate-500 block mb-1">
-                                      {CAN_NOI_RO_DIEU_CHINH(nhap.loaiLyDo)
-                                        ? <>Nêu rõ điều chỉnh <span className="text-red-500">*</span>{" "}
-                                           <span className="text-slate-400">— thay đổi gì so với lịch sử, căn cứ nào</span></>
-                                        : "Ghi chú (không bắt buộc)"}
+                                      Ghi chú thêm <span className="text-slate-400">(không bắt buộc)</span>
                                     </label>
                                     <textarea rows={2} value={nhap.ghiChu}
                                       onChange={(e) => capNhatNhap(m, "ghiChu", e.target.value)}
@@ -1143,6 +1397,18 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
                                     <span>Biến động {bienDong >= 0 ? "tăng" : "giảm"} hơn 30% so với {namCuoi} — nên ghi rõ lý do ở trên.</span>
                                   </div>
                                 )}
+                                <div className="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-3">
+                                  <span className="text-[11px] text-slate-500">
+                                    Số đang chọn mới là bản soạn; chưa vào giỏ.
+                                  </span>
+                                  {loiBanNhap[m.ma_hang] && (
+                                    <span className="text-xs text-red-600">{loiBanNhap[m.ma_hang]}</span>
+                                  )}
+                                  <button type="button" onClick={() => themVaoGio(m)}
+                                    className="inline-flex items-center gap-1.5 rounded-md bg-teal-700 px-3 py-2 text-sm font-medium text-white hover:bg-teal-800">
+                                    <ShoppingCart size={15} /> Thêm vào giỏ đề xuất
+                                  </button>
+                                </div>
                               </div>
                             </td>
                           </tr>
@@ -1171,8 +1437,8 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
 
               {gioHang.length === 0 ? (
                 <p className="text-xs text-slate-400">
-                  Chưa có mã hàng nào. Nhập số lượng ở bảng bên trên — chuyển sang nhóm kỹ thuật khác,
-                  đóng tab hay tải lại trang đều giữ nguyên, để gửi 1 lần cho nhiều nhóm.
+                  Chưa có mã hàng nào. Chọn số lượng và bấm <b>Thêm vào giỏ đề xuất</b>.
+                  Các mã đã thêm được giữ khi chuyển nhóm, đóng tab hoặc tải lại trang.
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -1189,7 +1455,31 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
                               className={`flex items-start gap-2 text-xs rounded-md px-2 py-1.5 border ${thieu ? "border-amber-200 bg-amber-50" : "border-slate-100 bg-slate-50/60"}`}>
                               <span className="font-mono text-slate-500 shrink-0">{n.ma_hang}</span>
                               <span className="flex-1 min-w-0 leading-tight">{n.ten_vat_tu}</span>
-                              <span className="font-mono text-teal-800 shrink-0">{fmt(Math.round(Number(n.soLuong)))} {n.dvt}</span>
+                              <label className="inline-flex shrink-0 items-center gap-1 text-slate-400">
+                                <span className="hidden lg:inline">SL</span>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  step="1"
+                                  value={n.soLuong}
+                                  onChange={(e) => {
+                                    const v = e.target.value;
+                                    if (v === "" || !(Number(v) > 0)) return;
+                                    datGio((prev) => ({
+                                      ...prev,
+                                      [n.ma_hang]: { ...prev[n.ma_hang], soLuong: v },
+                                    }));
+                                  }}
+                                  className="w-24 rounded border border-slate-300 bg-white px-1.5 py-1 text-right font-mono text-xs text-teal-800 focus:border-teal-500 focus:outline-none"
+                                  aria-label={`Số lượng đề xuất mã ${n.ma_hang}`}
+                                />
+                                <span>{n.dvt}</span>
+                              </label>
+                              {CO_TUY_CHON_30 && (
+                                <span className="font-mono text-sky-700 shrink-0" title="Trần quyền chọn, không tự động mua">
+                                  Trần +30%: {fmt(tinhTuyChonMuaThem30(Math.round(Number(n.soLuong))))}
+                                </span>
+                              )}
                               <span className="text-slate-400 shrink-0 hidden sm:inline">
                                 T{n.tuThang}/{n.tuNam}–T{n.denThang}/{n.denNam}
                               </span>
@@ -1260,6 +1550,9 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
                       <tr className="text-slate-400 text-xs border-b border-slate-100">
                         <th className="text-left font-normal px-4 py-2">Mã hàng</th>
                         <th className="text-right font-normal px-4 py-2">Số lượng</th>
+                        {CO_TUY_CHON_30 && (
+                          <th className="text-right font-normal px-4 py-2">Trần tùy chọn 30%</th>
+                        )}
                         <th className="text-left font-normal px-4 py-2">Kỳ dự kiến sử dụng</th>
                         <th className="text-left font-normal px-4 py-2">Gói thầu</th>
                         <th className="text-left font-normal px-4 py-2">Lý do đề xuất</th>
@@ -1271,6 +1564,9 @@ export default function Function1({ profile, goi, dot, dsDot = [], dangTaiDot = 
                         <tr key={r.ma_hang} className="border-b border-slate-50 last:border-0">
                           <td className="px-4 py-2 font-mono text-xs text-slate-600">{r.ma_hang}</td>
                           <td className="px-4 py-2 text-right font-mono">{fmt(r.so_luong)} <span className="text-slate-400 text-xs">{r.dvt}</span></td>
+                          {CO_TUY_CHON_30 && (
+                            <td className="px-4 py-2 text-right font-mono text-sky-800">{fmt(r.tuy_chon_mua_them_30)} <span className="text-slate-400 text-xs">{r.dvt}</span></td>
+                          )}
                           <td className="px-4 py-2 text-xs"><div className="font-mono">{r.ky}</div><div className="text-slate-400">{r.so_thang} tháng</div></td>
                           <td className="px-4 py-2">{NHAN_GOI_THAU[r.goi_thau]}</td>
                           <td className="px-4 py-2">

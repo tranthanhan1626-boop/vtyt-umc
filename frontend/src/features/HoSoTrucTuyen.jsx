@@ -10,12 +10,15 @@ import {
   FilePenLine,
   FileText,
   History,
+  LockKeyhole,
   MessageSquareText,
+  PlayCircle,
   Save,
   Send,
   Sheet,
   ShieldCheck,
   UserRoundCheck,
+  XCircle,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import {
@@ -23,6 +26,7 @@ import {
   taoBanThaoHoSo,
   xuatBanThaoHoSo,
 } from "../lib/xuatHoSo";
+import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
 
 const SO_DONG_MOI_TRANG = 25;
 
@@ -37,15 +41,30 @@ const TRANG_THAI = {
     lop: "border-amber-200 bg-amber-50 text-amber-800",
     icon: Clock3,
   },
+  dang_xet_duyet: {
+    ten: "PĐD đang xét duyệt",
+    lop: "border-indigo-200 bg-indigo-50 text-indigo-800",
+    icon: PlayCircle,
+  },
   pdd_da_sua: {
-    ten: "PĐD đã sửa · chờ duyệt",
+    ten: "PĐD đang chỉnh sửa",
     lop: "border-blue-200 bg-blue-50 text-blue-800",
     icon: UserRoundCheck,
+  },
+  tu_choi: {
+    ten: "PĐD trả lại · khoa cần sửa",
+    lop: "border-red-200 bg-red-50 text-red-800",
+    icon: XCircle,
   },
   da_duyet: {
     ten: "PĐD đã duyệt",
     lop: "border-emerald-200 bg-emerald-50 text-emerald-800",
     icon: ShieldCheck,
+  },
+  da_di_thau: {
+    ten: "Đã đi thầu · khóa chính thức",
+    lop: "border-violet-200 bg-violet-50 text-violet-800",
+    icon: LockKeyhole,
   },
 };
 
@@ -234,13 +253,18 @@ export default function HoSoTrucTuyen({
   taiLieu,
   meta = {},
   nguonKey = "current",
+  maKhoiTao = "",
+  anThanhTaiLieu = false,
+  chiKhoaDiThau = false,
   onSaved,
   tieuDe = "Hồ sơ trực tuyến",
   moTa = "Chỉnh trực tiếp, lưu phiên bản và trao đổi ngay trên hệ thống.",
 }) {
   const laPdd = profile.role === "dieu_duong" || profile.role === "admin";
   const giamChuyenDong = useReducedMotion();
-  const [maDangMo, setMaDangMo] = useState(taiLieu[0]?.ma || "");
+  const [maDangMo, setMaDangMo] = useState(
+    taiLieu.some((x) => x.ma === maKhoiTao) ? maKhoiTao : taiLieu[0]?.ma || ""
+  );
   const [hoSo, setHoSo] = useState({});
   const [banThao, setBanThao] = useState({});
   const [daSua, setDaSua] = useState({});
@@ -293,15 +317,38 @@ export default function HoSoTrucTuyen({
 
   useEffect(() => { tai(); }, [tai]);
   useEffect(() => {
-    if (!taiLieu.some((x) => x.ma === maDangMo)) setMaDangMo(taiLieu[0]?.ma || "");
-  }, [taiLieuKey, maDangMo]);
+    if (maKhoiTao && taiLieu.some((x) => x.ma === maKhoiTao)) {
+      setMaDangMo(maKhoiTao);
+      return;
+    }
+    if (!taiLieu.some((x) => x.ma === maDangMo)) {
+      setMaDangMo(taiLieu[0]?.ma || "");
+    }
+  }, [taiLieuKey, maDangMo, maKhoiTao]);
   useEffect(() => {
     setGhiChu(hoSo[maDangMo]?.ghi_chu_pdd || "");
   }, [maDangMo, hoSo]);
 
   const doc = hoSo[maDangMo];
   const draft = banThao[maDangMo];
-  const biKhoa = !laPdd && doc?.trang_thai === "da_duyet";
+  const trangThaiBo = [...new Set(Object.values(hoSo).map((h) => h.trang_thai).filter(Boolean))];
+  const dangChoPdd = trangThaiBo.includes("cho_pdd");
+  const dangXetDuyet = trangThaiBo.some((x) => x === "dang_xet_duyet" || x === "pdd_da_sua");
+  const daDuyetBo = trangThaiBo.length > 0
+    && trangThaiBo.every((x) => x === "da_duyet" || x === "da_di_thau");
+  const biKhoa = !laPdd && ["cho_pdd", "dang_xet_duyet", "pdd_da_sua", "da_duyet", "da_di_thau"]
+    .includes(doc?.trang_thai);
+  // PĐD được sửa trực tiếp ngay trên bản nháp của khoa. Lần lưu đầu tiên đổi
+  // trạng thái thành pdd_da_sua và vẫn ghi đầy đủ revision/audit qua RPC.
+  //
+  // `!doc` (chưa có bản ghi nào trong ho_so_cong_tac) PHẢI vẫn cho sửa được —
+  // đây đúng trường hợp bộ hồ sơ TỔNG HỢP TOÀN VIỆN (nguonKey=phien:<id>):
+  // không có "khoa" nào tạo bản nháp trước, chính PĐD là người tạo bản đầu
+  // tiên. Bắt buộc !!doc ở đây từng khóa cứng mọi nút (kể cả "Lưu bản nháp")
+  // ngay từ lần mở đầu tiên — PĐD không có cách nào lưu để doc tồn tại.
+  const pddCoTheSua = laPdd && (!doc || !["da_duyet", "da_di_thau", "tu_choi"].includes(doc.trang_thai));
+  const biKhoaPdd = laPdd && !pddCoTheSua;
+  const biKhoaTrinhSua = biKhoa || biKhoaPdd;
   const coDuLieu = rows.length > 0;
 
   const doiBanThao = (tiep) => {
@@ -318,22 +365,28 @@ export default function HoSoTrucTuyen({
     source_ids: rows.map((r) => r.id).filter(Boolean),
   });
 
-  const luu = async (hanhDong) => {
-    if (!maDangMo || !banThao[maDangMo]) return null;
-    setDangLuu(hanhDong);
-    setLoi("");
-    setThongBao("");
+  const goiLuuTaiLieu = async (ma, hanhDong) => {
+    if (!ma || !banThao[ma]) return { data: null, error: new Error("Thiếu nội dung tài liệu.") };
     const { data, error } = await supabase.rpc("luu_ho_so_cong_tac", {
       p_dot_id: Number(dotId),
       p_loai_mua_sam: goi,
       p_don_vi: donVi,
       p_nguon_key: nguonKey,
-      p_ma_ho_so: maDangMo,
-      p_loai_tai_lieu: HO_SO[maDangMo].loai,
-      p_noi_dung: noiDungLuu(maDangMo),
+      p_ma_ho_so: ma,
+      p_loai_tai_lieu: HO_SO[ma].loai,
+      p_noi_dung: noiDungLuu(ma),
       p_hanh_dong: hanhDong,
       p_ghi_chu: laPdd ? ghiChu : null,
     });
+    return { data, error };
+  };
+
+  const luu = async (hanhDong) => {
+    if (!maDangMo || !banThao[maDangMo]) return null;
+    setDangLuu(hanhDong);
+    setLoi("");
+    setThongBao("");
+    const { data, error } = await goiLuuTaiLieu(maDangMo, hanhDong);
     if (error) {
       setLoi(error.message);
       setDangLuu("");
@@ -353,8 +406,60 @@ export default function HoSoTrucTuyen({
     return data;
   };
 
+  const chuyenCaBo = async (hanhDong) => {
+    if (!coDuLieu) return;
+    if (hanhDong === "tu_choi" && !ghiChu.trim()) {
+      setLoi("Từ chối hồ sơ bắt buộc ghi rõ nội dung để khoa sửa.");
+      return;
+    }
+    setDangLuu(hanhDong);
+    setLoi("");
+    setThongBao("");
+
+    // Trước khi gửi/hoàn thành/từ chối, lưu nội dung mới nhất của CẢ Word và
+    // Excel. Nhờ vậy PĐD không thể chốt một bản cũ chỉ vì đang đứng ở tab kia.
+    if (hanhDong !== "bat_dau_xet_duyet") {
+      const hanhDongLuu = laPdd ? "pdd_sua" : "luu";
+      for (const t of taiLieu) {
+        const { error } = await goiLuuTaiLieu(t.ma, hanhDongLuu);
+        if (error) {
+          setLoi(`Không lưu được ${t.ten || HO_SO[t.ma].ten}: ${error.message}`);
+          setDangLuu("");
+          return;
+        }
+      }
+    }
+
+    const { data, error } = await supabase.rpc("chuyen_trang_thai_bo_ho_so", {
+      p_dot_id: Number(dotId),
+      p_loai_mua_sam: goi,
+      p_don_vi: donVi,
+      p_nguon_key: nguonKey,
+      p_hanh_dong: hanhDong,
+      p_ghi_chu: ghiChu.trim() || null,
+    });
+    if (error) {
+      const canPatch = error.code === "PGRST202" || /chuyen_trang_thai_bo_ho_so/i.test(error.message || "");
+      setLoi(canPatch
+        ? "Staging chưa có workflow bộ hồ sơ. Cần chạy backend/sql/patch_s_workflow_ho_so_dvsd.sql."
+        : error.message);
+      setDangLuu("");
+      return;
+    }
+    const cau = {
+      gui_pdd: "Đã gửi cả bộ hồ sơ cho Phòng Điều dưỡng.",
+      bat_dau_xet_duyet: "Đã chuyển bộ hồ sơ sang Đang xét duyệt.",
+      tu_choi: "Đã trả hồ sơ về khoa kèm nội dung cần điều chỉnh.",
+      hoan_thanh: "Đã hoàn thành và khóa bộ hồ sơ.",
+    }[hanhDong];
+    setThongBao(`${cau} ${data?.so_de_xuat ?? 0} dòng đề xuất đã đổi trạng thái.`);
+    await tai();
+    onSaved?.(data);
+    setDangLuu("");
+  };
+
   const taiBanDaDuyet = async () => {
-    if (!doc || doc.trang_thai !== "da_duyet" || daSua[maDangMo]) return;
+    if (!doc || !["da_duyet", "da_di_thau"].includes(doc.trang_thai) || daSua[maDangMo]) return;
     setDangLuu("tai");
     setLoi("");
     setThongBao("");
@@ -388,6 +493,43 @@ export default function HoSoTrucTuyen({
     setDangLuu("");
   };
 
+  const chotDaDiThau = async () => {
+    if (!laPdd || !doc || maDangMo !== "danh_muc_dvsd"
+        || !nguonKey.startsWith("gop:") || doc.trang_thai === "da_di_thau") return;
+    if (!window.confirm(
+      "Chọn Đã đi thầu sẽ khóa vĩnh viễn Excel này và trả các mã hàng về danh sách đề xuất của khoa. Tiếp tục?"
+    )) return;
+    setDangLuu("di_thau");
+    setLoi("");
+    setThongBao("");
+
+    if (daSua[maDangMo]) {
+      const { error: loiLuu } = await goiLuuTaiLieu(maDangMo, "pdd_sua");
+      if (loiLuu) {
+        setLoi(`Không lưu được thay đổi trước khi khóa: ${loiLuu.message}`);
+        setDangLuu("");
+        return;
+      }
+    }
+    const { data, error } = await supabase.rpc("chot_danh_muc_da_di_thau", {
+      p_ho_so_id: doc.id,
+    });
+    if (error) {
+      const canPatch = error.code === "PGRST202" || /chot_danh_muc_da_di_thau/i.test(error.message || "");
+      setLoi(canPatch
+        ? "Staging chưa có chức năng khóa Đã đi thầu. Cần chạy lại patch_x_quyen_khoa_va_ho_so_theo_gio.sql."
+        : error.message);
+      setDangLuu("");
+      return;
+    }
+    setThongBao(
+      `Đã khóa Excel chính thức. ${data?.so_ma_hang ?? 0} mã hàng đã được trả về danh sách đề xuất của khoa.`
+    );
+    await tai();
+    onSaved?.(data);
+    setDangLuu("");
+  };
+
   if (dangTai) {
     return <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500">Đang mở không gian hồ sơ…</p>;
   }
@@ -406,41 +548,43 @@ export default function HoSoTrucTuyen({
           </div>
         </div>
 
-        <div role="tablist" aria-label="Loại tài liệu hồ sơ"
-          className="mt-4 grid max-w-2xl gap-2 sm:grid-cols-2">
-          {taiLieu.map((t) => {
-            const isWord = HO_SO[t.ma].loai === "word";
-            const Icon = isWord ? FileText : Sheet;
-            const dangMo = maDangMo === t.ma;
-            return (
-              <button
-                key={t.ma}
-                type="button"
-                role="tab"
-                aria-selected={dangMo}
-                onClick={() => setMaDangMo(t.ma)}
-                className={`relative flex min-h-16 items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors ${
-                  dangMo
-                    ? isWord
-                      ? "border-blue-300 bg-white text-blue-900 shadow-sm"
-                      : "border-emerald-300 bg-white text-emerald-900 shadow-sm"
-                    : "border-slate-200 bg-white/60 text-slate-600 hover:bg-white"
-                }`}
-              >
-                <span className={`rounded-lg p-2 ${isWord ? "bg-blue-50 text-blue-700" : "bg-emerald-50 text-emerald-700"}`}>
-                  <Icon size={19} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[10px] font-bold uppercase tracking-wider opacity-60">
-                    {isWord ? "Tab Word" : "Tab Excel"}
+        {!anThanhTaiLieu && (
+          <div role="tablist" aria-label="Loại tài liệu hồ sơ"
+            className="mt-4 grid max-w-3xl gap-2 sm:grid-cols-2">
+            {taiLieu.map((t) => {
+              const isWord = HO_SO[t.ma].loai === "word";
+              const Icon = isWord ? FileText : Sheet;
+              const dangMo = maDangMo === t.ma;
+              return (
+                <button
+                  key={t.ma}
+                  type="button"
+                  role="tab"
+                  aria-selected={dangMo}
+                  onClick={() => setMaDangMo(t.ma)}
+                  className={`relative flex min-h-16 items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                    dangMo
+                      ? isWord
+                        ? "border-blue-300 bg-white text-blue-900 shadow-sm"
+                        : "border-emerald-300 bg-white text-emerald-900 shadow-sm"
+                      : "border-slate-200 bg-white/60 text-slate-600 hover:bg-white"
+                  }`}
+                >
+                  <span className={`rounded-lg p-2 ${isWord ? "bg-blue-50 text-blue-700" : "bg-emerald-50 text-emerald-700"}`}>
+                    <Icon size={19} />
                   </span>
-                  <span className="block truncate text-xs font-semibold">{t.ten || HO_SO[t.ma].ten}</span>
-                </span>
-                {hoSo[t.ma]?.trang_thai === "da_duyet" && <CheckCircle2 size={16} className="text-emerald-600" />}
-              </button>
-            );
-          })}
-        </div>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[10px] font-bold uppercase tracking-wider opacity-60">
+                      {isWord ? "Tab Word" : "Tab Excel"}
+                    </span>
+                    <span className="block truncate text-xs font-semibold">{t.ten || HO_SO[t.ma].ten}</span>
+                  </span>
+                  {hoSo[t.ma]?.trang_thai === "da_duyet" && <CheckCircle2 size={16} className="text-emerald-600" />}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {chuaPatch ? (
@@ -464,11 +608,31 @@ export default function HoSoTrucTuyen({
                 </span>
               )}
             </div>
-            {biKhoa && (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
-                <ShieldCheck size={13} /> Khoa đang xem bản đã duyệt
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {biKhoa && (
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
+                  <ShieldCheck size={13} /> Khoa đang xem bản đã duyệt
+                </span>
+              )}
+              {doc && (
+                <NutXoaDuLieuTest
+                  loai="ho_so_cong_tac"
+                  id={doc.id}
+                  compact
+                  nhan={`Xóa file ${HO_SO[maDangMo]?.loai === "word" ? "Word" : "Excel"} test`}
+                  moTa={`${HO_SO[maDangMo]?.ten || maDangMo} của ${donVi}, gồm lịch sử phiên bản và lịch sử xuất liên quan`}
+                  disabled={!!dangLuu}
+                  onDaXoa={() => {
+                    setHoSo((cu) => {
+                      const tiep = { ...cu };
+                      delete tiep[maDangMo];
+                      return tiep;
+                    });
+                    setThongBao(`Đã xóa file ${HO_SO[maDangMo]?.ten || maDangMo} khỏi dữ liệu kiểm thử.`);
+                  }}
+                />
+              )}
+            </div>
           </div>
 
           {loi && <p className="mx-4 mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{loi}</p>}
@@ -490,11 +654,13 @@ export default function HoSoTrucTuyen({
           {!coDuLieu ? (
             <div className="p-10 text-center">
               <FileCheck2 size={30} className="mx-auto text-slate-300" />
-              <p className="mt-2 text-sm font-medium text-slate-600">Chưa có dòng đề xuất đã hoàn thành duyệt</p>
-              <p className="mt-1 text-xs text-slate-400">Hồ sơ chỉ được khởi tạo từ dữ liệu đã qua cổng duyệt.</p>
+              <p className="mt-2 text-sm font-medium text-slate-600">Chưa có dòng đề xuất đã gửi trong đợt</p>
+              <p className="mt-1 text-xs text-slate-400">Khoa cần gửi giỏ đề xuất trước khi tạo hồ sơ Word/Excel.</p>
             </div>
           ) : draft ? (
-            <AnimatePresence mode="wait" initial={false}>
+            // Không mode="wait": nếu exit animation của tab cũ không tick tới
+            // cùng, tab mới (Word/Excel) chờ vô thời hạn, không bao giờ hiện.
+            <AnimatePresence initial={false}>
               <motion.div
                 key={maDangMo}
                 role="tabpanel"
@@ -505,8 +671,8 @@ export default function HoSoTrucTuyen({
                 className="p-3 sm:p-4"
               >
                 {HO_SO[maDangMo].loai === "word"
-                  ? <TrinhSuaWord value={draft} onChange={doiBanThao} disabled={biKhoa} />
-                  : <TrinhSuaExcel value={draft} onChange={doiBanThao} disabled={biKhoa} />}
+                  ? <TrinhSuaWord value={draft} onChange={doiBanThao} disabled={biKhoaTrinhSua} />
+                  : <TrinhSuaExcel value={draft} onChange={doiBanThao} disabled={biKhoaTrinhSua} />}
               </motion.div>
             </AnimatePresence>
           ) : null}
@@ -533,32 +699,59 @@ export default function HoSoTrucTuyen({
                   : "Lưu nháp để tiếp tục sau; gửi PĐD khi đã kiểm tra xong. Sau khi PĐD duyệt, khoa chỉ xem và tải bản chính thức."}
               </p>
               <div className="flex flex-wrap justify-end gap-2">
-                {!laPdd && !biKhoa && (
+                {!chiKhoaDiThau && !laPdd && !biKhoa && (
                   <>
                     <button type="button" onClick={() => luu("luu")} disabled={!!dangLuu}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40">
                       <Save size={14} /> {dangLuu === "luu" ? "Đang lưu…" : "Lưu bản nháp"}
                     </button>
-                    <button type="button" onClick={() => luu("gui_pdd")} disabled={!!dangLuu}
+                    <button type="button" onClick={() => chuyenCaBo("gui_pdd")} disabled={!!dangLuu}
                       className="inline-flex items-center gap-1.5 rounded-lg bg-blue-700 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-800 disabled:opacity-40">
-                      <Send size={14} /> {dangLuu === "gui_pdd" ? "Đang gửi…" : "Lưu & gửi PĐD"}
+                      <Send size={14} /> {dangLuu === "gui_pdd" ? "Đang gửi…" : `Gửi cả ${taiLieu.length} file cho PĐD`}
                     </button>
                   </>
                 )}
-                {laPdd && (
+                {!chiKhoaDiThau && laPdd && dangChoPdd && (
+                  <button type="button" onClick={() => chuyenCaBo("bat_dau_xet_duyet")} disabled={!!dangLuu}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-700 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-800 disabled:opacity-40">
+                    <PlayCircle size={14} /> {dangLuu === "bat_dau_xet_duyet" ? "Đang chuyển…" : "Bắt đầu xét duyệt"}
+                  </button>
+                )}
+                {pddCoTheSua && (!dangXetDuyet || chiKhoaDiThau) && (
+                  <button type="button" onClick={() => luu("pdd_sua")} disabled={!!dangLuu}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs font-semibold text-blue-800 hover:bg-blue-50 disabled:opacity-40">
+                    <Save size={14} /> {dangLuu === "pdd_sua" ? "Đang lưu…" : "Lưu chỉnh sửa PĐD"}
+                  </button>
+                )}
+                {!chiKhoaDiThau && laPdd && dangXetDuyet && (
                   <>
                     <button type="button" onClick={() => luu("pdd_sua")} disabled={!!dangLuu}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs font-semibold text-blue-800 hover:bg-blue-50 disabled:opacity-40">
                       <Save size={14} /> {dangLuu === "pdd_sua" ? "Đang lưu…" : "Lưu chỉnh sửa PĐD"}
                     </button>
-                    <button type="button" onClick={() => luu("duyet")} disabled={!!dangLuu}
+                    <button type="button" onClick={() => chuyenCaBo("tu_choi")} disabled={!!dangLuu || !ghiChu.trim()}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40">
+                      <XCircle size={14} /> {dangLuu === "tu_choi" ? "Đang trả…" : "Từ chối & trả khoa"}
+                    </button>
+                    <button type="button" onClick={() => chuyenCaBo("hoan_thanh")} disabled={!!dangLuu}
                       className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-40">
-                      <ShieldCheck size={14} /> {dangLuu === "duyet" ? "Đang chốt…" : "Duyệt & chốt"}
+                      <ShieldCheck size={14} /> {dangLuu === "hoan_thanh" ? "Đang chốt…" : "Hoàn thành cả bộ"}
                     </button>
                   </>
                 )}
+                {laPdd && maDangMo === "danh_muc_dvsd"
+                  && nguonKey.startsWith("gop:")
+                  && doc && doc.trang_thai !== "da_di_thau" && (
+                  <button type="button" onClick={chotDaDiThau} disabled={!!dangLuu}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-violet-700 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-800 disabled:opacity-40">
+                    <LockKeyhole size={14} />
+                    {dangLuu === "di_thau" ? "Đang khóa…" : "Chọn đã đi thầu"}
+                  </button>
+                )}
                 <button type="button" onClick={taiBanDaDuyet}
-                  disabled={!doc || doc.trang_thai !== "da_duyet" || !!daSua[maDangMo] || !!dangLuu}
+                  disabled={!daDuyetBo || !doc
+                    || !["da_duyet", "da_di_thau"].includes(doc.trang_thai)
+                    || !!daSua[maDangMo] || !!dangLuu}
                   title={daSua[maDangMo] ? "Cần lưu và duyệt lại thay đổi trước khi tải" : ""}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--umc-navy)] px-3 py-2 text-xs font-semibold text-white hover:bg-blue-950 disabled:opacity-35">
                   <Download size={14} /> {dangLuu === "tai" ? "Đang tạo file…" : "Tải bản đã duyệt"}
