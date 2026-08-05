@@ -10,7 +10,8 @@ Không cần dữ liệu người bệnh. Không nhận mật khẩu, service ke
 - Danh sách khoa và người dùng.
 - Proposal, lý do, biểu mẫu, lịch sử sử dụng hiện hành.
 - Ảnh chụp khả dụng/hợp đồng từ file thời gian sử dụng, gồm 2.661 dòng nguồn.
-- Các patch workflow từ A2 đến X nằm trong `backend/sql/`.
+- Các patch workflow từ A2 đến Z (kể cả X2 — đề xuất cấp mã quản lý) nằm
+  trong `backend/sql/`, đánh số theo thứ tự chạy.
 
 Nguồn Excel bệnh viện được giữ trong `database/`; dữ liệu staging xuất ra JSON
 nằm trong `backend/du_lieu_staging/`.
@@ -45,6 +46,12 @@ Folder nguồn: `Form biểu mẫu/`.
 
 Hệ thống phải dùng file mẫu thật, không dựng lại bố cục bằng tay. Word dùng form
 sẵn; Excel đổ từng mã hàng theo mã quản lý và giữ đủ metadata.
+
+Biểu mẫu 4 và 5 chính là hai tab Word/Excel của màn "Tổng hợp & xuất hồ sơ"
+(`TongHopPhongDieuDuong.jsx`) — PĐD chốt một snapshot (`phien_tong_hop`) gộp
+đề xuất **nhiều khoa cùng đợt**, cùng mã quản lý/mã hàng thì cộng lại nhưng
+vẫn sổ xuống được theo từng đơn vị sử dụng gửi. Chi tiết ở mục 4 tài liệu
+`01_NGHIEP_VU_VA_QUYET_DINH.md`.
 
 ### Cột đã có thể đổ
 

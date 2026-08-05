@@ -45,4 +45,4 @@ def test_huong_dan_khop_cong_thuc_production_qd34():
     assert "Dải thông thường: **P50–P75**" in HUONG_DAN
     assert "Mặc định: **P75**" in HUONG_DAN
     assert "Phần 30% không tự mua" in HUONG_DAN
-    assert "## 7. Tùy chọn mua thêm 30%" in QUYET_DINH
+    assert "## 8. Tùy chọn mua thêm 30%" in QUYET_DINH

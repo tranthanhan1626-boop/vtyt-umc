@@ -3,6 +3,7 @@
 .env.*
 !.env.example
 backend/.env.local
+ghi-chu-key/
 
 # Python
 .venv/

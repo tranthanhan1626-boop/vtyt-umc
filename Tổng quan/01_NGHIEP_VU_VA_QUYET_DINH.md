@@ -73,7 +73,34 @@ gộp:
   proposal nguồn;
 - chỉ sau mốc này mã hàng mới trở lại lịch sử để khoa đề xuất cho kỳ sau.
 
-## 5. Kết quả thầu và theo dõi sử dụng
+## 5. Tổng hợp toàn viện nhiều khoa (PĐD)
+
+Màn "Tổng hợp & xuất hồ sơ" (`TongHopPhongDieuDuong.jsx`) khác mục 4: mục 4 là
+Excel gộp **cùng một khoa, nhiều giỏ**; mục này là bản tổng hợp **nhiều khoa
+cùng một đợt/gói**, chính là biểu mẫu 4 (Word đề nghị mua thầu) và biểu mẫu 5
+(Excel tổng hợp danh mục đi thầu) chính thức.
+
+- Tab "Theo khoa": mỗi khoa hiện trạng thái đã gửi/chưa gửi; khoa **chưa gửi
+  vẫn hiện trong danh sách** với dấu "0"/cảnh báo, không được lược bỏ. PĐD mở
+  Word/Excel của từng khoa và sửa trực tiếp trên bản nháp của khoa, giống cơ
+  chế ở mục 3.
+- Tab "Tổng hợp theo mã": gộp 3 tầng `mã quản lý → mã hàng → khoa`. Trùng mã
+  quản lý/mã hàng giữa nhiều khoa thì cộng lại thành một dòng tổng, nhưng vẫn
+  sổ xuống/truy ngược được theo từng khoa đã gửi.
+- Nút "Chốt bản tổng hợp" tạo một snapshot bất biến (`phien_tong_hop`, không
+  sửa được sau khi tạo — muốn đổi phải tạo phiên bản mới). Snapshot sinh ra
+  đúng 2 tài liệu web: Word "Phiếu đề nghị mua thầu" và Excel "Danh mục tổng
+  hợp đi thầu", PĐD sửa trực tiếp qua cùng cơ chế Word/Excel cộng tác ở mục 3
+  (`nguon_key = phien:<id>`).
+- Bấm "Hoàn thành cả bộ" đổi trạng thái bộ hồ sơ **và** khóa "Đã đi thầu" cho
+  toàn bộ đề xuất nguồn (mọi khoa nằm trong phiên).
+- **Khóa theo đúng gói của phiên, không đụng gói khác**: nếu gói 18 tháng đi
+  thầu thì chỉ khóa ở gói 18 tháng; gói bổ sung của cùng mã hàng không bị ảnh
+  hưởng, để lỡ gói 18 tháng rớt thầu vẫn còn gói bổ sung kịp có hàng. RPC khóa
+  (`chot_phien_da_di_thau`) tự kiểm tra lại `loai_mua_sam`/`dot_id` của từng
+  đề xuất nguồn tại thời điểm khóa, không tin dữ liệu đã ghi lúc chốt phiên.
+
+## 6. Kết quả thầu và theo dõi sử dụng
 
 - Kết quả trúng/rớt chảy ngược về khoa; mã rớt phải xác nhận đã xem.
 - Tiến độ gói theo bốn tầng: gói → mã quản lý → mã hàng → khoa.
@@ -84,7 +111,7 @@ gộp:
   - chậm cam kết: dùng thấp hơn ngưỡng;
   - sắp hết sớm: nhịp dùng cho thấy hết trước kỳ.
 
-## 6. Sổ nghiệp vụ
+## 7. Sổ nghiệp vụ
 
 ### Sổ thiếu hàng
 
@@ -102,14 +129,14 @@ trạng thái duyệt. “Chưa phản hồi” là trạng thái riêng, không
 
 ĐVSD gửi đề nghị; PĐD duyệt/từ chối; mọi thay đổi giữ lịch sử.
 
-## 7. Tùy chọn mua thêm 30%
+## 8. Tùy chọn mua thêm 30%
 
 - Là trần có thể mua thêm, không phải cam kết phải mua.
 - Không tự cộng vào số gốc hoặc các phân vị.
 - Không dùng quyền 30% làm lý do nâng số gốc lên P90/P95.
 - Timeline phải tách khả dụng cơ bản, phần mua thêm và hàng đã mua chưa lãnh.
 
-## 8. Quyền và an toàn dữ liệu
+## 9. Quyền và an toàn dữ liệu
 
 | Việc | ĐVSD | PĐD |
 |---|---|---|

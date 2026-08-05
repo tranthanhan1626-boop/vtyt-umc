@@ -103,27 +103,30 @@ Sau khi chạy patch, smoke test tối thiểu:
 4. Xóa đợt dọn hết dữ liệu workflow trong đợt.
 5. Số dòng HIS, `vat_tu`, `users`, `bieu_mau` không đổi.
 
-### Nâng schema production hiện tại
+### Nhánh chính hiện tại và các site Netlify
 
-Production đang ở schema nền trước A2. Chạy **một file duy nhất** trong
-Supabase SQL Editor production:
+`phase-a-luong-de-xuat` là nhánh phát triển chính từ giờ — mọi patch mới cứ
+thêm nối tiếp vào `backend/sql/` theo đúng thứ tự tên, chạy trực tiếp trên
+staging như một dự án bình thường, **không cần** duy trì riêng một bundle gộp
+cho "nhánh production" nữa.
 
-```text
-backend/sql/patch_production_a2_z_20260804.sql
-```
+Có hai site Netlify khác nhau, đừng nhầm:
 
-File gộp đủ 23 patch A2→Z trong một transaction; một lỗi sẽ rollback toàn bộ.
-Không chạy thêm từng patch nguồn sau khi file gộp đã thành công. File ZA không
-nằm trong bundle vì RPC xóa test bị khóa cứng theo JWT issuer staging và giao
-diện production cũng không hiện nút xóa.
+| Site | Nhánh Git theo dõi | DB Supabase | Ai dùng |
+|---|---|---|---|
+| `vtyt-umc` (production hiện có) | `main` | production (`jttucjnkqxckphmmilaa`), đang ở schema nền, chưa có các bảng/RPC A2→Z | nhân viên bệnh viện thật |
+| Site test mới (tự tạo trên Netlify) | `phase-a-luong-de-xuat` | staging (`ihgfafubwyxnbubmppbj`) | người được mời test |
 
-Khi patch nguồn thay đổi, sinh lại bundle bằng:
+`main` và site `vtyt-umc` **không đụng tới** trong luồng làm việc hiện tại.
+File `backend/sql/patch_production_a2_z_20260804.sql` vẫn còn trong repo làm
+mốc lịch sử (bundle A2→Z gộp một lần cho production cũ) nhưng không còn là
+bước bắt buộc của quy trình sửa hằng ngày; chỉ cần tới nếu sau này quyết định
+đưa production thật lên ngang bằng nhánh chính.
 
-```bash
-backend/.venv/bin/python backend/scripts/tao_patch_gop_production.py
-```
-
-Sau migration phải đối chiếu schema production rồi mới push `main`.
+Khi nào thật sự muốn đưa code từ `phase-a-luong-de-xuat` lên site production
+`vtyt-umc` (đổi nhánh Netlify theo dõi, hoặc merge vào `main`), đó là một
+quyết định riêng, rủi ro cao (ảnh hưởng người dùng thật) — phải bàn và xác
+nhận rõ trước khi làm, không suy ra từ việc nhánh phụ đã ổn trên staging.
 
 ## 5. Sao lưu và phục hồi
 
