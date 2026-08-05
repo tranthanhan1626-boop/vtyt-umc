@@ -23,6 +23,8 @@ nằm trong `backend/du_lieu_staging/`.
 | Giá/hợp đồng | đơn giá, hợp đồng, hiệu lực, nhà cung cấp, lịch giao |
 | Thiếu hàng | số yêu cầu, số được cấp, ca hoãn, mã thay thế, phản hồi |
 | Sự kiện nhu cầu | tăng/giảm/ngưng, thời gian, định lượng, bằng chứng |
+| Gợi ý quy đổi danh mục | `nhom_ky_thuat.dvt_chuan`, `vat_tu.he_so_quy_doi` |
+| Snapshot quy đổi và phân bổ đề xuất | `proposals.so_luong_ma_quan_ly`, `dvt_ma_quan_ly`, `he_so_quy_doi`, `bang_quy_doi` |
 | Chuẩn hóa mã | mã cũ–mới và ngày hiệu lực, quy đổi ĐVT, mã tương đương |
 | Lâm sàng | VEN/criticality, mã Thông tư 04, phân nhóm TT14 |
 | Kết quả thầu | số đề xuất, số trúng, lý do rớt, thời điểm hàng về |
@@ -70,7 +72,8 @@ nguồn và chờ người phụ trách xác nhận.
 
 1. Mã hàng, mã quản lý và mã gói phải là text; không làm mất số 0 đầu.
 2. Tên khoa phải thống nhất giữa lịch sử, proposal và kết quả.
-3. Một mã có một ĐVT chuẩn; đổi ĐVT phải có bảng quy đổi.
+3. Mỗi lần đề xuất có một ĐVT chuẩn do ĐVSD chọn trong các ĐVT của mã quản lý;
+   đổi ĐVT chuẩn phải nhập lại đủ bảng quy đổi và lưu snapshot cùng đề xuất.
 4. Ngày dùng ISO `YYYY-MM-DD`; số không chứa chữ/đơn vị.
 5. Không sửa tay mã cho “giống nhau”; dùng bảng ánh xạ có thời gian hiệu lực.
 6. Mỗi file ghi nguồn, thời điểm xuất và người xác nhận.

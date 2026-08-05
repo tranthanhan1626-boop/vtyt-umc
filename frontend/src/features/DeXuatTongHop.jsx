@@ -497,15 +497,33 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <tbody>
-                      {g.items.map((r) => (
+                      {g.items.map((r, index) => (
                         <tr key={r.id} className="border-b border-slate-50 last:border-0">
                           <td className="px-4 py-2 align-top">
                             <div className="font-mono text-xs text-slate-600">{r.ma_hang}</div>
                             <div className="text-xs text-slate-500 leading-tight max-w-md">{r.ten_vat_tu}</div>
                             <div className="text-xs text-slate-300 font-mono mt-0.5">{r.ma_quan_ly}</div>
+                            {r.so_luong_ma_quan_ly != null
+                              && g.items.findIndex((x) => x.ma_quan_ly === r.ma_quan_ly) === index && (
+                              <div className="mt-1 text-xs font-medium text-teal-700">
+                                Tổng mã quản lý: {fmt(r.so_luong_ma_quan_ly)} {r.dvt_ma_quan_ly}
+                                {r.bang_quy_doi && (
+                                  <div className="font-normal text-slate-400">
+                                    Quy đổi ĐVSD đã chọn: {Object.entries(r.bang_quy_doi)
+                                      .map(([dvt, heSo]) => `1 ${dvt} = ${fmt(heSo)} ${r.dvt_ma_quan_ly}`)
+                                      .join(" · ")}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </td>
                           <td className="px-4 py-2 text-right font-mono align-top whitespace-nowrap">
                             {fmt(r.so_luong)} <span className="text-slate-400 text-xs">{r.dvt}</span>
+                            {r.he_so_quy_doi && (
+                              <div className="text-[10px] text-slate-400">
+                                = {fmt(Number(r.so_luong) * Number(r.he_so_quy_doi))} {r.dvt_ma_quan_ly}
+                              </div>
+                            )}
                           </td>
                           <td className="px-4 py-2 align-top text-xs">
                             <div>{NHAN_LY_DO[r.loai_ly_do] || r.loai_ly_do}</div>

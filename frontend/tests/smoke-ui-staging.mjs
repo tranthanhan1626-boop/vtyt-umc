@@ -12,7 +12,8 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const STAGING_REF = "ihgfafubwyxnbubmppbj";
-const APP_URL = "http://127.0.0.1:4175";
+const APP_PORT = Number(process.env.SMOKE_PORT || 4175);
+const APP_URL = `http://127.0.0.1:${APP_PORT}`;
 const CDP_URL = "http://127.0.0.1:9239";
 const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const FRONTEND = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -288,7 +289,7 @@ try {
 
   vite = spawn(
     "npm",
-    ["run", "dev", "--", "--host", "127.0.0.1", "--port", "4175", "--strictPort"],
+    ["run", "dev", "--", "--host", "127.0.0.1", "--port", String(APP_PORT), "--strictPort"],
     { cwd: FRONTEND, env: process.env, stdio: "ignore" },
   );
   await waitFor(APP_URL, "Vite");

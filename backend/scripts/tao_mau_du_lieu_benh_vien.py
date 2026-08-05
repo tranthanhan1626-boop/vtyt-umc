@@ -594,6 +594,7 @@ PATCH_FILES = (
     "patch_o_tien_do_su_dung.sql",
     "patch_p_du_kien_het_hang.sql",
     "patch_q_phan_nhom_abc.sql",
+    "patch_x2_de_xuat_theo_ma_quan_ly.sql",
     "patch_r_nhu_cau_bi_nen.sql",
     "patch_s_workflow_ho_so_dvsd.sql",
     "patch_t_tao_nhieu_bo_ho_so.sql",

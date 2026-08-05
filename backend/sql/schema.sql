@@ -180,6 +180,7 @@ grant select on v_danh_sach_khoa to anon, authenticated;
 create table nhom_ky_thuat (
     ma_quan_ly  text primary key,       -- vd "N01.01.020.01"
     ten_quan_ly text not null,          -- vd "Tăm bông, đường kính 15 - 18mm"
+    dvt_chuan   text,                   -- đơn vị chung để cộng và đề xuất ở cấp mã quản lý
     created_at  timestamptz not null default now(),
     updated_at  timestamptz not null default now()
 );
@@ -188,6 +189,7 @@ create table vat_tu (
     ma_hang     text primary key,       -- vd "66114"
     ten_vat_tu  text not null,          -- vd "Tăm bông, đường kính 15mm"
     dvt         text,                   -- đơn vị tính, vd "Que" — nhất quán theo mã hàng (đã xác nhận từ dữ liệu thật)
+    he_so_quy_doi numeric check (he_so_quy_doi is null or he_so_quy_doi > 0),
     ma_quan_ly  text references nhom_ky_thuat(ma_quan_ly),  -- NULL nếu HIS chưa gán nhóm (~10.5% dòng thật rơi vào TH này)
     -- Đặc tả + gói thầu từ danh mục "thông tin vật tư y tế tiêu hao" (seed bằng
     -- seed_thong_tin_vtyt.py). Gói thầu = NHÃN CHỮ (5 gói: Dùng chung/CTCH-NTK/
@@ -208,10 +210,10 @@ create index idx_vat_tu_nhom on vat_tu (ma_quan_ly);
 -- lấy nhóm THỰC SỰ có mã hàng, tránh hiện nhóm rỗng không chọn được gì.
 create view v_nhom_co_ma_hang
 with (security_invoker = true) as
-select n.ma_quan_ly, n.ten_quan_ly, count(v.ma_hang) as so_ma_hang
+select n.ma_quan_ly, n.ten_quan_ly, count(v.ma_hang) as so_ma_hang, n.dvt_chuan
 from nhom_ky_thuat n
 join vat_tu v on v.ma_quan_ly = n.ma_quan_ly
-group by n.ma_quan_ly, n.ten_quan_ly;
+group by n.ma_quan_ly, n.ten_quan_ly, n.dvt_chuan;
 
 -- Nhóm kỹ thuật mà mỗi khoa ĐÃ/ĐANG dùng — để Function 1 chỉ hiện nhóm liên
 -- quan tới khoa đang chọn thay vì đổ ra cả 878 nhóm (đo thật: Khoa GMHS còn
@@ -246,6 +248,10 @@ create table proposals (
     version        int not null default 1,
     is_current     boolean not null default true,
     so_luong       numeric not null check (so_luong >= 0),  -- số lượng đề xuất cho cả năm
+    so_luong_ma_quan_ly numeric,              -- tổng đã chốt cho cả mã quản lý
+    dvt_ma_quan_ly text,                      -- snapshot đơn vị chuẩn lúc gửi
+    he_so_quy_doi numeric,                    -- snapshot hệ số của dòng mã hàng
+    bang_quy_doi jsonb,                       -- snapshot {ĐVT: hệ số} của cả mã quản lý
     -- Nullable vì 3 dòng đề xuất tạo trước migration này không có dữ liệu;
     -- FE bắt buộc nhập cả 2 khi gửi đề xuất mới.
     so_thang_du_kien int check (so_thang_du_kien is null or so_thang_du_kien between 1 and 60),
@@ -304,7 +310,12 @@ create table proposal_reasons (
     uoc_ca_thang     numeric,  -- ước ca/tháng, đi kèm kỹ thuật mới
     ghi_chu          text,
     constraint ky_thuat_moi_phai_co_ten
-        check (loai_ly_do <> 'ky_thuat_moi' or ten_ky_thuat_moi is not null)
+        check (loai_ly_do <> 'ky_thuat_moi' or ten_ky_thuat_moi is not null),
+    constraint ly_do_khac_phai_co_ghi_chu
+        check (
+            loai_ly_do = 'theo_lich_su'
+            or nullif(btrim(ghi_chu), '') is not null
+        )
 );
 
 -- ----------------------------------------------------------------------------
@@ -385,7 +396,11 @@ select
     p.den_thang,
     p.den_nam,
     p.nhom_de_xuat,
-    coalesce(p.goi, v.goi) as goi   -- đề xuất cũ (p.goi null) rơi về gói danh mục
+    coalesce(p.goi, v.goi) as goi,   -- đề xuất cũ (p.goi null) rơi về gói danh mục
+    p.so_luong_ma_quan_ly,
+    p.dvt_ma_quan_ly,
+    p.he_so_quy_doi,
+    p.bang_quy_doi
 from proposals p
 join vat_tu v on v.ma_hang = p.ma_hang
 left join nhom_ky_thuat n on n.ma_quan_ly = v.ma_quan_ly

@@ -36,6 +36,7 @@ SOURCES = (
     "patch_v_tuy_chon_mua_them_30.sql",
     "patch_w_ma_rot_thau_ve_dvsd.sql",
     "patch_x_quyen_khoa_va_ho_so_theo_gio.sql",
+    "patch_x2_de_xuat_theo_ma_quan_ly.sql",
     "patch_y_khoa_da_di_thau_theo_phien.sql",
     "patch_z_chuyen_trang_thai_bo_ho_so_pdd.sql",
 )

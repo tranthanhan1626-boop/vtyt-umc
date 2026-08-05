@@ -17,18 +17,31 @@ lượng, nội dung và căn cứ riêng.
 
 ## 2. Luồng đề xuất của khoa
 
-1. Khoa chọn đợt, mã quản lý và mã hàng.
-2. Hệ thống hiển thị lịch sử, khả dụng/hợp đồng, kỳ sử dụng và các mốc gợi ý.
-3. Bấm P50/P75/P90/P95 hoặc gõ số chỉ cập nhật **bản đang soạn**.
-4. Chỉ nút **Thêm vào giỏ đề xuất** mới lưu mã vào giỏ.
-5. Giỏ lưu trên server, tồn tại qua đăng xuất, F5 và máy khác.
-6. Mọi tài khoản cùng khoa được tiếp tục sửa/rút/xử lý; audit ghi đúng người
+1. Khoa chọn đợt và mã quản lý.
+2. ĐVSD chọn một ĐVT chuẩn trong đúng các ĐVT đang có của mã quản lý, rồi nhập
+   một hệ số cho mỗi ĐVT còn lại. Hệ thống quy đổi lịch sử của mọi mã hàng
+   tương đương về ĐVT chuẩn và cộng ở cấp mã quản lý.
+3. Khoa chốt một tổng P50/P75/P90/P95 hoặc tự nhập cho cả mã quản lý.
+4. Khoa tự phân bổ tổng đó xuống một hay nhiều mã hàng tương đương; tổng sau
+   quy đổi phải đúng bằng số đã chốt.
+5. Chỉ nút **Thêm cả mã quản lý vào giỏ** mới lưu đồng thời toàn bộ phân bổ.
+6. Giỏ là biểu tượng ở góc trên, mở theo `gói thầu → mã quản lý → mã hàng`.
+7. Giỏ lưu trên server, tồn tại qua đăng xuất, F5 và máy khác.
+8. Mọi tài khoản cùng khoa được tiếp tục sửa/rút/xử lý; audit ghi đúng người
    thực hiện.
-7. Khi gửi, mã được ẩn khỏi danh sách chọn ở tất cả giỏ của khoa để tránh gửi
-   trùng.
+9. Khi thêm giỏ hoặc gửi, cả mã quản lý được ẩn khỏi danh sách của khoa. Chỉ
+   sau khi PĐD chốt **Đã đi thầu**, mã quản lý mới hiện lại.
 
-Số ngoài dải P50–P75 vẫn gửi được nhưng phải có căn cứ. P90/P95 là mức
-cao/ngoại lệ, không phải dải bình thường.
+Nhóm chỉ có một ĐVT tự nhận ĐVT đó làm chuẩn và hệ số 1. Nhóm trộn nhiều ĐVT
+bị chặn đến khi ĐVSD nhập đủ hệ số cho lần đề xuất. Các mã hàng cùng ĐVT dùng
+chung một hệ số. Bộ quy đổi được lưu snapshot cùng đề xuất, không sửa danh mục
+toàn viện và không ảnh hưởng khoa khác; tuyệt đối không cộng thô các ĐVT khác nhau.
+
+Số nằm trong dải P50–P75 tự nhận lý do **Theo lịch sử sử dụng**, không cần ghi
+chú thêm. Số ngoài dải vẫn gửi được nhưng bắt buộc chọn một lý do khác và nhập
+ghi chú cụ thể. Không so phần trăm tăng/giảm với riêng năm hiện tại vì dữ liệu
+năm thường chưa đủ khi lập thầu giữa năm. P90/P95 là mức cao/ngoại lệ, không
+phải dải bình thường.
 
 ## 3. Xét duyệt và hồ sơ Word–Excel
 

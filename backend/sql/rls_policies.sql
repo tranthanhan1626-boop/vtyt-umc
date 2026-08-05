@@ -375,6 +375,10 @@ begin
            and nullif(trim(v_item->>'ten_ky_thuat_moi'), '') is null then
             raise exception 'Mã % chọn kỹ thuật mới nhưng thiếu tên kỹ thuật.', v_ma_hang;
         end if;
+        if v_loai_ly_do <> 'theo_lich_su'
+           and nullif(trim(v_item->>'ghi_chu'), '') is null then
+            raise exception 'Mã % chọn số lượng ngoài khoảng nhưng thiếu ghi chú.', v_ma_hang;
+        end if;
 
         select coalesce(max(p.version), 0) + 1 into v_version
         from proposals p

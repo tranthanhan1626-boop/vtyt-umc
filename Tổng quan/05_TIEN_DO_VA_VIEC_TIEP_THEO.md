@@ -19,6 +19,9 @@ Cập nhật 04/08/2026.
 | Theo dõi cam kết 20/50/80 và dự kiến hết hàng | Đã có |
 | Khả dụng/hợp đồng/mua thêm 30% trên màn đề xuất | Đã có |
 | Công thức TSB + P50/P75/P90/P95 | Đã backtest và build |
+| Đề xuất cấp mã quản lý + phân bổ mã hàng | Đã code, chờ chạy patch staging để full test |
+| ĐVSD chọn ĐVT chuẩn và hệ số theo từng ĐVT cho mỗi đề xuất | Đã code, chờ chạy patch staging |
+| Giỏ icon theo gói → mã quản lý → mã hàng | Đã code và build |
 | Năm biểu mẫu chính thức | Đã đưa vào `frontend/public/form-bieu-mau/` |
 | Xóa dữ liệu test ở mọi màn hình cho ĐVSD/PĐD | Đã có trên staging; patch ZA cascade sạch phiên tổng hợp |
 

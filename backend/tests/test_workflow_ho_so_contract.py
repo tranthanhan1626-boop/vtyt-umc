@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 PATCH_S = (ROOT / "backend/sql/patch_s_workflow_ho_so_dvsd.sql").read_text()
 PATCH_T = (ROOT / "backend/sql/patch_t_tao_nhieu_bo_ho_so.sql").read_text()
+PATCH_Q = (ROOT / "backend/sql/patch_x2_de_xuat_theo_ma_quan_ly.sql").read_text()
 FUNCTION_1 = (ROOT / "frontend/src/features/Function1.jsx").read_text()
 HO_SO = (ROOT / "frontend/src/features/HoSoTrucTuyen.jsx").read_text()
 XUAT_HO_SO_KHOA = (ROOT / "frontend/src/features/XuatHoSo.jsx").read_text()
@@ -35,11 +36,42 @@ def test_patch_s_co_du_vong_trang_thai_va_audit():
     assert "('tu_choi', 'de_xuat')" in PATCH_S
 
 
-def test_ngoai_khoang_bat_buoc_ly_do_nhung_ghi_chu_tuy_chon():
+def test_trong_khoang_mac_dinh_lich_su_ngoai_khoang_bat_buoc_ly_do_va_ghi_chu():
     assert 'const CO_GOI_Y_SO_LUONG = (goi) => goi !== "chi_dinh_thau"' in FUNCTION_1
-    assert 'n.ngoaiKhoang && n.loaiLyDo === "theo_lich_su"' in FUNCTION_1
+    assert 'tiep.loaiLyDo = "theo_lich_su"' in FUNCTION_1
+    assert "LY_DO_GIAI_TRINH_OPTIONS" in FUNCTION_1
+    assert "Số lượng ngoài khoảng P50–P75 bắt buộc nhập ghi chú thêm." in FUNCTION_1
+    assert "Bắt buộc ghi chú cụ thể khi số lượng ngoài khoảng P50–P75." in FUNCTION_1
     assert "Ghi chú thêm" in FUNCTION_1
-    assert "(không bắt buộc)" in FUNCTION_1
+    assert "So với {namCuoi}" not in FUNCTION_1
+    assert "canhBaoBienDong" not in FUNCTION_1
+    assert "ly_do_khac_phai_co_ghi_chu" in PATCH_Q
+    assert "not valid" in PATCH_Q.lower()
+
+
+def test_de_xuat_cap_ma_quan_ly_quy_doi_phan_bo_va_gio_phan_tang():
+    for noi_dung in (
+        "dvt_chuan",
+        "he_so_quy_doi",
+        "so_luong_ma_quan_ly",
+        "bang_quy_doi",
+    ):
+        assert noi_dung in PATCH_Q
+    assert "drop function if exists cap_nhat_quy_doi_ma_quan_ly" in PATCH_Q
+    assert "create or replace function cap_nhat_quy_doi_ma_quan_ly" not in PATCH_Q
+    assert "themMaQuanLyVaoGio" in FUNCTION_1
+    assert "Thêm cả mã quản lý vào giỏ" in FUNCTION_1
+    assert "gioTheoGoi" in FUNCTION_1
+    assert "Tổng mã quản lý" in FUNCTION_1
+    assert "nhomDangChoDiThau" in FUNCTION_1
+    assert "so_luong_ma_quan_ly" in PATCH_Q
+    assert ".eq(\"da_di_thau\", false)" in FUNCTION_1
+    assert "ĐVSD chọn ĐVT để chốt tổng cho lần đề xuất này." in FUNCTION_1
+    assert "heSoTheoDvt" in FUNCTION_1
+    assert "dsDvtNhom.map" in FUNCTION_1
+    assert "cap_nhat_quy_doi_ma_quan_ly" not in FUNCTION_1
+    assert "ĐVT chuẩn hoặc hệ số quy đổi của mã quản lý không hợp lệ." in PATCH_Q
+    assert "Tổng phân bổ sau quy đổi không bằng tổng của mã quản lý." in PATCH_Q
 
 
 def test_ho_so_chuyen_theo_ca_bo_va_excel_sort_dung_ma():

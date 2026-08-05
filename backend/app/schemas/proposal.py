@@ -12,11 +12,15 @@ class ProposalReasonIn(BaseModel):
     ghi_chu: str | None = None
 
     @model_validator(mode="after")
-    def ky_thuat_moi_bat_buoc_ten(self):
+    def kiem_tra_noi_dung_ly_do(self):
         # Test nghiệm thu G1: chọn "kỹ thuật mới" mà bỏ trống tên -> 422
         if self.loai_ly_do == "ky_thuat_moi" and not (self.ten_ky_thuat_moi or "").strip():
             raise ValueError(
                 "Chọn lý do 'kỹ thuật mới' bắt buộc phải điền tên kỹ thuật (ten_ky_thuat_moi)."
+            )
+        if self.loai_ly_do != "theo_lich_su" and not (self.ghi_chu or "").strip():
+            raise ValueError(
+                "Số lượng ngoài khoảng P50-P75 bắt buộc phải có ghi chú cụ thể."
             )
         return self
 
@@ -32,6 +36,10 @@ class ProposalIn(BaseModel):
     tu_nam: int
     den_thang: int
     den_nam: int
+    so_luong_ma_quan_ly: float | None = None
+    dvt_ma_quan_ly: str | None = None
+    he_so_quy_doi: float | None = None
+    bang_quy_doi: dict[str, float] | None = None
     created_by: EmailStr
     reason: ProposalReasonIn
 
@@ -50,6 +58,28 @@ class ProposalIn(BaseModel):
         ket_thuc = self.den_nam * 12 + self.den_thang
         if ket_thuc < bat_dau:
             raise ValueError("Mốc kết thúc phải sau mốc bắt đầu.")
+        co_du_lieu_cap_ma_quan_ly = any(
+            value is not None
+            for value in (
+                self.so_luong_ma_quan_ly,
+                self.dvt_ma_quan_ly,
+                self.he_so_quy_doi,
+                self.bang_quy_doi,
+            )
+        )
+        if co_du_lieu_cap_ma_quan_ly:
+            dvt = (self.dvt_ma_quan_ly or "").strip()
+            if (
+                not dvt
+                or not (self.so_luong_ma_quan_ly and self.so_luong_ma_quan_ly > 0)
+                or not (self.he_so_quy_doi and self.he_so_quy_doi > 0)
+                or not self.bang_quy_doi
+                or any(value <= 0 for value in self.bang_quy_doi.values())
+                or abs(self.bang_quy_doi.get(dvt, 0) - 1) > 0.000001
+            ):
+                raise ValueError(
+                    "Đề xuất cấp mã quản lý phải có ĐVT chuẩn, tổng và bảng quy đổi hợp lệ."
+                )
         return self
 
     @property
