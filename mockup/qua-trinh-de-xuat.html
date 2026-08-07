@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<title>Quá trình đề xuất — Excel 50–70 cột (Mockup)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  html, body { height: 100%; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .cell { min-width: 130px; padding: 6px 10px; font-size: 12.5px; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+  .cell.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .cell.narrow { min-width: 68px; }
+  .cell.wide { min-width: 220px; }
+  .cell.readonly { background: #f8fafc; color: #475569; }
+  .cell.locked { background: #eef2ff; }
+  .cell input, .cell textarea { background: transparent; outline: none; width: 100%; border: 0; font-size: 12.5px; }
+  .cell:hover { background: #fefce8; }
+  .cell.editing { outline: 2px solid #2563eb; outline-offset: -2px; background: #eff6ff !important; }
+  .row-locked td { background: #fffbeb !important; }
+  .row-failed td { background: #fef2f2 !important; }
+  .row-partial td { background: #fff7ed !important; }
+  thead th { position: sticky; top: 0; background: #0f172a; color: #f8fafc; z-index: 20; font-weight: 600; font-size: 11.5px; padding: 6px 10px; border-right: 1px solid #1e293b; border-bottom: 1px solid #1e293b; text-align: left; }
+  thead tr.group-row th { background: #1e293b; text-transform: uppercase; letter-spacing: 0.04em; font-size: 10.5px; z-index: 25; top: 0; }
+  thead tr.col-row th { top: 30px; z-index: 22; }
+  th.freeze, td.freeze { position: sticky; z-index: 15; background: #0f172a; color: #f8fafc; }
+  td.freeze { background: #f1f5f9; color: #0f172a; z-index: 10; }
+  th.freeze { z-index: 30; }
+  .lock-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; background: #6366f1; color: white; padding: 1px 5px; border-radius: 8px; }
+  .badge { display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px; border-radius: 8px; font-size: 10.5px; font-weight: 500; }
+  .badge-green { background: #d1fae5; color: #065f46; }
+  .badge-red { background: #fee2e2; color: #991b1b; }
+  .badge-yellow { background: #fef3c7; color: #92400e; }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+  .toolbar-btn { display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; border: 1px solid #cbd5e1; background: white; }
+  .toolbar-btn:hover { background: #f1f5f9; }
+  .toolbar-btn.primary { background: #0f766e; color: white; border-color: #0f766e; }
+  .toolbar-btn.primary:hover { background: #115e59; }
+  .toolbar-btn.danger { background: #dc2626; color: white; border-color: #dc2626; }
+  .audit-log-item { border-left: 2px solid #64748b; padding-left: 8px; padding-top: 3px; padding-bottom: 3px; margin-bottom: 6px; }
+  .audit-log-item.pdd { border-color: #6366f1; }
+  .audit-log-item.dvsd { border-color: #0d9488; }
+</style>
+</head>
+<body class="bg-slate-100 flex flex-col">
+
+<!-- Top bar -->
+<div class="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0">
+  <div class="flex items-center gap-3">
+    <div class="flex items-center gap-1.5 text-xs text-slate-500">
+      <span>VTYT</span>
+      <span>›</span>
+      <span>Đợt T1/2027</span>
+      <span>›</span>
+      <span>18T / Dùng chung</span>
+      <span>›</span>
+      <span>Khoa Nội tổng hợp</span>
+    </div>
+  </div>
+  <div class="flex items-center gap-2">
+    <span class="badge badge-blue">Bạn đang đăng nhập: PĐD · Trần Hiền</span>
+    <a href="pdd-tong-quan.html" class="toolbar-btn">← Về màn PĐD</a>
+  </div>
+</div>
+
+<!-- Header -->
+<div class="bg-white px-4 py-3 border-b border-slate-200">
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <h1 class="text-lg font-semibold text-slate-900">Quá trình đề xuất — Khoa Nội tổng hợp</h1>
+      <p class="text-xs text-slate-500 mt-0.5">Gói 18T / Dùng chung · Đợt T1/2027 · 47 mã hàng · Cập nhật cuối: 14:22 hôm nay bởi Trần Hiền (PĐD)</p>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap">
+      <button class="toolbar-btn">💾 Lưu (auto)</button>
+      <button class="toolbar-btn">🔍 Tìm / Lọc</button>
+      <button class="toolbar-btn">📋 Chọn cột cho Danh mục đề xuất</button>
+      <button class="toolbar-btn">🔒 Lock cột đang chọn</button>
+      <button class="toolbar-btn">🔒 Lock dòng đang chọn</button>
+      <button class="toolbar-btn">⬇ Xuất Excel</button>
+      <button class="toolbar-btn primary">✓ Tạo Danh mục đề xuất →</button>
+    </div>
+  </div>
+  <div class="mt-2 flex items-center gap-2 text-xs text-slate-600">
+    <span class="badge badge-yellow">⚠ Có 3 dòng đang ngoài P50-P75 chưa ghi lý do</span>
+    <span class="badge badge-blue">Đã lock: 4 cột · 0 dòng</span>
+    <span class="badge badge-green">Audit: 127 lượt sửa từ khi tạo</span>
+  </div>
+</div>
+
+<!-- Body -->
+<div class="flex-1 flex overflow-hidden">
+  <!-- Main table -->
+  <div class="flex-1 overflow-auto bg-white" id="tbl-wrap">
+    <table class="border-collapse w-max">
+      <thead>
+        <!-- Group headers -->
+        <tr class="group-row">
+          <th class="freeze" style="left: 0;" colspan="4">Định danh</th>
+          <th colspan="3">TSKT gốc từ danh mục</th>
+          <th colspan="3">TSKT khoa đề xuất</th>
+          <th colspan="3">TSKT PĐD điều chỉnh</th>
+          <th colspan="3">TSKT chốt (sau họp) 🔒</th>
+          <th colspan="6">Lịch sử & công thức</th>
+          <th colspan="5">Số lượng đề xuất</th>
+          <th colspan="4">Thương mại</th>
+          <th colspan="4">Kết quả thầu</th>
+          <th colspan="3">Ghi chú</th>
+        </tr>
+        <!-- Column headers -->
+        <tr class="col-row">
+          <!-- Định danh -->
+          <th class="freeze" style="left: 0; min-width: 46px;">STT</th>
+          <th class="freeze" style="left: 46px; min-width: 90px;">Mã hàng</th>
+          <th class="freeze" style="left: 136px; min-width: 220px;">Tên vật tư</th>
+          <th class="freeze" style="left: 356px; min-width: 68px;">ĐVT</th>
+          <!-- TSKT gốc -->
+          <th class="wide">Tiêu chuẩn kỹ thuật</th>
+          <th>Quy cách đóng gói</th>
+          <th>Nhà sản xuất tham chiếu</th>
+          <!-- TSKT khoa -->
+          <th class="wide">TSKT khoa đề xuất</th>
+          <th>Lý do khoa đổi</th>
+          <th>Tài liệu đính kèm</th>
+          <!-- TSKT PĐD -->
+          <th class="wide">TSKT PĐD điều chỉnh</th>
+          <th>Lý do PĐD đổi</th>
+          <th>Thảo luận với khoa</th>
+          <!-- TSKT chốt -->
+          <th class="wide">TSKT chốt</th>
+          <th>Ngày chốt</th>
+          <th>Số biên bản</th>
+          <!-- Lịch sử & công thức -->
+          <th class="num narrow">LS 12T (khoa)</th>
+          <th class="num narrow">LS 18T (khoa)</th>
+          <th class="num narrow">P50</th>
+          <th class="num narrow">P75</th>
+          <th class="num narrow">P90</th>
+          <th class="num narrow">P95</th>
+          <!-- SL đề xuất -->
+          <th class="num narrow">SL tổng MQ</th>
+          <th class="num narrow">SL mã hàng</th>
+          <th class="num narrow">Mua thêm (30%)</th>
+          <th>Mức chọn</th>
+          <th class="wide">Lý do ngoài P50-P75</th>
+          <!-- Thương mại -->
+          <th class="num">Giá dự kiến</th>
+          <th class="num">Giá HĐ cũ</th>
+          <th class="num">Tổng giá trị</th>
+          <th>Nhà cung cấp gợi ý</th>
+          <!-- Kết quả thầu -->
+          <th>GĐ1 Chào giá</th>
+          <th>GĐ2 Mở thầu</th>
+          <th>GĐ3 Đánh giá</th>
+          <th>Trạng thái</th>
+          <!-- Ghi chú -->
+          <th class="wide">Ghi chú khoa</th>
+          <th class="wide">Ghi chú PĐD</th>
+          <th>Cờ theo dõi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Row 1 - normal editable -->
+        <tr>
+          <td class="freeze cell num" style="left: 0;">1</td>
+          <td class="freeze cell" style="left: 46px;">GT-01</td>
+          <td class="freeze cell wide" style="left: 136px;">Găng tay khám không bột size M</td>
+          <td class="freeze cell narrow">Cái</td>
+          <td class="cell readonly wide">Latex không bột, AQL 1.5</td>
+          <td class="cell readonly">Hộp 100 cái</td>
+          <td class="cell readonly">Ansell, Top Glove</td>
+          <td class="cell wide">Nitrile không bột, AQL 1.5, độ dày ≥0.1mm</td>
+          <td class="cell">Tránh dị ứng latex</td>
+          <td class="cell">📎 tskt_gantay.pdf</td>
+          <td class="cell wide">Nitrile không bột, AQL 1.5, độ dày 0.08-0.12mm</td>
+          <td class="cell">Điều chỉnh dải độ dày</td>
+          <td class="cell">Đã họp 12/07 với khoa</td>
+          <td class="cell wide locked">Nitrile không bột, AQL 1.5, độ dày 0.08-0.12mm <span class="lock-badge">🔒</span></td>
+          <td class="cell locked">15/07/2026</td>
+          <td class="cell locked">BB-2026-104</td>
+          <td class="cell num readonly">2.400</td>
+          <td class="cell num readonly">3.700</td>
+          <td class="cell num readonly">3.800</td>
+          <td class="cell num readonly">4.200</td>
+          <td class="cell num readonly">4.700</td>
+          <td class="cell num readonly">5.100</td>
+          <td class="cell num">4.200</td>
+          <td class="cell num">4.200</td>
+          <td class="cell num readonly">1.260</td>
+          <td class="cell">P75</td>
+          <td class="cell wide readonly">—</td>
+          <td class="cell num">1.850</td>
+          <td class="cell num readonly">1.720</td>
+          <td class="cell num readonly">7.770.000</td>
+          <td class="cell">Ansell VN</td>
+          <td class="cell"><span class="badge badge-green">Đậu</span></td>
+          <td class="cell"><span class="badge badge-green">Đậu</span></td>
+          <td class="cell"><span class="badge badge-green">Đậu</span></td>
+          <td class="cell"><span class="badge badge-green">TRÚNG</span></td>
+          <td class="cell wide">Ưu tiên nitrile do khoa có nhiều BN dị ứng latex</td>
+          <td class="cell wide">OK, đàm phán giảm 5% giá</td>
+          <td class="cell">⭐</td>
+        </tr>
+
+        <!-- Row 2 - active editing -->
+        <tr>
+          <td class="freeze cell num" style="left: 0;">2</td>
+          <td class="freeze cell" style="left: 46px;">GT-02</td>
+          <td class="freeze cell wide" style="left: 136px;">Găng tay khám không bột size L</td>
+          <td class="freeze cell narrow">Cái</td>
+          <td class="cell readonly wide">Latex không bột, AQL 1.5</td>
+          <td class="cell readonly">Hộp 100 cái</td>
+          <td class="cell readonly">Ansell, Top Glove</td>
+          <td class="cell wide">Nitrile không bột, AQL 1.5</td>
+          <td class="cell">Tránh dị ứng latex</td>
+          <td class="cell">📎 tskt_gantay.pdf</td>
+          <td class="cell wide editing">Nitrile không bột, AQL 1.5, độ dày 0.08-0.12mm|</td>
+          <td class="cell">Đồng bộ với GT-01</td>
+          <td class="cell"></td>
+          <td class="cell wide readonly">—</td>
+          <td class="cell readonly">—</td>
+          <td class="cell readonly">—</td>
+          <td class="cell num readonly">1.100</td>
+          <td class="cell num readonly">1.700</td>
+          <td class="cell num readonly">1.600</td>
+          <td class="cell num readonly">1.900</td>
+          <td class="cell num readonly">2.200</td>
+          <td class="cell num readonly">2.400</td>
+          <td class="cell num">1.900</td>
+          <td class="cell num">1.900</td>
+          <td class="cell num readonly">570</td>
+          <td class="cell">P75</td>
+          <td class="cell wide readonly">—</td>
+          <td class="cell num">1.850</td>
+          <td class="cell num readonly">1.720</td>
+          <td class="cell num readonly">3.515.000</td>
+          <td class="cell">Ansell VN</td>
+          <td class="cell"><span class="badge badge-green">Đậu</span></td>
+          <td class="cell"><span class="badge badge-green">Đậu</span></td>
+          <td class="cell">Chờ</td>
+          <td class="cell"><span class="badge badge-blue">Đang thầu GĐ3</span></td>
+          <td class="cell wide">—</td>
+          <td class="cell wide">—</td>
+          <td class="cell"></td>
+        </tr>
+
+        <!-- Row 3 - out of P50-P75, no reason yet -->
+        <tr class="row-partial">
+          <td class="freeze cell num" style="left: 0;">3</td>
+          <td class="freeze cell" style="left: 46px;">KT-05</td>
+          <td class="freeze cell wide" style="left: 136px;">Kim tiêm 5ml có màng chống bắn</td>
+          <td class="freeze cell narrow">Cái</td>
+          <td class="cell readonly wide">Kim 22G, xy-lanh 5ml, có màng</td>
+          <td class="cell readonly">Túi 100 cái</td>
+          <td class="cell readonly">Nipro, Terumo</td>
+          <td class="cell wide">Kim 22G, xy-lanh 5ml, có màng chống bắn</td>
+          <td class="cell">Đúng chuẩn</td>
+          <td class="cell"></td>
+          <td class="cell wide">Kim 22G, xy-lanh 5ml, có màng</td>
+          <td class="cell">—</td>
+          <td class="cell"></td>
+          <td class="cell wide readonly">—</td>
+          <td class="cell readonly">—</td>
+          <td class="cell readonly">—</td>
+          <td class="cell num readonly">3.200</td>
+          <td class="cell num readonly">4.800</td>
+          <td class="cell num readonly">5.000</td>
+          <td class="cell num readonly">5.400</td>
+          <td class="cell num readonly">5.900</td>
+          <td class="cell num readonly">6.300</td>
+          <td class="cell num" style="background:#fee2e2">6.500 ⚠</td>
+          <td class="cell num" style="background:#fee2e2">6.500</td>
+          <td class="cell num readonly">1.950</td>
+          <td class="cell">Tự nhập (ngoài P75)</td>
+          <td class="cell wide" style="background:#fef2f2"><em class="text-red-600">⚠ Bắt buộc ghi lý do — chưa nhập</em></td>
+          <td class="cell num">2.100</td>
+          <td class="cell num readonly">1.980</td>
+          <td class="cell num readonly">13.650.000</td>
+          <td class="cell">Nipro VN</td>
+          <td class="cell"><span class="badge badge-green">Đậu</span></td>
+          <td class="cell"><span class="badge badge-green">Đậu</span></td>
+          <td class="cell"><span class="badge badge-green">Đậu</span></td>
+          <td class="cell"><span class="badge badge-green">TRÚNG</span></td>
+          <td class="cell wide">Tăng do khoa mở thêm 2 giường ICU</td>
+          <td class="cell wide">Chờ khoa xác nhận sự kiện nhu cầu</td>
+          <td class="cell">⚠</td>
+        </tr>
+
+        <!-- Row 4 - partial fail -->
+        <tr class="row-partial">
+          <td class="freeze cell num" style="left: 0;">4</td>
+          <td class="freeze cell" style="left: 46px;">KT-06</td>
+          <td class="freeze cell wide" style="left: 136px;">Kim tiêm 5ml thường</td>
+          <td class="freeze cell narrow">Cái</td>
+          <td class="cell readonly wide">Kim 22G, xy-lanh 5ml</td>
+          <td class="cell readonly">Túi 100 cái</td>
+          <td class="cell readonly">Nipro, Terumo</td>
+          <td class="cell wide">Kim 22G, xy-lanh 5ml</td>
+          <td class="cell"></td>
+          <td class="cell"></td>
+          <td class="cell wide">Kim 22G, xy-lanh 5ml</td>
+          <td class="cell"></td>
+          <td class="cell"></td>
+          <td class="cell wide readonly">—</td>
+          <td class="cell readonly">—</td>
+          <td class="cell readonly">—</td>
+          <td class="cell num readonly">1.400</td>
+          <td class="cell num readonly">2.100</td>
+          <td class="cell num readonly">2.200</td>
+          <td class="cell num readonly">2.500</td>
+          <td class="cell num readonly">2.800</td>
+          <td class="cell num readonly">3.000</td>
+          <td class="cell num">2.400</td>
+          <td class="cell num" style="background:#fef3c7">1.200 → điều chỉnh ↓</td>
+          <td class="cell num readonly">720</td>
+          <td class="cell">P50</td>
+          <td class="cell wide readonly">—</td>
+          <td class="cell num">1.550</td>
+          <td class="cell num readonly">1.420</td>
+          <td class="cell num readonly">1.860.000</td>
+          <td class="cell">Terumo VN</td>
+          <td class="cell"><span class="badge badge-green">Đậu</span></td>
+          <td class="cell"><span class="badge badge-red">Rớt</span></td>
+          <td class="cell">—</td>
+          <td class="cell"><span class="badge badge-yellow">RỚT 1 PHẦN</span></td>
+          <td class="cell wide">Đã chuyển 1.200 sang KT-05 (cùng MQ Kim tiêm 5ml)</td>
+          <td class="cell wide">Confirm với khoa: mã tương đương KT-05 vẫn trúng</td>
+          <td class="cell">🔁</td>
+        </tr>
+
+        <!-- Row 5 - locked full row -->
+        <tr class="row-locked">
+          <td class="freeze cell num" style="left: 0;">5</td>
+          <td class="freeze cell" style="left: 46px;">OT-11</td>
+          <td class="freeze cell wide" style="left: 136px;">Ống thông tiểu Foley 16F 2 nhánh silicon</td>
+          <td class="freeze cell narrow">Cái</td>
+          <td class="cell readonly wide">Silicon 100%, 2 nhánh</td>
+          <td class="cell readonly">Túi vô trùng</td>
+          <td class="cell readonly">Bard, Coloplast</td>
+          <td class="cell wide">Silicon 100%, 2 nhánh, dây dài ≥40cm</td>
+          <td class="cell">—</td>
+          <td class="cell"></td>
+          <td class="cell wide">Silicon 100%, 2 nhánh, dây dài ≥40cm</td>
+          <td class="cell"></td>
+          <td class="cell"></td>
+          <td class="cell wide locked">Silicon 100%, 2 nhánh, dây dài ≥40cm <span class="lock-badge">🔒</span></td>
+          <td class="cell locked">10/07/2026</td>
+          <td class="cell locked">BB-2026-098</td>
+          <td class="cell num readonly">180</td>
+          <td class="cell num readonly">280</td>
+          <td class="cell num readonly">300</td>
+          <td class="cell num readonly">340</td>
+          <td class="cell num readonly">380</td>
+          <td class="cell num readonly">410</td>
+          <td class="cell num">340</td>
+          <td class="cell num">340</td>
+          <td class="cell num readonly">102</td>
+          <td class="cell">P75</td>
+          <td class="cell wide readonly">—</td>
+          <td class="cell num">185.000</td>
+          <td class="cell num readonly">172.000</td>
+          <td class="cell num readonly">62.900.000</td>
+          <td class="cell">Bard VN</td>
+          <td class="cell"><span class="badge badge-green">Đậu</span></td>
+          <td class="cell"><span class="badge badge-green">Đậu</span></td>
+          <td class="cell"><span class="badge badge-green">Đậu</span></td>
+          <td class="cell"><span class="badge badge-green">TRÚNG</span></td>
+          <td class="cell wide">Khoa dùng đều tháng</td>
+          <td class="cell wide">Đã lock — chờ trình ký</td>
+          <td class="cell"></td>
+        </tr>
+
+        <!-- Row 6 - failed completely, moved to giỏ rớt -->
+        <tr class="row-failed">
+          <td class="freeze cell num" style="left: 0;">6</td>
+          <td class="freeze cell" style="left: 46px;">OT-12</td>
+          <td class="freeze cell wide" style="left: 136px;">Ống thông tiểu Foley 14F 2 nhánh latex</td>
+          <td class="freeze cell narrow">Cái</td>
+          <td class="cell readonly wide">Latex, 2 nhánh</td>
+          <td class="cell readonly">Túi vô trùng</td>
+          <td class="cell readonly">—</td>
+          <td class="cell wide">Latex, 2 nhánh, dây ≥40cm</td>
+          <td class="cell"></td>
+          <td class="cell"></td>
+          <td class="cell wide">Latex, 2 nhánh, dây ≥40cm</td>
+          <td class="cell"></td>
+          <td class="cell"></td>
+          <td class="cell wide readonly">—</td>
+          <td class="cell readonly">—</td>
+          <td class="cell readonly">—</td>
+          <td class="cell num readonly">120</td>
+          <td class="cell num readonly">180</td>
+          <td class="cell num readonly">200</td>
+          <td class="cell num readonly">230</td>
+          <td class="cell num readonly">260</td>
+          <td class="cell num readonly">280</td>
+          <td class="cell num">220</td>
+          <td class="cell num">220</td>
+          <td class="cell num readonly">66</td>
+          <td class="cell">P50</td>
+          <td class="cell wide readonly">—</td>
+          <td class="cell num">120.000</td>
+          <td class="cell num readonly">115.000</td>
+          <td class="cell num readonly">26.400.000</td>
+          <td class="cell">—</td>
+          <td class="cell"><span class="badge badge-red">Rớt</span></td>
+          <td class="cell"><span class="badge badge-red">Rớt</span></td>
+          <td class="cell"><span class="badge badge-red">Rớt</span></td>
+          <td class="cell"><span class="badge badge-red">RỚT HOÀN TOÀN</span></td>
+          <td class="cell wide">Đã chuyển vào giỏ rớt — chờ khoa add vào bổ sung T10/2026</td>
+          <td class="cell wide">Không có mã tương đương thay thế</td>
+          <td class="cell">↩</td>
+        </tr>
+
+        <!-- Row placeholder for scrolling -->
+        <tr><td class="freeze cell num" style="left: 0;">7</td><td class="freeze cell" style="left: 46px;">KG-08</td><td class="freeze cell wide" style="left: 136px;">Kim gây tê tủy sống 25G</td><td class="freeze cell narrow">Cái</td><td class="cell readonly wide">25G × 90mm, đầu Quincke</td><td class="cell readonly">Túi 25 cái</td><td class="cell readonly">B.Braun</td><td class="cell wide">25G × 90mm, đầu Quincke</td><td class="cell"></td><td class="cell"></td><td class="cell wide">25G × 90mm</td><td class="cell"></td><td class="cell"></td><td class="cell wide readonly">—</td><td class="cell readonly">—</td><td class="cell readonly">—</td><td class="cell num readonly">90</td><td class="cell num readonly">140</td><td class="cell num readonly">150</td><td class="cell num readonly">170</td><td class="cell num readonly">200</td><td class="cell num readonly">220</td><td class="cell num">170</td><td class="cell num">170</td><td class="cell num readonly">51</td><td class="cell">P75</td><td class="cell wide readonly">—</td><td class="cell num">75.000</td><td class="cell num readonly">70.000</td><td class="cell num readonly">12.750.000</td><td class="cell">B.Braun VN</td><td class="cell">Chưa</td><td class="cell">Chưa</td><td class="cell">Chưa</td><td class="cell"><span class="badge badge-blue">Chờ thầu</span></td><td class="cell wide">—</td><td class="cell wide">—</td><td class="cell"></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Right panel: audit log -->
+  <aside class="w-80 shrink-0 border-l border-slate-200 bg-white overflow-auto">
+    <div class="px-3 py-2 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-sm font-semibold text-slate-800">Lịch sử ô đang chọn</h3>
+      <button class="text-slate-400 hover:text-slate-700 text-lg">×</button>
+    </div>
+    <div class="px-3 py-2 text-xs text-slate-500 border-b border-slate-100">
+      <div class="font-medium text-slate-700">GT-02 · TSKT PĐD điều chỉnh</div>
+      <div class="mt-0.5">Dòng 2 · Cột "TSKT PĐD điều chỉnh"</div>
+    </div>
+    <div class="px-3 py-3">
+      <div class="audit-log-item pdd">
+        <div class="text-[10.5px] text-slate-500">Hôm nay 14:22 · Trần Hiền (PĐD)</div>
+        <div class="text-xs text-slate-800 mt-0.5">Đang gõ: <em>"Nitrile không bột, AQL 1.5, độ dày 0.08-0.12mm"</em></div>
+      </div>
+      <div class="audit-log-item pdd">
+        <div class="text-[10.5px] text-slate-500">Hôm nay 11:04 · Trần Hiền (PĐD)</div>
+        <div class="text-xs text-slate-800 mt-0.5">
+          <div class="line-through text-slate-400">Nitrile không bột, AQL 1.5</div>
+          <div>Nitrile không bột, AQL 1.5, độ dày ≥0.08mm</div>
+        </div>
+      </div>
+      <div class="audit-log-item dvsd">
+        <div class="text-[10.5px] text-slate-500">Hôm qua 16:47 · Nguyễn Văn A (Khoa Nội)</div>
+        <div class="text-xs text-slate-800 mt-0.5">
+          <div class="line-through text-slate-400">Latex không bột</div>
+          <div>Nitrile không bột, AQL 1.5</div>
+        </div>
+      </div>
+      <div class="audit-log-item dvsd">
+        <div class="text-[10.5px] text-slate-500">02/08 09:12 · Nguyễn Văn A (Khoa Nội)</div>
+        <div class="text-xs text-slate-800 mt-0.5">Tạo ô (submit giỏ): trống</div>
+      </div>
+    </div>
+
+    <div class="px-3 py-2 border-t border-slate-200 bg-slate-50">
+      <h4 class="text-xs font-semibold text-slate-700 mb-1">Ai đang xem trang này</h4>
+      <div class="flex flex-col gap-1 text-xs">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span>Trần Hiền (PĐD) · bạn</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span>Nguyễn Văn A (Khoa Nội)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="px-3 py-2 border-t border-slate-200 text-xs">
+      <h4 class="font-semibold text-slate-700 mb-1">Chú thích màu</h4>
+      <div class="space-y-1 text-slate-600">
+        <div><span class="inline-block w-3 h-3 rounded-sm bg-slate-100 border border-slate-300 mr-1 align-middle"></span> Chỉ đọc (từ danh mục / công thức)</div>
+        <div><span class="inline-block w-3 h-3 rounded-sm bg-indigo-50 border border-indigo-200 mr-1 align-middle"></span> Đã lock (PĐD lock)</div>
+        <div><span class="inline-block w-3 h-3 rounded-sm bg-amber-50 border border-amber-200 mr-1 align-middle"></span> Dòng đã lock</div>
+        <div><span class="inline-block w-3 h-3 rounded-sm bg-orange-50 border border-orange-200 mr-1 align-middle"></span> Cảnh báo / cần chỉnh</div>
+        <div><span class="inline-block w-3 h-3 rounded-sm bg-red-50 border border-red-200 mr-1 align-middle"></span> Rớt hoàn toàn</div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="bg-slate-800 text-slate-300 text-xs px-4 py-1.5 flex items-center justify-between shrink-0">
+  <div>47 mã hàng · 8 mã QL · 5 cột đã lock · 0 dòng đã lock</div>
+  <div>Auto save: bật · Sync với Danh mục tổng hợp: bật</div>
+</div>
+
+</body>
+</html>

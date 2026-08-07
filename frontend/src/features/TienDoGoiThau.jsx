@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
+  Bell,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
+  ClipboardCheck,
   PackagePlus,
   Plus,
   Search,
+  Users,
   XCircle,
 } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
@@ -58,6 +61,8 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
   const [dangLuuRot, setDangLuuRot] = useState(false);
   const [dotBoSungChon, setDotBoSungChon] = useState({});
   const [dangChuyen, setDangChuyen] = useState(null);
+  const [tab, setTab] = useState("theo_goi"); // "theo_goi" | "gio_rot_toan_vien" (PĐD)
+  const [khoaDaCopy, setKhoaDaCopy] = useState(null);
 
   const tai = useCallback(async () => {
     setDangTai(true);
@@ -109,6 +114,48 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
     () => laPdd ? goi : goi.filter((g) => (kqTheoGoi.get(g.id) || []).length > 0),
     [goi, kqTheoGoi, laPdd]
   );
+
+  // Giỏ rớt toàn viện (mục 5) — PĐD theo dõi khoa nào CÒN mã rớt chưa xử lý
+  // (chưa đẩy hết SL, chưa chuyển sang giỏ bổ sung) và đã bao nhiêu ngày.
+  const gioRotToanVien = useMemo(() => {
+    if (!laPdd) return [];
+    const theoKhoa = new Map();
+    ketQua.forEach((r) => {
+      if (!theoKhoa.has(r.don_vi)) theoKhoa.set(r.don_vi, { khoa: r.don_vi, chuaXuLy: [] });
+      if (!r.da_xu_ly) theoKhoa.get(r.don_vi).chuaXuLy.push(r);
+    });
+    return [...theoKhoa.values()]
+      .filter((x) => x.chuaXuLy.length > 0)
+      .map((x) => {
+        const moc = x.chuaXuLy
+          .map((r) => new Date(r.cap_nhat_luc).getTime())
+          .filter((t) => Number.isFinite(t));
+        const ngayCham = moc.length ? Math.floor((Date.now() - Math.min(...moc)) / 86_400_000) : 0;
+        return {
+          khoa: x.khoa,
+          soMa: new Set(x.chuaXuLy.map((r) => r.ma_hang)).size,
+          ngayCham,
+          maHang: [...new Set(x.chuaXuLy.map((r) => r.ma_hang))],
+        };
+      })
+      .sort((a, b) => b.ngayCham - a.ngayCham);
+  }, [ketQua, laPdd]);
+
+  const sinhTinNhacNho = (x) =>
+    `[Nhắc xử lý mã rớt thầu — ${x.khoa}]\n` +
+    `Còn ${x.soMa} mã rớt chưa xử lý, cách đây ${x.ngayCham} ngày.\n` +
+    `Mã: ${x.maHang.join(", ")}\n` +
+    `Vào "Tiến độ gói thầu" hoặc "Danh mục đề xuất" để đẩy số lượng sang mã tương đương cùng mã quản lý, hoặc chuyển sang đợt bổ sung gần nhất.`;
+
+  const copyNhacNho = async (x) => {
+    try {
+      await navigator.clipboard.writeText(sinhTinNhacNho(x));
+      setKhoaDaCopy(x.khoa);
+      window.setTimeout(() => setKhoaDaCopy((cu) => (cu === x.khoa ? null : cu)), 2000);
+    } catch {
+      setLoi("Không copy được — trình duyệt chặn quyền clipboard.");
+    }
+  };
 
   const taoGoi = async () => {
     setLoi("");
@@ -213,8 +260,24 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
     const local = docGioDeXuat(khoa, dotDich.id);
     const gio = { ...(trenServer?.noi_dung || {}), ...local };
     const tuThang = Number(dotDich.thang_moc) || 1;
+    // Mã rớt chuyển sang gói bổ sung đứng ĐỘC LẬP trong đợt mới (không kéo
+    // theo mã tương đương nào khác của cùng mã quản lý ở đây — khoa có thể tự
+    // thêm nếu muốn qua màn nhập bình thường). Vì vậy "tổng mã quản lý" của
+    // MỤC NÀY tự bằng chính số lượng của nó, không copy so_luong_ma_quan_ly
+    // cũ từ đợt 18T gốc (330 chẳng hạn) — số đó không còn ý nghĩa ở đợt mới,
+    // giữ lại sẽ làm sai lệch "Tổng mã quản lý" hiển thị trên giỏ.
+    // BUG ĐÃ SỬA 06/08/2026 (phát hiện qua test loop-engineering): thiếu hẳn
+    // soLuongMaQuanLy/dvtMaQuanLy/heSoQuyDoi/bangQuyDoi khiến giỏ hiện
+    // "Tổng mã quản lý: NaN" và nếu gửi thật sẽ ghi so_luong_ma_quan_ly=null
+    // vào proposals (Function1.jsx dòng ~1304: "nhap.soLuongMaQuanLy || null").
+    const slChuyen = Math.round(Number(r.so_luong_de_xuat) || 0);
     gio[r.ma_hang] = {
-      soLuong: String(Math.round(Number(r.so_luong_de_xuat) || 0)),
+      soLuong: String(slChuyen),
+      soLuongMaQuanLy: slChuyen,
+      soLuongQuyDoi: slChuyen,
+      dvtMaQuanLy: r.dvt || null,
+      heSoQuyDoi: 1,
+      bangQuyDoi: r.dvt ? { [r.dvt]: 1 } : null,
       tuThang,
       tuNam: Number(dotDich.nam),
       denThang: 12,
@@ -247,6 +310,15 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
       return;
     }
     ghiGioDeXuat(khoa, dotDich.id, gio);
+    // Đánh dấu đã xử lý cho Giỏ rớt toàn viện — không chặn luồng chính nếu lỗi
+    // (đã chuyển vào giỏ thành công, chỉ cờ "đã xử lý" ở PĐD bị trễ 1 nhịp).
+    const { error: loiXacNhan } = await supabase.rpc("xac_nhan_da_chuyen_bo_sung", {
+      p_goi_id: r.goi_id, p_ma_hang: r.ma_hang,
+    });
+    if (loiXacNhan) console.warn("Không đánh dấu được đã xử lý:", loiXacNhan.message);
+    setKetQua((prev) => prev.map((x) =>
+      x.goi_id === r.goi_id && x.ma_hang === r.ma_hang && x.don_vi === khoa
+        ? { ...x, da_xu_ly: true } : x));
     setDangChuyen(null);
     onChuyenGoiBoSung?.(dotDich.id);
   };
@@ -293,6 +365,53 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
       </div>
 
       {laPdd && (
+        <div className="flex gap-1.5 border-b border-slate-200">
+          <button onClick={() => setTab("theo_goi")}
+            className={`px-3 py-1.5 text-xs font-medium border-b-2 -mb-px ${
+              tab === "theo_goi" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"
+            }`}>
+            Theo gói thầu
+          </button>
+          <button onClick={() => setTab("gio_rot_toan_vien")}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-b-2 -mb-px ${
+              tab === "gio_rot_toan_vien" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"
+            }`}>
+            <Users size={13} /> Giỏ rớt toàn viện
+            {gioRotToanVien.length > 0 && (
+              <span className="rounded-full bg-red-600 px-1.5 text-[10px] font-semibold text-white">{gioRotToanVien.length}</span>
+            )}
+          </button>
+        </div>
+      )}
+
+      {tab === "gio_rot_toan_vien" && laPdd ? (
+        <div className="space-y-2">
+          {gioRotToanVien.length === 0 ? (
+            <div className="rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-400">
+              Không có khoa nào còn mã rớt chưa xử lý.
+            </div>
+          ) : gioRotToanVien.map((x) => (
+            <div key={x.khoa} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-slate-800">{x.khoa}</div>
+                <div className="mt-0.5 text-xs text-slate-500">
+                  <span className={x.ngayCham >= 7 ? "font-medium text-red-700" : ""}>
+                    {x.soMa} mã rớt chưa xử lý · {x.ngayCham} ngày
+                  </span>
+                  {" · "}{x.maHang.slice(0, 4).join(", ")}{x.maHang.length > 4 ? "…" : ""}
+                </div>
+              </div>
+              <button onClick={() => copyNhacNho(x)}
+                className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-100">
+                {khoaDaCopy === x.khoa ? <><ClipboardCheck size={13} /> Đã copy</> : <><Bell size={13} /> Nhắc nhở</>}
+              </button>
+            </div>
+          ))}
+          <p className="text-[11px] text-slate-400">
+            Bấm "Nhắc nhở" để copy sẵn tin nhắn, tự dán sang Zalo/Email/Teams — hệ thống không tự gửi.
+          </p>
+        </div>
+      ) : laPdd && (
         moTao ? (
           <div className="space-y-3 rounded-lg border border-teal-200 bg-white p-3">
             <div className="grid gap-2 md:grid-cols-2">
@@ -338,7 +457,7 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
         </div>
       )}
 
-      {goiHienThi.length === 0 ? (
+      {tab === "theo_goi" && (goiHienThi.length === 0 ? (
         <div className="rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-400">
           {laPdd ? "Chưa có gói thầu nào để theo dõi." : "Khoa chưa có mã nào bị rớt thầu."}
         </div>
@@ -528,7 +647,7 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
             )}
           </section>
         );
-      })}
+      }))}
     </div>
   );
 }

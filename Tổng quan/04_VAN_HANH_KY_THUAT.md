@@ -5,7 +5,7 @@
 | Thư mục | Nội dung |
 |---|---|
 | `frontend/` | React/Vite, giao diện và xuất Word/Excel |
-| `backend/sql/` | baseline schema/RLS và patch A2→ZA |
+| `backend/sql/` | baseline schema/RLS và patch A2→ZL (chạy theo thứ tự tên) |
 | `backend/scripts/` | nạp, sao lưu, dọn staging, tạo dữ liệu |
 | `backend/tests/` | contract và smoke test |
 | `database/` | file Excel nguồn |
@@ -52,8 +52,29 @@ cd "/Users/tranhien/Downloads/9.vtyt"
 backend/.venv/bin/pytest -q backend/tests
 ```
 
+`npm run test:formula` hiện chạy 5 bộ, đều là logic thuần (không cần DB):
+
+| File | Chốt chặn điều gì |
+|---|---|
+| `congThucSoLuong.test.mjs` | TSB/P50–P95, loại tháng nghi hết hàng |
+| `deXuatMaQuanLy.test.mjs` | quy đổi ĐVT và cộng theo mã quản lý |
+| `tongHopDeXuat.test.mjs` | gom MQ→mã hàng→khoa, tỉ trọng cộng đúng 100%, tổng cây = tổng dữ liệu thô |
+| `xuatExcelDong.test.mjs` | cột đã ẩn không lọt vào Excel; khoa không đề xuất để **trống** chứ không phải 0 |
+| `cotDong.test.mjs` | cột năm sinh động; giữ "Theo 18T"; đọc tên cột từ biểu mẫu (kể cả ô richText) |
+
 Ngoài test tự động, phải smoke test hai vai trò ĐVSD/PĐD trên staging và kiểm
-Word/Excel thật.
+Word/Excel thật — **mở file .xlsx tải về bằng openpyxl để đối chiếu**, đừng chỉ
+tin màn hình:
+
+```bash
+cd "/Users/tranhien/Downloads/9.vtyt"
+backend/.venv/bin/python3 -c "
+import openpyxl; ws = openpyxl.load_workbook('<file>.xlsx').worksheets[0]
+print(ws.max_column, [ws.cell(row=4, column=c).value for c in range(1, ws.max_column+1)])"
+```
+
+Lưu ý khi tự động hoá trình duyệt: Chrome **chặn tải file thứ hai liên tiếp**
+trong cùng một tab, nên muốn kiểm nhiều bản xuất thì mỗi lần một tab mới.
 
 ## 4. Staging
 
@@ -193,6 +214,81 @@ Backup chưa thử restore không được coi là backup. Phải diễn tập t
 14. Không in service key/token ra log hoặc ảnh chụp.
 15. Chế độ xóa test phải khóa bằng project ref staging ở cả frontend và RPC;
     không dựa riêng vào việc ẩn/hiện nút.
+16. `KhungGoiThau.jsx` định nghĩa 3 gói con bổ sung (`bs-t1`/`bs-t5`/`bs-t9`,
+    dùng cho link `#tong-hop-pdd/...`) nhưng `GOI_ID_MAP` trong `cotChuan.js`
+    chỉ có một khoá `"bo-sung"` — mọi màn dùng `GOI_ID_MAP` (`TongHopPdd.jsx`,
+    `DanhMucDeXuatKhoa.jsx`) không phân biệt được 3 đợt bổ sung, rơi về mặc
+    định `18t-dung-chung` nếu goiId không khớp key nào. Phát hiện 07/08/2026
+    khi nối link "Xem Danh mục đề xuất của khoa" ở `Function1.jsx` — chưa sửa,
+    cần bàn có nên tách `GOI_ID_MAP` theo từng đợt bổ sung hay không.
+17. Cột `position: sticky` để freeze khi cuộn ngang: z-index không chỉ cần
+    "cao hơn" theo giá trị số, còn phải thắng theo CSS specificity. Một rule
+    chung kiểu `thead tr.col-row th { z-index: 22 }` (nhiều phần tử selector)
+    có thể thắng `th.freeze { z-index: 30 }` (ít phần tử hơn dù giá trị số
+    lớn hơn) — freeze cột thêm vào (không phải cột freeze tĩnh gốc) bị cột
+    thường cuộn qua đè mất header, dễ tưởng nhầm là bug logic freeze chứ
+    không phải CSS. Phát hiện 07/08/2026 ở `DanhMucDeXuatKhoa.jsx` khi thêm
+    freeze động qua patch_zh (2 cột freeze tĩnh gốc không lộ bug vì luôn
+    liền kề đầu bảng). Sửa bằng rule đặc hiệu hơn, không chỉ tăng số
+    z-index. Cần rà thêm `TongHopPdd.jsx`/`QuaTrinhDeXuat.jsx` nếu có freeze
+    động tương tự.
+18. **Bảng có select/insert/update nhưng QUÊN policy DELETE** — lỗi lặp lại 2
+    lần: `danh_muc_tong_hop_o` (patch_zd) và `danh_muc_khoa_cot_cau_hinh`
+    (patch_zh). Triệu chứng đúng như bẫy 5 nhưng khó thấy hơn: lệnh xoá trả
+    **HTTP 200** và PostgREST trả mảng rỗng, không có thông báo lỗi nào —
+    frontend tưởng đã xoá xong. Hậu quả thật: PĐD sửa đè một ô rồi **không có
+    đường lùi về số gốc**, và không dọn được dữ liệu sau kiểm thử.
+    ⇒ Khi tạo bảng có RLS, viết đủ **4** policy hoặc ghi rõ vì sao cố tình
+    thiếu. Ở frontend, sau khi xoá phải `.select()` và **đếm số dòng thực
+    xoá**, đừng tin mỗi HTTP status. Đã vá bằng `patch_zl`.
+19. Cột trong biểu mẫu Excel của bệnh viện hay có định dạng HỖN HỢP nên
+    ExcelJS trả `{richText:[...]}` chứ không phải chuỗi — `String(cell.value)`
+    ra `"[object Object]"` và tên cột trong file xuất bị hỏng. Dùng
+    `docChuTrongO()` trong `lib/tenCotBieuMau.js`.
+20. Cột dữ liệu theo NĂM không được đóng đinh trong code. Hai biểu mẫu gốc
+    soạn cho kỳ 2026-2027 nên chỉ có 2022→2025; dữ liệu HIS chạy tiếp sang
+    2026 là năm mới **rơi mất hoàn toàn** khỏi bảng và khỏi file xuất, năm
+    đang dở thì cộng thiếu tháng. Sinh cột theo đúng năm có trong dữ liệu
+    (`taoCotLichSu`/`suyRaNamCoDuLieu` trong `cotChuan.js`).
+
+## 6b. Dung lượng Supabase — dự án chỉ dùng gói FREE (500MB)
+
+Đo thật 07/08/2026: **142MB / 500MB**.
+
+| Bảng | Số dòng | Ghi chú |
+|---|---|---|
+| `usage_history_current` | **141.623** | chiếm gần như toàn bộ dung lượng |
+| `vat_tu` | 3.327 | gần như cố định |
+| `nhom_ky_thuat` | 1.369 | gần như cố định |
+| còn lại | < 100 | không đáng kể |
+
+**Tốc độ tăng:** ~7.974 cặp khoa–mã có phát sinh × 12 tháng ≈ **96.000
+dòng/năm** cho lịch sử HIS. Giữ nguyên mọi thứ theo tháng thì **2–3 năm nữa
+đụng trần**.
+
+**Hai quyết định giữ dự án ở lại gói free:**
+
+1. **Lưu ô theo JSONB, không theo EAV.** Bảng `danh_muc_khoa_o` (patch_zm)
+   dùng 1 dòng cho mỗi (gói con, năm, khoa, mã hàng) với cột `jsonb` gom mọi ô
+   đã sửa — thay vì mỗi ô một dòng như `danh_muc_tong_hop_o`:
+
+   | Cách | dòng/đợt | 4 đợt/năm |
+   |---|---|---|
+   | EAV (mỗi ô 1 dòng) | 62 × ~200 × ~15 ≈ **186.000** | ~744.000 + audit |
+   | **JSONB** | 62 × ~200 ≈ **12.400** | ~50.000 |
+
+   EAV sẽ ăn hết 500MB trong khoảng một năm. **Bảng mới lưu dữ liệu rộng theo
+   khoa thì mặc định chọn JSONB.**
+
+2. **Nén lịch sử HIS cũ** (`patch_zn`). Công thức TSB chỉ dùng cửa sổ 24
+   tháng, nên dữ liệu cũ hơn chỉ cần TỔNG NĂM để hiển thị cột "SL năm XXXX".
+   Giữ 36 tháng chi tiết, cũ hơn gộp về `usage_history_nam` → 12 dòng còn 1.
+   **Chưa cần chạy ở mức 142MB**; xem "KHI NÀO CHẠY" cuối file patch.
+
+**Nút "Kết thúc đợt & dọn"** (Bàn điều hành, chỉ PĐD) xoá dữ liệu LÀM VIỆC của
+một gói con khi đợt xong hẳn. Chốt 07/08/2026: **xuất Excel KHÔNG xoá gì** —
+xuất thử/xuất nhầm không được làm mất dữ liệu. Nút này không đụng `proposals`,
+lịch sử HIS, bản Word, kết quả thầu hay audit.
 
 ## 7. Quy trình sửa
 

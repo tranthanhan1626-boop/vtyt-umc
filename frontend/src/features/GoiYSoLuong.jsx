@@ -18,10 +18,13 @@ import { fmt } from "../components/ChartDongBo";
 // Cũng KHÔNG chặn gõ ngoài dải: đây là hàng rào mức phục vụ, không phải giới
 // hạn quyền chuyên môn.
 
-export default function GoiYSoLuong({ lichSu, thieu, H, abc, giaTri, onChon }) {
+export default function GoiYSoLuong({ lichSu, thieu, H, abc, giaTri, onChon, thangCuoiHIS }) {
   const [muc, setMuc] = useState(MUC_MAC_DINH);
 
-  const ch = useMemo(() => chuoiNhuCau(lichSu, thieu), [lichSu, thieu]);
+  const ch = useMemo(
+    () => chuoiNhuCau(lichSu, thieu, 24, thangCuoiHIS),
+    [lichSu, thieu, thangCuoiHIS],
+  );
   const kq = useMemo(() => khoangPhanVi(ch, H), [ch, H]);
   const mocK = useMemo(() => soTheoHeSoK(ch, H, abc), [ch, H, abc]);
 
@@ -106,14 +109,26 @@ export default function GoiYSoLuong({ lichSu, thieu, H, abc, giaTri, onChon }) {
         </p>
       )}
 
-      {kq.soThangBiLoai > 0 && (
+      {kq.soThangBiLoaiBangChung > 0 && (
         <p className="mt-1.5 flex items-start gap-1.5 text-[11px] leading-snug text-amber-800">
           <AlertTriangle size={12} className="mt-0.5 shrink-0" />
           <span>
-            Đã <b>loại {kq.soThangBiLoai} tháng</b> khoa báo hết hàng / cấp hạn chế mà
+            Đã <b>loại {kq.soThangBiLoaiBangChung} tháng</b> khoa báo hết hàng / cấp hạn chế mà
             không ghi số yêu cầu. Những tháng đó số xuất kho là mức trần của kho,
             không phải nhu cầu — tính vào sẽ kéo gợi ý xuống thấp giả tạo.
             Lần sau báo thiếu nhớ điền <b>số yêu cầu</b> và <b>số được cấp</b>.
+          </span>
+        </p>
+      )}
+
+      {kq.soThangBiLoaiKhe > 0 && (
+        <p className="mt-1.5 flex items-start gap-1.5 text-[11px] leading-snug text-amber-800">
+          <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+          <span>
+            Đã <b>loại {kq.soThangBiLoaiKhe} tháng</b> nghi hết hàng (dải ≥3 tháng liên
+            tiếp không xuất kho, ở giữa hai giai đoạn có dùng) — chưa có sổ báo thiếu
+            xác nhận. Đề nghị <b>xác nhận với khoa</b>: đây là hết hàng hay không có
+            chỉ định/mặt bệnh giai đoạn đó, rồi ghi lại vào sổ thiếu hàng cho đợt sau.
           </span>
         </p>
       )}

@@ -44,6 +44,9 @@ export const MUC_MAC_DINH = "P75";
 /** Số tháng sạch tối thiểu để σ có nghĩa. Dưới mức này chỉ hiện P50. */
 const TOI_THIEU_THANG = 6;
 const TSB_ALPHA = 0.30;
+/** Dải >= NGUONG_KHE tháng liên tiếp =0 NẰM GIỮA hai giai đoạn có dùng bị coi
+ * là nghi hết hàng, loại khỏi thống kê. Xem chú thích dài trong chuoiNhuCau(). */
+const NGUONG_KHE = 3;
 
 /**
  * Teunter–Syntetos–Babai (TSB): cập nhật riêng quy mô lần dùng và xác suất
@@ -71,14 +74,17 @@ export function mucDuBaoTsb(values, alpha = TSB_ALPHA) {
 
 /**
  * Dựng chuỗi nhu cầu theo tháng đã PHỤC HỒI, từ:
- *   lichSuMotMa — {nam: number[12]} số xuất kho (Function1 đã tải, lọc theo khoa)
- *   thieuMotMa  — {"nam-thang": {thieu_co_bang_chung, bi_nen}} từ v_thieu_theo_thang
+ *   lichSuMotMa   — {nam: number[12]} số xuất kho (Function1 đã tải, lọc theo khoa)
+ *   thieuMotMa    — {"nam-thang": {thieu_co_bang_chung, bi_nen}} từ v_thieu_theo_thang
+ *   thangCuoiHIS  — tháng HIS mới nhất TOÀN VIỆN (month-id = nam*12+thang-1),
+ *                   Function1 tải một lần từ MAX(nam,thang) của v_usage_monthly
+ *                   không lọc mã/khoa. null thì lùi về hành vi cũ (xem dưới).
  *
  * Trả về các tháng DÙNG ĐƯỢC cho thống kê. Tháng bị nén mà không đo được phần
  * thiếu thì LOẠI HẲN — coi nó là một tháng nhu cầu thấp chính là cách dạy mô
  * hình tái tạo giới hạn cung ứng cũ.
  */
-export function chuoiNhuCau(lichSuMotMa, thieuMotMa, soThangNhin = 24) {
+export function chuoiNhuCau(lichSuMotMa, thieuMotMa, soThangNhin = 24, thangCuoiHIS = null) {
   if (!lichSuMotMa) return null;
 
   // Gộp mốc tháng từ CẢ HAI nguồn.
@@ -97,35 +103,81 @@ export function chuoiNhuCau(lichSuMotMa, thieuMotMa, soThangNhin = 24) {
     mocThieu.set(nam * 12 + (thg - 1), v);
   });
 
-  const tatCa = [...new Set([...xuat.keys(), ...mocThieu.keys()])].sort((a, b) => a - b);
-  if (tatCa.length === 0) return null;
-
-  // Mốc cuối lấy theo LỊCH SỬ XUẤT KHO, không theo sổ thiếu hàng.
-  //
-  // Lý do: HIS nạp 2 lần/tuần và luôn trễ hơn sổ thiếu hàng (khoa báo thiếu
-  // ngay trong ngày). Một lần báo thiếu ở tháng HIS chưa nạp sẽ tạo ra một
-  // tháng "xuất kho = 0" giả — đó là THIẾU DỮ LIỆU chứ không phải dùng ít, và
-  // nó kéo tụt μ. Đo thật trên mã 66114: nếu tính cả tháng đó thì μ rơi từ
-  // 4.005 xuống 3.527 và P90 mất 9.000 đơn vị, hoàn toàn do một tháng chưa nạp.
   const coXuat = [...xuat.entries()].filter(([, v]) => v > 0).map(([m]) => m);
-  if (coXuat.length === 0) return null;
-  const cuoi = Math.max(...coXuat);
+  if (coXuat.length === 0 && thangCuoiHIS == null) return null;
+
+  // Mốc cuối cửa sổ PHẢI LÀ THÁNG HIS MỚI NHẤT CHUNG (thangCuoiHIS), KHÔNG
+  // PHẢI tháng gần nhất riêng của mã này.
+  //
+  // ⚠️ Bẫy đã mắc (đo trên mã 67340, gói Răng Hàm Mặt, 08/2026): lấy mốc cuối
+  // = tháng gần nhất CÓ xuất của riêng mã sẽ đẩy cửa sổ lùi lại cho kết thúc
+  // đúng vào các tháng DÙNG BÙ ngay sau khi hàng về (mã này có 8 tháng liền
+  // =0 giữa 11/2024-06/2025 rồi bùng lên 1.000-4.156/tháng) — công thức cũ
+  // neo cửa sổ đúng vào đỉnh bùng đó. Đo được trên CÙNG một chuỗi dữ liệu:
+  // mốc riêng mã cho P75=49.030 (2,75× mức 18 tháng đã dùng thật); mốc HIS
+  // chung cho P75=26.469 (1,49×). Không sửa quy tắc mốc cuối thì sẽ luôn có
+  // rủi ro này với bất kỳ mã nào có vài tháng cuối =0.
+  //
+  // Nếu Function1 chưa tải được thangCuoiHIS (lỗi mạng, quyền, v.v.) thì lùi
+  // về hành vi cũ để không chặn nhập liệu — công thức là thứ hỗ trợ.
+  const cuoi = thangCuoiHIS != null ? thangCuoiHIS : Math.max(...coXuat);
   const dau = cuoi - (soThangNhin - 1);
 
-  let soThangBiLoai = 0;
-  let coPhucHoi = false;
-  const sach = [];
-  // Duyệt LIÊN TỤC từng tháng trong cửa sổ hai năm. Tháng không có dòng xuất
-  // là mức 0, rất quan trọng với mã dùng gián đoạn; bỏ tháng 0 sẽ làm xác suất
-  // phát sinh và dự báo bị cao giả tạo.
+  // Giá trị từng tháng trong cửa sổ TRƯỚC khi loại bất cứ gì — cần đủ để dò
+  // đúng vị trí các khe nghi hết hàng bên dưới.
+  const theoThang = [];
   for (let m = dau; m <= cuoi; m += 1) {
     const t = mocThieu.get(m);
     const buDap = Number(t?.thieu_co_bang_chung || 0);
-    if (buDap > 0) coPhucHoi = true;
-    // Biết thiếu nhưng không đo được -> không dùng tháng này.
-    if (t?.bi_nen && buDap <= 0) { soThangBiLoai += 1; continue; }
-    sach.push((xuat.get(m) || 0) + buDap);
+    const biLoaiBangChung = !!(t?.bi_nen && buDap <= 0);
+    theoThang.push({ m, buDap, biLoaiBangChung, gtri: biLoaiBangChung ? 0 : (xuat.get(m) || 0) + buDap });
   }
+
+  const viTriCoDung = theoThang
+    .map((x, i) => (x.gtri > 0 ? i : -1))
+    .filter((i) => i >= 0);
+  const daySo = viTriCoDung[0];
+  const cuoiSo = viTriCoDung[viTriCoDung.length - 1];
+
+  // Khe nghi hết hàng: dải >= NGUONG_KHE tháng liên tiếp giá trị 0, NẰM GIỮA
+  // hai giai đoạn có dùng (không áp đầu/cuối cửa sổ — hai chỗ đó vẫn nhập
+  // nhằng giữa "chưa đưa vào dùng"/"ngừng dùng" và "đang hết hàng", không suy
+  // được từ hình dạng chuỗi số).
+  //
+  // Đã kiểm định trên 33.444-38.447 điểm chấm ngoài mẫu, dữ liệu thật 2024-
+  // 2026 (chon_cong_thuc_cho_dot_nay.py, chỉ chấm điểm mà kỳ tương lai không
+  // có dấu hiệu bị che): loại khe này đưa trung vị tỷ lệ dự báo/thực tế nhóm
+  // gián đoạn từ 0,84-0,92 lên 1,07, nhóm thưa từ 0,25 lên 0,86-1,08; tỷ lệ
+  // điểm bị dự báo THIẾU ở nhóm thưa giảm từ 80% xuống 48-54%.
+  const viTriKhe = new Set();
+  if (daySo != null && cuoiSo != null && cuoiSo > daySo) {
+    let i = daySo;
+    while (i <= cuoiSo) {
+      if (theoThang[i].gtri === 0) {
+        let j = i;
+        while (j <= cuoiSo && theoThang[j].gtri === 0) j += 1;
+        if (j - i >= NGUONG_KHE) for (let k = i; k < j; k += 1) viTriKhe.add(k);
+        i = j;
+      } else {
+        i += 1;
+      }
+    }
+  }
+
+  let soThangBiLoaiBangChung = 0;
+  let soThangBiLoaiKhe = 0;
+  let coPhucHoi = false;
+  const sach = [];
+  // Duyệt LIÊN TỤC từng tháng trong cửa sổ hai năm. Tháng không có dòng xuất
+  // là mức 0, rất quan trọng với mã dùng gián đoạn; bỏ tháng 0 LẺ sẽ làm xác
+  // suất phát sinh và dự báo bị cao giả tạo — chỉ khe NGHI HẾT HÀNG mới loại.
+  theoThang.forEach((x, i) => {
+    if (x.buDap > 0) coPhucHoi = true;
+    if (x.biLoaiBangChung) { soThangBiLoaiBangChung += 1; return; }
+    if (viTriKhe.has(i)) { soThangBiLoaiKhe += 1; return; }
+    sach.push(x.gtri);
+  });
+  const soThangBiLoai = soThangBiLoaiBangChung + soThangBiLoaiKhe;
 
   if (sach.length === 0) return null;
   const n = sach.length;
@@ -160,7 +212,8 @@ export function chuoiNhuCau(lichSuMotMa, thieuMotMa, soThangNhin = 24) {
     mu: muTsb, sigma, tangTruong,
     trungBinh6: mu6, trungBinh12: muGan,
     phuongPhap: "TSB", alpha: TSB_ALPHA,
-    soThang: n, soThangCoDung, soThangGan: gan.length, soThangBiLoai, coPhucHoi,
+    soThang: n, soThangCoDung, soThangGan: gan.length,
+    soThangBiLoai, soThangBiLoaiBangChung, soThangBiLoaiKhe, coPhucHoi,
     duLieuMong: soThangCoDung < TOI_THIEU_THANG,
     tong12: gan.reduce((a, b) => a + b, 0),
   };
@@ -216,14 +269,14 @@ export function viTriTrongDai(gt, kq) {
  * Trả null khi chưa đủ dữ liệu để tạo dải; trường hợp đó không được tự suy là
  * "ngoài khoảng" vì không có khoảng hợp lệ để đối chiếu.
  */
-export function danhGiaSoLuong(lichSu, thieu, H, giaTri) {
-  const ch = chuoiNhuCau(lichSu, thieu);
+export function danhGiaSoLuong(lichSu, thieu, H, giaTri, thangCuoiHIS = null) {
+  const ch = chuoiNhuCau(lichSu, thieu, 24, thangCuoiHIS);
   const kq = khoangPhanVi(ch, H);
   const so = Number(giaTri);
   if (!kq || !(so > 0)) return null;
   return {
     tu: kq.p50,
     den: kq.muc.P75,
-    ngoaiKhoang: so < kq.p50 || so > kq.muc.P75,
+    ngoaiKhoang: so > kq.muc.P75,
   };
 }

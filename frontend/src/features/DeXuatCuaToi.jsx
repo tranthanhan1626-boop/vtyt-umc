@@ -1,11 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { FileText, Package, Sheet, Trash2, Undo2, X } from "lucide-react";
+import { ExternalLink, FileText, Package, Sheet, Trash2, Undo2, X } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import { NHAN_TRANG_THAI, fmtNgayGio, khoaNhom } from "./DeXuatTongHop";
 import { NHAN_GOI_THAU } from "./Function1";
+import { GOI_ID_MAP } from "../lib/cotChuan";
 import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
+
+// Tra ngược nhãn gói con (r.goi, vd "GMHS") -> khoá goiId dùng cho route
+// #danh-muc-de-xuat/<goiId>/<khoa> (khớp GOI_ID_MAP trong cotChuan.js).
+const GOI_LABEL_SANG_ID = Object.fromEntries(
+  Object.entries(GOI_ID_MAP).filter(([, v]) => v.goi).map(([k, v]) => [v.goi, k])
+);
 
 const NHAN_LY_DO = {
   theo_lich_su: "Theo lịch sử sử dụng",
@@ -68,9 +75,30 @@ export default function DeXuatCuaToi({ profile, goi, onMoHoSo }) {
       const tt = [...new Set(g.items.map((i) => i.trang_thai))];
       // Lý do PĐD trả lại — hiện NGAY trên thẻ, không bắt khoa bấm vào mới thấy.
       const lyDo = [...new Set(g.items.map((i) => i.ly_do_tra_lai).filter(Boolean))];
-      return { ...g, trangThai: tt.length === 1 ? tt[0] : "hon_hop", lyDoTraLai: lyDo };
+      // goiId cho link "Danh mục đề xuất" toàn màn hình — chỉ tính được khi cả
+      // giỏ cùng 1 gói con (mua_sam_bo_sung không phân biệt theo r.goi, chỉ
+      // định thầu không có Danh mục đề xuất dạng này).
+      const mauMua = g.items[0]?.loai_mua_sam;
+      const goiSet = [...new Set(g.items.map((i) => i.goi).filter(Boolean))];
+      const goiId = mauMua === "mua_sam_bo_sung" ? "bo-sung"
+        : mauMua === "dau_thau_rong_rai" && goiSet.length === 1 ? GOI_LABEL_SANG_ID[goiSet[0]] || null
+        : null;
+      return { ...g, trangThai: tt.length === 1 ? tt[0] : "hon_hop", lyDoTraLai: lyDo, goiId };
     });
   }, [rows]);
+
+  // Danh mục đề xuất là TỔNG của mọi giỏ cùng gói con (không phải 1 file/giỏ)
+  // — DanhMucDeXuatKhoa.jsx đọc thẳng theo (khoa, goiId), tự gộp mọi giỏ đã
+  // gửi. Gom về đúng số gói con đang có giỏ để không lặp link trên từng thẻ.
+  const danhMucTheoGoi = useMemo(() => {
+    const map = new Map();
+    nhomLoc.forEach((g) => {
+      if (!g.goiId) return;
+      if (!map.has(g.goiId)) map.set(g.goiId, { goiId: g.goiId, donVi: g.don_vi, soGio: 0 });
+      map.get(g.goiId).soGio += 1;
+    });
+    return [...map.values()];
+  }, [nhomLoc]);
 
   const moXacNhan = (g) => {
     setXacNhanRut(g.key);
@@ -121,6 +149,18 @@ export default function DeXuatCuaToi({ profile, goi, onMoHoSo }) {
       <div className="text-sm text-slate-500 px-1">
         {nhomLoc.length} đề xuất đã gửi <span className="text-slate-400">({rows.length} mã hàng)</span>
       </div>
+      {danhMucTheoGoi.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2.5">
+          <span className="text-xs font-medium text-teal-900">Danh mục đề xuất của khoa (gộp mọi giỏ cùng gói con):</span>
+          {danhMucTheoGoi.map((d) => (
+            <a key={d.goiId} href={`#danh-muc-de-xuat/${d.goiId}/${encodeURIComponent(d.donVi)}`}
+              className="inline-flex items-center gap-1 rounded-md border border-teal-300 bg-white px-2.5 py-1.5 text-xs font-medium text-teal-800 hover:bg-teal-100">
+              <ExternalLink size={13} /> {GOI_ID_MAP[d.goiId]?.nhan || d.goiId}
+              {d.soGio > 1 && <span className="text-teal-500">({d.soGio} giỏ)</span>}
+            </a>
+          ))}
+        </div>
+      )}
       <div className="space-y-3">
         <AnimatePresence initial={false}>
         {nhomLoc.map((g) => {

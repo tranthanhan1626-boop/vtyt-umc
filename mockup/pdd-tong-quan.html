@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<title>Màn Phòng Điều dưỡng — Tổng quan (Mockup)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #f1f5f9; }
+  .card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; }
+  .stat { padding: 12px 14px; }
+  .stat .num { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; color: #0f172a; }
+  .stat .label { font-size: 11.5px; color: #64748b; margin-top: 2px; }
+  .timeline-step { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; padding: 8px 6px; }
+  .timeline-step .dot { width: 22px; height: 22px; border-radius: 50%; background: white; border: 2px solid #cbd5e1; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #64748b; }
+  .timeline-step.done .dot { background: #059669; border-color: #059669; color: white; }
+  .timeline-step.active .dot { background: #f59e0b; border-color: #f59e0b; color: white; box-shadow: 0 0 0 4px #fef3c7; }
+  .timeline-step .label { margin-top: 4px; font-size: 11px; color: #64748b; font-weight: 500; }
+  .timeline-step.active .label { color: #92400e; font-weight: 600; }
+  .timeline-step.done .label { color: #047857; }
+  .connector { flex: 1; height: 2px; background: #cbd5e1; margin-top: 15px; }
+  .connector.done { background: #059669; }
+  .badge { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; border-radius: 9999px; font-size: 10.5px; font-weight: 500; }
+  .badge-green { background: #d1fae5; color: #065f46; }
+  .badge-red { background: #fee2e2; color: #991b1b; }
+  .badge-yellow { background: #fef3c7; color: #92400e; }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+  .badge-slate { background: #e2e8f0; color: #334155; }
+  .tab { padding: 8px 14px; font-size: 13px; color: #64748b; border-bottom: 2px solid transparent; cursor: pointer; }
+  .tab.active { color: #0f172a; border-color: #0f766e; font-weight: 600; }
+  .tab-badge { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 9999px; background: #dc2626; color: white; font-size: 10px; font-weight: 600; }
+  .row-warn { background: #fffbeb !important; }
+  th { text-align: left; padding: 8px 10px; font-size: 11.5px; font-weight: 600; color: #475569; border-bottom: 1px solid #e2e8f0; background: #f8fafc; position: sticky; top: 0; }
+  td { padding: 8px 10px; font-size: 12.5px; color: #0f172a; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .expand-btn { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 4px; color: #64748b; }
+  .expand-btn:hover { background: #e2e8f0; }
+  .khoa-row td { background: #f8fafc; font-size: 12px; padding-top: 5px; padding-bottom: 5px; }
+  .khoa-row td.name { padding-left: 40px; color: #475569; }
+  .mah-row td { background: #f1f5f9; font-size: 12px; padding-top: 4px; padding-bottom: 4px; }
+  .mah-row td.name { padding-left: 30px; color: #475569; }
+  .warn-cell { color: #b91c1c; font-weight: 500; }
+  .toolbar-btn { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 6px; font-size: 12.5px; font-weight: 500; border: 1px solid #cbd5e1; background: white; }
+  .toolbar-btn:hover { background: #f1f5f9; }
+  .toolbar-btn.primary { background: #0f766e; color: white; border-color: #0f766e; }
+  .toolbar-btn.primary:hover { background: #115e59; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<div class="max-w-[1400px] mx-auto p-4 space-y-3">
+
+  <!-- Top bar -->
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <h1 class="text-lg font-semibold text-slate-900">Phòng Điều dưỡng — Tổng quan</h1>
+      <span class="badge badge-slate">PĐD · Trần Hiền</span>
+    </div>
+    <div class="flex items-center gap-2 text-xs">
+      <span class="text-slate-500">Kỳ đề xuất: <b class="text-slate-800">T1/2027</b></span>
+      <button class="toolbar-btn">🔔 Thông báo (3)</button>
+      <button class="toolbar-btn">⚙</button>
+    </div>
+  </div>
+
+  <!-- Package selector -->
+  <div class="card p-3">
+    <div class="flex items-center gap-2 flex-wrap">
+      <span class="text-xs text-slate-500 mr-2">Chọn gói:</span>
+      <button class="toolbar-btn primary">18T / Dùng chung</button>
+      <button class="toolbar-btn">18T / GMHS</button>
+      <button class="toolbar-btn">18T / RHM</button>
+      <button class="toolbar-btn">18T / Tim mạch</button>
+      <button class="toolbar-btn">18T / CTCH-NTK</button>
+      <span class="border-l border-slate-300 h-6 mx-2"></span>
+      <button class="toolbar-btn">Bổ sung T10/2026</button>
+      <button class="toolbar-btn">Bổ sung T2/2027</button>
+      <button class="toolbar-btn">Chỉ định thầu</button>
+    </div>
+  </div>
+
+  <!-- Summary + timeline -->
+  <div class="grid grid-cols-12 gap-3">
+    <!-- Summary stats -->
+    <div class="col-span-7 card">
+      <div class="grid grid-cols-4 divide-x divide-slate-200">
+        <div class="stat">
+          <div class="num">234</div>
+          <div class="label">Tổng mã quản lý</div>
+        </div>
+        <div class="stat">
+          <div class="num">198 <span class="text-sm text-slate-500">(85%)</span></div>
+          <div class="label">Đã có đề xuất từ ≥1 khoa</div>
+        </div>
+        <div class="stat">
+          <div class="num text-orange-600">36</div>
+          <div class="label">Chưa khoa nào đề xuất</div>
+        </div>
+        <div class="stat">
+          <div class="num">12,4 <span class="text-sm text-slate-500">tỉ</span></div>
+          <div class="label">Giá trị dự kiến toàn gói</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="col-span-5 card p-3">
+      <div class="flex items-center justify-between mb-1">
+        <h3 class="text-xs font-semibold text-slate-700">Tiến độ đấu thầu</h3>
+        <span class="text-xs text-slate-500">Đang ở GĐ2 · Mở thầu</span>
+      </div>
+      <div class="flex items-center">
+        <div class="timeline-step done">
+          <div class="dot">✓</div>
+          <div class="label">Chào giá</div>
+        </div>
+        <div class="connector done"></div>
+        <div class="timeline-step active">
+          <div class="dot">2</div>
+          <div class="label">Mở thầu</div>
+        </div>
+        <div class="connector"></div>
+        <div class="timeline-step">
+          <div class="dot">3</div>
+          <div class="label">Đánh giá</div>
+        </div>
+        <div class="connector"></div>
+        <div class="timeline-step">
+          <div class="dot">🔒</div>
+          <div class="label">Chốt & Trình ký</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Warnings -->
+  <div class="grid grid-cols-12 gap-3">
+    <div class="col-span-7 card border-orange-200 bg-orange-50 p-3">
+      <div class="flex items-start gap-2">
+        <div class="text-orange-500 text-lg leading-none">⚠</div>
+        <div class="flex-1">
+          <div class="text-sm font-semibold text-orange-900">5 khoa chưa nộp Danh mục đề xuất cho gói này</div>
+          <div class="mt-1 flex flex-wrap gap-1.5 text-xs">
+            <span class="badge badge-yellow">Khoa Nội TH</span>
+            <span class="badge badge-yellow">Khoa Ngoại TH</span>
+            <span class="badge badge-yellow">Nhi</span>
+            <span class="badge badge-yellow">Sản</span>
+            <span class="badge badge-yellow">ICU</span>
+            <button class="text-orange-700 hover:underline">→ Xem chi tiết & nhắc nhở</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-span-5 card border-red-200 bg-red-50 p-3">
+      <div class="flex items-start gap-2">
+        <div class="text-red-500 text-lg leading-none">🔴</div>
+        <div class="flex-1">
+          <div class="text-sm font-semibold text-red-900">14 dòng khoa đề xuất ngoài dải P50-P75</div>
+          <div class="mt-1 text-xs text-red-700">Đã ghi lý do: 11 · Còn thiếu lý do: 3</div>
+          <button class="text-red-700 hover:underline text-xs mt-1">→ Xem các dòng cần bổ sung</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action buttons -->
+  <div class="card p-3 flex items-center gap-2 flex-wrap">
+    <a href="qua-trinh-de-xuat.html" class="toolbar-btn primary">📊 Mở Danh mục tổng hợp ↗</a>
+    <button class="toolbar-btn">📋 Danh mục đề xuất từng khoa ▼</button>
+    <button class="toolbar-btn">✏ Tích mã rớt GĐ2</button>
+    <button class="toolbar-btn">🔒 Lock & xuất Danh mục chính thức</button>
+    <button class="toolbar-btn">⬇ Xuất báo cáo</button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="card">
+    <div class="flex border-b border-slate-200 px-3">
+      <div class="tab active">Tổng quan theo mã quản lý</div>
+      <div class="tab">Theo từng khoa</div>
+      <div class="tab">Kết quả thầu</div>
+      <div class="tab">Giỏ rớt toàn viện <span class="tab-badge">8</span></div>
+      <div class="tab">Lịch sử chỉnh sửa</div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="px-3 py-2 flex items-center gap-2 flex-wrap border-b border-slate-100">
+      <input type="text" placeholder="🔍 Tìm mã quản lý / mã hàng / tên vật tư..." class="border border-slate-300 rounded px-2 py-1 text-sm w-72" />
+      <select class="border border-slate-300 rounded px-2 py-1 text-sm">
+        <option>Tất cả trạng thái</option>
+        <option>Chưa có đề xuất</option>
+        <option>Đang thầu</option>
+        <option>Trúng</option>
+        <option>Rớt 1 phần</option>
+        <option>Rớt hoàn toàn</option>
+      </select>
+      <select class="border border-slate-300 rounded px-2 py-1 text-sm">
+        <option>Tất cả khoa</option>
+        <option>Khoa Nội TH</option>
+        <option>Khoa Ngoại TH</option>
+        <option>GMHS</option>
+      </select>
+      <label class="flex items-center gap-1 text-xs text-slate-600 ml-2">
+        <input type="checkbox" checked /> Chỉ hiện dòng có cảnh báo
+      </label>
+    </div>
+
+    <!-- Main table -->
+    <div class="overflow-auto max-h-[520px]">
+      <table class="w-full">
+        <thead>
+          <tr>
+            <th class="w-8"></th>
+            <th class="w-24">Mã QL</th>
+            <th>Tên nhóm</th>
+            <th class="text-right w-28">SL tổng BV</th>
+            <th class="text-right w-28">LS 18T BV</th>
+            <th class="text-right w-16">% ĐX/LS</th>
+            <th class="w-24">Số khoa ĐX</th>
+            <th class="text-right w-28">Giá trị ước tính</th>
+            <th class="w-32">Trạng thái</th>
+            <th class="w-8"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- MQ001 - collapsed -->
+          <tr>
+            <td><button class="expand-btn">▶</button></td>
+            <td class="font-mono text-xs">MQ001</td>
+            <td>Kim tiêm 5ml</td>
+            <td class="num">5.200</td>
+            <td class="num">4.800</td>
+            <td class="num">+8%</td>
+            <td>3 khoa</td>
+            <td class="num">10.920.000</td>
+            <td><span class="badge badge-green">Trúng</span></td>
+            <td class="text-slate-400">⋮</td>
+          </tr>
+
+          <!-- MQ002 - expanded, has warning -->
+          <tr class="row-warn">
+            <td><button class="expand-btn">▼</button></td>
+            <td class="font-mono text-xs">MQ002</td>
+            <td class="font-medium">Găng tay khám</td>
+            <td class="num font-semibold">12.000</td>
+            <td class="num">9.500</td>
+            <td class="num warn-cell">+26% ⚠</td>
+            <td>5 khoa</td>
+            <td class="num">22.200.000</td>
+            <td><span class="badge badge-blue">Đang thầu GĐ2</span></td>
+            <td class="text-slate-400">⋮</td>
+          </tr>
+
+          <!-- Level 2: Mã hàng -->
+          <tr class="mah-row">
+            <td></td>
+            <td class="font-mono text-[10.5px]" style="padding-left: 24px">GT-01</td>
+            <td class="name">Găng tay khám không bột size M · Cái</td>
+            <td class="num">8.000</td>
+            <td class="num">6.700</td>
+            <td class="num">+19%</td>
+            <td>3 khoa</td>
+            <td class="num">14.800.000</td>
+            <td><span class="badge badge-green">Trúng</span></td>
+            <td></td>
+          </tr>
+
+          <!-- Level 3: khoa breakdown -->
+          <tr class="khoa-row">
+            <td></td>
+            <td></td>
+            <td class="name">→ Khoa Nội TH</td>
+            <td class="num">3.000</td>
+            <td class="num text-slate-500">2.400 (khoa)</td>
+            <td class="num">+25%</td>
+            <td class="text-xs text-slate-500">Chọn P75 · trong dải</td>
+            <td class="num">5.550.000</td>
+            <td><span class="badge badge-green">✓</span></td>
+            <td></td>
+          </tr>
+          <tr class="khoa-row row-warn">
+            <td></td>
+            <td></td>
+            <td class="name">→ Khoa Ngoại TH</td>
+            <td class="num warn-cell">3.500</td>
+            <td class="num text-slate-500">2.100 (khoa)</td>
+            <td class="num warn-cell">+67% ⚠</td>
+            <td class="text-xs warn-cell">Vượt P75 (2.600) · có lý do</td>
+            <td class="num">6.475.000</td>
+            <td><span class="badge badge-yellow">🚩</span></td>
+            <td></td>
+          </tr>
+          <tr class="khoa-row">
+            <td></td>
+            <td></td>
+            <td class="name">→ GMHS - Phòng mổ</td>
+            <td class="num">1.500</td>
+            <td class="num text-slate-500">1.400 (khoa)</td>
+            <td class="num">+7%</td>
+            <td class="text-xs text-slate-500">Chọn P50 · trong dải</td>
+            <td class="num">2.775.000</td>
+            <td><span class="badge badge-green">✓</span></td>
+            <td></td>
+          </tr>
+
+          <!-- Second mã hàng of MQ002 -->
+          <tr class="mah-row">
+            <td></td>
+            <td class="font-mono text-[10.5px]" style="padding-left: 24px">GT-02</td>
+            <td class="name">Găng tay khám không bột size L · Cái</td>
+            <td class="num">4.000</td>
+            <td class="num">2.800</td>
+            <td class="num">+43%</td>
+            <td>2 khoa</td>
+            <td class="num">7.400.000</td>
+            <td><span class="badge badge-blue">Đang GĐ3</span></td>
+            <td></td>
+          </tr>
+          <tr class="khoa-row">
+            <td></td>
+            <td></td>
+            <td class="name">→ Khoa Nhi</td>
+            <td class="num">4.000</td>
+            <td class="num text-slate-500">2.800 (khoa)</td>
+            <td class="num">+43%</td>
+            <td class="text-xs text-slate-500">Chọn P75 · trong dải</td>
+            <td class="num">7.400.000</td>
+            <td><span class="badge badge-blue">…</span></td>
+            <td></td>
+          </tr>
+
+          <!-- MQ003 collapsed with partial fail -->
+          <tr>
+            <td><button class="expand-btn">▶</button></td>
+            <td class="font-mono text-xs">MQ003</td>
+            <td>Ống thông tiểu Foley</td>
+            <td class="num">560</td>
+            <td class="num">460</td>
+            <td class="num">+22%</td>
+            <td>4 khoa</td>
+            <td class="num">67.100.000</td>
+            <td><span class="badge badge-yellow">Rớt 1 phần</span></td>
+            <td class="text-slate-400">⋮</td>
+          </tr>
+
+          <!-- MQ004 - no proposal -->
+          <tr class="row-warn">
+            <td><button class="expand-btn">▶</button></td>
+            <td class="font-mono text-xs">MQ004</td>
+            <td>Kim gây tê tủy sống</td>
+            <td class="num text-slate-400">—</td>
+            <td class="num">280</td>
+            <td class="num">—</td>
+            <td class="warn-cell text-xs">0 khoa ⚠</td>
+            <td class="num text-slate-400">—</td>
+            <td><span class="badge badge-slate">Chưa có đề xuất</span></td>
+            <td class="text-slate-400">⋮</td>
+          </tr>
+
+          <!-- MQ005 - failed completely -->
+          <tr>
+            <td><button class="expand-btn">▶</button></td>
+            <td class="font-mono text-xs">MQ005</td>
+            <td>Ống thông tiểu Foley 14F latex</td>
+            <td class="num">220</td>
+            <td class="num">180</td>
+            <td class="num">+22%</td>
+            <td>1 khoa</td>
+            <td class="num">26.400.000</td>
+            <td><span class="badge badge-red">Rớt hoàn toàn</span></td>
+            <td class="text-slate-400">⋮</td>
+          </tr>
+
+          <!-- More rows -->
+          <tr>
+            <td><button class="expand-btn">▶</button></td>
+            <td class="font-mono text-xs">MQ006</td>
+            <td>Ống nội khí quản</td>
+            <td class="num">340</td>
+            <td class="num">310</td>
+            <td class="num">+10%</td>
+            <td>2 khoa</td>
+            <td class="num">18.700.000</td>
+            <td><span class="badge badge-green">Trúng</span></td>
+            <td class="text-slate-400">⋮</td>
+          </tr>
+          <tr>
+            <td><button class="expand-btn">▶</button></td>
+            <td class="font-mono text-xs">MQ007</td>
+            <td>Băng gạc vô khuẩn</td>
+            <td class="num">18.400</td>
+            <td class="num">17.200</td>
+            <td class="num">+7%</td>
+            <td>12 khoa</td>
+            <td class="num">9.200.000</td>
+            <td><span class="badge badge-blue">Đang GĐ2</span></td>
+            <td class="text-slate-400">⋮</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="px-3 py-2 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
+      <div>Hiển thị 7/234 mã quản lý</div>
+      <div class="flex items-center gap-2">
+        <button class="hover:underline">Trước</button>
+        <span>Trang 1 / 34</span>
+        <button class="hover:underline">Sau</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Giỏ rớt panel (preview) -->
+  <div class="card">
+    <div class="px-3 py-2 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-sm font-semibold text-slate-800">Giỏ rớt toàn viện — cần đốc thúc ĐVSD xử lý</h3>
+      <div class="flex items-center gap-2 text-xs">
+        <span class="badge badge-red">8 chờ xử lý</span>
+        <span class="badge badge-green">3 đã add vào bổ sung</span>
+        <span class="text-slate-500">· Gói bổ sung gần nhất: T10/2026</span>
+      </div>
+    </div>
+    <table class="w-full">
+      <thead>
+        <tr>
+          <th class="w-24">Mã hàng</th>
+          <th>Tên</th>
+          <th class="w-24">Rớt GĐ</th>
+          <th>Khoa liên quan</th>
+          <th class="w-24">Ngày rớt</th>
+          <th class="w-32">Trạng thái xử lý</th>
+          <th class="w-40">Hành động</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="font-mono text-xs">OT-12</td>
+          <td>Ống thông tiểu Foley 14F latex</td>
+          <td><span class="badge badge-red">Đánh giá</span></td>
+          <td>Khoa Nội TH <span class="text-red-600">(chưa xử lý)</span></td>
+          <td class="text-xs">28/07 (5 ngày)</td>
+          <td><span class="badge badge-red">⏳ Chưa add</span></td>
+          <td>
+            <button class="toolbar-btn text-xs">📋 Copy nhắc</button>
+            <button class="toolbar-btn text-xs">💬</button>
+          </td>
+        </tr>
+        <tr>
+          <td class="font-mono text-xs">KT-06</td>
+          <td>Kim tiêm 5ml thường</td>
+          <td><span class="badge badge-red">Mở thầu</span></td>
+          <td>GMHS <span class="text-green-600">✓</span>, Ngoại <span class="text-red-600">⏳</span></td>
+          <td class="text-xs">30/07 (3 ngày)</td>
+          <td><span class="badge badge-yellow">½ xử lý</span></td>
+          <td>
+            <button class="toolbar-btn text-xs">📋 Copy nhắc</button>
+            <button class="toolbar-btn text-xs">💬</button>
+          </td>
+        </tr>
+        <tr>
+          <td class="font-mono text-xs">GB-08</td>
+          <td>Gạc vô khuẩn 10×10</td>
+          <td><span class="badge badge-red">Chào giá</span></td>
+          <td>Nhi, Sản</td>
+          <td class="text-xs">01/08 (1 ngày)</td>
+          <td><span class="badge badge-slate">Chờ ĐVSD xem</span></td>
+          <td>
+            <button class="toolbar-btn text-xs">📋 Copy nhắc</button>
+            <button class="toolbar-btn text-xs">💬</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="text-center text-xs text-slate-400 py-2">Mockup HTML tĩnh · dữ liệu ví dụ · dựng theo brainstorm 05/08/2026</div>
+</div>
+
+</body>
+</html>

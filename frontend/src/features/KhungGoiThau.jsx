@@ -10,12 +10,15 @@ import {
   Gauge,
   Grid2X2,
   History,
+  LayoutDashboard,
   LayoutList,
   Menu,
   PackageCheck,
   PackagePlus,
+  Sheet,
   ShieldAlert,
   Files,
+  UploadCloud,
   X,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
@@ -32,10 +35,26 @@ export const GOI = [
   { ma: "chi_dinh_thau",     ten: "Gói chỉ định thầu", mo_ta: "Mua nhanh, hạn chế dùng", icon: ShieldAlert },
 ];
 
+export const GOI_CON = {
+  dau_thau_rong_rai: [
+    { ma: "18t-dung-chung", ten: "Dùng chung",  hash: "#tong-hop-pdd/18t-dung-chung" },
+    { ma: "18t-gmhs",       ten: "GMHS",         hash: "#tong-hop-pdd/18t-gmhs" },
+    { ma: "18t-rhm",        ten: "RHM",          hash: "#tong-hop-pdd/18t-rhm" },
+    { ma: "18t-tim-mach",   ten: "Tim mạch",     hash: "#tong-hop-pdd/18t-tim-mach" },
+    { ma: "18t-ctch-ntk",   ten: "CTCH-NTK",    hash: "#tong-hop-pdd/18t-ctch-ntk" },
+  ],
+  mua_sam_bo_sung: [
+    { ma: "bs-t1", ten: "Tháng 1", hash: "#tong-hop-pdd/bs-t1" },
+    { ma: "bs-t5", ten: "Tháng 5", hash: "#tong-hop-pdd/bs-t5" },
+    { ma: "bs-t9", ten: "Tháng 9", hash: "#tong-hop-pdd/bs-t9" },
+  ],
+};
+
 export const MAN_HINH_GOI = [
   { ma: "de_xuat",  ten: "Đề xuất số lượng", icon: ClipboardList },
   { ma: "cua_toi",  ten: "Đề xuất của tôi", icon: LayoutList },
-  { ma: "bieu_mau", ten: "Hồ sơ của khoa", icon: FileSearch },
+  { ma: "danh_muc_khoa", ten: "Danh mục đề xuất của khoa", icon: Sheet },
+  { ma: "bieu_mau", ten: "Cam kết của khoa", icon: FileSearch },
 ];
 
 export function manHinhTheoVaiTro(goi, laPdd) {
@@ -43,13 +62,16 @@ export function manHinhTheoVaiTro(goi, laPdd) {
     { ma: "de_xuat", ten: "Đề xuất số lượng", icon: ClipboardList },
     { ma: "cua_toi", ten: laPdd ? "Đề xuất các khoa" : "Đề xuất của tôi", icon: LayoutList },
   ];
+  if (!laPdd && goi !== "chi_dinh_thau") {
+    ds.push({ ma: "danh_muc_khoa", ten: "Danh mục đề xuất của khoa", icon: Sheet });
+  }
   if (laPdd && goi !== "chi_dinh_thau") {
     ds.push({ ma: "tong_hop", ten: "Tổng hợp & xuất hồ sơ", icon: Files });
-    ds.push({ ma: "bieu_mau", ten: "Hồ sơ của khoa", icon: FileSearch });
+    ds.push({ ma: "bieu_mau", ten: "Cam kết của khoa", icon: FileSearch });
   } else {
     ds.push({
       ma: "bieu_mau",
-      ten: goi === "chi_dinh_thau" ? "Hồ sơ chỉ định thầu" : "Hồ sơ của khoa",
+      ten: goi === "chi_dinh_thau" ? "Hồ sơ chỉ định thầu" : "Cam kết của khoa",
       icon: FileSearch,
     });
   }
@@ -60,6 +82,9 @@ export const MUC_CHUNG = [
   { ma: "thieuhang", ten: "Sổ thiếu hàng", mo_ta: "Báo thiếu, theo dõi xử lý và xác nhận cuối tháng", icon: Archive },
   { ma: "sukien",    ten: "Sự kiện nhu cầu", mo_ta: "Ghi nhận thay đổi làm tăng hoặc giảm nhu cầu sử dụng", icon: CalendarClock },
   { ma: "makythuat", ten: "Mã kỹ thuật khoa tự thêm", mo_ta: "Khai mã tương đương hoặc mã mới hoàn toàn", icon: FileSearch },
+  // chiPdd: chỉ Phòng Điều dưỡng/admin thấy — nạp dữ liệu ảnh hưởng toàn viện,
+  // khoa không cần và không nên thấy mục này.
+  { ma: "napdulieu", ten: "Nạp dữ liệu sử dụng", mo_ta: "Nạp file HIS mới mỗi tháng, thay cho chạy script tay", icon: UploadCloud, chiPdd: true },
 ];
 
 /** Đợt đang MỞ của từng gói — khoa chỉ gửi được khi có đợt mở (QĐ-20). */
@@ -139,19 +164,39 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
 
   const nutGoi = (g) => {
     const dangChon = chon.nhom === "goi" && chon.goi === g.ma;
-    const dsManHinh = manHinhTheoVaiTro(g.ma, laPdd);
+    const dsGoiCon = GOI_CON[g.ma] || [];
+    const coGoiCon = dsGoiCon.length > 0;
     const dotMo = dotTheoGoi?.[g.ma];
     const soDot = dsDotTheoGoi?.[g.ma]?.length || 0;
     const Icon = g.icon;
+
+    // Items luôn hiện ở cấp gói mẹ (không nằm trong gói con nào).
+    const manHinhMeBao = [
+      {
+        ma: "cua_toi",
+        ten: laPdd ? "Đề xuất các khoa" : "Đề xuất của tôi",
+        icon: LayoutList,
+      },
+      // Chỉ ĐVSD — PĐD đã có "Tổng hợp & xuất hồ sơ" xem hết mọi khoa; chỉ
+      // định thầu không có Danh mục đề xuất dạng 34 cột này.
+      ...(!laPdd && g.ma !== "chi_dinh_thau"
+        ? [{ ma: "danh_muc_khoa", ten: "Danh mục đề xuất của khoa", icon: Sheet }]
+        : []),
+      ...(laPdd && g.ma !== "chi_dinh_thau"
+        ? [{ ma: "tong_hop", ten: "Tổng hợp & xuất hồ sơ", icon: Files }]
+        : []),
+      {
+        ma: "bieu_mau",
+        ten: g.ma === "chi_dinh_thau" ? "Hồ sơ chỉ định thầu" : "Cam kết của khoa",
+        icon: FileSearch,
+      },
+    ];
+
     return (
       <div key={g.ma} className="relative">
         <button
           type="button"
-          onClick={() => chuyenMan({
-            nhom: "goi",
-            goi: g.ma,
-            man: dsManHinh.some((m) => m.ma === chon.man) ? chon.man : "de_xuat",
-          })}
+          onClick={() => chuyenMan({ nhom: "goi", goi: g.ma, goiCon: chon.goiCon, man: chon.man || "de_xuat" })}
           className={`umc-package-button ${dangChon ? "is-active" : ""}`}
           aria-expanded={dangChon}
         >
@@ -164,8 +209,6 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
         </button>
 
         <div className="pl-11">
-          {/* Trạng thái đợt hiện NGAY trên menu — khoa biết trước có gửi được không,
-              thay vì bấm vào rồi mới thấy nút gửi bị khoá. */}
           <span
             className={`umc-round-status ${dotMo ? "is-open" : ""} ${loiDot && !dotMo ? "is-error" : ""}`}
             title={loiDot || undefined}
@@ -185,14 +228,46 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
             >
-              {dsManHinh.map((m) => {
+              {/* Gói có gói con: mỗi gói con → Đề xuất số lượng */}
+              {coGoiCon && (
+                <>
+                  <div className="px-3 py-1 text-[10px] uppercase tracking-wider text-slate-400">Gói con</div>
+                  {dsGoiCon.map((gc) => (
+                    <button
+                      type="button"
+                      key={gc.ma}
+                      onClick={() => chuyenMan({ nhom: "goi", goi: g.ma, goiCon: gc.ma, man: "de_xuat" })}
+                      className={`umc-subnav-button ${chon.goiCon === gc.ma && chon.man === "de_xuat" ? "is-active" : ""}`}
+                    >
+                      <LayoutList size={13} />
+                      {gc.ten}
+                    </button>
+                  ))}
+                  <div className="mx-3 my-1.5 border-t border-slate-700/40" />
+                </>
+              )}
+
+              {/* Gói không có gói con (chỉ định thầu): Đề xuất số lượng thẳng ở đây */}
+              {!coGoiCon && (
+                <button
+                  type="button"
+                  onClick={() => chuyenMan({ nhom: "goi", goi: g.ma, goiCon: null, man: "de_xuat" })}
+                  className={`umc-subnav-button ${chon.man === "de_xuat" ? "is-active" : ""}`}
+                >
+                  <ClipboardList size={14} />
+                  Đề xuất số lượng
+                </button>
+              )}
+
+              {/* Cấp gói mẹ: Đề xuất của tôi, Hồ sơ của khoa, (Tổng hợp PĐD) */}
+              {manHinhMeBao.map((m) => {
                 const SubIcon = m.icon;
                 return (
                   <button
                     type="button"
                     key={m.ma}
-                    onClick={() => chuyenMan({ nhom: "goi", goi: g.ma, man: m.ma })}
-                    className={`umc-subnav-button ${chon.man === m.ma ? "is-active" : ""}`}
+                    onClick={() => chuyenMan({ nhom: "goi", goi: g.ma, goiCon: null, man: m.ma })}
+                    className={`umc-subnav-button ${chon.man === m.ma && !chon.goiCon ? "is-active" : ""}`}
                   >
                     <SubIcon size={14} />
                     {m.ten}
@@ -215,9 +290,34 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
         </button>
       </div>
 
-      <div className="umc-nav-label">Theo gói thầu</div>
+      {/* PĐD không đề xuất, nên không dùng cây "gói con → Đề xuất số lượng"
+          của khoa. Vào thẳng Bàn điều hành: chọn đợt + gói con ngay trong màn,
+          xem theo dõi khoa / danh mục tổng hợp / kết quả thầu. Các màn cũ vẫn
+          còn nguyên route, mở bằng drill-down từ Bàn điều hành. */}
+      {laPdd && (
+        <>
+          <div className="umc-nav-label">Điều hành</div>
+          <button
+            type="button"
+            onClick={() => chuyenMan({ nhom: "chung", man: "ban_dieu_hanh" })}
+            className={`umc-package-button ${chon.man === "ban_dieu_hanh" ? "is-active" : ""}`}
+          >
+            <span className={`umc-package-icon ${chon.man === "ban_dieu_hanh" ? "is-active" : ""}`}>
+              <LayoutDashboard size={17} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold leading-tight">Bàn điều hành</span>
+              <span className="mt-1 block text-[11px] leading-tight opacity-70">
+                Theo dõi khoa · Danh mục tổng hợp · Kết quả thầu
+              </span>
+            </span>
+          </button>
+        </>
+      )}
+
+      <div className="umc-nav-label">{laPdd ? "Gói khác" : "Theo gói thầu"}</div>
       <div className="space-y-2">
-        {GOI.filter((g) => g.ma !== "chi_dinh_thau").map(nutGoi)}
+        {!laPdd && GOI.filter((g) => g.ma !== "chi_dinh_thau").map(nutGoi)}
         <button
           type="button"
           onClick={() => chuyenMan({ nhom: "tuy_chon_mua_them", man: "tuy_chon_mua_them" })}
@@ -232,7 +332,9 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
           </span>
           <ChevronDown size={14} className={`mt-0.5 shrink-0 -rotate-90 ${chon.nhom === "tuy_chon_mua_them" ? "text-white" : ""}`} />
         </button>
-        {GOI.filter((g) => g.ma === "chi_dinh_thau").map(nutGoi)}
+        {/* Chỉ định thầu là việc của khoa (tự nhập số lượng và căn cứ riêng);
+            PĐD theo dõi qua Bàn điều hành nên không cần mục này trên menu. */}
+        {!laPdd && GOI.filter((g) => g.ma === "chi_dinh_thau").map(nutGoi)}
       </div>
 
       {laPdd && (

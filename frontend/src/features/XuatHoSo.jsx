@@ -147,12 +147,12 @@ export default function XuatHoSo({
     [rowsTrongDot, donVi, nhomKhoiTao, proposalIdKhoiTao]
   );
 
+  // Chỉ còn Word — "Danh mục đề xuất của khoa" (Excel) đã dời sang tab riêng
+  // (DanhMucDeXuatKhoa.jsx, #danh-muc-de-xuat/...), không tạo/dùng ở đây nữa
+  // (chốt 07/08/2026).
   const taiLieu = useMemo(() => goi === "chi_dinh_thau"
     ? [{ ma: "chi_dinh_thau", ten: "Đề xuất mua chỉ định thầu" }]
-    : [
-        { ma: "cam_ket_sl", ten: "Bản cam kết số lượng" },
-        { ma: "danh_muc_dvsd", ten: "Danh mục đề xuất của khoa" },
-      ], [goi]);
+    : [{ ma: "cam_ket_sl", ten: "Bản cam kết số lượng" }], [goi]);
   const mauTheoLoai = useMemo(
     () => taiLieu.filter((t) => HO_SO[t.ma]?.loai === loaiTaiLieu),
     [taiLieu, loaiTaiLieu]
@@ -221,8 +221,8 @@ export default function XuatHoSo({
   }, [khoaGioKhoiTao, goi]);
 
   // Hai nút trên thẻ đề xuất đi thẳng vào đúng bộ hồ sơ của CHÍNH giỏ đó.
-  // Nếu đây là lần mở đầu tiên, RPC tạo nguyên tử cả Word và Excel; từ lần sau
-  // chỉ mở lại cùng nguon_key nên hồ sơ luôn có trong kho của khoa.
+  // Nếu đây là lần mở đầu tiên, RPC tạo bản cam kết Word; từ lần sau chỉ mở
+  // lại cùng nguon_key nên hồ sơ luôn có trong kho của khoa.
   useEffect(() => {
     if (!khoaGioKhoiTao || !nguonGioKhoiTao || !daTaiDanhSach || dangTai
         || dangTao || gioDaThuTao === khoaGioKhoiTao || !dotId || !donVi
@@ -237,7 +237,7 @@ export default function XuatHoSo({
       return;
     }
     if (!rowsLoc.every((r) => r.trang_thai === "hoan_thanh")) {
-      setLoiHoSo("Chỉ tạo Word–Excel sau khi Phòng Điều dưỡng đã hoàn thành duyệt cả giỏ.");
+      setLoiHoSo("Chỉ tạo bản cam kết Word sau khi Phòng Điều dưỡng đã hoàn thành duyệt cả giỏ.");
       setGioDaThuTao(khoaGioKhoiTao);
       return;
     }
@@ -269,7 +269,7 @@ export default function XuatHoSo({
       if (error) {
         const canPatch = error.code === "PGRST202" || /tao_ho_so_tu_gio_da_duyet/i.test(error.message || "");
         setLoiHoSo(canPatch
-          ? "Staging chưa có chức năng tạo Word–Excel theo giỏ. Cần chạy backend/sql/patch_x_quyen_khoa_va_ho_so_theo_gio.sql."
+          ? "Staging chưa có chức năng tạo cam kết Word theo giỏ. Cần chạy backend/sql/patch_x_quyen_khoa_va_ho_so_theo_gio.sql."
           : error.message);
         setDangTao(false);
         return;
@@ -355,7 +355,7 @@ export default function XuatHoSo({
           </span>
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-semibold text-slate-900">
-              Hồ sơ của khoa
+              {goi === "chi_dinh_thau" ? "Hồ sơ chỉ định thầu" : "Cam kết của khoa"}
             </h2>
             <p className="mt-0.5 text-sm text-slate-500">
               {laPdd
@@ -404,9 +404,9 @@ export default function XuatHoSo({
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-4">
           <div>
-            <h3 className="text-sm font-semibold text-slate-900">Kho hồ sơ của khoa</h3>
+            <h3 className="text-sm font-semibold text-slate-900">Kho cam kết của khoa</h3>
             <p className="mt-0.5 text-xs text-slate-500">
-              Chọn Word/Excel để mở hồ sơ đã tạo, hoặc nhấn dấu + để chọn biểu mẫu và tạo bộ mới.
+              Chọn để mở bản cam kết đã tạo, hoặc nhấn dấu + để tạo bộ mới.
             </p>
           </div>
           <button type="button" onClick={() => setMoChonMau((x) => !x)}
@@ -415,31 +415,6 @@ export default function XuatHoSo({
             {moChonMau ? <X size={15} /> : <Plus size={15} />}
             {moChonMau ? "Đóng chọn mẫu" : "Tạo hồ sơ mới"}
           </button>
-        </div>
-
-        <div role="tablist" aria-label="Loại hồ sơ" className="grid grid-cols-2 border-b border-slate-200">
-          {[
-            { ma: "word", ten: "Word", Icon: FileText, mau: "text-blue-700" },
-            { ma: "excel", ten: "Excel", Icon: Sheet, mau: "text-emerald-700" },
-          ].map(({ ma, ten, Icon, mau }) => (
-            <button key={ma} type="button" role="tab" aria-selected={loaiTaiLieu === ma}
-              onClick={() => {
-                setLoaiTaiLieu(ma);
-                setMoChonMau(false);
-                setNguonDangMo("");
-                setMaDangMo("");
-              }}
-              className={`flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold ${
-                loaiTaiLieu === ma
-                  ? "border-b-2 border-teal-600 bg-white text-slate-900"
-                  : "bg-slate-50 text-slate-500 hover:bg-white"
-              }`}>
-              <Icon size={16} className={mau} /> {ten}
-              <span className="rounded-full bg-slate-200 px-1.5 py-0.5 text-[10px] text-slate-600">
-                {dsHoSo.filter((h) => h.loai_tai_lieu === ma).length}
-              </span>
-            </button>
-          ))}
         </div>
 
         {loiHoSo && (

@@ -7,6 +7,8 @@ import DatLaiMatKhau from "./auth/DatLaiMatKhau";
 import Function1 from "./features/Function1";
 import DeXuatTongHop from "./features/DeXuatTongHop";
 import DeXuatCuaToi from "./features/DeXuatCuaToi";
+import DanhMucDeXuatLinks from "./features/DanhMucDeXuatLinks";
+import BanDieuHanhPdd from "./features/BanDieuHanhPdd";
 import ChoDuyet, { demViecChoDuyet } from "./features/ChoDuyet";
 import TienDoGoiThau from "./features/TienDoGoiThau";
 import XuatHoSo from "./features/XuatHoSo";
@@ -26,6 +28,10 @@ import NhomKyThuatCuaKhoa from "./features/NhomKyThuatCuaKhoa";
 import TongHopPhongDieuDuong from "./features/TongHopPhongDieuDuong";
 import GoiTuyChonMuaThem from "./features/GoiTuyChonMuaThem";
 import QuanLyDuLieuTest from "./features/QuanLyDuLieuTest";
+import QuaTrinhDeXuat from "./features/QuaTrinhDeXuat";
+import DanhMucDeXuatKhoa from "./features/DanhMucDeXuatKhoa";
+import TongHopPdd from "./features/TongHopPdd";
+import NapDuLieuSuDung from "./features/NapDuLieuSuDung";
 
 const TEN_VAI_TRO = {
   dvsd: "Đơn vị sử dụng",
@@ -52,7 +58,24 @@ function ManHinhDangTai() {
   );
 }
 
+// Hash-based navigation cho các màn full-screen (không nằm trong khung nav chính).
+// Ví dụ #qua-trinh-de-xuat/mock → mở Excel 50-70 cột toàn màn hình.
+function useHashRoute() {
+  const [hash, setHash] = useState(() => (typeof window !== "undefined" ? window.location.hash : ""));
+  useEffect(() => {
+    const onChange = () => setHash(window.location.hash);
+    window.addEventListener("hashchange", onChange);
+    return () => window.removeEventListener("hashchange", onChange);
+  }, []);
+  return hash;
+}
+
 export default function App() {
+  // useHashRoute + useAuth PHẢI khai ở trên đầu — mọi hook trong App phải chạy
+  // đủ mỗi lần render, kể cả khi ta muốn return sớm cho hash route. Nếu return
+  // sớm trước useAuth thì lần sau chuyển hash sẽ đổi số hook và React trắng
+  // trang (đã bị 1 lần).
+  const hash = useHashRoute();
   const {
     session, profile, loading, profileError, recoveryMode,
     signIn, signUp, sendPasswordReset, updatePassword, signOut,
@@ -71,6 +94,17 @@ export default function App() {
     loi: loiDot,
   } = useDotDangMo(session?.user?.id || null);
   const laPdd = profile?.role === "admin" || profile?.role === "dieu_duong";
+
+  // PĐD đăng nhập vào thẳng Bàn điều hành. `chon` khởi tạo trước khi biết
+  // profile (useAuth còn đang tải) nên phải đặt lại một lần ở đây — chỉ đúng
+  // một lần, không ép người dùng quay về màn này mỗi lần re-render.
+  const [daDatManPdd, setDaDatManPdd] = useState(false);
+  useEffect(() => {
+    if (!laPdd || daDatManPdd) return;
+    setChon({ nhom: "chung", man: "ban_dieu_hanh" });
+    setDaDatManPdd(true);
+  }, [laPdd, daDatManPdd]);
+
   const capNhatDem = useCallback(() => {
     if (!laPdd) return;
     demViecChoDuyet().then(setSoChoDuyet).catch(() => {});
@@ -99,6 +133,18 @@ export default function App() {
 
   if (loading) {
     return <ManHinhDangTai />;
+  }
+
+  // #qua-trinh-de-xuat vẫn MOCK (chưa nối dữ liệu thật, giai đoạn brainstorm)
+  // — đặt trước session check để dev/duyệt UI được mà không cần login.
+  //
+  // #danh-muc-de-xuat KHÔNG còn ở đây — từ 06/08/2026 nó đọc Supabase THẬT
+  // (proposals, usage_history_current, v_ket_qua_thau_theo_khoa...), RLS yêu
+  // cầu phiên đăng nhập thật (current_user_khoa()). Cùng lý do #tong-hop-pdd
+  // đã dời xuống dưới trước đó — xem nhánh sau session+profile check.
+  if (hash.startsWith("#qua-trinh-de-xuat")) {
+    const gioId = hash.replace(/^#qua-trinh-de-xuat\/?/, "") || "mock";
+    return <QuaTrinhDeXuat gioId={gioId} />;
   }
 
   // Vừa bấm link "Quên mật khẩu" trong email, quay lại app — ưu tiên màn hình
@@ -133,6 +179,40 @@ export default function App() {
   // Tab tổng hợp chỉ dành cho admin/dieu_duong. RLS cũng đã chặn ở DB (dvsd chỉ
   // select được đề xuất khoa mình) — ẩn tab chỉ là lớp UI, không phải bảo mật.
   const xemDuocTongHop = profile.role === "admin" || profile.role === "dieu_duong";
+
+  // #tong-hop-pdd — SAU profile check để có JWT thật cho RLS (xem comment ở
+  // nhánh mock phía trên). dvsd không có policy nào trên các bảng liên quan
+  // (danh_muc_tong_hop_o/_khoa) nên chặn luôn ở đây cho rõ ràng, không để họ
+  // vào rồi thấy toàn lỗi RLS khó hiểu.
+  if (hash.startsWith("#tong-hop-pdd")) {
+    if (!xemDuocTongHop) {
+      return (
+        <div className="umc-loading-screen px-4">
+          <div className="max-w-sm rounded-2xl border border-amber-100 bg-white p-6 text-center shadow-sm">
+            <p className="text-sm text-amber-800">
+              Danh mục tổng hợp chỉ dành cho Phòng Điều dưỡng/admin.
+            </p>
+            <a href="#" onClick={(e) => { e.preventDefault(); window.location.hash = ""; }}
+              className="mt-3 inline-block text-sm font-medium text-[var(--umc-blue)] hover:underline">
+              Về màn chính
+            </a>
+          </div>
+        </div>
+      );
+    }
+    const goiId = hash.replace(/^#tong-hop-pdd\/?/, "") || "18t-dung-chung";
+    return <TongHopPdd goiId={goiId} profile={profile} />;
+  }
+  // #danh-muc-de-xuat/<goiId>/<khoaEncoded> — khoaEncoded chỉ cần khi PĐD
+  // muốn xem khoa khác khoa mình (browse toàn viện). ĐVSD bỏ trống, mặc định
+  // xem khoa mình — RLS proposals/usage_history_current vẫn chặn dvsd đọc
+  // khoa khác dù URL có bị gõ tay (xem "xem đề xuất theo phân quyền khoa").
+  if (hash.startsWith("#danh-muc-de-xuat")) {
+    const phan = hash.replace(/^#danh-muc-de-xuat\/?/, "").split("/");
+    const goiId = phan[0] || "18t-dung-chung";
+    const khoaTuUrl = phan[1] ? decodeURIComponent(phan[1]) : null;
+    return <DanhMucDeXuatKhoa goiId={goiId} khoa={khoaTuUrl || profile.khoa} profile={profile} />;
+  }
   // "Đề xuất của tôi" chỉ dành cho dvsd — admin/dieu_duong đã có tab tổng hợp
   // thấy hết mọi khoa rồi, thêm tab này cho họ là dư thừa.
   const tenHienThi = profile.ho_ten || profile.email?.split("@")[0] || "Người dùng";
@@ -154,9 +234,17 @@ export default function App() {
     ketquathau: "Tổng hợp kết quả thầu",
     tieuchi: "Điều chỉnh tiêu chí kỹ thuật",
     tiendosudung: "Tiến độ sử dụng theo cam kết",
+    napdulieu: "Nạp dữ liệu sử dụng",
   };
 
-  const noiDungChung = chon.man === "tongquan"
+  const noiDungChung = chon.man === "ban_dieu_hanh" && xemDuocTongHop
+    ? (
+      <BanDieuHanhPdd
+        profile={profile}
+        onMoManKhac={(h) => setChon({ nhom: "goi", ...h })}
+      />
+    )
+    : chon.man === "tongquan"
     ? <TrangDungChung doiChon={setChon} laPdd={xemDuocTongHop} soChoDuyet={soChoDuyet} dotTheoGoi={dotTheoGoi} />
     : chon.man === "thieuhang" ? <SoThieuHang profile={profile} />
     : chon.man === "sukien" ? <SoSuKienNhuCau profile={profile} />
@@ -176,6 +264,7 @@ export default function App() {
     : chon.man === "ketquathau" && xemDuocTongHop ? <TongHopKetQuaThau profile={profile} />
     : chon.man === "tieuchi" ? <DieuChinhTieuChi profile={profile} />
     : chon.man === "tiendosudung" ? <TienDoSuDung profile={profile} />
+    : chon.man === "napdulieu" && xemDuocTongHop ? <NapDuLieuSuDung profile={profile} />
     : chon.man === "quanlydot" && xemDuocTongHop ? <QuanLyDot />
     : chon.man === "choduyet" && xemDuocTongHop ? (
       <ChoDuyet
@@ -251,12 +340,14 @@ export default function App() {
         <KhungGoiThau chon={chon} doiChon={setChon} dotTheoGoi={dotTheoGoi}
           dsDotTheoGoi={dsDotTheoGoi} dangTaiDot={dangTaiDot} loiDot={loiDot} laPdd={xemDuocTongHop}>
           {chon.nhom === "goi" ? (
-            chon.man === "de_xuat"  ? <Function1 profile={profile} goi={chon.goi} dot={dotTheoGoi[chon.goi]}
+            chon.man === "de_xuat"  ? <Function1 profile={profile} goi={chon.goi} goiCon={chon.goiCon}
+              dot={dotTheoGoi[chon.goi]}
               dsDot={dsDotTheoGoi[chon.goi] || []} dangTaiDot={dangTaiDot} dotIdKhoiTao={chon.dotId} />
           : chon.man === "cua_toi" ? (xemDuocTongHop
               ? <DeXuatTongHop
                   profile={profile}
                   goi={chon.goi}
+                  goiConKhoiTao={chon.goiCon}
                   onMoHoSo={(h) => setChon({
                     nhom: "goi",
                     goi: chon.goi,
@@ -267,6 +358,7 @@ export default function App() {
               : <DeXuatCuaToi
                   profile={profile}
                   goi={chon.goi}
+                  goiConKhoiTao={chon.goiCon}
                   onMoHoSo={(h) => setChon({
                     nhom: "goi",
                     goi: chon.goi,
@@ -274,6 +366,8 @@ export default function App() {
                     ...h,
                   })}
                 />)
+          : chon.man === "danh_muc_khoa"
+              ? <DanhMucDeXuatLinks profile={profile} goi={chon.goi} />
           : chon.man === "tong_hop" && xemDuocTongHop
               ? <TongHopPhongDieuDuong
                   profile={profile}
@@ -286,6 +380,7 @@ export default function App() {
           : <XuatHoSo
               profile={profile}
               goi={chon.goi}
+              goiConKhoiTao={chon.goiCon}
               dot={dotTheoGoi[chon.goi]}
               dotIdKhoiTao={chon.dotId}
               donViKhoiTao={chon.donVi}
@@ -296,7 +391,7 @@ export default function App() {
             />
           ) : chon.nhom === "tuy_chon_mua_them"
             ? <GoiTuyChonMuaThem profile={profile} />
-          : chon.man === "tongquan" ? noiDungChung : (
+          : chon.man === "tongquan" || chon.man === "ban_dieu_hanh" ? noiDungChung : (
             <div className="umc-linked-page">
               <QuayLaiDungChung
                 onBack={() => setChon({ nhom: "chung", man: "tongquan" })}

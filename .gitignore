@@ -31,5 +31,11 @@ frontend/src/data/kha-dung-hop-dong-staging.json
 # Bản sao lưu — KHÔNG commit (chứa dữ liệu bệnh viện)
 backend/sao_luu/
 
+# Kết quả backtest dạng bảng — chứa dữ liệu bệnh viện theo từng khoa/mã hàng
+# (tên khoa + sản lượng thật). Script .py và báo cáo .md thì commit bình
+# thường; chỉ chặn phần dữ liệu thô. Nguyên tắc 8, Tổng quan/00_BAT_DAU.md.
+phan-tich-cong-thuc/*.csv
+phan-tich-cong-thuc/*.json
+
 # Biểu mẫu thật của bệnh viện — không commit (dung lượng lớn, có dữ liệu khoa)
 Form biểu mẫu/

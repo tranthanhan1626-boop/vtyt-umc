@@ -1,6 +1,10 @@
 # Tổng quan hệ thống VTYT
 
-Cập nhật: 04/08/2026.
+Cập nhật: **07/08/2026**.
+
+> **Đang vội?** Mở thẳng phần "TRẠNG THÁI HIỆN TẠI" ở đầu
+> `05_TIEN_DO_VA_VIEC_TIEP_THEO.md` — ở đó có bảng hai vai trò làm được gì,
+> patch SQL nào đã chạy / còn thiếu, và việc tiếp theo.
 
 Đây là bộ tài liệu duy nhất của dự án. Tài liệu lịch sử, bản thiết kế trước
 migration và demo RHM đã được loại bỏ để tránh lấy nhầm quyết định cũ.
@@ -20,8 +24,12 @@ Web là không gian làm việc chung giữa:
 
 - **Đơn vị sử dụng (ĐVSD):** lập đề xuất, làm hồ sơ, theo dõi kết quả và mức sử
   dụng của khoa.
-- **Phòng Điều dưỡng (PĐD):** quản lý đợt/gói, xét duyệt, sửa hồ sơ, tổng hợp
-  danh mục, cập nhật tiến độ và trả kết quả về khoa.
+- **Phòng Điều dưỡng (PĐD):** quản lý đợt/gói, tổng hợp danh mục toàn viện,
+  theo dõi khoa nào chưa nộp, tích kết quả rớt thầu và trả kết quả về khoa.
+  Từ 07/08/2026 PĐD có màn hình riêng — **Bàn điều hành** — không dùng chung
+  khung màn hình của khoa nữa. **Không còn bước "PĐD duyệt giỏ"** (bỏ từ
+  05/08/2026): khoa submit là chính thức, hai bên cộng tác trực tiếp trên
+  danh mục.
 - **Admin:** quản trị dữ liệu và tài khoản; không phải một vai trò nghiệp vụ thứ
   ba.
 

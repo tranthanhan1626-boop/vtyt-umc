@@ -1,11 +1,13 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Search, ChevronDown, ChevronLeft, Check, Package, ChevronRight, AlertTriangle, ShoppingCart, X } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { Search, ChevronDown, ChevronLeft, Check, Package, ChevronRight, AlertTriangle, ShoppingCart, X, ExternalLink } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import ChartDongBo, { BarChartNam, LegendItem, fmt, kyHieuNam, mauNam } from "../components/ChartDongBo";
 import GoiYSoLuong from "./GoiYSoLuong";
 import { danhGiaSoLuong } from "../lib/congThucSoLuong";
 import { tinhTuyChonMuaThem30 } from "../lib/tuyChonMuaThem";
 import { docGioDeXuat, ghiGioDeXuat } from "../lib/gioDeXuat";
+import { GOI_ID_MAP } from "../lib/cotChuan";
 import {
   gopLichSuTheoMaQuanLy,
   gopThieuTheoMaQuanLy,
@@ -85,6 +87,17 @@ function ChonKyThang({ gtThang, gtNam, doiThang, doiNam }) {
 // tháng vì dù sao cũng phải kéo sử dụng từ tháng nào tới tháng nào nên không
 // cần phải nhập số tháng sử dụng". Nên giờ hàm này là NGUỒN TÍNH THẬT của
 // so_thang_du_kien, không còn chỉ để đối chiếu.
+// Tính tổng xuất kho từng năm từ lichSuThang của 1 mã hàng.
+// Trả mảng [{ nam, tong }] giảm dần theo năm, chỉ giữ năm có dữ liệu > 0.
+function tongTheoNamLS(lichSuMa) {
+  if (!lichSuMa) return [];
+  return Object.entries(lichSuMa)
+    .map(([nam, thang]) => ({ nam: Number(nam), tong: (thang || []).reduce((s, v) => s + (Number(v) || 0), 0) }))
+    .filter((x) => x.tong > 0)
+    .sort((a, b) => b.nam - a.nam)
+    .slice(0, 3);
+}
+
 export const doDaiKy = (n) => {
   const a = Number(n.tuNam) * 12 + Number(n.tuThang);
   const b = Number(n.denNam) * 12 + Number(n.denThang);
@@ -92,29 +105,37 @@ export const doDaiKy = (n) => {
   return b - a + 1;
 };
 
-// Kỳ sử dụng dự kiến mặc định: cả năm tài chính được đề xuất.
-const MAC_DINH_NHAP = () => ({
-  soLuong: "",
-  tuThang: 1, tuNam: NAM_DE_XUAT, denThang: 12, denNam: NAM_DE_XUAT,
-  // Lý do là RIÊNG cho từng mã hàng (chốt 21/07/2026) — 1 đơn vị đề xuất nhiều
-  // mặt hàng ở nhiều nhóm khác nhau, mỗi thứ một lý do khác nhau.
-  loaiLyDo: "theo_lich_su", tenKyThuatMoi: "", uocCaThang: "", ghiChu: "",
-  // Chỉ dùng cho phương thức "Chỉ định thầu" (QĐ-14). Chỉ định thầu là ngoại lệ
-  // pháp lý (mua nhanh, hạn chế dùng) nên bắt buộc giải trình bằng chữ, không
-  // cho chọn lý do trong dropdown rồi thôi.
-  noiDungChiDinh: "",
-});
-const MAC_DINH_NHAP_NHOM = () => ({
-  ...MAC_DINH_NHAP(),
+// Kỳ sử dụng dự kiến mặc định: mua sắm rộng rãi (gói 18 tháng) mặc định đúng
+// 18 tháng (T1 năm đề xuất -> T6 năm sau); các phương thức khác (bổ sung, chỉ
+// định thầu) giữ nguyên cả năm tài chính như cũ — chốt 06/08/2026, khoa vẫn
+// tự sửa lại mốc từ/đến nếu cần, đây chỉ là gợi ý mặc định.
+const MAC_DINH_NHAP = (goiThau) => {
+  const laRongRai = goiThau === "dau_thau_rong_rai";
+  return {
+    soLuong: "",
+    tuThang: 1, tuNam: NAM_DE_XUAT,
+    denThang: laRongRai ? 6 : 12,
+    denNam: laRongRai ? NAM_DE_XUAT + 1 : NAM_DE_XUAT,
+    // Lý do là RIÊNG cho từng mã hàng (chốt 21/07/2026) — 1 đơn vị đề xuất nhiều
+    // mặt hàng ở nhiều nhóm khác nhau, mỗi thứ một lý do khác nhau.
+    loaiLyDo: "theo_lich_su", tenKyThuatMoi: "", uocCaThang: "", ghiChu: "",
+    // Chỉ dùng cho phương thức "Chỉ định thầu" (QĐ-14). Chỉ định thầu là ngoại lệ
+    // pháp lý (mua nhanh, hạn chế dùng) nên bắt buộc giải trình bằng chữ, không
+    // cho chọn lý do trong dropdown rồi thôi.
+    noiDungChiDinh: "",
+  };
+};
+const MAC_DINH_NHAP_NHOM = (goiThau) => ({
+  ...MAC_DINH_NHAP(goiThau),
   phanBo: {},
 });
 
 // Phương thức mua sắm nào bắt buộc giải trình bằng chữ.
 const CAN_GIAI_TRINH = (goiThau) => goiThau === "chi_dinh_thau";
 
-// Gói có dải P50–P75: trong dải tự dùng lý do lịch sử; ngoài dải phải chọn lý
-// do khác và nhập ghi chú cụ thể. Không so với tổng năm hiện tại vì khi làm thầu
-// giữa năm thì năm đó chưa đủ dữ liệu.
+// Gói có gợi ý P75: ≤ P75 tự dùng lý do lịch sử, không cần giải trình; > P75
+// bắt buộc chọn lý do và nhập ghi chú cụ thể. Không so năm hiện tại vì làm
+// thầu giữa năm dữ liệu chưa đủ.
 const CO_GOI_Y_SO_LUONG = (goi) => goi !== "chi_dinh_thau";
 
 // --- Giỏ đề xuất lưu ở localStorage, TÁCH RIÊNG THEO KHOA ------------------
@@ -352,6 +373,7 @@ export function FormNhomKyThuat({ giaTri, doiGiaTri, onLuu, onHuy, dangLuu, loi,
 export default function Function1({
   profile,
   goi,
+  goiCon = null,
   dot,
   dsDot = [],
   dangTaiDot = false,
@@ -389,6 +411,9 @@ export default function Function1({
   // Nhu cầu KHÔNG được đáp ứng theo tháng -> phục hồi phần bị che trước khi
   // tính μ/σ. {ma_hang: {"nam-thang": {...}}}
   const [thieuTheoThang, setThieuTheoThang] = useState({});
+  // Tháng HIS mới nhất TOÀN VIỆN (month-id = nam*12+thang-1) — mốc cuối cửa sổ
+  // 24 tháng dùng CHUNG cho mọi mã. Xem chú thích dài trong congThucSoLuong.js.
+  const [thangCuoiHIS, setThangCuoiHIS] = useState(null);
   const [maMoRong, setMaMoRong] = useState(null);     // mã hàng đang bung chart + nhập
   // Mã đã nằm trong BẤT KỲ giỏ đã gửi của khoa nhưng chưa được PĐD chốt
   // "Đã đi thầu". Nguồn server giúp ẩn đúng qua nhiều giỏ, nhiều máy.
@@ -429,6 +454,13 @@ export default function Function1({
   // Toàn viện = cộng gộp số liệu 66 khoa, CHỈ ĐỂ XEM. Không gửi đề xuất được
   // vì mỗi đề xuất bắt buộc thuộc về đúng 1 khoa (proposals.don_vi NOT NULL).
   const toanVien = khoaHienTai === TOAN_VIEN;
+
+  // goiId cho link "Danh mục đề xuất" toàn màn hình (#danh-muc-de-xuat/<goiId>/<khoa>,
+  // khớp GOI_ID_MAP trong cotChuan.js). Chỉ định thầu không có Danh mục đề xuất
+  // dạng này nên goiId = null, ẩn link.
+  const goiIdDanhMuc = goi === "dau_thau_rong_rai" ? (goiCon || "18t-dung-chung")
+    : goi === "mua_sam_bo_sung" ? "bo-sung"
+    : null;
 
   useEffect(() => {
     if (toanVien || !khoaHienTai) {
@@ -549,6 +581,26 @@ export default function Function1({
         .select("ma_quan_ly, nhom_abc, he_so_k, canh_bao_abc").range(f, t));
       if (huy || r.error || !r.data) return;
       setAbcTheoNhom(Object.fromEntries(r.data.map((d) => [d.ma_quan_ly, d])));
+    })();
+    return () => { huy = true; };
+  }, []);
+
+  // --- Tháng HIS mới nhất, TOÀN VIỆN, không lọc mã/khoa --------------------
+  // BẪY ĐÃ MẮC (đo trên mã 67340, gói Răng Hàm Mặt, 08/2026): nếu công thức tự
+  // suy mốc cuối cửa sổ từ tháng gần nhất CÓ xuất kho của RIÊNG từng mã, một mã
+  // có vài tháng cuối =0 (hết hàng hoặc chưa dùng lại) sẽ bị đẩy cửa sổ lùi cho
+  // kết thúc đúng vào các tháng DÙNG BÙ ngay sau khi hàng về — nhu cầu bị thổi
+  // phồng. Phải lấy một mốc CHUNG, tính trên TOÀN BỘ v_usage_monthly (không lọc
+  // theo mã/khoa) — chi tiết xem chuoiNhuCau() trong congThucSoLuong.js.
+  // Thiếu view/lỗi mạng thì lùi về hành vi cũ (mốc riêng từng mã) — không chặn
+  // nhập đề xuất. View v_thang_cuoi_his: patch_zb_thang_cuoi_his.sql.
+  useEffect(() => {
+    let huy = false;
+    (async () => {
+      const { data, error } = await supabase.from("v_thang_cuoi_his")
+        .select("nam, thang").limit(1);
+      if (huy || error || !data?.length) return;
+      setThangCuoiHIS(Number(data[0].nam) * 12 + (Number(data[0].thang) - 1));
     })();
     return () => { huy = true; };
   }, []);
@@ -830,7 +882,7 @@ export default function Function1({
     // Đổi ĐVT chuẩn làm thay đổi ý nghĩa của tổng và toàn bộ phép phân bổ.
     // Xóa hai số này để không vô tình dùng lại con số thuộc ĐVT cũ.
     setBanNhapNhom((prev) => {
-      const cu = prev[nhomChon] || MAC_DINH_NHAP_NHOM();
+      const cu = prev[nhomChon] || MAC_DINH_NHAP_NHOM(goi);
       return {
         ...prev,
         [nhomChon]: {
@@ -871,7 +923,7 @@ export default function Function1({
     maHangTrongNhom, lichSuThang,
   ]);
 
-  const layNhap = (maHang) => banNhap[maHang] || MAC_DINH_NHAP();
+  const layNhap = (maHang) => banNhap[maHang] || MAC_DINH_NHAP(goi);
 
   // Mọi thay đổi giỏ đi qua đây để state và localStorage không bao giờ lệch nhau.
   // Ghi ngay trong updater (thay vì useEffect riêng) để tránh cảnh giỏ đã đổi mà
@@ -901,7 +953,7 @@ export default function Function1({
   const capNhatNhap = (m, field, value) => {
     setBanNhap((prev) => {
       const tiep = {
-        ...(prev[m.ma_hang] || MAC_DINH_NHAP()),
+        ...(prev[m.ma_hang] || MAC_DINH_NHAP(goi)),
         [field]: value,
       };
       const danhGia = CO_GOI_Y_SO_LUONG(goi)
@@ -909,7 +961,8 @@ export default function Function1({
             lichSuThang[m.ma_hang],
             thieuTheoThang[m.ma_hang],
             doDaiKy(tiep),
-            tiep.soLuong
+            tiep.soLuong,
+            thangCuoiHIS
           )
         : null;
       tiep.goiYTu = danhGia?.tu ?? null;
@@ -940,9 +993,9 @@ export default function Function1({
     });
   };
 
-  const nhapNhom = banNhapNhom[nhomChon] || MAC_DINH_NHAP_NHOM();
+  const nhapNhom = banNhapNhom[nhomChon] || MAC_DINH_NHAP_NHOM(goi);
   const danhGiaNhom = CO_GOI_Y_SO_LUONG(goi)
-    ? danhGiaSoLuong(lichSuNhom, thieuNhom, doDaiKy(nhapNhom), nhapNhom.soLuong)
+    ? danhGiaSoLuong(lichSuNhom, thieuNhom, doDaiKy(nhapNhom), nhapNhom.soLuong, thangCuoiHIS)
     : null;
   const ngoaiKhoangNhom = Number(nhapNhom.soLuong) > 0
     && CO_GOI_Y_SO_LUONG(goi)
@@ -950,16 +1003,25 @@ export default function Function1({
   const tongDaPhanBo = tongPhanBoQuyDoi(
     maHangQuyDoi, nhapNhom.phanBo, dvtChuan,
   );
+  // Kiểm P50-P75 realtime cho TỔNG PHÂN BỔ (sau quy đổi), tách khỏi kiểm ở
+  // cấp mã quản lý. Cần cả hai vì trong lúc gõ, tổng phân bổ có thể lệch xa
+  // khỏi con số tổng MQ đã chọn — user cần thấy cảnh báo sớm.
+  const danhGiaPhanBo = CO_GOI_Y_SO_LUONG(goi) && tongDaPhanBo > 0
+    ? danhGiaSoLuong(lichSuNhom, thieuNhom, doDaiKy(nhapNhom), tongDaPhanBo, thangCuoiHIS)
+    : null;
+  const ngoaiKhoangPhanBo = tongDaPhanBo > 0
+    && CO_GOI_Y_SO_LUONG(goi)
+    && (!danhGiaPhanBo || danhGiaPhanBo.ngoaiKhoang);
 
   const capNhatNhapNhom = (field, value) => {
     if (!nhomChon) return;
     setBanNhapNhom((prev) => {
       const tiep = {
-        ...(prev[nhomChon] || MAC_DINH_NHAP_NHOM()),
+        ...(prev[nhomChon] || MAC_DINH_NHAP_NHOM(goi)),
         [field]: value,
       };
       const danhGia = CO_GOI_Y_SO_LUONG(goi)
-        ? danhGiaSoLuong(lichSuNhom, thieuNhom, doDaiKy(tiep), tiep.soLuong)
+        ? danhGiaSoLuong(lichSuNhom, thieuNhom, doDaiKy(tiep), tiep.soLuong, thangCuoiHIS)
         : null;
       const ngoai = Number(tiep.soLuong) > 0
         && CO_GOI_Y_SO_LUONG(goi)
@@ -984,7 +1046,7 @@ export default function Function1({
   const capNhatPhanBo = (maHang, value) => {
     if (!nhomChon) return;
     setBanNhapNhom((prev) => {
-      const cu = prev[nhomChon] || MAC_DINH_NHAP_NHOM();
+      const cu = prev[nhomChon] || MAC_DINH_NHAP_NHOM(goi);
       return {
         ...prev,
         [nhomChon]: {
@@ -1024,9 +1086,9 @@ export default function Function1({
       loi = "Gói chỉ định thầu bắt buộc nhập nội dung và căn cứ.";
     else if (ngoaiKhoangNhom
              && (!nhapNhom.loaiLyDo || nhapNhom.loaiLyDo === "theo_lich_su"))
-      loi = "Số lượng ngoài P50–P75 bắt buộc chọn lý do đề xuất.";
+      loi = "Số lượng > P75 bắt buộc chọn lý do đề xuất.";
     else if (ngoaiKhoangNhom && !(nhapNhom.ghiChu || "").trim())
-      loi = "Số lượng ngoài P50–P75 bắt buộc nhập ghi chú thêm.";
+      loi = "Số lượng > P75 bắt buộc nhập ghi chú thêm.";
     if (loi) {
       setLoiNhapNhom(loi);
       return;
@@ -1083,7 +1145,8 @@ export default function Function1({
           lichSuThang[m.ma_hang],
           thieuTheoThang[m.ma_hang],
           doDaiKy(nhap),
-          nhap.soLuong
+          nhap.soLuong,
+          thangCuoiHIS
         )
       : null;
     const dong = {
@@ -1114,10 +1177,10 @@ export default function Function1({
     else if (CO_GOI_Y_SO_LUONG(goi) && dong.ngoaiKhoang
              && (!dong.loaiLyDo || dong.loaiLyDo === "theo_lich_su"))
       loi = dong.coKhoangGoiY
-        ? `Số lượng nằm ngoài khoảng ${fmt(dong.goiYTu)}–${fmt(dong.goiYDen)}; vui lòng chọn lý do đề xuất.`
-        : "Chưa có dải P50–P75 hợp lệ; vui lòng chọn lý do đề xuất.";
+        ? `Số lượng vượt P75 (${fmt(dong.goiYDen)}); vui lòng chọn lý do đề xuất.`
+        : "Chưa có P75 hợp lệ; vui lòng chọn lý do đề xuất.";
     else if (CO_GOI_Y_SO_LUONG(goi) && dong.ngoaiKhoang && !(dong.ghiChu || "").trim())
-      loi = "Số lượng ngoài khoảng P50–P75 bắt buộc nhập ghi chú thêm.";
+      loi = "Số lượng > P75 bắt buộc nhập ghi chú thêm.";
     if (loi) {
       setLoiBanNhap((prev) => ({ ...prev, [m.ma_hang]: loi }));
       return;
@@ -1162,7 +1225,8 @@ export default function Function1({
           lichSuThang[n.ma_hang],
           thieuTheoThang[n.ma_hang],
           doDaiKy(n),
-          n.soLuong
+          n.soLuong,
+          thangCuoiHIS
         );
         const ngoaiKhoang = !danhGia || danhGia.ngoaiKhoang;
         return {
@@ -1200,10 +1264,17 @@ export default function Function1({
     });
     return [...m.entries()];
   }, [gioHang]);
+  // Nhãn gói cho khay giỏ — LUÔN theo tab gói con đang đứng (khớp đúng cái
+  // submit() sẽ ghi, xem QĐ "1 giỏ = 1 gói con" 07/08/2026), KHÔNG dùng
+  // `n.goi` tĩnh trên vat_tu nữa (dữ liệu thầu cũ, gây hiểu lầm mã bị "phân
+  // sai gói" trong khi thực chất giỏ luôn nộp theo đúng 1 gói con đang xem).
+  const tenGoiHienTai = goi === "dau_thau_rong_rai"
+    ? (GOI_ID_MAP[goiIdDanhMuc]?.goi || "Chưa chọn gói con")
+    : NHAN_GOI_THAU[goi] || goi;
   const gioTheoGoi = useMemo(() => {
     const map = new Map();
     gioHang.forEach((n) => {
-      const tenGoi = n.goi || "Chưa phân gói thầu";
+      const tenGoi = tenGoiHienTai;
       if (!map.has(tenGoi)) map.set(tenGoi, new Map());
       const nhomMap = map.get(tenGoi);
       const maNhom = n.ma_quan_ly || "—";
@@ -1218,7 +1289,7 @@ export default function Function1({
       nhomMap.get(maNhom).dong.push(n);
     });
     return [...map.entries()].map(([ten, nhom]) => [ten, [...nhom.values()]]);
-  }, [gioHang]);
+  }, [gioHang, tenGoiHienTai]);
 
   const submit = async () => {
     setLoiLuu("");
@@ -1235,13 +1306,20 @@ export default function Function1({
     }
     setDangLuu(true);
 
+    // "1 giỏ = 1 gói con" (chốt 07/08/2026): khoa gửi giỏ khi đang đứng ở tab
+    // gói con nào (chon.goiCon) thì MỌI mã trong giỏ ghi nhận đúng gói con đó
+    // — ghi đè lên nhãn `goi` tĩnh trên vat_tu (phân loại theo dữ liệu thầu
+    // cũ, có thể khác/lẫn gói giữa các mã cùng giỏ). Chỉ áp cho rộng rãi 18T
+    // (5 gói con); bổ sung không có khái niệm gói con nên giữ nguyên.
+    const goiGhiDe = goi === "dau_thau_rong_rai" ? (GOI_ID_MAP[goiIdDanhMuc]?.goi || null) : null;
+
     // Một RPC = một transaction PostgreSQL: hoặc lưu đủ mọi mã + lý do +
     // version, hoặc rollback toàn bộ. Không còn tình trạng gửi được nửa giỏ.
     const items = gioHang.map((nhap) => ({
       ma_hang: nhap.ma_hang,
       so_luong: Math.round(Number(nhap.soLuong)),
       loai_mua_sam: goi,
-      goi: nhap.goi || null,
+      goi: goiGhiDe || nhap.goi || null,
       tu_thang: Number(nhap.tuThang),
       tu_nam: Number(nhap.tuNam),
       den_thang: Number(nhap.denThang),
@@ -1484,6 +1562,14 @@ export default function Function1({
           </div>
         )}
 
+        {!toanVien && khoaHienTai && goiIdDanhMuc && (
+          <a href={`#danh-muc-de-xuat/${goiIdDanhMuc}/${encodeURIComponent(khoaHienTai)}`}
+            className="flex items-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2.5 text-sm font-medium text-teal-800 hover:bg-teal-100">
+            <ExternalLink size={15} />
+            Xem Danh mục đề xuất của khoa
+          </a>
+        )}
+
         <div className="bg-white border border-slate-200 rounded-lg p-3">
           <label className="text-xs text-slate-400 block mb-1.5">Tìm nhóm kỹ thuật hoặc mã hàng</label>
           <div className="relative mb-3">
@@ -1659,6 +1745,29 @@ export default function Function1({
                       </div>
                     ))}
                   </div>
+
+                  {/* Chart theo mã quản lý (đã cộng quy đổi mọi mã hàng trong
+                      nhóm) — trước đây vẽ theo từng mã hàng riêng, giờ số
+                      lượng chỉ nhập ở cấp mã quản lý nên chart cũng gộp lên
+                      cấp này để khớp đúng con số đang chốt. */}
+                  <div className="mt-3 bg-white border border-slate-200 rounded-lg p-3">
+                    <p className="text-xs text-slate-500 mb-2">
+                      Tổng số lượng sử dụng theo năm ({tongNhom.dvtChuan})
+                    </p>
+                    <BarChartNam lichSu={lichSuNhom} />
+                  </div>
+                  <div className="mt-3 bg-white border border-slate-200 rounded-lg p-3">
+                    <p className="text-xs text-slate-500 mb-2">
+                      Xu hướng sử dụng theo tháng (chỉ để tham khảo)
+                    </p>
+                    <ChartDongBo lichSu={lichSuNhom} />
+                    <div className="flex flex-wrap gap-4 mt-2 px-1">
+                      {tongNhom.nam.map((yr, i) => (
+                        <LegendItem key={yr} shape={kyHieuNam(i, tongNhom.nam.length)}
+                          color={mauNam(i, tongNhom.nam.length)} label={`Thực dùng ${yr}`} />
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -1677,7 +1786,7 @@ export default function Function1({
                   </p>
                 )}
 
-                <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+                <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
                   <div>
                     <label className="mb-1 block text-xs text-slate-500">
                       Tổng số lượng đề xuất ({dvtChuan || "chưa có ĐVT chuẩn"})
@@ -1694,10 +1803,30 @@ export default function Function1({
                         thieu={thieuNhom}
                         H={doDaiKy(nhapNhom)}
                         giaTri={nhapNhom.soLuong}
+                        thangCuoiHIS={thangCuoiHIS}
                         onChon={(v) => capNhatNhapNhom("soLuong", String(v))}
                       />
                     )}
                   </div>
+                  {CO_TUY_CHON_30 && (
+                    <div>
+                      <label className="mb-1 block text-xs text-slate-500">
+                        Trần tùy chọn mua thêm 30% ({dvtChuan || "ĐVT chuẩn"})
+                      </label>
+                      <motion.div
+                        key={tinhTuyChonMuaThem30(Math.round(Number(nhapNhom.soLuong) || 0))}
+                        initial={{ opacity: 0.5, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ type: "spring", bounce: 0.2, visualDuration: 0.25 }}
+                        className="w-full rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-right font-mono text-sm font-semibold text-sky-900"
+                      >
+                        {fmt(tinhTuyChonMuaThem30(Math.round(Number(nhapNhom.soLuong) || 0)))}
+                      </motion.div>
+                      <p className="mt-1 text-[11px] leading-snug text-slate-400">
+                        <b>floor(30% × tổng)</b> — trần mua thêm sau đấu thầu, không tự động cộng vào số đề xuất.
+                      </p>
+                    </div>
+                  )}
                   <div>
                     <label className="mb-1 block text-xs text-slate-500">
                       Dùng từ → đến <span className="text-red-500">*</span>
@@ -1722,7 +1851,7 @@ export default function Function1({
                 <div className="mt-4 rounded-lg border border-slate-200">
                   <div className="grid grid-cols-[90px_1fr_110px_150px] gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
                     <span>Mã hàng</span>
-                    <span>Khoa chọn mã tương đương</span>
+                    <span>Khoa chọn mã tương đương · <span className="italic">Lịch sử (3 năm gần nhất)</span></span>
                     <span className="text-right">Số lượng mã hàng</span>
                     <span className="text-right">Sau quy đổi</span>
                   </div>
@@ -1732,19 +1861,31 @@ export default function Function1({
                     const soPhanBo = Number(nhapNhom.phanBo?.[m.ma_hang]) || 0;
                     return (
                       <div key={m.ma_hang}
-                        className="grid grid-cols-[90px_1fr_110px_150px] items-center gap-2 border-b border-slate-100 px-3 py-2 text-xs last:border-0">
-                        <span className="font-mono text-slate-500">{m.ma_hang}</span>
+                        className="grid grid-cols-[90px_1fr_110px_150px] items-start gap-2 border-b border-slate-100 px-3 py-2 text-xs last:border-0">
+                        <span className="font-mono text-slate-500 pt-0.5">{m.ma_hang}</span>
                         <span>
                           <span className="block">{m.ten_vat_tu}</span>
                           <span className="text-slate-400">{m.dvt} · 1 {m.dvt} = {heSo || "?"} {dvtChuan || "ĐVT chuẩn"}</span>
+                          {/* Lịch sử xuất kho từng năm của riêng mã hàng này */}
+                          <span className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                            {tongTheoNamLS(lichSuThang[m.ma_hang]).length > 0
+                              ? tongTheoNamLS(lichSuThang[m.ma_hang]).map(({ nam, tong }) => (
+                                  <span key={nam} className="text-slate-500">
+                                    <span className="text-slate-400">{nam}:</span>{" "}
+                                    <b className="font-semibold text-slate-600">{fmt(tong)}</b>{" "}{m.dvt}
+                                  </span>
+                                ))
+                              : <span className="italic text-slate-400">Chưa có lịch sử</span>
+                            }
+                          </span>
                         </span>
                         <input type="number" min="0" step="1"
                           value={nhapNhom.phanBo?.[m.ma_hang] || ""}
                           disabled={!tinhTrangQuyDoi.hopLe}
                           onChange={(e) => capNhatPhanBo(m.ma_hang, e.target.value)}
-                          className="w-full rounded border border-slate-300 px-1.5 py-1 text-right font-mono disabled:bg-slate-100"
+                          className="w-full rounded border border-slate-300 px-1.5 py-1 text-right font-mono disabled:bg-slate-100 mt-0.5"
                         />
-                        <span className="text-right font-mono text-teal-800">
+                        <span className="text-right font-mono text-teal-800 pt-0.5">
                           {fmt(soPhanBo * Number(heSo || 0))} {dvtChuan}
                         </span>
                       </div>
@@ -1760,6 +1901,39 @@ export default function Function1({
                       {fmt(tongDaPhanBo)} / {fmt(Number(nhapNhom.soLuong) || 0)} {dvtChuan}
                     </span>
                   </div>
+                  <AnimatePresence initial={false}>
+                    {CO_GOI_Y_SO_LUONG(goi) && danhGiaPhanBo && tongDaPhanBo > 0 && (
+                      <motion.div
+                        key={ngoaiKhoangPhanBo ? "ngoai" : "trong"}
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ type: "spring", bounce: 0.15, visualDuration: 0.25 }}
+                        className={`flex items-start gap-1.5 px-3 py-2 text-[11px] border-t ${
+                          ngoaiKhoangPhanBo
+                            ? "border-red-200 bg-red-50 text-red-800"
+                            : "border-teal-100 bg-white text-teal-700"
+                        }`}
+                      >
+                        {ngoaiKhoangPhanBo ? (
+                          <>
+                            <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                            <span>
+                              <b>Tổng phân bổ đang vượt P75</b> (P75 = {fmt(Math.round(danhGiaPhanBo.den))} {dvtChuan}).
+                              Khi đúng bằng tổng MQ, sẽ bắt chọn lý do và ghi chú ở dưới.
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <Check size={12} className="mt-0.5 shrink-0" />
+                            <span>
+                              Tổng phân bổ ≤ P75 ({fmt(Math.round(danhGiaPhanBo.den))} {dvtChuan}) — không cần giải trình thêm.
+                            </span>
+                          </>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -1789,7 +1963,7 @@ export default function Function1({
                       <textarea rows={2} value={nhapNhom.ghiChu}
                         onChange={(e) => capNhatNhapNhom("ghiChu", e.target.value)}
                         className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-                        placeholder={ngoaiKhoangNhom ? "Nêu rõ căn cứ chọn tổng số lượng ngoài P50–P75" : ""}
+                        placeholder={ngoaiKhoangNhom ? "Nêu rõ căn cứ chọn tổng số lượng vượt P75" : ""}
                       />
                     </div>
                   )}
@@ -1823,296 +1997,6 @@ export default function Function1({
                   </button>
                 </div>
               </div>
-
-              {/* Bảng chi tiết cũ được ẩn: số lượng chỉ được nhập ở cấp mã quản lý. */}
-              <table className="hidden w-full text-sm">
-                <thead>
-                  <tr className="text-slate-400 text-xs border-b border-slate-100">
-                    <th className="text-left font-normal px-4 py-2">Mã hàng</th>
-                    <th className="text-left font-normal px-4 py-2">Tên vật tư</th>
-                    <th className="text-right font-normal px-4 py-2">Đã dùng (theo năm)</th>
-                    <th className="text-right font-normal px-4 py-2 w-36">Số lượng đề xuất {NAM_DE_XUAT}</th>
-                    {CO_TUY_CHON_30 && (
-                      <th className="text-right font-normal px-4 py-2">Trần tùy chọn 30%</th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {maHangHienThi.map((m) => {
-                    const ls = lichSuThang[m.ma_hang] || {};
-                    const namSap = Object.keys(ls).sort();
-                    const coLichSu = namSap.length > 0;
-                    const dangMo = maMoRong === m.ma_hang;
-                    const nhap = layNhap(m.ma_hang);
-                    const dvKy = doDaiKy(nhap);
-                    const tong = Math.round(Number(nhap.soLuong)) || 0;
-                    return (
-                      <Fragment key={m.ma_hang}>
-                        <tr className={`border-b border-slate-50 cursor-pointer ${dangMo ? "bg-slate-50/60" : "hover:bg-slate-50/40"}`}
-                          onClick={() => setMaMoRong(dangMo ? null : m.ma_hang)}>
-                          <td className="px-4 py-2 font-mono text-xs text-slate-500 align-top">
-                            <span className="inline-flex items-center gap-1">
-                              <ChevronRight size={13} className={`shrink-0 transition-transform ${dangMo ? "rotate-90" : ""} text-slate-400`} />
-                              {m.ma_hang}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2 align-top">
-                            <div className="leading-tight">{m.ten_vat_tu}</div>
-                            <div className="text-xs text-slate-400">
-                              {m.dvt}
-                              {m.goi && <span className="ml-2 text-teal-700">· Gói: {m.goi}</span>}
-                            </div>
-                          </td>
-                          <td className="px-4 py-2 text-right align-top whitespace-nowrap text-xs text-slate-500 font-mono">
-                            {!coLichSu ? (
-                              <span className="text-slate-300">chưa dùng</span>
-                            ) : (
-                              namSap.map((y) => (
-                                <div key={y}>{y}: {fmt(ls[y].reduce((a, b) => a + b, 0))}</div>
-                              ))
-                            )}
-                          </td>
-                          <td className="px-4 py-2 text-right align-top font-mono">
-                            {tong > 0 ? (
-                              <div>
-                                <span className="text-teal-800 font-medium">{fmt(tong)}</span>
-                                <div className="text-xs text-slate-400 font-sans">
-                                  {dvKy >= 1 && (
-                                    <div>T{nhap.tuThang}/{nhap.tuNam} – T{nhap.denThang}/{nhap.denNam} ({dvKy} tháng)</div>
-                                  )}
-                                  <div>{NHAN_GOI_THAU[goi]}</div>
-                                </div>
-                              </div>
-                            ) : (
-                              <span className="text-slate-300">bấm để nhập</span>
-                            )}
-                          </td>
-                          {CO_TUY_CHON_30 && (
-                            <td className="px-4 py-2 text-right align-top whitespace-nowrap font-mono">
-                              {tong > 0 ? (
-                                <div>
-                                  <span className="font-medium text-sky-800">{fmt(tinhTuyChonMuaThem30(tong))}</span>
-                                  <div className="text-[10px] font-sans text-slate-400">tự tính · không sửa</div>
-                                </div>
-                              ) : <span className="text-slate-300">—</span>}
-                            </td>
-                          )}
-                        </tr>
-                        {dangMo && (
-                          <tr className="border-b border-slate-100 bg-slate-50/60">
-                            <td colSpan={CO_TUY_CHON_30 ? 5 : 4} className="px-4 pb-4 pt-1" onClick={(e) => e.stopPropagation()}>
-                              {coLichSu ? (
-                                <>
-                                  <p className="text-xs text-slate-500 mb-2 mt-1">
-                                    Tổng số lượng sử dụng theo năm — mã <span className="font-mono">{m.ma_hang}</span> tại {khoaHienTai}
-                                  </p>
-                                  <div className="bg-white border border-slate-200 rounded-lg p-3">
-                                    <BarChartNam lichSu={ls} />
-                                  </div>
-
-                                  <p className="text-xs text-slate-500 mb-2 mt-3">
-                                    Xu hướng sử dụng theo tháng (chỉ để tham khảo)
-                                  </p>
-                                  <div className="bg-white border border-slate-200 rounded-lg p-3">
-                                    <ChartDongBo lichSu={ls} />
-                                    <div className="flex flex-wrap gap-4 mt-2 px-1">
-                                      {namSap.map((yr, i) => (
-                                        <LegendItem key={yr} shape={kyHieuNam(i, namSap.length)} color={mauNam(i, namSap.length)} label={`Thực dùng ${yr}`} />
-                                      ))}
-                                    </div>
-                                  </div>
-                                </>
-                              ) : (
-                                <p className="text-xs text-slate-400 py-3 mt-1">
-                                  Khoa {khoaHienTai} chưa từng xuất kho mã này — không có lịch sử để vẽ chart.
-                                </p>
-                              )}
-
-                              {/* Nhập đề xuất. Số tháng KHÔNG còn nhập tay — suy
-                                  ra từ kỳ từ/đến (xem comment ở doDaiKy). */}
-                              <div className="bg-white border border-slate-200 rounded-lg p-3 mt-3 space-y-3">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                  <div>
-                                    <label className="text-xs text-slate-500 block mb-1">Số lượng đề xuất ({m.dvt || "đơn vị"}) <span className="text-red-500">*</span></label>
-                                    <input type="number" min="1" value={nhap.soLuong}
-                                      onChange={(e) => capNhatNhap(m, "soLuong", e.target.value)}
-                                      placeholder="vd 100"
-                                      className="w-full text-right font-mono text-sm border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500" />
-                                    {CO_GOI_Y_SO_LUONG(goi) ? (
-                                      <GoiYSoLuong
-                                        lichSu={lichSuThang[m.ma_hang]}
-                                        thieu={thieuTheoThang[m.ma_hang]}
-                                        H={dvKy >= 1 ? dvKy : 0}
-                                        abc={abcTheoNhom[m.ma_quan_ly || nhomChon]}
-                                        giaTri={nhap.soLuong}
-                                        onChon={(v) => capNhatNhap(m, "soLuong", String(v))}
-                                      />
-                                    ) : (
-                                      <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-2 text-[11px] leading-snug text-amber-900">
-                                        Gói chỉ định thầu không dùng khoảng công thức. Khoa tự chốt số lượng
-                                        và nhập đầy đủ nội dung, căn cứ ở phần dưới.
-                                      </p>
-                                    )}
-                                  </div>
-                                  {CO_TUY_CHON_30 && (
-                                    <div>
-                                      <label className="text-xs text-slate-500 block mb-1">
-                                        Trần tùy chọn mua thêm 30% ({m.dvt || "đơn vị"})
-                                      </label>
-                                      <div className="w-full rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-right font-mono text-sm font-semibold text-sky-900">
-                                        {fmt(tinhTuyChonMuaThem30(Math.round(Number(nhap.soLuong))))}
-                                      </div>
-                                      <p className="mt-1 text-[11px] leading-snug text-slate-400">
-                                        Đây là quyền mua tối đa ở quyết định thứ hai; không tự động cộng vào số mua.
-                                      </p>
-                                    </div>
-                                  )}
-                                  <div>
-                                    <label className="text-xs text-slate-500 block mb-1">Dùng từ → đến <span className="text-red-500">*</span></label>
-                                    <div className="flex items-center gap-1 flex-wrap">
-                                      <ChonKyThang gtThang={nhap.tuThang} gtNam={nhap.tuNam}
-                                        doiThang={(v) => capNhatNhap(m, "tuThang", v)}
-                                        doiNam={(v) => capNhatNhap(m, "tuNam", v)} />
-                                      <span className="text-slate-400 text-sm px-0.5">→</span>
-                                      <ChonKyThang gtThang={nhap.denThang} gtNam={nhap.denNam}
-                                        doiThang={(v) => capNhatNhap(m, "denThang", v)}
-                                        doiNam={(v) => capNhatNhap(m, "denNam", v)} />
-                                    </div>
-                                    {dvKy < 1 ? (
-                                      <p className="text-xs mt-1 text-red-600">Mốc kết thúc phải sau mốc bắt đầu</p>
-                                    ) : (
-                                      <p className="text-xs mt-1 text-slate-400">Khoảng đã chọn: {dvKy} tháng</p>
-                                    )}
-                                  </div>
-                                  
-                                </div>
-
-                                {/* Chỉ định thầu = ngoại lệ pháp lý, mua nhanh
-                                    nhưng dễ bị soi. Bắt giải trình bằng chữ NGAY
-                                    tại dòng, không cho chỉ chọn lý do rồi thôi. */}
-                                {CAN_GIAI_TRINH(goi) && (
-                                  <div className="border border-amber-300 bg-amber-50 rounded-md p-2.5">
-                                    <div className="flex items-start gap-1.5 mb-2">
-                                      <AlertTriangle size={13} className="text-amber-700 mt-0.5 shrink-0" />
-                                      <p className="text-xs text-amber-900 leading-snug">
-                                        Chỉ định thầu là ngoại lệ, hạn chế dùng. Hồ sơ phải nêu rõ
-                                        nội dung và căn cứ — Phòng Điều dưỡng sẽ trả lại nếu để trống.
-                                      </p>
-                                    </div>
-                                    <label className="text-xs text-amber-900 block mb-1">
-                                      Nội dung &amp; căn cứ chỉ định thầu <span className="text-red-600">*</span>
-                                    </label>
-                                    <textarea rows={3}
-                                      value={nhap.noiDungChiDinh || ""}
-                                      onChange={(e) => capNhatNhap(m, "noiDungChiDinh", e.target.value)}
-                                      className="w-full border border-amber-300 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-                                      placeholder="Vật tư dùng cho việc gì, vì sao không kịp chờ đấu thầu rộng rãi, hậu quả nếu chậm..." />
-                                    {!(nhap.noiDungChiDinh || "").trim() && (
-                                      <p className="text-xs text-red-700 mt-1">Chưa nhập — dòng này chưa gửi được.</p>
-                                    )}
-                                  </div>
-                                )}
-
-                                {/* Lý do RIÊNG cho từng mã hàng — 1 bản đề xuất
-                                    có nhiều mặt hàng, mỗi thứ một lý do khác. */}
-                                <div className="border-t border-slate-100 pt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                  <div>
-                                    <label className="text-xs text-slate-500 block mb-1">
-                                      Lý do đề xuất
-                                      {CO_GOI_Y_SO_LUONG(goi) && nhap.ngoaiKhoang
-                                        && <span className="text-red-500"> *</span>}
-                                    </label>
-                                    {CO_GOI_Y_SO_LUONG(goi) && !nhap.ngoaiKhoang ? (
-                                      <div className="rounded-md border border-teal-200 bg-teal-50 px-3 py-2 text-sm text-teal-800">
-                                        Theo lịch sử sử dụng
-                                      </div>
-                                    ) : (
-                                      <div className="relative">
-                                        <select value={nhap.loaiLyDo}
-                                          onChange={(e) => capNhatNhap(m, "loaiLyDo", e.target.value)}
-                                          className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                          {CO_GOI_Y_SO_LUONG(goi) && nhap.ngoaiKhoang
-                                            && <option value="">— Chọn lý do đề xuất —</option>}
-                                          {(CO_GOI_Y_SO_LUONG(goi) && nhap.ngoaiKhoang
-                                            ? LY_DO_GIAI_TRINH_OPTIONS
-                                            : LY_DO_OPTIONS
-                                          ).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                                        </select>
-                                        <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                      </div>
-                                    )}
-                                    {CO_GOI_Y_SO_LUONG(goi) && nhap.ngoaiKhoang
-                                      && (!nhap.loaiLyDo || nhap.loaiLyDo === "theo_lich_su") && (
-                                      <p className="mt-1 text-xs text-red-600">
-                                        {nhap.coKhoangGoiY
-                                          ? <>Số {fmt(Number(nhap.soLuong) || 0)} nằm ngoài khoảng{" "}
-                                              {fmt(nhap.goiYTu)}–{fmt(nhap.goiYDen)}.</>
-                                          : <>Mã này chưa có dải P50–P75 hợp lệ.</>}{" "}
-                                        Vui lòng chọn lý do đề xuất.
-                                      </p>
-                                    )}
-                                  </div>
-                                  {nhap.loaiLyDo === "ky_thuat_moi" && (
-                                    <div>
-                                      <label className="text-xs text-slate-500 block mb-1">Ước ca / tháng</label>
-                                      <input type="number" value={nhap.uocCaThang}
-                                        onChange={(e) => capNhatNhap(m, "uocCaThang", e.target.value)}
-                                        placeholder="vd 20"
-                                        className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
-                                    </div>
-                                  )}
-                                  {nhap.loaiLyDo === "ky_thuat_moi" && (
-                                    <div className="sm:col-span-2">
-                                      <label className="text-xs text-slate-500 block mb-1">Tên kỹ thuật mới <span className="text-red-500">*</span></label>
-                                      <input value={nhap.tenKyThuatMoi}
-                                        onChange={(e) => capNhatNhap(m, "tenKyThuatMoi", e.target.value)}
-                                        placeholder="vd Nội soi tán sỏi qua da đường hầm nhỏ"
-                                        className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
-                                    </div>
-                                  )}
-                                  {(!CO_GOI_Y_SO_LUONG(goi) || nhap.ngoaiKhoang) && (
-                                    <div className="sm:col-span-2">
-                                      <label className="text-xs text-slate-500 block mb-1">
-                                        Ghi chú thêm
-                                        {CO_GOI_Y_SO_LUONG(goi) && nhap.ngoaiKhoang
-                                          ? <span className="text-red-500"> *</span>
-                                          : <span className="text-slate-400"> (không bắt buộc)</span>}
-                                      </label>
-                                      <textarea rows={2} value={nhap.ghiChu}
-                                        onChange={(e) => capNhatNhap(m, "ghiChu", e.target.value)}
-                                        placeholder={CO_GOI_Y_SO_LUONG(goi) && nhap.ngoaiKhoang
-                                          ? "Nêu rõ căn cứ chọn số lượng ngoài khoảng P50–P75"
-                                          : undefined}
-                                        className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
-                                      {CO_GOI_Y_SO_LUONG(goi) && nhap.ngoaiKhoang && !(nhap.ghiChu || "").trim() && (
-                                        <p className="mt-1 text-xs text-red-600">
-                                          Bắt buộc ghi chú cụ thể khi số lượng ngoài khoảng P50–P75.
-                                        </p>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-3">
-                                  <span className="text-[11px] text-slate-500">
-                                    Số đang chọn mới là bản soạn; chưa vào giỏ.
-                                  </span>
-                                  {loiBanNhap[m.ma_hang] && (
-                                    <span className="text-xs text-red-600">{loiBanNhap[m.ma_hang]}</span>
-                                  )}
-                                  <button type="button" onClick={() => themVaoGio(m)}
-                                    className="inline-flex items-center gap-1.5 rounded-md bg-teal-700 px-3 py-2 text-sm font-medium text-white hover:bg-teal-800">
-                                    <ShoppingCart size={15} /> Thêm vào giỏ đề xuất
-                                  </button>
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </Fragment>
-                    );
-                  })}
-                </tbody>
-              </table>
             </div>
           </>
         )}
@@ -2178,7 +2062,6 @@ export default function Function1({
                               <span className="text-slate-400 shrink-0 hidden sm:inline">
                                 T{n.tuThang}/{n.tuNam}–T{n.denThang}/{n.denNam}
                               </span>
-                              {n.goi && <span className="text-teal-700 shrink-0 hidden sm:inline">Gói: {n.goi}</span>}
                               <span className="text-slate-400 shrink-0 hidden md:inline">{NHAN_LY_DO[n.loaiLyDo]}</span>
                               <button onClick={() => boKhoiGio(n.ma_hang)} className="text-slate-300 hover:text-red-600 shrink-0" title="Bỏ khỏi giỏ">
                                 <X size={13} />
