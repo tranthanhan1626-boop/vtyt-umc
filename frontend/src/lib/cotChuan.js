@@ -195,6 +195,25 @@ export const GOI_ID_MAP = {
   "bs-t9":           { loai_mua_sam: "mua_sam_bo_sung", goi: null, nhan: "Bổ sung · đợt tháng 9" },
 };
 
+// -------- Ánh xạ cột: Danh mục KHOA <-> Tổng hợp PĐD ----------------------
+// QĐ 08/08/2026 của chủ dự án: "PĐD chỉnh sửa gì thì khoa đều thấy hết".
+// Hai biểu mẫu đặt tên khoá khác nhau cho cùng một thứ, nên phải có bảng tra
+// thì mới gắn được ô PĐD sửa đè vào đúng ô trên màn khoa.
+// Cột nào không có ở đây nghĩa là hai bên trùng tên khoá (ten_vt_2627,
+// tskt_2627, dvt, ma_nhom, ten_nhom_ql...) — dùng thẳng, không cần đổi.
+const COT_KHOA_DOI_TEN = {
+  sl_de_xuat_18t: "sl_de_xuat_2627",
+  giai_trinh_2627: "giai_trinh",
+  ma_sp_2627: "ma_sp",
+  hang_sx_2627: "hang_sx",
+  nuoc_sx_2627: "nuoc_sx",
+};
+
+/** Khoá cột bên màn khoa -> khoá cột tương ứng bên bản tổng hợp PĐD. */
+export function cotKhoaSangPdd(colKey) {
+  return COT_KHOA_DOI_TEN[colKey] || colKey;
+}
+
 // -------- Cột "Số lượng đã sử dụng" SINH ĐỘNG theo dữ liệu thật -----------
 // Hai file mẫu bệnh viện đóng đinh 4 cột 2022/2023/2024/"7 tháng 2025" vì
 // chúng được soạn cho kỳ thầu 2026-2027. Dữ liệu HIS thì chạy tiếp: đến

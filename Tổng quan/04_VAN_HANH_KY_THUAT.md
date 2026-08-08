@@ -272,6 +272,22 @@ Backup chưa thử restore không được coi là backup. Phải diễn tập t
     chiều dữ liệu đó không** — nếu không thì gộp ở view. Nhớ giữ
     `security_invoker = true` để phạm vi quyền không đổi.
 
+23. **`create policy` KHÔNG có `if not exists`.** Patch nào tạo policy mà chạy
+    lại lần hai là văng lỗi và rollback cả transaction — trong khi quy trình
+    của dự án là dán patch vào SQL Editor bằng tay, chạy trùng rất dễ xảy ra.
+    Luôn viết `drop policy if exists "…" on <bảng>;` ngay trước mỗi
+    `create policy`. (`create table`/`create or replace function|view` thì đã
+    idempotent sẵn.)
+24. **Gán `OLD`/`NEW` trong khối DECLARE của trigger.** `v_row … := case when
+    TG_OP = 'DELETE' then old else new end;` đặt ở DECLARE có thể làm plpgsql
+    báo `record "old" is not assigned yet` khi trigger chạy cho INSERT, dù
+    nhánh đó không được chọn. Gán trong THÂN hàm bằng `if TG_OP = 'DELETE'`.
+25. **Trigger chặn sửa phải tính tới đường DỌN DẸP.** Thêm trigger chặn
+    INSERT/UPDATE/DELETE lên một bảng thì mọi hàm dọn dữ liệu trên bảng đó
+    cũng bị chặn theo — `patch_zs` chặn sửa sau khi chốt và suýt làm nút "Kết
+    thúc đợt & dọn" không chạy được nữa (chỉ cần MỘT khoa đã chốt). Hàm dọn
+    phải gỡ điều kiện khoá TRƯỚC, và phải có test canh đúng thứ tự đó.
+
 ## 6b. Dung lượng Supabase — dự án chỉ dùng gói FREE (500MB)
 
 Đo thật 07/08/2026: **142MB / 500MB**.

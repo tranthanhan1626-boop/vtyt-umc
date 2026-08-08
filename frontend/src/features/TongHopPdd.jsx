@@ -250,14 +250,25 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
   const [loi, setLoi] = useState("");
   const [cotLocked, setCotLocked] = useState(new Set());
   const [dongLocked, setDongLocked] = useState(new Set());
+  // Chốt CẢ BẢN tổng hợp (patch_zs). Khác khoá cột/dòng: chốt là khoá tất,
+  // dùng khi số đã xong và sắp mang đi thầu. Server chặn độc lập bằng trigger.
+  const [chot, setChot] = useState(null);   // { chot_boi, chot_luc } | null
+  const [dangChot, setDangChot] = useState(false);
 
   const taiLai = useCallback(async () => {
     setDangTai(true);
     setLoi("");
     try {
-      const { bo, rows, dsNamCoDuLieu: dsNam } = await taiDuLieuGoc(goiId);
-      const { overrideTheoMa: ov, cotLocked: cl, dongLocked: dl, cotAn: ca } =
-        await taiOverrideVaKhoa(goiId, NAM_DE_XUAT);
+      const [{ bo, rows, dsNamCoDuLieu: dsNam }, khoaVaOverride, chotRes] = await Promise.all([
+        taiDuLieuGoc(goiId),
+        taiOverrideVaKhoa(goiId, NAM_DE_XUAT),
+        supabase.from("danh_muc_tong_hop_chot")
+          .select("chot_boi, chot_luc")
+          .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT).maybeSingle(),
+      ]);
+      const { overrideTheoMa: ov, cotLocked: cl, dongLocked: dl, cotAn: ca } = khoaVaOverride;
+      // Chưa chạy patch_zs -> bảng chưa có; coi như chưa chốt, không làm vỡ màn.
+      setChot(chotRes.error ? null : (chotRes.data || null));
       setBoThau(bo);
       setRowsGoc(rows);
       setDsNamCoDuLieu(dsNam || []);
@@ -378,8 +389,10 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
   // PĐD phải chỉnh được số sai mà không cần nhờ ai. Đổi lại, ô nào bị sửa đè
   // sẽ được ĐÁNH DẤU RÕ kèm số gốc, và mọi lần sửa đều vào audit theo ô
   // (danh_muc_tong_hop_o_audit). Chỉ còn khoá cột/khoá dòng là chặn sửa.
+  // Đã CHỐT cả bản thì không sửa ô nào nữa (patch_zs) — server cũng chặn bằng
+  // trigger, đây chỉ là lớp cho người dùng thấy sớm.
   const oCoTheSua = (col, maHang) =>
-    !cotLocked.has(col.key) && !dongLocked.has(maHang);
+    !chot && !cotLocked.has(col.key) && !dongLocked.has(maHang);
 
   /** Ô này có đang bị PĐD sửa đè lên số gốc không? */
   const oBiSuaDe = (maHang, cot) => overrideTheoMa.get(maHang)?.has(cot) ?? false;
@@ -439,6 +452,37 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
     } finally {
       setDangXuat(false);
     }
+  };
+
+  // Chốt / mở chốt cả bản tổng hợp (patch_zs). Xoá dòng = mở chốt; trigger tự
+  // ghi audit nên không mất dấu vết ai chốt, ai mở, lúc nào.
+  const doiChot = async () => {
+    setDangChot(true);
+    setLoiO("");
+    const dangChot = !!chot;
+    const { data, error } = dangChot
+      ? await supabase.from("danh_muc_tong_hop_chot").delete()
+          .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT).select()
+      : await supabase.from("danh_muc_tong_hop_chot")
+          .insert({ goi_id: goiId, nam_de_xuat: NAM_DE_XUAT, chot_boi: profile.email })
+          .select();
+    setDangChot(false);
+    if (error) {
+      const chuaCoBang = error.code === "42P01"
+        || /danh_muc_tong_hop_chot/i.test(error.message || "");
+      setLoiO(chuaCoBang
+        ? "Staging chưa có chức năng chốt bản tổng hợp. Cần chạy backend/sql/patch_zs_so_chot_va_khoa_sau_chot.sql."
+        : error.message);
+      return;
+    }
+    // Bẫy 18: xoá trả 200 kèm mảng rỗng khi RLS chặn — phải đếm dòng thật.
+    if (!data?.length) {
+      setLoiO(dangChot
+        ? "Không mở được chốt — tài khoản không có quyền, hoặc chưa chạy patch_zs."
+        : "Không chốt được — tài khoản không có quyền, hoặc chưa chạy patch_zs.");
+      return;
+    }
+    setChot(dangChot ? null : data[0]);
   };
 
   const batDauSua = (maHang, colKey, giaTriHienTai) => {
@@ -597,6 +641,14 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
               title="Đầy đủ = mọi ô hiện trọn nội dung (dòng cao). Gọn = cắt còn 4 dòng cho dễ cuộn; bấm vào ô vẫn xem/sửa được đủ.">
               <AlignLeft size={13} /> Nội dung ô: {dongGon ? "GỌN" : "ĐẦY ĐỦ"}
             </button>
+            <button className={`qtdx-tb ${chot ? "" : "primary"}`}
+              onClick={doiChot} disabled={dangChot || !rows.length}
+              title={chot
+                ? "Bản tổng hợp đang KHOÁ. Mở chốt để sửa tiếp."
+                : "Chốt số để mang đi thầu — khoá mọi ô, không ai sửa được nữa."}>
+              {chot ? <Unlock size={13} /> : <Lock size={13} />}
+              {dangChot ? "Đang lưu…" : chot ? "Mở chốt để sửa" : "Chốt số đi thầu"}
+            </button>
             <button className="qtdx-tb" onClick={xuatExcel} disabled={dangXuat || !rows.length}>
               <Download size={13} /> {dangXuat ? "Đang xuất…" : "Xuất Excel đi thầu"}
             </button>
@@ -605,6 +657,12 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
         <div className="mt-2 flex items-center gap-1.5 text-[11px] flex-wrap">
           <span className="qtdx-badge blue">Tổng mã hàng: {tongMaHang}</span>
           <span className="qtdx-badge green">{tongKhoaThamGia} khoa đã đề xuất</span>
+          {chot && (
+            <span className="qtdx-badge amber">
+              ĐÃ CHỐT SỐ ĐI THẦU — mọi ô đang khoá · {chot.chot_boi}
+              {" · "}{new Date(chot.chot_luc).toLocaleString("vi-VN")}
+            </span>
+          )}
           {cotLocked.size > 0 && <span className="qtdx-badge amber">{cotLocked.size} cột đang khoá</span>}
           {dongLocked.size > 0 && <span className="qtdx-badge amber">{dongLocked.size} dòng đang khoá</span>}
           {loiO && (

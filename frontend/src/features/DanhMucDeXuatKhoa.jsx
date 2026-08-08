@@ -7,7 +7,7 @@ import { tinhTuyChonMuaThem30 } from "../lib/tuyChonMuaThem";
 import {
   COT_KHOA, NHOM_COT_KHOA, GOI_ID_MAP, sapXepFreezeTruoc, tinhLeftFreeze,
   tinhSegmentsGroup, taoCotLichSu, thayCotLichSu, suyRaNamCoDuLieu,
-  taoCotLichSuNhom, chenCotLichSuNhom,
+  taoCotLichSuNhom, chenCotLichSuNhom, cotKhoaSangPdd,
 } from "../lib/cotChuan";
 import { xuatExcelDong, tenFileAnToan } from "../lib/xuatExcelDong";
 import { docTenCotTuMau, ganTenMau } from "../lib/tenCotBieuMau";
@@ -219,6 +219,8 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
   // audit `danh_muc_khoa_o_audit` đã có sẵn từ patch_zm (trigger tự ghi mỗi
   // lần giá trị một ô THỰC SỰ đổi), trước giờ chỉ chưa có chỗ nào xem được.
   const [audit, setAudit] = useState(null); // { maHang, cot, dsAudit, dangTai, loi }
+  // Ô PĐD đã sửa đè trên bản tổng hợp: Map<ma_hang, Map<cot_pdd, {gia_tri,...}>>
+  const [suaDeCuaPdd, setSuaDeCuaPdd] = useState(new Map());
   // Mặc định hiện ĐẦY ĐỦ nội dung mọi ô (wraptext) — xem StyleTable.
   const [dongGon, setDongGon] = useState(false);
   // Cấu hình cột dùng CHUNG theo (goiId, năm, khoa), lưu server qua
@@ -392,6 +394,26 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
     return new Map((data || []).map((r) => [r.ma_hang, r.gia_tri || {}]));
   }, [goiId, khoaHienTai]);
 
+  // ---- Minh bạch: PĐD sửa gì trên bản tổng hợp, khoa thấy hết (patch_zs) ---
+  // QĐ 08/08/2026 của chủ dự án. Trước patch_zs, dvsd không có policy nào trên
+  // danh_muc_tong_hop_o nên đọc ra rỗng — khoa nộp số này, đi thầu số khác mà
+  // không biết. Giờ mở ĐỌC (vẫn không cho ghi).
+  const taiSuaDeCuaPdd = useCallback(async () => {
+    if (!goiId) return new Map();
+    const { data, error } = await supabase.from("danh_muc_tong_hop_o")
+      .select("ma_hang, cot, gia_tri, updated_by, updated_at")
+      .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT);
+    // Chưa chạy patch_zs -> RLS trả rỗng chứ không lỗi. Không cản trở gì, chỉ
+    // là chưa thấy được phần PĐD sửa.
+    if (error) return new Map();
+    const m = new Map();
+    (data || []).forEach((r) => {
+      if (!m.has(r.ma_hang)) m.set(r.ma_hang, new Map());
+      m.get(r.ma_hang).set(r.cot, r);
+    });
+    return m;
+  }, [goiId]);
+
   const taiLai = useCallback(async () => {
     setDangTai(true);
     setLoi("");
@@ -401,7 +423,8 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
       const ketQuaTheoMa = dsMaHang?.length
         ? await taiKetQuaThau(bo.loai_mua_sam, khoaHienTai, dsMaHang)
         : new Map();
-      const oDaLuu = await taiODaLuu();
+      const [oDaLuu, suaDePdd] = await Promise.all([taiODaLuu(), taiSuaDeCuaPdd()]);
+      setSuaDeCuaPdd(suaDePdd);
       setBoThau(bo);
       setDsNamCoDuLieu(dsNam || []);
       // Áp giá trị đã lưu ĐÈ lên số gốc hệ thống dựng ra.
@@ -423,7 +446,7 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
     } finally {
       setDangTai(false);
     }
-  }, [goiId, khoaHienTai, taiODaLuu]);
+  }, [goiId, khoaHienTai, taiODaLuu, taiSuaDeCuaPdd]);
 
   useEffect(() => { taiLai(); }, [taiLai]);
 
@@ -452,6 +475,7 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
   const capNhatO = (maHang, colKey, giaTri) => {
     if (COT_CHI_DOC_THEM.has(colKey)) return; // sl_de_xuat_18t: chỉ đọc, xem comment đầu file
     if (daKhoaSua(colKey)) return;            // cột đang khóa sửa (patch_zi)
+    if (trangThaiChot) return;                // đã chốt danh sách (patch_zs)
     setRows((prev) => prev.map((r) => (r.ma_hang === maHang ? { ...r, [colKey]: giaTri } : r)));
   };
 
@@ -459,33 +483,70 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
   // mà bắn mỗi ký tự một request thì vừa nặng vừa đầy audit vô ích.
   const ketThucSuaO = async (maHang, colKey) => {
     setODangChon(null);
-    if (COT_CHI_DOC_THEM.has(colKey) || daKhoaSua(colKey)) return;
+    if (COT_CHI_DOC_THEM.has(colKey) || daKhoaSua(colKey) || trangThaiChot) return;
     const giaTri = rows.find((r) => r.ma_hang === maHang)?.[colKey];
     await luuOLenServer(maHang, colKey, giaTri);
   };
 
+  /** Ô này PĐD đã sửa đè trên bản tổng hợp chưa? (minh bạch, QĐ 08/08/2026) */
+  const oPddSuaDe = (maHang, colKey) =>
+    suaDeCuaPdd.get(maHang)?.get(cotKhoaSangPdd(colKey)) || null;
+
+  // Chỉ đếm ô PĐD sửa mà khoa này THỰC SỰ NHÌN THẤY. `suaDeCuaPdd` chứa cả mã
+  // của khoa khác trong cùng gói con (bản tổng hợp là toàn viện), đếm thẳng nó
+  // sẽ báo "PĐD sửa 3 ô" trong khi trên bảng chỉ có 1 ô viền tím — người dùng
+  // sẽ đi tìm 2 ô không tồn tại.
+  const soOPddSuaDe = useMemo(() => {
+    const cotDangHien = new Set(cotHienThi.map((c) => cotKhoaSangPdd(c.key)));
+    return rows.reduce((n, r) => {
+      const cua = suaDeCuaPdd.get(r.ma_hang);
+      if (!cua) return n;
+      return n + [...cua.keys()].filter((k) => cotDangHien.has(k)).length;
+    }, 0);
+  }, [rows, suaDeCuaPdd, cotHienThi]);
+
+  // Lịch sử một ô = lịch sử khoa sửa + lịch sử PĐD sửa đè ô tương ứng trên bản
+  // tổng hợp, trộn theo thời gian. Tách hai bảng ra hai panel thì khoa phải tự
+  // ghép mốc thời gian trong đầu mới hiểu ai đổi sau ai (QĐ minh bạch
+  // 08/08/2026).
   const xemAudit = async (maHang, colKey) => {
     setAudit({ maHang, cot: colKey, dsAudit: [], dangTai: true });
-    const { data, error } = await supabase.from("danh_muc_khoa_o_audit")
-      .select("gia_tri_cu, gia_tri_moi, nguoi_sua, thoi_gian")
-      .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT).eq("khoa", khoaHienTai)
-      .eq("ma_hang", maHang).eq("cot", colKey)
-      .order("thoi_gian", { ascending: false }).limit(20);
-    const chuaCoBang = error && (error.code === "42P01"
-      || /danh_muc_khoa_o_audit/i.test(error.message || ""));
+    const [khoaRes, pddRes] = await Promise.all([
+      supabase.from("danh_muc_khoa_o_audit")
+        .select("gia_tri_cu, gia_tri_moi, nguoi_sua, thoi_gian")
+        .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT).eq("khoa", khoaHienTai)
+        .eq("ma_hang", maHang).eq("cot", colKey)
+        .order("thoi_gian", { ascending: false }).limit(20),
+      supabase.from("danh_muc_tong_hop_o_audit")
+        .select("gia_tri_cu, gia_tri_moi, nguoi_sua, thoi_gian")
+        .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT)
+        .eq("ma_hang", maHang).eq("cot", cotKhoaSangPdd(colKey))
+        .order("thoi_gian", { ascending: false }).limit(20),
+    ]);
+    const chuaCoBang = khoaRes.error && (khoaRes.error.code === "42P01"
+      || /danh_muc_khoa_o_audit/i.test(khoaRes.error.message || ""));
+    // Lỗi/RLS chặn bên PĐD thì bỏ qua phần đó, đừng làm mất luôn lịch sử khoa.
+    const ds = [
+      ...(khoaRes.data || []).map((a) => ({ ...a, ben: "khoa" })),
+      ...(pddRes.data || []).map((a) => ({ ...a, ben: "pdd" })),
+    ].sort((a, b) => String(b.thoi_gian).localeCompare(String(a.thoi_gian)));
     setAudit({
       maHang, cot: colKey, dangTai: false,
-      dsAudit: error ? [] : (data || []),
+      dsAudit: khoaRes.error ? [] : ds,
       loi: chuaCoBang
         ? "Staging chưa có bảng lịch sử sửa ô. Cần chạy backend/sql/patch_zm_luu_o_danh_muc_khoa.sql."
-        : error?.message,
+        : khoaRes.error?.message,
     });
   };
 
   // Cột khóa sửa: KHÔNG AI sửa được (kể cả PĐD), phải mở khóa trước — đúng
   // "cột đã lock: không ai sửa" mục 3.1 tài liệu nghiệp vụ.
+  // Thêm 08/08/2026: đã CHỐT danh sách thì khoá luôn mọi ô. Server cũng chặn
+  // độc lập bằng trigger (patch_zs) — đây chỉ là lớp cho người dùng thấy sớm,
+  // không phải lớp bảo vệ.
   const oCoTheSua = (col) =>
-    !col.readonly && !COT_CHI_DOC_THEM.has(col.key) && !daKhoaSua(col.key);
+    !col.readonly && !COT_CHI_DOC_THEM.has(col.key) && !daKhoaSua(col.key)
+    && !trangThaiChot;
 
   // ---- Đẩy SL rớt 1 phần (mục 4.3) — mở form, tải ứng viên mã tương đương
   // cùng mã quản lý CÒN TRÚNG (kể cả mã khoa mình chưa từng đề xuất). ----
@@ -689,8 +750,16 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
         {loiLuuO && <p className="mt-2 text-xs text-red-600">{loiLuuO}</p>}
         <div className="mt-2 flex items-center gap-1.5 text-[11px] flex-wrap">
           {trangThaiChot && (
-            <span className="qtdx-badge green">
-              Đã chốt · {trangThaiChot.chot_boi} · {new Date(trangThaiChot.chot_luc).toLocaleString("vi-VN")}
+            <span className="qtdx-badge amber">
+              <Lock size={11} className="mr-1" />
+              ĐÃ CHỐT — mọi ô đang khoá · {trangThaiChot.chot_boi} · {new Date(trangThaiChot.chot_luc).toLocaleString("vi-VN")}
+              {" · bấm \"Mở lại để sửa\" nếu cần chỉnh"}
+            </span>
+          )}
+          {soOPddSuaDe > 0 && (
+            <span className="qtdx-badge violet">
+              Phòng Điều dưỡng đã sửa {soOPddSuaDe} ô của khoa này
+              {" "}— ô có viền tím là số ĐI THẦU, không phải số khoa nộp
             </span>
           )}
           <span className="qtdx-badge green">Số lượng khoa đề xuất: chỉ sửa được ở màn Nhập đề xuất trước đấu thầu</span>
@@ -764,7 +833,7 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
               <RowKhoa key={r.ma_hang} r={r} cotHienThi={cotHienThi} oDangChon={oDangChon}
                 setODangChon={setODangChon} oCoTheSua={oCoTheSua} capNhatO={capNhatO}
                 daKhoaSua={daKhoaSua} ketThucSuaO={ketThucSuaO} oDaSua={oDaSua}
-                xemAudit={xemAudit}
+                xemAudit={xemAudit} oPddSuaDe={oPddSuaDe}
                 dangChonMaDay={dangChonMaDay} moFormDay={moFormDay} setDangChonMaDay={setDangChonMaDay}
                 ungVienDay={ungVienDay} formDay={formDay} setFormDay={setFormDay}
                 luuDaySL={luuDaySL} dangLuuDay={dangLuuDay} thongBaoDay={thongBaoDay} />
@@ -806,7 +875,12 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
               ) : (
                 audit.dsAudit.map((a, i) => (
                   <div key={i} className="text-xs border-b border-slate-100 pb-2">
-                    <div className="text-slate-400">
+                    <div className="flex items-center gap-1.5 text-slate-400">
+                      <span className={`rounded px-1 py-0.5 text-[10px] font-semibold ${
+                        a.ben === "pdd" ? "bg-violet-100 text-violet-800" : "bg-slate-100 text-slate-600"
+                      }`}>
+                        {a.ben === "pdd" ? "PĐD" : "Khoa"}
+                      </span>
                       {new Date(a.thoi_gian).toLocaleString("vi-VN")} · {a.nguoi_sua}
                     </div>
                     <div className="mt-0.5 whitespace-pre-wrap break-words">
@@ -827,7 +901,7 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
 
 function RowKhoa({
   r, cotHienThi, oDangChon, setODangChon, oCoTheSua, capNhatO, daKhoaSua,
-  ketThucSuaO, oDaSua, xemAudit,
+  ketThucSuaO, oDaSua, xemAudit, oPddSuaDe,
   dangChonMaDay, moFormDay, setDangChonMaDay, ungVienDay, formDay, setFormDay,
   luuDaySL, dangLuuDay, thongBaoDay,
 }) {
@@ -840,11 +914,13 @@ function RowKhoa({
           const isEditing = oDangChon?.maHang === r.ma_hang && oDangChon?.colKey === c.key;
           const canSua = oCoTheSua(c);
           const value = r[c.key];
+          const pdd = oPddSuaDe(r.ma_hang, c.key);
           const cn = [
             "qtdx-cell",
             c.readonly || !canSua ? "readonly" : "",
             daKhoaSua(c.key) ? "col-locked" : "",
             oDaSua.has(`${r.ma_hang}|${c.key}`) ? "sua-de" : "",
+            pdd ? "pdd-sua" : "",
             isEditing ? "editing" : "",
             c.kieu === "num" ? "num" : "",
             c.freeze ? "freeze" : "",
@@ -883,10 +959,21 @@ function RowKhoa({
                   {/* Lịch sử sửa ô — hiện ở MỌI ô như bên Tổng hợp PĐD, kể cả
                       ô chưa từng sửa (bấm vào thì panel báo "chưa có lần sửa
                       nào"), để không phải đoán ô nào có lịch sử. */}
+                  {/* PĐD sửa gì khoa thấy hết (QĐ 08/08/2026). Số của PĐD là
+                      số ĐI THẦU nên phải hiện ngay cạnh số khoa nộp, không
+                      giấu trong tooltip. Khoa KHÔNG sửa được ô của PĐD. */}
+                  {pdd && (
+                    <span
+                      className="ml-1.5 inline-flex items-center rounded bg-violet-100 px-1 py-0.5 align-middle text-[10px] font-semibold text-violet-800"
+                      title={`Phòng Điều dưỡng đã sửa thành "${pdd.gia_tri ?? "(trống)"}" `
+                        + `· ${pdd.updated_by} · ${new Date(pdd.updated_at).toLocaleString("vi-VN")}`}>
+                      PĐD: {pdd.gia_tri === null || pdd.gia_tri === "" ? "(trống)" : pdd.gia_tri}
+                    </span>
+                  )}
                   <button
                     onClick={(e) => { e.stopPropagation(); xemAudit(r.ma_hang, c.key); }}
                     className="ml-1 opacity-40 hover:opacity-100"
-                    title="Xem lịch sử sửa ô này">
+                    title="Xem lịch sử sửa ô này (cả khoa và PĐD)">
                     <History size={9} className="inline text-slate-400" />
                   </button>
                 </span>
@@ -990,6 +1077,10 @@ export function StyleTable() {
       /* Cột đang KHÓA SỬA (patch_zi) — nền vàng nhạt để phân biệt với ô chỉ
          đọc do bản chất dữ liệu (readonly, nền xám). */
       td.qtdx-cell.col-locked { background: #fffbeb; cursor: not-allowed; }
+      /* Ô Phòng Điều dưỡng đã sửa đè trên bản tổng hợp — số này mới là số đi
+         thầu, phải phân biệt được với số khoa tự nộp. Viền tím ở mép phải để
+         không đụng vạch cam của "khoa đã sửa" bên mép trái. */
+      td.qtdx-cell.pdd-sua { box-shadow: inset -3px 0 0 #7c3aed; }
       th.freeze, td.freeze { position: sticky; z-index: 15; }
       th.freeze { background: #0f172a; color: #f8fafc; z-index: 30; }
       td.freeze { background: #f1f5f9; color: #0f172a; z-index: 10; }
@@ -1024,6 +1115,7 @@ export function StyleToolbar() {
       .qtdx-badge.amber { background: #fef3c7; color: #92400e; }
       .qtdx-badge.blue { background: #dbeafe; color: #1e40af; }
       .qtdx-badge.red { background: #fee2e2; color: #991b1b; }
+      .qtdx-badge.violet { background: #ede9fe; color: #5b21b6; }
     `}</style>
   );
 }

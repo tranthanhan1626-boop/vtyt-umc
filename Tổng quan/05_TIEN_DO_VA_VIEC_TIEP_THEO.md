@@ -26,11 +26,10 @@ Cập nhật **07/08/2026**. Nhánh chính hiện tại: `phase-a-luong-de-xuat`
 | `patch_zp` | 2 view lịch sử tổng theo nhóm mã quản lý | ✅ 08/08/2026 |
 | `patch_zq` | Tạo Word cam kết ngay khi gửi giỏ, không chờ PĐD duyệt xong | ✅ 08/08/2026 |
 | `patch_zr` | 2 view gộp lịch sử toàn viện — bỏ 123 vòng HTTP tuần tự | ✅ 08/08/2026 (đo lại: 40.628 + 6.684 dòng, số khớp bản cũ) |
-| **`patch_q`** | **Phân nhóm ABC + hệ số k** | ❌ **CHƯA — `v_abc_ma_quan_ly` vẫn 404 ngày 08/08/2026** |
+| `patch_q` | Phân nhóm ABC + hệ số k | ✅ 08/08/2026 |
+| `patch_zs` | Số chốt duy nhất + minh bạch PĐD↔khoa + chốt là khoá sửa | ✅ 08/08/2026 |
 
-⚠️ `patch_q` chỉ phụ thuộc `v_usage_monthly` + `vat_tu` (đều đã có) nên không bị
-chặn bởi gì cả — đơn giản là chưa chạy. Hệ quả: gợi ý hệ số k ở màn Đề xuất số
-lượng đang TẮT ÂM THẦM (Function1 có đường lùi nên không báo lỗi).
+**Toàn bộ patch đã chạy hết trên staging.**
 
 **Đã kiểm sau khi chạy (08/08/2026):**
 
@@ -62,6 +61,46 @@ lượng đang TẮT ÂM THẦM (Function1 có đường lùi nên không báo l
 **Nợ kỹ thuật đã biết:** xem mục 6 `04_VAN_HANH_KY_THUAT.md` (bẫy 16–20).
 
 ## 0. Nhật ký thay đổi (mới nhất ở trên) — mục 3 bên dưới là kế hoạch cũ, nhiều phần đã lỗi thời
+
+### 08/08/2026 (d) — MỘT nguồn "số chốt" duy nhất (patch_zs)
+
+Đây là rủi ro nghiệp vụ lớn nhất còn lại trước go-live: số lượng sống ở 3 nơi
+(`proposals`, `danh_muc_tong_hop_o`, `danh_muc_khoa_o`) nên **file Excel đi thầu
+có thể khác số trong `proposals` mà không ai biết**.
+
+**Hai quyết định của chủ dự án:**
+  a) PĐD sửa gì thì khoa **thấy hết** — minh bạch, rõ ràng.
+  b) Bấm **chốt danh sách là khoá**, mở chốt mới sửa tiếp được.
+
+**Ràng buộc không lách được.** Ô PĐD sửa đè là số TOÀN VIỆN của một mã, còn
+`proposals` là số TỪNG KHOA. Không chia ngược một tổng về từng khoa được nếu
+không bịa tỉ lệ. Nên `v_so_chot_de_xuat` chốt ở **đúng cấp đấu thầu dùng** —
+toàn viện theo mã hàng — và không cố suy ngược. Khoa vẫn thấy số mình nộp, kèm
+dấu rõ ràng PĐD đã sửa tổng thành bao nhiêu.
+
+**Hai chỗ cố ý làm khác thường** (đọc kỹ trước khi "sửa cho nhất quán"):
+- `v_so_chot_de_xuat` **không** `security_invoker`. Chạy bằng quyền người gọi
+  thì RLS cắt khoa xuống còn số của chính họ và khoa sẽ thấy một "số chốt toàn
+  viện" thực ra là số của mình — sai nguy hiểm hơn là không cho xem. An toàn vì
+  view **không có cột `don_vi`**; có test canh không ai thêm vào.
+- Ô sửa đè **chỉ nhận chuỗi số sạch**. PĐD gõ nhầm chữ thì coi như không có sửa
+  đè, tuyệt đối không để thành `0` rồi đi thầu bằng số 0.
+
+**Hai lỗi tự tìm ra khi làm, đã sửa trước khi giao:**
+1. Chốt làm hỏng nút "Kết thúc đợt & dọn" — trigger chặn cả DELETE, mà dọn cuối
+   đợt chính là DELETE; một khoa chốt là PĐD không dọn được gì. Sửa:
+   `don_du_lieu_lam_viec` xoá dòng chốt trước. Có test canh thứ tự.
+2. Patch không chạy lại được lần hai (Postgres không có
+   `create policy if not exists`) — thêm `drop policy if exists` cho cả 8.
+   Cùng lúc sửa một chỗ gán `OLD` trong khối DECLARE, plpgsql có thể báo
+   "record old is not assigned yet" khi trigger chạy cho INSERT.
+
+**Đã kiểm end-to-end bằng JWT thật của cả hai vai trò — 20/20:**
+PĐD sửa đè → số chốt đổi theo; gõ chữ → lùi về tổng khoa chứ không thành 0;
+chốt → server chặn cả sửa lẫn xoá; audit ghi đủ; mở chốt → sửa lại được.
+Khoa đọc được ô + lịch sử PĐD sửa nhưng ghi bị chặn (403); số chốt khoa thấy
+đúng bằng số PĐD thấy (toàn viện); khoa chốt → server chặn, **PĐD cũng không
+lách được**; dọn cuối đợt chạy được dù đang chốt. Kiểm cả trên giao diện thật.
 
 ### 08/08/2026 (c) — Vòng rà toàn hệ thống
 
