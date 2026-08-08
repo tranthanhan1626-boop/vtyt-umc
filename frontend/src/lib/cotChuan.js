@@ -190,9 +190,11 @@ export const GOI_ID_MAP = {
   // T1/T5/T9 phân biệt nhau bằng `dot_id` chứ không phải cột `goi` — muốn tách
   // thật thì GOI_ID_MAP phải mang thêm điều kiện đợt và cả 2 màn phải lọc
   // theo đó. Ghi rõ ở đây để không tưởng đã xong.
-  "bs-t1":           { loai_mua_sam: "mua_sam_bo_sung", goi: null, nhan: "Bổ sung · đợt tháng 1" },
-  "bs-t5":           { loai_mua_sam: "mua_sam_bo_sung", goi: null, nhan: "Bổ sung · đợt tháng 5" },
-  "bs-t9":           { loai_mua_sam: "mua_sam_bo_sung", goi: null, nhan: "Bổ sung · đợt tháng 9" },
+  // `thang_moc` khớp dot_de_xuat.thang_moc — 3 đợt bổ sung phân biệt nhau bằng
+  // ĐỢT chứ không bằng cột `goi` (patch_zt). null = không lọc theo đợt.
+  "bs-t1":           { loai_mua_sam: "mua_sam_bo_sung", goi: null, thang_moc: 1, nhan: "Bổ sung · đợt tháng 1" },
+  "bs-t5":           { loai_mua_sam: "mua_sam_bo_sung", goi: null, thang_moc: 5, nhan: "Bổ sung · đợt tháng 5" },
+  "bs-t9":           { loai_mua_sam: "mua_sam_bo_sung", goi: null, thang_moc: 9, nhan: "Bổ sung · đợt tháng 9" },
 };
 
 // -------- Ánh xạ cột: Danh mục KHOA <-> Tổng hợp PĐD ----------------------

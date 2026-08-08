@@ -28,8 +28,11 @@ Cập nhật **07/08/2026**. Nhánh chính hiện tại: `phase-a-luong-de-xuat`
 | `patch_zr` | 2 view gộp lịch sử toàn viện — bỏ 123 vòng HTTP tuần tự | ✅ 08/08/2026 (đo lại: 40.628 + 6.684 dòng, số khớp bản cũ) |
 | `patch_q` | Phân nhóm ABC + hệ số k | ✅ 08/08/2026 |
 | `patch_zs` | Số chốt duy nhất + minh bạch PĐD↔khoa + chốt là khoá sửa | ✅ 08/08/2026 |
+| `patch_zt` | Tách 3 đợt bổ sung T1/T5/T9 theo `dot_id` | ✅ 08/08/2026 |
+| `patch_zu` | Hàm `do_dung_luong()` cho cảnh báo dung lượng | ✅ 08/08/2026 |
 
-**Toàn bộ patch đã chạy hết trên staging.**
+**Toàn bộ patch đã chạy hết trên staging.** Kiểm bằng
+`scripts/kiem_truoc_deploy.py` → sạch.
 
 **Đã kiểm sau khi chạy (08/08/2026):**
 
@@ -47,9 +50,12 @@ Cập nhật **07/08/2026**. Nhánh chính hiện tại: `phase-a-luong-de-xuat`
   dòng.
 
 **Việc tiếp theo gần nhất:**
-1. Chạy `patch_zq`, rồi bấm thử bằng tài khoản khoa: gửi giỏ xong là "Mở phiếu
-   Word cam kết" được ngay, không phải chờ PĐD duyệt.
-2. Live sync số PĐD sửa trên Tổng hợp → xuống Danh mục đề xuất từng khoa
+1. **Diễn tập phục hồi trên bảng LỚN** (`proposals`, và nhóm nặng
+   `usage_history_current`) — mới diễn tập được bảng nhỏ.
+2. **Kế hoạch dung lượng phải tính cả `usage_history_changelog`** — xem mục 6b
+   `04_VAN_HANH_KY_THUAT.md`: bảng này 291.622 dòng / 48,2 MB, chiếm 40% dung
+   lượng và tăng nhanh gấp đôi bảng lịch sử, nhưng `patch_zn` KHÔNG đụng tới.
+3. Live sync số PĐD sửa trên Tổng hợp → xuống Danh mục đề xuất từng khoa
    (mục 4.1 nghiệp vụ) — **chưa thiết kế thuật toán chia lại** khi nhiều khoa
    cùng đề xuất một mã. Phải bàn trước khi code.
 3. Chốt sau đấu thầu / khóa "Danh mục chính thức" (mục 4.4 nghiệp vụ).
@@ -61,6 +67,47 @@ Cập nhật **07/08/2026**. Nhánh chính hiện tại: `phase-a-luong-de-xuat`
 **Nợ kỹ thuật đã biết:** xem mục 6 `04_VAN_HANH_KY_THUAT.md` (bẫy 16–20).
 
 ## 0. Nhật ký thay đổi (mới nhất ở trên) — mục 3 bên dưới là kế hoạch cũ, nhiều phần đã lỗi thời
+
+### 08/08/2026 (e) — Trả hết 4 việc còn nợ
+
+**1. Tách 3 đợt bổ sung theo `dot_id` (`patch_zt`) — dứt điểm bẫy 16.**
+Bản vá sáng nay mới đưa `bs-t1/t5/t9` về đúng `mua_sam_bo_sung`, nhưng cả 3 vẫn
+cho ra CÙNG một rổ — bấm "tháng 1" hay "tháng 9" đều thấy y hệt, gồm cả đề xuất
+của đợt khác. Ba đợt phân biệt bằng `dot_de_xuat.thang_moc` (1/5/9), không phải
+cột `goi`. `goi_con` thêm cột `thang_moc`; `v_so_chot_de_xuat` lọc theo đợt;
+frontend thêm `lib/dotBoSung.js`. Khoá tổng `bo-sung` giữ nguyên nghĩa "gộp cả
+3 đợt".
+
+**2. Smoke test tự động trước deploy — `scripts/kiem_truoc_deploy.py`.**
+CHỈ ĐỌC, chạy vài giây, tự động hoá đúng vòng rà tay đã bắt 3 lỗi thật hôm nay.
+Khác `smoke_full_workflow_staging.py` (kiểm luồng nghiệp vụ, có ghi dữ liệu).
+Kiểm: đủ bảng/view/RPC · `fetchAllRows` có sắp xếp · policy DELETE (chèn-xoá
+thật) · ranh giới quyền khoa↔PĐD · số chốt hai vai trò khớp nhau · `goi_con` ↔
+`GOI_ID_MAP`. Thoát mã 1 nếu có lỗi chặn deploy.
+**Đã thử ngược**: cố tình bỏ `order` ở một call site → script bắt đúng file,
+đúng dòng, exit 1. Test mà chưa từng thấy nó fail thì chưa phải test.
+
+**3. Cảnh báo dung lượng tự động (`patch_zu`).**
+Vấn đề không phải thiếu cách đo mà là **phải nhớ đi đo** — không ai nhớ, và
+đụng trần 500MB thì Supabase khoá ghi giữa mùa thầu. Hàm `do_dung_luong()` trả
+% dùng + 8 bảng nặng nhất; Bàn điều hành hiện chip đổi màu theo ngưỡng:
+70% để ý · 85% chạy nén `patch_zn` trong quý này · 95% xử lý ngay.
+
+**4. Diễn tập phục hồi backup — `scripts/phuc_hoi.py`.**
+`04_VAN_HANH_KY_THUAT.md` mục 5 tự viết "backup chưa thử restore không được coi
+là backup", nhưng dự án chỉ có `sao_luu.py`, **không có đường về**. Toàn bộ
+backup đang ở trạng thái chưa bao giờ được chứng minh dùng được.
+Ba chế độ: `--kiem-file` (không chạm DB) · `--dien-tap` (round-trip thật trên
+staging rồi tự trả lại hiện trạng) · `--that` (bắt gõ câu xác nhận).
+**Đã diễn tập thật 08/08/2026**: `ma_ly_do` (20 dòng) và `moc_cam_ket_su_dung`
+(3 dòng) — xoá → phục hồi → khớp từng dòng → trả về nguyên trạng. Đây là lần
+đầu đường phục hồi của dự án được chứng minh chạy.
+Từ chối diễn tập trên production (một lần lỗi mạng giữa chừng là mất thật).
+
+Lỗi bắt được ngay trong lúc làm: PostgREST chặn DELETE không có WHERE, mà
+`id=not.is.null` không dùng được cho bảng khoá chính dạng text (`ma_ly_do`,
+`goi_con`). Đổi sang `or=(cot.is.null,cot.not.is.null)` — luôn đúng với mọi
+dòng, mọi bảng. Script fail-safe nên lần chạy hỏng đó không mất dữ liệu.
 
 ### 08/08/2026 (d) — MỘT nguồn "số chốt" duy nhất (patch_zs)
 

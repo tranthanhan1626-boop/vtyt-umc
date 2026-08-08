@@ -11,6 +11,7 @@ import {
 } from "../lib/cotChuan";
 import { docTenCotTuMau, ganTenMau } from "../lib/tenCotBieuMau";
 import { taiLichSuTheoThang, gomTheoThang } from "../lib/lichSuSuDung";
+import { taiDotIdCuaGoi, locTheoDot } from "../lib/dotBoSung";
 import { StyleTable, StyleToolbar, formatCell } from "./DanhMucDeXuatKhoa";
 import { xuatExcelDong, tenFileAnToan } from "../lib/xuatExcelDong";
 
@@ -79,12 +80,16 @@ function epGiaTri(giaTriText, kieu) {
 async function taiDuLieuGoc(goiId) {
   const bo = GOI_ID_MAP[goiId] || GOI_ID_MAP["18t-dung-chung"];
 
+  // Gói bổ sung: 3 đợt T1/T5/T9 chỉ khác nhau ở dot_de_xuat.thang_moc, không
+  // khác ở cột `goi` — không lọc thêm thì cả 3 đợt ra cùng một rổ (patch_zt).
+  const dsDotId = await taiDotIdCuaGoi(bo);
   let qProposals = supabase.from("proposals")
     .select("ma_hang, don_vi, so_luong")
     .eq("nam_de_xuat", NAM_DE_XUAT)
     .eq("is_current", true)
     .eq("loai_mua_sam", bo.loai_mua_sam);
   if (bo.goi) qProposals = qProposals.eq("goi", bo.goi);
+  qProposals = locTheoDot(qProposals, dsDotId);
   const { data: propRows, error: loiProposals } = await fetchAllRows((f, t) =>
     qProposals.range(f, t), { order: "id" });
   if (loiProposals) throw loiProposals;

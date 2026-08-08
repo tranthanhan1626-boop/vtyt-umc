@@ -190,7 +190,41 @@ Muốn phục hồi cần đủ:
 2. `schema.sql`, `rls_policies.sql` và các patch hiện hành;
 3. khóa kết nối local được giữ riêng.
 
-Backup chưa thử restore không được coi là backup. Phải diễn tập trước go-live.
+### Phục hồi và DIỄN TẬP phục hồi (từ 08/08/2026)
+
+Trước đó dự án chỉ có `sao_luu.py`, **không có đường về** — nghĩa là mọi backup
+đều ở trạng thái chưa bao giờ được chứng minh dùng được. Nay có
+`scripts/phuc_hoi.py`, ba chế độ nguy hiểm tăng dần:
+
+```bash
+.venv/bin/python scripts/phuc_hoi.py --kiem-file            # không chạm DB
+.venv/bin/python scripts/phuc_hoi.py --dien-tap --bang ma_ly_do
+.venv/bin/python scripts/phuc_hoi.py --that --bang <tên bảng>
+```
+
+`--dien-tap` mới là thứ chứng minh được đường phục hồi chạy: chụp hiện trạng →
+xoá → nạp từ backup → đối chiếu từng dòng → **tự trả lại hiện trạng**. Script
+từ chối diễn tập trên production (một lần lỗi mạng giữa chừng là mất thật).
+
+✅ **Đã diễn tập 08/08/2026** trên staging: `ma_ly_do` (20 dòng) và
+`moc_cam_ket_su_dung` (3 dòng) — khớp từng dòng, về đúng nguyên trạng.
+Vẫn cần diễn tập trên bảng LỚN (`proposals` và cả nhóm nặng) trước go-live.
+
+## 5b. Kiểm sức khoẻ TRƯỚC MỖI LẦN DEPLOY
+
+```bash
+cd "/Users/tranhien/Downloads/9.vtyt/backend"
+set -a && . ./.env.local && set +a
+.venv/bin/python scripts/kiem_truoc_deploy.py       # thêm --production nếu cần
+```
+
+Chỉ đọc, vài giây, thoát mã 1 nếu có lỗi chặn deploy. Kiểm: đủ bảng/view/RPC ·
+`fetchAllRows` có sắp xếp (bẫy 21) · policy DELETE bằng cách chèn-xoá thật
+(bẫy 18) · ranh giới quyền khoa↔PĐD · số chốt hai vai trò khớp nhau ·
+`goi_con` khớp `GOI_ID_MAP`.
+
+Khác `smoke_full_workflow_staging.py`: cái đó kiểm LUỒNG NGHIỆP VỤ và có ghi
+dữ liệu, chạy lâu hơn. Hai thứ bổ sung nhau, không thay thế nhau.
 
 ## 6. Bẫy kỹ thuật quan trọng
 
@@ -219,8 +253,10 @@ Backup chưa thử restore không được coi là backup. Phải diễn tập t
     chỉ có một khoá `"bo-sung"` — mọi màn dùng `GOI_ID_MAP` (`TongHopPdd.jsx`,
     `DanhMucDeXuatKhoa.jsx`) không phân biệt được 3 đợt bổ sung, rơi về mặc
     định `18t-dung-chung` nếu goiId không khớp key nào. Phát hiện 07/08/2026
-    khi nối link "Xem Danh mục đề xuất của khoa" ở `Function1.jsx` — chưa sửa,
-    cần bàn có nên tách `GOI_ID_MAP` theo từng đợt bổ sung hay không.
+    khi nối link "Xem Danh mục đề xuất của khoa" ở `Function1.jsx`.
+    ✅ **ĐÃ ĐÓNG 08/08/2026** (`patch_zt`): `GOI_ID_MAP` và bảng `goi_con` có
+    thêm `thang_moc`, lọc theo `dot_de_xuat.thang_moc` (1/5/9). Đã kiểm thật:
+    T1 chỉ ra mã của đợt T1, T9 chỉ ra mã của đợt T9, khoá `bo-sung` ra cả hai.
 17. Cột `position: sticky` để freeze khi cuộn ngang: z-index không chỉ cần
     "cao hơn" theo giá trị số, còn phải thắng theo CSS specificity. Một rule
     chung kiểu `thead tr.col-row th { z-index: 22 }` (nhiều phần tử selector)
@@ -292,12 +328,28 @@ Backup chưa thử restore không được coi là backup. Phải diễn tập t
 
 Đo thật 07/08/2026: **142MB / 500MB**.
 
-| Bảng | Số dòng | Ghi chú |
-|---|---|---|
-| `usage_history_current` | **141.623** | chiếm gần như toàn bộ dung lượng |
-| `vat_tu` | 3.327 | gần như cố định |
-| `nhom_ky_thuat` | 1.369 | gần như cố định |
-| còn lại | < 100 | không đáng kể |
+**Đo lại 08/08/2026 bằng `do_dung_luong()` (patch_zu), kèm dung lượng thật:**
+
+| Bảng | Số dòng | Dung lượng | Ghi chú |
+|---|---|---|---|
+| `usage_history_current` | 141.623 | **63,7 MB** | lịch sử HIS |
+| `usage_history_changelog` | **291.622** | **48,2 MB** | ⚠️ audit mỗi lần nạp |
+| `vat_tu` | 3.327 | 3,9 MB | gần như cố định |
+| `kha_dung_hop_dong_ma_hang` | 2.661 | 1,8 MB | |
+| `nhom_ky_thuat` | 1.369 | 0,4 MB | gần như cố định |
+| **Tổng schema public** | | **121 MB / 500 MB (24,1%)** | |
+
+⚠️ **Bảng cũ ở mục này ghi SAI.** Nó viết "còn lại < 100 dòng, không đáng kể"
+và bỏ sót `usage_history_changelog` — thực tế bảng đó **291.622 dòng, 48,2 MB,
+chiếm 40% dung lượng** và là bảng tăng NHANH NHẤT: mỗi lần nạp HIS, trigger
+`fn_log_usage_change` ghi một dòng cho MỌI giá trị thay đổi. Nạp 2 lần/tuần
+nên nó tăng nhanh gấp đôi `usage_history_current`.
+⇒ Kế hoạch dung lượng phải tính cả changelog. `patch_zn` chỉ nén
+`usage_history_current`, **không đụng changelog** — khi nào cần nén thật thì
+phải xử lý cả hai, nếu không mới giải quyết được 60% vấn đề.
+⇒ Con số 121 MB ở đây nhỏ hơn 142 MB mà Supabase Dashboard báo hôm 07/08 vì
+hàm chỉ đo schema `public`; Dashboard tính cả `auth`, `storage`, WAL. Dùng số
+của hàm để theo dõi XU HƯỚNG, dùng Dashboard để biết mức trần thật.
 
 **Tốc độ tăng:** ~7.974 cặp khoa–mã có phát sinh × 12 tháng ≈ **96.000
 dòng/năm** cho lịch sử HIS. Giữ nguyên mọi thứ theo tháng thì **2–3 năm nữa

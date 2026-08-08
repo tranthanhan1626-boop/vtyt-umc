@@ -38,6 +38,20 @@ const goiConCuaLoai = (loai) =>
 const fmtNgay = (s) => (s ? new Date(s).toLocaleDateString("vi-VN") : "—");
 const soNgayTu = (s) => (s ? Math.floor((Date.now() - new Date(s).getTime()) / 86400000) : null);
 
+// Ngưỡng khớp với hàm do_dung_luong (patch_zu): 70% để ý · 85% chạy nén
+// patch_zn trong quý này · 95% xử lý ngay.
+const MAU_DUNG_LUONG = {
+  on:        "border-slate-200 bg-slate-50 text-slate-600",
+  de_y:      "border-sky-200 bg-sky-50 text-sky-800",
+  canh_bao:  "border-amber-300 bg-amber-50 text-amber-900",
+  nguy_hiem: "border-red-300 bg-red-50 text-red-800",
+};
+const NHAN_DUNG_LUONG = {
+  de_y:      "— bắt đầu để ý",
+  canh_bao:  "— nên chạy nén lịch sử (patch_zn) trong quý này",
+  nguy_hiem: "— SẮP KHOÁ GHI, xử lý ngay",
+};
+
 export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   const [dsDot, setDsDot] = useState([]);
   const [dotId, setDotId] = useState("");
@@ -53,6 +67,11 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   const [loi, setLoi] = useState("");
   const [canhBaoChot, setCanhBaoChot] = useState("");
   const [mocHis, setMocHis] = useState(null); // { nam, thang } mới nhất
+  // Dung lượng Supabase (patch_zu). Dự án chốt chỉ dùng gói FREE 500MB và
+  // lịch sử HIS tăng ~96.000 dòng/năm — đụng trần là Supabase KHOÁ GHI, giữa
+  // mùa đấu thầu thì hỏng việc thật. Không ai nhớ vào Dashboard đo tay, nên
+  // để app tự báo.
+  const [dungLuong, setDungLuong] = useState(null);
   const [formDon, setFormDon] = useState(null); // số dòng sẽ xoá, chờ xác nhận
   const [dangDon, setDangDon] = useState(false);
   const [thongBao, setThongBao] = useState("");
@@ -124,6 +143,11 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
 
     // Mốc dữ liệu HIS mới nhất — PĐD nạp file 2 lần/tuần nên cần biết ngay
     // "số đang dùng để tính là tới tháng mấy", không phải tự nhớ.
+    // Chỉ số dung lượng: thiếu patch_zu thì bỏ qua, không làm hỏng Bàn điều hành.
+    supabase.rpc("do_dung_luong").then(({ data, error }) => {
+      if (!error) setDungLuong(data);
+    });
+
     const { data: hisMoi } = await supabase.from("usage_history_current")
       .select("nam, thang").order("nam", { ascending: false })
       .order("thang", { ascending: false }).limit(1);
@@ -405,6 +429,19 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
               Nạp thêm dữ liệu
             </button>
           </span>
+          {dungLuong && (
+            <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 ${
+              MAU_DUNG_LUONG[dungLuong.muc] || MAU_DUNG_LUONG.on}`}>
+              <Database size={12} />
+              Dung lượng: <b>{dungLuong.phan_tram}%</b>
+              <span className="opacity-70">
+                ({Math.round(dungLuong.bytes / 1048576)}/{Math.round(dungLuong.gioi_han_bytes / 1048576)}MB)
+              </span>
+              {dungLuong.muc !== "on" && (
+                <b className="ml-0.5">{NHAN_DUNG_LUONG[dungLuong.muc]}</b>
+              )}
+            </span>
+          )}
         </div>
 
         {loi && <p className="mt-2 text-sm text-red-600">{loi}</p>}

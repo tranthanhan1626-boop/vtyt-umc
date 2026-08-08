@@ -12,6 +12,7 @@ import {
 import { xuatExcelDong, tenFileAnToan } from "../lib/xuatExcelDong";
 import { docTenCotTuMau, ganTenMau } from "../lib/tenCotBieuMau";
 import { gomTheoThang } from "../lib/lichSuSuDung";
+import { taiDotIdCuaGoi, locTheoDot } from "../lib/dotBoSung";
 
 /*
  * DanhMucDeXuatKhoa — Bản chính thức 34 cột của MỘT khoa (mục 3.2 tài liệu
@@ -70,11 +71,14 @@ async function taiDuLieuKhoa(goiId, khoa) {
   const bo = GOI_ID_MAP[goiId] || GOI_ID_MAP["18t-dung-chung"];
   if (!khoa) return { bo, rows: [] };
 
+  // Xem chú thích cùng chỗ ở TongHopPdd.jsx — lọc đúng đợt bổ sung (patch_zt).
+  const dsDotId = await taiDotIdCuaGoi(bo);
   let qProposals = supabase.from("proposals")
     .select("id, ma_hang, so_luong, dot_id")
     .eq("nam_de_xuat", NAM_DE_XUAT).eq("is_current", true)
     .eq("loai_mua_sam", bo.loai_mua_sam).eq("don_vi", khoa);
   if (bo.goi) qProposals = qProposals.eq("goi", bo.goi);
+  qProposals = locTheoDot(qProposals, dsDotId);
   const { data: propRows, error: loiProposals } = await fetchAllRows((f, t) => qProposals.range(f, t), { order: "id" });
   if (loiProposals) throw loiProposals;
   if (!propRows?.length) return { bo, rows: [] };
