@@ -963,37 +963,125 @@
   }
 }
 
-/* Đồng bộ các màn hình nghiệp vụ cũ với hệ nhận diện mới mà không đổi logic. */
-.umc-content .bg-white.border-slate-200.rounded-lg {
-  border-color: var(--umc-border);
-  box-shadow: 0 8px 28px rgba(28, 75, 126, 0.045);
-}
+/* ===================================================================
+   CHUẨN HOÁ TOÀN HỆ — nâng đồng loạt 33 màn nghiệp vụ
+   ===================================================================
+   `.umc-content` bọc mọi màn nghiệp vụ, nên đặt chuẩn ở đây là cách nâng
+   tất cả cùng lúc mà không phải sửa markup từng màn (rủi ro vỡ chức năng
+   gần bằng 0). Khảo sát trước khi viết: 19 bảng nhưng 12 cái dùng `<thead>`
+   trần không có kiểu, 5 biến thể thead khác nhau, thẻ có 3 bán kính bo
+   khác nhau, 73 ô nhập.
 
-/* Bốn quy tắc ép `teal-*` thành màu UMC từng nằm ở đây đã được GỠ BỎ.
-   Chúng chỉ có tác dụng bên trong `.umc-content`, nên màn nào nằm ngoài phạm
-   vi đó vẫn hiện teal — đó là lý do hệ thống trông chắp vá. Nay teal đã được
-   thay tận gốc bằng thang `umc-*` trong toàn bộ mã nguồn (251 lượt, 26 file),
-   nên lớp vá này thừa và việc giữ lại chỉ che mất teal mới nếu ai đó lỡ thêm. */
+   ĐẶT TRONG @layer components — KHÔNG để CSS trần như bản trước.
+   Bản trước viết trần nên thứ tự ưu tiên (0,1,1) đè lên cả class Tailwind
+   (0,1,0): `.umc-content table thead { background:#f7fafc }` ăn đứt
+   `bg-umc-50` đặt trên chính thẻ đó. Nằm trong @layer components thì
+   utilities của Tailwind luôn thắng, nên màn nào muốn khác chuẩn chỉ cần
+   thêm class như bình thường.
 
-.umc-content input:not([type="checkbox"]):not([type="radio"]),
-.umc-content select,
-.umc-content textarea {
-  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
-}
+   Loại trừ `.qtdx-table`: bảng web-excel có hệ màu ngữ nghĩa riêng (ô khoá,
+   ô PĐD sửa đè, hàng rớt thầu) mà chuẩn chung không được đụng vào. */
+@layer components {
+  /* ---------- Thẻ / khung ---------- */
+  .umc-content .bg-white.border-slate-200 {
+    border-color: var(--umc-border);
+  }
 
-.umc-content input:not([type="checkbox"]):not([type="radio"]):focus,
-.umc-content select:focus,
-.umc-content textarea:focus {
-  border-color: var(--umc-cyan);
-  box-shadow: 0 0 0 3px rgba(82, 195, 233, 0.12);
-}
+  .umc-content .bg-white.border-slate-200.rounded-lg,
+  .umc-content .bg-white.border-slate-200.rounded-xl,
+  .umc-content .bg-white.border-slate-200.rounded-2xl {
+    box-shadow: 0 8px 28px rgba(28, 75, 126, 0.045);
+  }
 
-.umc-content table thead {
-  background: #f7fafc;
-}
+  /* ---------- Ô nhập ---------- */
+  .umc-content input:not([type="checkbox"]):not([type="radio"]),
+  .umc-content select,
+  .umc-content textarea {
+    transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+  }
 
-.umc-content table tbody tr {
-  transition: background-color 120ms ease;
+  .umc-content input:not([type="checkbox"]):not([type="radio"]):hover,
+  .umc-content select:hover,
+  .umc-content textarea:hover {
+    border-color: #a9c6e2;
+  }
+
+  .umc-content input:not([type="checkbox"]):not([type="radio"]):focus,
+  .umc-content select:focus,
+  .umc-content textarea:focus {
+    border-color: var(--umc-cyan);
+    box-shadow: 0 0 0 3px rgba(82, 195, 233, 0.12);
+  }
+
+  /* Ô nhập bị khoá phải nhìn ra ngay là không sửa được, đừng để người dùng
+     bấm vào rồi mới biết. */
+  .umc-content input:disabled,
+  .umc-content select:disabled,
+  .umc-content textarea:disabled {
+    background: #f4f7fa;
+    color: #8395ab;
+    cursor: not-allowed;
+  }
+
+  /* ---------- Bảng ---------- */
+  /* 12/19 bảng dùng <thead> trần nên trước đây thừa hưởng nền xám nhạt,
+     không gắn gì với nhận diện. Chuẩn mới: nền xanh UMC rất nhạt, chữ navy,
+     chữ hoa nhỏ có giãn cách — đọc lướt qua nhận ra ngay đâu là hàng tiêu đề
+     kể cả khi bảng dài phải cuộn. */
+  .umc-content table:not(.qtdx-table) thead {
+    background: linear-gradient(180deg, #f2f8fd, #eaf3fb);
+  }
+
+  .umc-content table:not(.qtdx-table) thead th {
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid #cfe0f0;
+    color: var(--umc-navy);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-align: left;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* Sọc ngựa vằn + đổi nền khi rê chuột. Bảng nghiệp vụ ở đây thường 6-8 cột
+     và vài chục hàng; mắt phải dò ngang từ cột đầu sang cột cuối, không có
+     mốc thì rất dễ đọc nhầm hàng. */
+  .umc-content table:not(.qtdx-table) tbody tr {
+    transition: background-color 120ms ease;
+  }
+
+  .umc-content table:not(.qtdx-table) tbody tr:nth-child(even) {
+    background-color: rgba(241, 246, 251, 0.55);
+  }
+
+  .umc-content table:not(.qtdx-table) tbody tr:hover {
+    background-color: #eef5fb;
+  }
+
+  .umc-content table:not(.qtdx-table) tbody td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #eef2f7;
+  }
+
+  .umc-content table:not(.qtdx-table) tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  /* Cột số: căn phải và dùng chữ số đều bề ngang để các chữ số thẳng cột,
+     so sánh số lượng giữa các hàng bằng mắt mới chính xác. */
+  .umc-content table:not(.qtdx-table) td.text-right,
+  .umc-content table:not(.qtdx-table) th.text-right {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  /* ---------- Nút ---------- */
+  .umc-content button:focus-visible {
+    outline: 2px solid var(--umc-cyan);
+    outline-offset: 2px;
+    border-radius: 0.4rem;
+  }
 }
 
 @media (max-width: 1023px) {

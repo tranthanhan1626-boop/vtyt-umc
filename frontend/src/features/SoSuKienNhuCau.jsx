@@ -248,7 +248,7 @@ export default function SoSuKienNhuCau({ profile }) {
 
       {dangTai ? <p className="text-sm text-slate-500">Đang tải...</p>
         : rows.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-lg p-6 text-center text-sm text-slate-400">
+          <div className="bg-white border border-slate-200 rounded-lg p-6 text-center text-sm text-slate-500">
             Chưa có sự kiện nhu cầu nào được khai.
           </div>
         ) : rows.map((r) => {

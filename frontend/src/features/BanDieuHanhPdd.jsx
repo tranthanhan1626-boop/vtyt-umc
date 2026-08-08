@@ -598,7 +598,7 @@ function TabKhoa({
           </thead>
           <tbody>
             {khoaHienThi.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-400">Không có khoa nào khớp bộ lọc.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-500">Không có khoa nào khớp bộ lọc.</td></tr>
             ) : khoaHienThi.map((k) => (
               // Sọc ngựa vằn + đổi nền khi rê chuột: bảng 7 cột × 62 khoa, mắt
               // phải dò ngang từ tên khoa sang cột "Chốt danh mục" tận bên phải.
@@ -689,7 +689,7 @@ function TabTongHop({
           </thead>
           <tbody>
             {cay.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-400">Chưa có đề xuất nào trong đợt/gói con này.</td></tr>
+              <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-500">Chưa có đề xuất nào trong đợt/gói con này.</td></tr>
             ) : cay.map((mq) => {
               const moNhom = mqMo.has(mq.ma_quan_ly);
               const maRotTrongNhom = mq.maHang.filter((mh) => maDangRot.has(mh.ma_hang)).length;

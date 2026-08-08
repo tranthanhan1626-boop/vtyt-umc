@@ -266,7 +266,7 @@ export default function GoiTuyChonMuaThem({ profile }) {
         </div>
 
         {goiLoc.length === 0 ? (
-          <p className="rounded-lg bg-slate-50 p-6 text-center text-sm text-slate-400">
+          <p className="rounded-lg bg-slate-50 p-6 text-center text-sm text-slate-500">
             Chưa có gói 18 tháng hoặc gói bổ sung phù hợp bộ lọc.
           </p>
         ) : (
@@ -333,7 +333,7 @@ export default function GoiTuyChonMuaThem({ profile }) {
           )}
 
           {nhomChiTiet.length === 0 ? (
-            <p className="p-6 text-center text-sm text-slate-400">Không có mã hàng phù hợp bộ lọc.</p>
+            <p className="p-6 text-center text-sm text-slate-500">Không có mã hàng phù hợp bộ lọc.</p>
           ) : (
             <div className="divide-y divide-slate-200">
               {nhomChiTiet.map((nhom) => (

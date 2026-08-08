@@ -387,7 +387,7 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
       {tab === "gio_rot_toan_vien" && laPdd ? (
         <div className="space-y-2">
           {gioRotToanVien.length === 0 ? (
-            <div className="rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-400">
+            <div className="rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
               Không có khoa nào còn mã rớt chưa xử lý.
             </div>
           ) : gioRotToanVien.map((x) => (
@@ -458,7 +458,7 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
       )}
 
       {tab === "theo_goi" && (goiHienThi.length === 0 ? (
-        <div className="rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-400">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
           {laPdd ? "Chưa có gói thầu nào để theo dõi." : "Khoa chưa có mã nào bị rớt thầu."}
         </div>
       ) : goiHienThi.map((g) => {
@@ -584,7 +584,7 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
                 )}
 
                 {nhomRot.length === 0 ? (
-                  <p className="p-5 text-center text-sm text-slate-400">
+                  <p className="p-5 text-center text-sm text-slate-500">
                     Chưa có mã nào được PĐD đánh dấu rớt trong gói này.
                   </p>
                 ) : (

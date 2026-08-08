@@ -305,7 +305,7 @@ export default function PhieuDeNghi({ phieuId, profile }) {
                   <p className="text-xs font-medium text-slate-600 mb-2">{label}</p>
                   <textarea rows={4} value={nd[field]} onChange={(e) => suaND(field, e.target.value)} className={taCls + " text-xs"}
                     placeholder="(phòng chức năng ghi ý kiến)" />
-                  <p className="text-center text-xs text-slate-400 mt-3">Ngày … tháng … năm …<br />TRƯỞNG PHÒNG</p>
+                  <p className="text-center text-xs text-slate-500 mt-3">Ngày … tháng … năm …<br />TRƯỞNG PHÒNG</p>
                 </div>
               ))}
             </div>

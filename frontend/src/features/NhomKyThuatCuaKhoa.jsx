@@ -187,9 +187,9 @@ export default function NhomKyThuatCuaKhoa({ profile }) {
         </div>
 
         {dangTai ? (
-          <p className="p-8 text-center text-sm text-slate-400">Đang tải danh sách…</p>
+          <p className="p-8 text-center text-sm text-slate-500">Đang tải danh sách…</p>
         ) : dsDeNghi.length === 0 ? (
-          <p className="p-8 text-center text-sm text-slate-400">Khoa chưa có đề nghị mã kỹ thuật nào.</p>
+          <p className="p-8 text-center text-sm text-slate-500">Khoa chưa có đề nghị mã kỹ thuật nào.</p>
         ) : (
           <div className="divide-y divide-slate-100">
             {dsDeNghi.map((d) => (

@@ -561,7 +561,7 @@ export default function TongHopPhongDieuDuong({
                   })}
                 </div>
               ) : (
-                <p className="p-8 text-center text-sm text-slate-400">Chưa có khoa nào gửi đề xuất trong đợt này.</p>
+                <p className="p-8 text-center text-sm text-slate-500">Chưa có khoa nào gửi đề xuất trong đợt này.</p>
               )
             ) : nhomTongHop.length ? (
               <>
@@ -657,7 +657,7 @@ export default function TongHopPhongDieuDuong({
                 </div>
               </>
             ) : (
-              <p className="p-8 text-center text-sm text-slate-400">Không có mã hàng khớp bộ lọc.</p>
+              <p className="p-8 text-center text-sm text-slate-500">Không có mã hàng khớp bộ lọc.</p>
             )}
           </motion.div>
         </AnimatePresence>

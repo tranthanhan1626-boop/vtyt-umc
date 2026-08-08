@@ -71,7 +71,7 @@ export default function DanhMucDeXuatLinks({ profile, goi }) {
       </div>
 
       {danhSachGoiId.length === 0 ? (
-        <p className="mt-4 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-400">
+        <p className="mt-4 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
           Khoa chưa gửi đề xuất nào.
         </p>
       ) : (

@@ -92,7 +92,7 @@ export default function TongHopKetQuaThau({ profile }) {
   if (dangTai) return <p className="text-sm text-slate-500">Đang tải...</p>;
   if (theoMa.length === 0) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-400">
+      <div className="rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
         Chưa có mã nào được gán vào gói thầu để theo dõi kết quả.
       </div>
     );

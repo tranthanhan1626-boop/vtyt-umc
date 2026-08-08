@@ -1448,7 +1448,7 @@ export default function Function1({
 
                 <div className="flex-1 overflow-y-auto p-4">
                   {gioTheoGoi.length === 0 ? (
-                    <p className="rounded-lg border border-dashed border-slate-200 p-4 text-center text-sm text-slate-400">
+                    <p className="rounded-lg border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
                       Giỏ đang trống. Hãy chốt tổng một mã quản lý rồi thêm vào giỏ.
                     </p>
                   ) : (

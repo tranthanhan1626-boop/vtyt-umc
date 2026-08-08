@@ -88,7 +88,7 @@ export default function QuanLyDot() {
       {loi && !moForm && <p className="text-sm text-red-600">{loi}</p>}
 
       {dot.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-lg p-6 text-center text-sm text-slate-400">
+        <div className="bg-white border border-slate-200 rounded-lg p-6 text-center text-sm text-slate-500">
           Chưa có đợt nào. Tạo đợt để khoa bắt đầu gửi đề xuất.
         </div>
       ) : (
