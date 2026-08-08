@@ -129,7 +129,7 @@ export default function LichSuXuatHoSo() {
     setDangTai(true);
     setLoi("");
     const r = await fetchAllRows((f, t) => supabase.from("lan_xuat_ho_so")
-      .select("*").order("ngay_xuat", { ascending: false }).range(f, t));
+      .select("*").order("ngay_xuat", { ascending: false }).range(f, t), { order: "id" });
     if (r.error) setLoi(r.error.message);
     setRows(r.error ? [] : r.data || []);
     setDangTai(false);

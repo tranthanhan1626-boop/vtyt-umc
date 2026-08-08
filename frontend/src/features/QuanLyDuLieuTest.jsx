@@ -59,7 +59,7 @@ export default function QuanLyDuLieuTest({ profile }) {
         ten: "Đề xuất / giỏ đã gửi",
         query: () => fetchAllRows((f, t) => supabase.from("v_de_xuat_tong_hop")
           .select("id,nhom_de_xuat,don_vi,ma_hang,trang_thai,created_at")
-          .order("created_at", { ascending: false }).range(f, t)),
+          .order("created_at", { ascending: false }).range(f, t), { order: "id" }),
         chuyen: (rows) => nhomDeXuat(rows),
         nhan: (r) => `${r.don_vi} · ${r.so_dong} mã · ${r.trang_thai}`,
         phu: (r) => `${r.ma_hang.join(", ")}${r.so_dong > r.ma_hang.length ? "…" : ""} · ${fmtNgay(r.created_at)}`,
@@ -69,7 +69,7 @@ export default function QuanLyDuLieuTest({ profile }) {
         ten: "File Word / Excel đang cộng tác",
         query: () => fetchAllRows((f, t) => supabase.from("ho_so_cong_tac")
           .select("id,ma_ho_so,loai_tai_lieu,don_vi,trang_thai,nguon_key,updated_at")
-          .order("updated_at", { ascending: false }).range(f, t)),
+          .order("updated_at", { ascending: false }).range(f, t), { order: "id" }),
         nhan: (r) => `${tenMaHoSo[r.ma_ho_so] || r.ma_ho_so} · ${r.don_vi}`,
         phu: (r) => `${r.trang_thai} · ${r.nguon_key} · ${fmtNgay(r.updated_at)}`,
       },
@@ -78,7 +78,7 @@ export default function QuanLyDuLieuTest({ profile }) {
         ten: "Lịch sử xuất Word / Excel",
         query: () => fetchAllRows((f, t) => supabase.from("lan_xuat_ho_so")
           .select("id,ten_ho_so,ma_ho_so,don_vi,so_dong,ngay_xuat")
-          .order("ngay_xuat", { ascending: false }).range(f, t)),
+          .order("ngay_xuat", { ascending: false }).range(f, t), { order: "id" }),
         nhan: (r) => `${r.ten_ho_so} · ${r.don_vi || "Toàn viện"}`,
         phu: (r) => `${r.so_dong} dòng · ${fmtNgay(r.ngay_xuat)}`,
       },
@@ -87,7 +87,7 @@ export default function QuanLyDuLieuTest({ profile }) {
         ten: "Giỏ nháp đang soạn",
         query: () => fetchAllRows((f, t) => supabase.from("gio_nhap")
           .select("id,don_vi,loai_mua_sam,dot_id,cap_nhat_luc")
-          .order("cap_nhat_luc", { ascending: false }).range(f, t)),
+          .order("cap_nhat_luc", { ascending: false }).range(f, t), { order: "id" }),
         nhan: (r) => `${r.don_vi} · ${r.loai_mua_sam}`,
         phu: (r) => `Đợt #${r.dot_id} · ${fmtNgay(r.cap_nhat_luc)}`,
       },
@@ -96,7 +96,7 @@ export default function QuanLyDuLieuTest({ profile }) {
         ten: "Phiếu đề nghị mua",
         query: () => fetchAllRows((f, t) => supabase.from("phieu_de_nghi")
           .select("id,proposal_id,trang_thai,created_at,updated_at")
-          .order("created_at", { ascending: false }).range(f, t)),
+          .order("created_at", { ascending: false }).range(f, t), { order: "id" }),
         nhan: (r) => `Phiếu #${r.id} · đề xuất neo #${r.proposal_id}`,
         phu: (r) => `${r.trang_thai} · ${fmtNgay(r.updated_at || r.created_at)}`,
       },
@@ -105,7 +105,7 @@ export default function QuanLyDuLieuTest({ profile }) {
         ten: "Sổ thiếu hàng",
         query: () => fetchAllRows((f, t) => supabase.from("su_kien_thieu_hang")
           .select("id,don_vi,ma_hang,ten_vat_tu_tu_do,tinh_trang,ngay_bao")
-          .order("ngay_bao", { ascending: false }).range(f, t)),
+          .order("ngay_bao", { ascending: false }).range(f, t), { order: "id" }),
         nhan: (r) => `${r.don_vi} · ${r.ma_hang || r.ten_vat_tu_tu_do || "Không mã"}`,
         phu: (r) => `${r.tinh_trang} · ${r.ngay_bao}`,
       },
@@ -114,7 +114,7 @@ export default function QuanLyDuLieuTest({ profile }) {
         ten: "Xác nhận tháng không thiếu hàng",
         query: () => fetchAllRows((f, t) => supabase.from("xac_nhan_thang")
           .select("id,don_vi,thang,nam,created_at")
-          .order("created_at", { ascending: false }).range(f, t)),
+          .order("created_at", { ascending: false }).range(f, t), { order: "id" }),
         nhan: (r) => `${r.don_vi} · tháng ${r.thang}/${r.nam}`,
         phu: (r) => fmtNgay(r.created_at),
       },
@@ -123,7 +123,7 @@ export default function QuanLyDuLieuTest({ profile }) {
         ten: "Sự kiện nhu cầu",
         query: () => fetchAllRows((f, t) => supabase.from("su_kien_nhu_cau")
           .select("id,don_vi,ma_hang,ma_quan_ly,ma_ly_do,trang_thai,created_at")
-          .order("created_at", { ascending: false }).range(f, t)),
+          .order("created_at", { ascending: false }).range(f, t), { order: "id" }),
         nhan: (r) => `${r.don_vi} · ${r.ma_hang || r.ma_quan_ly || r.ma_ly_do}`,
         phu: (r) => `${r.trang_thai} · ${fmtNgay(r.created_at)}`,
       },
@@ -132,7 +132,7 @@ export default function QuanLyDuLieuTest({ profile }) {
         ten: "Đề nghị sửa tiêu chí",
         query: () => fetchAllRows((f, t) => supabase.from("de_nghi_sua_tieu_chi")
           .select("id,don_vi,ma_hang,ma_quan_ly,trang_thai,ngay_de_nghi")
-          .order("ngay_de_nghi", { ascending: false }).range(f, t)),
+          .order("ngay_de_nghi", { ascending: false }).range(f, t), { order: "id" }),
         nhan: (r) => `${r.don_vi} · ${r.ma_hang || r.ma_quan_ly}`,
         phu: (r) => `${r.trang_thai} · ${fmtNgay(r.ngay_de_nghi)}`,
       },
@@ -141,7 +141,7 @@ export default function QuanLyDuLieuTest({ profile }) {
         ten: "Mã kỹ thuật / mã hàng khoa tự thêm",
         query: () => fetchAllRows((f, t) => supabase.from("khoa_nhom_ky_thuat")
           .select("id,don_vi,ma_hang_moi,ma_quan_ly,ten_vat_tu_moi,trang_thai,created_at")
-          .order("created_at", { ascending: false }).range(f, t)),
+          .order("created_at", { ascending: false }).range(f, t), { order: "id" }),
         nhan: (r) => `${r.don_vi} · ${r.ma_hang_moi || r.ma_quan_ly || r.ten_vat_tu_moi || "Mã mới"}`,
         phu: (r) => `${r.trang_thai} · ${fmtNgay(r.created_at)}`,
       },
@@ -150,7 +150,7 @@ export default function QuanLyDuLieuTest({ profile }) {
         ten: "Lần kích hoạt mua thêm 30%",
         query: () => fetchAllRows((f, t) => supabase.from("tuy_chon_mua_them_kich_hoat")
           .select("id,proposal_id,don_vi,so_luong_kich_hoat,created_at")
-          .order("created_at", { ascending: false }).range(f, t)),
+          .order("created_at", { ascending: false }).range(f, t), { order: "id" }),
         nhan: (r) => `${r.don_vi} · đề xuất #${r.proposal_id}`,
         phu: (r) => `Mua thêm ${r.so_luong_kich_hoat} · ${fmtNgay(r.created_at)}`,
       },
@@ -163,7 +163,7 @@ export default function QuanLyDuLieuTest({ profile }) {
           ten: "Đợt đề xuất",
           query: () => fetchAllRows((f, t) => supabase.from("dot_de_xuat")
             .select("id,ten,loai_mua_sam,nam,trang_thai,created_at")
-            .order("created_at", { ascending: false }).range(f, t)),
+            .order("created_at", { ascending: false }).range(f, t), { order: "id" }),
           nhan: (r) => `${r.ten} · ${r.nam}`,
           phu: (r) => `${r.loai_mua_sam} · ${r.trang_thai}`,
         },
@@ -172,7 +172,7 @@ export default function QuanLyDuLieuTest({ profile }) {
           ten: "Gói và tiến độ thầu",
           query: () => fetchAllRows((f, t) => supabase.from("goi_thau_tien_do")
             .select("id,ten_goi,loai_mua_sam,nam,dot_id,created_at")
-            .order("created_at", { ascending: false }).range(f, t)),
+            .order("created_at", { ascending: false }).range(f, t), { order: "id" }),
           nhan: (r) => `${r.ten_goi} · ${r.nam}`,
           phu: (r) => `${r.loai_mua_sam} · đợt #${r.dot_id || "—"}`,
         },
@@ -181,7 +181,7 @@ export default function QuanLyDuLieuTest({ profile }) {
           ten: "Kết quả từng mã trong gói thầu",
           query: () => fetchAllRows((f, t) => supabase.from("goi_thau_ket_qua_ma")
             .select("id,goi_id,ma_hang,don_vi,ket_qua,cap_nhat_luc")
-            .order("cap_nhat_luc", { ascending: false }).range(f, t)),
+            .order("cap_nhat_luc", { ascending: false }).range(f, t), { order: "id" }),
           nhan: (r) => `${r.don_vi} · ${r.ma_hang}`,
           phu: (r) => `${r.ket_qua} · gói #${r.goi_id}`,
         },
@@ -190,7 +190,7 @@ export default function QuanLyDuLieuTest({ profile }) {
           ten: "Phiên tổng hợp PĐD",
           query: () => fetchAllRows((f, t) => supabase.from("phien_tong_hop")
             .select("id,dot_id,loai_mua_sam,so_khoa,so_dong,created_at")
-            .order("created_at", { ascending: false }).range(f, t)),
+            .order("created_at", { ascending: false }).range(f, t), { order: "id" }),
           nhan: (r) => `Phiên #${r.id} · ${r.so_khoa} khoa · ${r.so_dong} dòng`,
           phu: (r) => `${r.loai_mua_sam} · đợt #${r.dot_id} · ${fmtNgay(r.created_at)}`,
         },

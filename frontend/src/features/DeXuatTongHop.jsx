@@ -4,7 +4,15 @@ import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import { NHAN_GOI_THAU } from "./Function1";
 import { taoBanThaoHoSo } from "../lib/xuatHoSo";
+import { GOI_ID_MAP } from "../lib/cotChuan";
+import { taiLichSuTheoNam } from "../lib/lichSuSuDung";
 import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
+
+// Tra ngược nhãn gói con (r.goi, vd "GMHS") -> khoá goiId dùng cho route
+// #danh-muc-de-xuat/<goiId>/<khoa>. Giống hệt DeXuatCuaToi.jsx.
+const GOI_LABEL_SANG_ID = Object.fromEntries(
+  Object.entries(GOI_ID_MAP).filter(([, v]) => v.goi).map(([k, v]) => [v.goi, k])
+);
 
 const NHAN_LY_DO = {
   theo_lich_su: "Theo lịch sử sử dụng",
@@ -64,7 +72,7 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
       supabase.from("v_de_xuat_tong_hop").select("*")
         .eq("loai_mua_sam", goi)
         .order("created_at", { ascending: false }).range(f, t)
-    );
+    , { order: "id" });
     if (error) { setLoi("Không đọc được v_de_xuat_tong_hop — kiểm tra view/RLS trong Supabase (schema hiện tại xem backend/sql/schema.sql)."); setLoading(false); return; }
     setRows(data); setLoi("");
 
@@ -73,7 +81,7 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
     // Phiếu gắn theo nhóm (nhom_de_xuat) HOẶC theo proposal_id lẻ (đề xuất cũ).
     const { data: phieu } = await fetchAllRows((f, t) =>
       supabase.from("phieu_de_nghi").select("id, proposal_id, nhom_de_xuat, bieu_mau_id, trang_thai").range(f, t)
-    );
+    , { order: "id" });
     setPhieuTheoNhom(Object.fromEntries(
       (phieu || []).map((p) => [p.nhom_de_xuat || `le:${p.proposal_id}`, p])
     ));
@@ -119,6 +127,12 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
         trangThai: tt.length === 1 ? tt[0] : "hon_hop",
         goi: goiSet.length === 1 ? goiSet[0] : goiSet.length > 1 ? "(nhiều gói)" : null,
         daDiThau: g.items.every((i) => !!i.da_di_thau),
+        // Chỉ tính được khi cả giỏ nằm trong 1 gói con — Danh mục đề xuất là
+        // một tab theo (khoa, gói con), không phải theo từng giỏ.
+        goiId: goi === "mua_sam_bo_sung" ? "bo-sung"
+          : goi === "dau_thau_rong_rai" && goiSet.length === 1
+            ? GOI_LABEL_SANG_ID[goiSet[0]] || null
+            : null,
       };
     });
     if (sapXep === "goi") {
@@ -228,12 +242,11 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
     const [vt, us, hs] = await Promise.all([
       fetchAllRows((f, t) => supabase.from("vat_tu")
         .select("ma_hang,ten_thuong_mai,ky_ma_hieu,hang,nuoc_san_xuat,tieu_chi_ky_thuat")
-        .in("ma_hang", codes).range(f, t)),
-      fetchAllRows((f, t) => supabase.from("v_usage_monthly")
-        .select("ma_hang,nam,so_luong").in("ma_hang", codes).range(f, t)),
+        .in("ma_hang", codes).range(f, t), { order: "ma_hang" }),
+      taiLichSuTheoNam(codes),
       fetchAllRows((f, t) => supabase.from("ho_so_cong_tac")
         .select("nguon_key,noi_dung").eq("ma_ho_so", "danh_muc_dvsd")
-        .in("nguon_key", nguonKeys).range(f, t)),
+        .in("nguon_key", nguonKeys).range(f, t), { order: "id" }),
     ]);
     if (vt.error || us.error || hs.error) {
       setLoiCapNhat((p) => ({
@@ -246,11 +259,7 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
 
     const thongTin = Object.fromEntries((vt.data || []).map((x) => [x.ma_hang, x]));
     const rowsDayDu = rowsGop.map((r) => ({ ...r, ...(thongTin[r.ma_hang] || {}) }));
-    const usage = {};
-    (us.data || []).forEach((x) => {
-      usage[x.ma_hang] = usage[x.ma_hang] || {};
-      usage[x.ma_hang][x.nam] = (usage[x.ma_hang][x.nam] || 0) + Number(x.so_luong);
-    });
+    const usage = us.data;
     const hoSoTheoNguon = Object.fromEntries((hs.data || []).map((x) => [x.nguon_key, x]));
     const meta = {
       don_vi: dsGio[0].don_vi,
@@ -467,7 +476,9 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
                       Đã đi thầu · đã khóa
                     </span>
                   )}
-                  {g.trangThai === "hoan_thanh" && goi !== "chi_dinh_thau" && (
+                  {/* Giỏ đã GỬI là mở được Word cam kết, không chờ duyệt xong
+                      (chốt 08/08/2026, xem patch_zq). */}
+                  {goi !== "chi_dinh_thau" && (
                     <div className="flex flex-wrap items-center gap-2">
                       <button type="button" onClick={() => onMoHoSo?.({
                         dotId: g.dot_id,
@@ -479,16 +490,16 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
                         className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-white px-2.5 py-1.5 font-medium text-blue-700 hover:bg-blue-50">
                         <FileText size={13} /> Mở Word cam kết
                       </button>
-                      <button type="button" onClick={() => onMoHoSo?.({
-                        dotId: g.dot_id,
-                        donVi: g.don_vi,
-                        nhomDeXuat: g.nhom_de_xuat,
-                        proposalId: g.nhom_de_xuat ? null : g.items[0]?.id,
-                        maHoSo: "danh_muc_dvsd",
-                      })}
-                        className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-white px-2.5 py-1.5 font-medium text-emerald-700 hover:bg-emerald-50">
-                        <Sheet size={13} /> Mở Excel danh mục
-                      </button>
+                      {/* Excel danh mục KHÔNG còn là tài liệu trong bộ hồ sơ
+                          (chốt 07/08/2026) — nó là tab riêng gộp mọi giỏ cùng
+                          gói con. Gọi onMoHoSo("danh_muc_dvsd") như trước sẽ mở
+                          một hồ sơ không bao giờ tồn tại. */}
+                      {g.goiId && (
+                        <a href={`#danh-muc-de-xuat/${g.goiId}/${encodeURIComponent(g.don_vi)}`}
+                          className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-white px-2.5 py-1.5 font-medium text-emerald-700 hover:bg-emerald-50">
+                          <Sheet size={13} /> Mở Excel danh mục
+                        </a>
+                      )}
                     </div>
                   )}
                 </div>

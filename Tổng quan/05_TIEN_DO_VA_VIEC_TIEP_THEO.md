@@ -20,14 +20,36 @@ Cập nhật **07/08/2026**. Nhánh chính hiện tại: `phase-a-luong-de-xuat`
 | `patch_zj` | Chốt danh mục + RPC tích/bỏ tích rớt theo đợt | ✅ |
 | `patch_zk` | Ẩn cột lưu server (Danh mục tổng hợp) | ✅ |
 | `patch_zl` | Bỏ sửa đè về số gốc + policy DELETE cho 2 bảng cấu hình | ✅ |
-| **`patch_zm`** | **Lưu THẬT ô Danh mục đề xuất khoa (JSONB) + nút dọn cuối đợt** | ❌ **CHƯA — cần chạy** |
+| `patch_zm` | Lưu THẬT ô Danh mục đề xuất khoa (JSONB) + nút dọn cuối đợt | ✅ (kiểm lại 08/08/2026: bảng `danh_muc_khoa_o` + audit đã có dữ liệu thật) |
 | `patch_zn` | Hạ tầng nén lịch sử HIS cũ | ❌ chưa chạy — **chưa cần** |
+| `patch_zo` | Word cam kết không còn bắt buộc kèm Excel danh mục | ✅ 08/08/2026 |
+| `patch_zp` | 2 view lịch sử tổng theo nhóm mã quản lý | ✅ 08/08/2026 |
+| `patch_zq` | Tạo Word cam kết ngay khi gửi giỏ, không chờ PĐD duyệt xong | ✅ 08/08/2026 |
+| `patch_zr` | 2 view gộp lịch sử toàn viện — bỏ 123 vòng HTTP tuần tự | ✅ 08/08/2026 (đo lại: 40.628 + 6.684 dòng, số khớp bản cũ) |
+| **`patch_q`** | **Phân nhóm ABC + hệ số k** | ❌ **CHƯA — `v_abc_ma_quan_ly` vẫn 404 ngày 08/08/2026** |
 
-⚠️ Chưa chạy `patch_zm` thì các ô chữ trên Danh mục đề xuất của khoa **vẫn mất
-khi đóng tab** (màn hình có báo đỏ đúng điều này).
+⚠️ `patch_q` chỉ phụ thuộc `v_usage_monthly` + `vat_tu` (đều đã có) nên không bị
+chặn bởi gì cả — đơn giản là chưa chạy. Hệ quả: gợi ý hệ số k ở màn Đề xuất số
+lượng đang TẮT ÂM THẦM (Function1 có đường lùi nên không báo lỗi).
+
+**Đã kiểm sau khi chạy (08/08/2026):**
+
+- `tao_bo_ho_so_moi` và `tao_ho_so_tu_gio_da_duyet` đều nhận bộ **chỉ Word**,
+  vẫn nhận bộ Word+Excel cũ (tương thích ngược), và vẫn **chặn** bộ thiếu Word
+  (`Bộ hồ sơ phải có Word cam kết số lượng.`). Kiểm bằng probe gửi
+  `noi_dung: null` nên dừng trước lệnh insert — `ho_so_cong_tac` không phát
+  sinh dòng rác nào.
+- `v_lich_su_nhom_nam` cho `N05.02.090.04`: 2024 = 13.266 · 2025 = 17.338 ·
+  2026 = 8.148 (đúng con số đã dò tay từ `usage_history_current`).
+- `v_lich_su_nhom_nam_khoa`: mỗi khoá `(don_vi, ma_quan_ly, nam)` đúng 1 dòng,
+  không lặp. GMHS - Phòng mổ 2025 = 13.798.
+- Trên màn Tổng hợp PĐD, nhóm `K00.22.000.04` gồm 2 mã khẩu trang:
+  1.149.630 + 148.672 = 1.298.302 = đúng số cột "Nhóm 2025" hiện trên cả 2
+  dòng.
 
 **Việc tiếp theo gần nhất:**
-1. Chạy `patch_zm`, rồi test lưu → thoát → vào lại.
+1. Chạy `patch_zq`, rồi bấm thử bằng tài khoản khoa: gửi giỏ xong là "Mở phiếu
+   Word cam kết" được ngay, không phải chờ PĐD duyệt.
 2. Live sync số PĐD sửa trên Tổng hợp → xuống Danh mục đề xuất từng khoa
    (mục 4.1 nghiệp vụ) — **chưa thiết kế thuật toán chia lại** khi nhiều khoa
    cùng đề xuất một mã. Phải bàn trước khi code.
@@ -40,6 +62,98 @@ khi đóng tab** (màn hình có báo đỏ đúng điều này).
 **Nợ kỹ thuật đã biết:** xem mục 6 `04_VAN_HANH_KY_THUAT.md` (bẫy 16–20).
 
 ## 0. Nhật ký thay đổi (mới nhất ở trên) — mục 3 bên dưới là kế hoạch cũ, nhiều phần đã lỗi thời
+
+### 08/08/2026 (c) — Vòng rà toàn hệ thống
+
+Chạy hết test + quét từng màn bằng phiên đăng nhập thật của **cả hai vai trò**
+(PĐD `pdd@umc.edu.vn`, ĐVSD `rhm@umc.edu.vn`), bọc `fetch` để bắt mọi request
+hỏng chứ không chỉ lỗi hiện ra màn hình.
+
+**Lỗi tìm được và đã sửa**
+
+1. **Phân trang thiếu `ORDER BY` — 32/60 lời gọi.** Xem bẫy 21. Đây là lỗi
+   nghiêm trọng nhất tìm được trong vòng này: mất dòng âm thầm, không có
+   thông báo, và rơi đúng vào truy vấn lịch sử dùng để tính số đề xuất.
+2. **Bẫy 16 (nợ từ 07/08) — 3 link gói bổ sung trỏ nhầm dữ liệu.** Menu sinh
+   `#tong-hop-pdd/bs-t1|bs-t5|bs-t9` nhưng `GOI_ID_MAP` không có 3 khoá đó nên
+   rơi về mặc định `18t-dung-chung` — bấm "Bổ sung tháng 1" lại thấy danh mục
+   gói 18T. Đã thêm 3 khoá trỏ đúng `mua_sam_bo_sung`. **Chưa** tách được theo
+   từng đợt (T1/T5/T9 phân biệt bằng `dot_id`, không phải cột `goi`).
+3. **Nút "Mở Excel danh mục" chết ở màn PĐD** (`DeXuatTongHop.jsx`) — cùng lỗi
+   đã sửa ở màn khoa. Đổi thành link sang tab Danh mục đề xuất.
+4. **4 contract test hỏng** — 3 cái hỏng sẵn từ các phiên trước (chữ trên UI
+   đổi mà test không đổi theo), 1 cái do thay đổi hôm nay. Đã cập nhật assert
+   về đúng hợp đồng hiện hành thay vì xoá. Giờ **32/32 pass**.
+
+**Tối ưu**
+
+5. **`patch_zr` + `lib/lichSuSuDung.js`** — xem bẫy 22. Gộp lịch sử ở DB thay
+   vì kéo 122.159 dòng về cộng bằng JavaScript. Gộp luôn 3 bản chép tay gần
+   giống nhau ở `XuatHoSo` / `TongHopPhongDieuDuong` / `DeXuatTongHop` về một
+   helper. Có đường lùi: thiếu view thì tự quay lại `v_usage_monthly`.
+6. **Chạy song song** các truy vấn độc lập ở `TongHopPdd` và
+   `DanhMucDeXuatKhoa` — trước đó 3 lượt chờ mạng nối đuôi nhau.
+
+**Kiểm tra không ra lỗi** (ghi lại để lần sau khỏi làm lại)
+
+- Bẫy 18 (thiếu policy DELETE): thử insert→delete thật trên cả 5 bảng cấu hình
+  → cả 5 xoá đúng 1 dòng. Không còn bảng nào xoá âm thầm.
+- 45 bảng/view và 24 RPC frontend gọi: chỉ **`v_abc_ma_quan_ly`** thiếu trên
+  staging (patch_q chưa chạy — mất phần gợi ý hệ số k, app không vỡ vì đã có
+  đường lùi). 24/24 RPC đều có.
+- Quét 14 route + toàn bộ menu hai vai trò: **0 lỗi console, 0 request hỏng**
+  ngoài 2 view của patch chưa chạy.
+
+### 08/08/2026 (b) — QĐ: Word cam kết tạo được NGAY KHI GỬI GIỎ
+
+Trước đó phải chờ cả giỏ `hoan_thanh` (PĐD duyệt xong). Chủ dự án chốt bỏ.
+
+**Vì sao bỏ được mà không sợ số lệch:** `CAM_KET` trong `coCauBieuMau.js`
+không chứa một con số lượng nào — toàn bộ là văn bản cam kết ("đảm bảo sử
+dụng đạt 80% số lượng đã đề xuất", "đính kèm danh mục"), chỉ điền `nguoi_lap`
+và `don_vi`. PĐD sửa số lúc duyệt cũng không làm bản cam kết sai. Danh mục
+kèm theo là tab riêng, đọc realtime chứ không phải bản chụp.
+
+Gỡ ở 4 chỗ: `patch_zq` (RPC `tao_ho_so_tu_gio_da_duyet`), `XuatHoSo.jsx`,
+`DeXuatCuaToi.jsx`, `DeXuatTongHop.jsx`. Mọi kiểm tra khác giữ nguyên (giỏ
+phải tồn tại, chưa rút, đồng nhất khoa/đợt/phương thức, ĐVSD chỉ tạo cho khoa
+mình). `tao_bo_ho_so_moi` (nút dấu +) vốn đã không chặn theo trạng thái.
+
+Kèm 2 sửa nhỏ phát sinh từ thay đổi này:
+- `DeXuatTongHop.jsx` cũng còn nút "Mở Excel danh mục" gọi
+  `onMoHoSo("danh_muc_dvsd")` — hồ sơ đó không còn tồn tại từ 07/08. Đổi thành
+  link sang tab Danh mục đề xuất, giống đã làm ở `DeXuatCuaToi.jsx`.
+- `rowsDangMo` trong `XuatHoSo.jsx`: giỏ giờ có thể bị trả lại rồi gửi lại sau
+  khi cam kết đã tạo, mà `proposals` là bảng versioned nên id đổi →
+  `source_ids` đã lưu thành lạc hậu và bộ lọc trả rỗng, làm mất tên người lập
+  trên bản cam kết. Đã lùi về giỏ hiện tại khi không khớp dòng nào.
+
+### 08/08/2026 — 4 việc theo báo lỗi của chủ dự án
+
+1. **Word cam kết đòi tạo kèm Excel** → `patch_zo`. Nguyên nhân ở DB chứ không
+   ở FE: FE đã bỏ `danh_muc_dvsd` từ 07/08 nhưng 2 RPC vẫn bắt đúng 2 tài liệu.
+   Nới thành: Word `cam_ket_sl` bắt buộc, Excel tùy chọn (giữ tương thích với
+   các bộ hồ sơ cũ đã có 2 dòng). Nút "Mở phiếu Excel danh mục" ở
+   `DeXuatCuaToi.jsx` đổi thành link sang tab Danh mục đề xuất — trước đó nó mở
+   một hồ sơ không bao giờ tồn tại.
+2. **Lịch sử sửa ô cho Danh mục đề xuất khoa** — bảng audit
+   `danh_muc_khoa_o_audit` đã có sẵn từ `patch_zm`, chỉ thiếu chỗ xem. Thêm
+   icon đồng hồ ở mọi ô + panel bên phải, giống hệt Danh mục tổng hợp PĐD.
+   Không cần patch SQL.
+3. **Wraptext mọi ô** (cả PĐD lẫn khoa) — bỏ `white-space: nowrap` + ellipsis
+   trong `.qtdx-cell`, đổi sang `pre-wrap`. Kèm nút **"Nội dung ô: ĐẦY ĐỦ /
+   GỌN"**: TSKT thật dài 15-20 dòng nên ở chế độ đầy đủ, 1 dòng bảng có thể
+   chiếm trọn màn hình; chế độ Gọn cắt còn 4 dòng để cuộn. Mặc định ĐẦY ĐỦ.
+   Excel xuất ra luôn có nguyên văn, không phụ thuộc chế độ đang xem.
+4. **Mã 62993 "sai số nghiêm trọng"** — đã dò tận nguồn: **số không sai**.
+   Xem phần giải thích đầy đủ trong `backend/sql/patch_zp_...sql`. Tóm tắt:
+   mã quản lý `N05.02.090.04` gom 6 mã hàng thay thế nhau, GMHS dùng đều
+   ~1.100 tép/tháng suốt 30 tháng, nhưng 12/2024→11/2025 khoa dùng
+   69433/69430/64016 chứ không dùng 62993. Toàn viện cả nhóm: 2024 = 13.266,
+   2025 = 17.338 (CAO HƠN 2024), trong khi riêng 62993 năm 2025 chỉ 890.
+   → QĐ: cột theo mã hàng GIỮ NGUYÊN, thêm khối cột "Lịch sử cả nhóm mã quản
+   lý" bên cạnh (đấu thầu chốt ở cấp mã quản lý — QĐ X2), dùng 2 view mới ở
+   `patch_zp` để không phải tải lịch sử của mọi mã anh em về trình duyệt.
 
 Quyết định kiến trúc thực tế **khác** kế hoạch gốc ở mục 3.1 bên dưới: KHÔNG
 xây bảng `excel_qua_trinh_de_xuat`/`excel_o_gia_tri` riêng. Danh mục tổng hợp

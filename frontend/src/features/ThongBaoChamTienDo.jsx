@@ -36,7 +36,7 @@ export default function ThongBaoChamTienDo({ profile, onXemChiTiet }) {
         fetchAllRows((f, t) => supabase.from("v_tien_do_su_dung")
           .select("goi_id, ma_hang, ten_vat_tu, dvt, sl_trung, da_dung, phan_tram_da_dung,"
                 + " nguong_phai_dat, thang_da_qua, ngay_bat_dau, con_lai, ngay_du_kien_het")
-          .eq("don_vi", profile.khoa).range(f, t)),
+          .eq("don_vi", profile.khoa).range(f, t), { order: ["goi_id", "ma_hang", "don_vi"] }),
         supabase.from("moc_cam_ket_su_dung").select("thang_thu"),
       ]);
       if (huy || r.error) return;

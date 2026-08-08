@@ -67,7 +67,7 @@ export default function NapDuLieuSuDung({ profile }) {
 
       // Danh mục mã hàng đã biết — để cảnh báo mã lạ, không chặn.
       const { data: vatTuRows } = await fetchAllRows((f, t) =>
-        supabase.from("vat_tu").select("ma_hang").range(f, t));
+        supabase.from("vat_tu").select("ma_hang").range(f, t), { order: "ma_hang" });
       const knownMaHang = new Set((vatTuRows || []).map((r) => r.ma_hang));
 
       setKetQua(kiemDichVaLamSach(rowsTho, knownMaHang));

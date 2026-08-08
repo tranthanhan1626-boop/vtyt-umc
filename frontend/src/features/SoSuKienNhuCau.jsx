@@ -51,7 +51,7 @@ export default function SoSuKienNhuCau({ profile }) {
     setDangTai(true);
     const [r, l] = await Promise.all([
       fetchAllRows((x, y) => supabase.from("su_kien_nhu_cau").select("*")
-        .eq("an_khoi_bao_cao", false).order("created_at", { ascending: false }).range(x, y)),
+        .eq("an_khoi_bao_cao", false).order("created_at", { ascending: false }).range(x, y), { order: "id" }),
       supabase.from("ma_ly_do").select("*").eq("nhom", "C").eq("dang_dung", true).order("thu_tu"),
     ]);
     setRows(r.error ? [] : r.data || []);

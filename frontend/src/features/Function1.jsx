@@ -477,14 +477,14 @@ export default function Function1({
           .eq("is_current", true)
           .eq("da_rut", false)
           .eq("da_di_thau", false)
-          .range(f, t)),
+          .range(f, t), { order: "id" }),
         fetchAllRows((f, t) => {
           let q = supabase.from("gio_nhap")
             .select("noi_dung")
             .eq("don_vi", khoaHienTai);
           if (dotDung?.id) q = q.neq("dot_id", dotDung.id);
           return q.range(f, t);
-        }),
+        }, { order: "id" }),
       ]);
       if (huy) return;
       // Trước khi patch X được chạy, cột da_di_thau chưa tồn tại: không khóa
@@ -578,7 +578,7 @@ export default function Function1({
     let huy = false;
     (async () => {
       const r = await fetchAllRows((f, t) => supabase.from("v_abc_ma_quan_ly")
-        .select("ma_quan_ly, nhom_abc, he_so_k, canh_bao_abc").range(f, t));
+        .select("ma_quan_ly, nhom_abc, he_so_k, canh_bao_abc").range(f, t), { order: "ma_quan_ly" });
       if (huy || r.error || !r.data) return;
       setAbcTheoNhom(Object.fromEntries(r.data.map((d) => [d.ma_quan_ly, d])));
     })();
@@ -614,7 +614,7 @@ export default function Function1({
   // chứa nó. Chỉ dùng (1) thì tính năng "thêm mã kỹ thuật" trông như không chạy.
   const taiNhomCuaKhoa = useCallback(async (khoa) => {
     const [lichSu, deNghi] = await Promise.all([
-      fetchAllRows((f, t) => supabase.from("v_don_vi_nhom").select("ma_quan_ly").eq("don_vi", khoa).range(f, t)),
+      fetchAllRows((f, t) => supabase.from("v_don_vi_nhom").select("ma_quan_ly").eq("don_vi", khoa).range(f, t), { order: "ma_quan_ly" }),
       supabase.from("khoa_nhom_ky_thuat").select("*").eq("don_vi", khoa).order("created_at", { ascending: false }),
     ]);
     // Thiếu view => để null = không lọc, thà hiện thừa còn hơn chặn hết.
@@ -693,7 +693,7 @@ export default function Function1({
         let q = supabase.from("v_usage_monthly").select("ma_hang, nam, thang, so_luong").in("ma_hang", codes);
         if (!toanVien) q = q.eq("don_vi", khoaHienTai);
         return q.range(f, t);
-      });
+      }, { order: ["don_vi", "ma_hang", "nam", "thang"] });
       const acc = {};
       (us || []).forEach((r) => {
         acc[r.ma_hang] = acc[r.ma_hang] || {};
@@ -709,7 +709,7 @@ export default function Function1({
           .select("ma_hang, nam, thang, thieu_co_bang_chung, bi_nen").in("ma_hang", codes);
         if (!toanVien) q = q.eq("don_vi", khoaHienTai);
         return q.range(f, t);
-      });
+      }, { order: ["don_vi", "ma_hang", "nam", "thang"] });
       const gomThieu = {};
       (th || []).forEach((r) => {
         gomThieu[r.ma_hang] = gomThieu[r.ma_hang] || {};

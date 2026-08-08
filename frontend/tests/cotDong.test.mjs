@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
-import { COT_KHOA, COT_PDD, taoCotLichSu, thayCotLichSu, suyRaNamCoDuLieu } from "../src/lib/cotChuan.js";
+import {
+  COT_KHOA, COT_PDD, taoCotLichSu, thayCotLichSu, suyRaNamCoDuLieu,
+  taoCotLichSuNhom, chenCotLichSuNhom,
+} from "../src/lib/cotChuan.js";
 import { ganTenMau, docChuTrongO } from "../src/lib/tenCotBieuMau.js";
 
 // Dữ liệu thật của mã 67163 (Khoa Phẫu thuật hàm mặt răng hàm mặt), lấy từ
@@ -58,6 +61,46 @@ assert.ok(
 // Chỉ giữ N năm gần nhất
 const nhieuNam = [2019, 2020, 2021, 2022, 2023, 2024].map((nam) => ({ nam, thang: 12 }));
 assert.deepEqual(suyRaNamCoDuLieu(nhieuNam, 4).map((x) => x.nam), [2021, 2022, 2023, 2024]);
+
+// --- Khối "lịch sử cả nhóm mã quản lý" (mã 62993, xem patch_zp) ----------
+// Các mã hàng trong cùng mã quản lý thay thế nhau qua từng kỳ hợp đồng, nên
+// cạnh cột theo mã hàng phải có cột tổng cả nhóm, nếu không sẽ đọc nhầm là
+// nhu cầu tụt hẳn.
+const cotNhom = taoCotLichSuNhom(dsNam);
+assert.deepEqual(cotNhom.map((c) => c.key), ["sl_nhom_2024", "sl_nhom_2025", "sl_nhom_2026"]);
+assert.equal(cotNhom[2].nhan, "Nhóm 6 tháng 2026", "năm dở vẫn phải ghi rõ mấy tháng");
+assert.ok(cotNhom.every((c) => c.group === "lich_su_nhom" && c.kieu === "num" && c.readonly));
+
+const cotCoNhom = chenCotLichSuNhom(cotMoi, cotNhom);
+const keyCoNhom = cotCoNhom.map((c) => c.key);
+assert.equal(cotCoNhom.length, cotMoi.length + 3);
+assert.equal(
+  keyCoNhom.indexOf("sl_nhom_2024"), keyCoNhom.indexOf("sl_2026") + 1,
+  "khối nhóm phải nằm NGAY SAU cột lịch sử theo mã hàng cuối cùng, để so sánh bằng mắt",
+);
+assert.ok(keyCoNhom.indexOf("sl_nhom_2026") < keyCoNhom.indexOf("sl_de_xuat_18t"),
+  "và vẫn nằm trước SL đề xuất");
+
+// Ở COT_PDD, khối nhóm phải chen sau "Theo 18T" (cột cuối của nhóm lich_su),
+// không được cắt đôi nhóm lịch sử — tinhSegmentsGroup cần các cột cùng nhóm
+// nằm liền nhau, cắt đôi thì group header vỡ thành 2 mảnh trùng tên.
+const cotPddCoNhom = chenCotLichSuNhom(cotPddMoi, taoCotLichSuNhom(dsNam, { theoKhoa: false }));
+const keyPddNhom = cotPddCoNhom.map((c) => c.key);
+assert.equal(keyPddNhom.indexOf("sl_nhom_2024"), keyPddNhom.indexOf("theo_18t_2025") + 1);
+assert.equal(
+  keyPddNhom.filter((k) => cotPddCoNhom.find((c) => c.key === k)?.group === "lich_su").length,
+  keyPddNhom.lastIndexOf("theo_18t_2025") - keyPddNhom.indexOf("sl_2024") + 1,
+  "mọi cột nhóm lich_su phải liền một mạch",
+);
+
+// Không có năm nào -> không thêm cột, bảng giữ nguyên
+assert.equal(chenCotLichSuNhom(cotMoi, []).length, cotMoi.length);
+
+// Cột nhóm không có trong biểu mẫu -> phải rơi xuống nhanMau, không lấy tên
+// ngắn trên màn hình ("Nhóm 2024") vào file trình ký.
+const ganNhom = ganTenMau([cotNhom[0]], COT_KHOA, COT_KHOA.map((c) => `MẪU: ${c.key}`));
+assert.equal(ganNhom[0].nhan,
+  "Số lượng đã sử dụng năm 2024 - cả nhóm mã quản lý (khoa)");
 
 // --- Tên cột khi xuất Excel lấy từ biểu mẫu -----------------------------
 // Giả lập header dòng 5 của "Danh mục đề xuất khoa chuẩn.xlsx" (tên đầy đủ).

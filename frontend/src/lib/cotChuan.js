@@ -66,6 +66,7 @@ export const NHOM_COT_KHOA = [
   { key: "phan_nhom",  nhan: "Phân nhóm quản lý",                    mau: "bg-slate-700" },
   { key: "vat_tu",     nhan: "Vật tư & TSKT",                        mau: "bg-teal-800" },
   { key: "lich_su",    nhan: "Lịch sử sử dụng của khoa",             mau: "bg-slate-600" },
+  { key: "lich_su_nhom", nhan: "Lịch sử cả nhóm mã quản lý (khoa)",  mau: "bg-indigo-800" },
   { key: "de_xuat",    nhan: "Số lượng khoa đề xuất",                mau: "bg-teal-700" },
   { key: "rot_thau",   nhan: "Rớt thầu DC 2025",                     mau: "bg-rose-800" },
   { key: "giai_trinh", nhan: "Giải trình đề xuất",                   mau: "bg-amber-800" },
@@ -118,7 +119,8 @@ export const NHOM_COT_PDD = [
   { key: "dinh_danh",  nhan: "Định danh",                            mau: "bg-slate-800" },
   { key: "phan_nhom",  nhan: "Phân nhóm quản lý",                    mau: "bg-slate-700" },
   { key: "vat_tu",     nhan: "Vật tư & TSKT",                        mau: "bg-teal-800" },
-  { key: "lich_su",    nhan: "Lịch sử sử dụng toàn viện",            mau: "bg-slate-600" },
+  { key: "lich_su",    nhan: "Lịch sử sử dụng toàn viện (mã hàng)",  mau: "bg-slate-600" },
+  { key: "lich_su_nhom", nhan: "Lịch sử toàn viện cả nhóm mã quản lý", mau: "bg-indigo-800" },
   { key: "de_xuat",    nhan: "Đề xuất tổng hợp toàn viện",           mau: "bg-teal-700" },
   { key: "tm_2627",    nhan: "Thương mại tham khảo 2026-2027",       mau: "bg-sky-800" },
 ];
@@ -177,6 +179,20 @@ export const GOI_ID_MAP = {
   "18t-tim-mach":    { loai_mua_sam: "dau_thau_rong_rai", goi: "Tim mạch", nhan: "18T / Tim mạch" },
   "18t-ctch-ntk":    { loai_mua_sam: "dau_thau_rong_rai", goi: "CTCH-NTK", nhan: "18T / CTCH-NTK" },
   "bo-sung":         { loai_mua_sam: "mua_sam_bo_sung", goi: null, nhan: "Mua sắm bổ sung" },
+  // BẪY 16 (vá 08/08/2026): menu gói bổ sung ở KhungGoiThau.jsx sinh link
+  // #tong-hop-pdd/bs-t1 | bs-t5 | bs-t9, nhưng 3 khoá đó KHÔNG có ở đây nên
+  // `GOI_ID_MAP[goiId] || GOI_ID_MAP["18t-dung-chung"]` lặng lẽ rơi về 18T
+  // Dùng chung — bấm "Bổ sung tháng 1" lại thấy danh mục của gói 18T, sai dữ
+  // liệu mà không có báo lỗi nào.
+  //
+  // Vá ở mức ĐÚNG PHƯƠNG THỨC MUA SẮM: cả 3 khoá cùng trỏ mua_sam_bo_sung nên
+  // số liệu hiện ra là số bổ sung thật. CHƯA tách được theo từng đợt vì 3 đợt
+  // T1/T5/T9 phân biệt nhau bằng `dot_id` chứ không phải cột `goi` — muốn tách
+  // thật thì GOI_ID_MAP phải mang thêm điều kiện đợt và cả 2 màn phải lọc
+  // theo đó. Ghi rõ ở đây để không tưởng đã xong.
+  "bs-t1":           { loai_mua_sam: "mua_sam_bo_sung", goi: null, nhan: "Bổ sung · đợt tháng 1" },
+  "bs-t5":           { loai_mua_sam: "mua_sam_bo_sung", goi: null, nhan: "Bổ sung · đợt tháng 5" },
+  "bs-t9":           { loai_mua_sam: "mua_sam_bo_sung", goi: null, nhan: "Bổ sung · đợt tháng 9" },
 };
 
 // -------- Cột "Số lượng đã sử dụng" SINH ĐỘNG theo dữ liệu thật -----------
@@ -204,6 +220,49 @@ export function taoCotLichSu(dsNam = [], { theoKhoa = true } = {}) {
       width: 100, kieu: "num", readonly: true, group: "lich_su",
     };
   });
+}
+
+/*
+ * -------- Lịch sử theo NHÓM MÃ QUẢN LÝ (mã tương đương) -------------------
+ *
+ * VÌ SAO CÓ KHỐI CỘT NÀY (phát hiện 08/08/2026, mã 62993):
+ * Một mã quản lý gom nhiều mã hàng THAY THẾ ĐƯỢC CHO NHAU, và bệnh viện đổi
+ * mã dùng theo từng kỳ hợp đồng. Ví dụ N05.02.090.04 (chỉ Vicryl 3-0, kim
+ * 26mm, 6 mã hàng) tại Khoa GMHS dùng đều ~1.100 tép/tháng suốt 30 tháng,
+ * nhưng riêng mã 62993 thì:
+ *     2024 = 6.815   2025 = 890   2026 = 4.389   (toàn viện)
+ * vì 12/2024→11/2025 khoa dùng mã 69433/69430/64016 thay cho 62993. Nhìn cột
+ * "SL 2025" của riêng 62993 sẽ tưởng nhu cầu tụt 87%, trong khi tổng nhóm
+ * 2025 (17.338) còn CAO HƠN 2024 (13.266).
+ *
+ * Vì đấu thầu diễn ra ở CẤP MÃ QUẢN LÝ (xem QĐ X2), số để giải trình số lượng
+ * phải là tổng nhóm. Giữ nguyên cột theo mã hàng (vẫn cần để biết mã nào đang
+ * thực dùng) và THÊM khối cột này bên cạnh.
+ */
+export function taoCotLichSuNhom(dsNam = [], { theoKhoa = true } = {}) {
+  return dsNam.map(({ nam, thangCuoi }) => {
+    const caNam = Number(thangCuoi) >= 12;
+    const duoi = caNam ? `${nam}` : `${thangCuoi} tháng ${nam}`;
+    return {
+      key: `sl_nhom_${nam}`,
+      nhan: `Nhóm ${duoi}`,
+      nhanMau: `Số lượng đã sử dụng ${caNam ? `năm ${nam}` : `${thangCuoi} tháng/ ${nam}`} `
+        + `- cả nhóm mã quản lý${theoKhoa ? " (khoa)" : " (toàn viện)"}`,
+      width: 100, kieu: "num", readonly: true, group: "lich_su_nhom",
+    };
+  });
+}
+
+/**
+ * Chèn khối cột lịch sử nhóm ngay SAU cột lịch sử theo mã hàng cuối cùng.
+ * Đặt cạnh nhau để so sánh được bằng mắt, không phải cuộn qua lại.
+ */
+export function chenCotLichSuNhom(cot, cotNhom) {
+  if (!cotNhom.length) return cot;
+  let iCuoi = -1;
+  cot.forEach((c, i) => { if (c.group === "lich_su") iCuoi = i; });
+  if (iCuoi < 0) return [...cot, ...cotNhom];
+  return [...cot.slice(0, iCuoi + 1), ...cotNhom, ...cot.slice(iCuoi + 1)];
 }
 
 /**

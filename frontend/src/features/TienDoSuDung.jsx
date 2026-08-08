@@ -62,7 +62,7 @@ export default function TienDoSuDung({ profile }) {
     setDangTai(true);
     const [r, m] = await Promise.all([
       fetchAllRows((f, t) => supabase.from("v_tien_do_su_dung")
-        .select("*").order("ten_goi").order("ma_quan_ly").range(f, t)),
+        .select("*").order("ten_goi").order("ma_quan_ly").range(f, t), { order: ["goi_id", "ma_hang", "don_vi"] }),
       supabase.from("moc_cam_ket_su_dung").select("*").order("thang_thu"),
     ]);
     setRows(r.error ? [] : r.data || []);

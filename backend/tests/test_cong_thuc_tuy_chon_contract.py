@@ -26,7 +26,9 @@ def test_p90_p95_la_muc_cao_can_giai_trinh():
 def test_tuy_chon_30_la_tran_khong_tu_dong_mua():
     assert "không tự động mua" in GOI_Y
     assert "Trần tùy chọn 30%" in FUNCTION_1
-    assert "không tự động cộng vào số mua" in FUNCTION_1
+    # Chữ trên màn đã đổi "số mua" -> "số đề xuất" (Function1.jsx:1826).
+    # Ràng buộc nghiệp vụ không đổi: 30% là TRẦN, không tự cộng vào số đề xuất.
+    assert "không tự động cộng vào số đề xuất" in FUNCTION_1
 
 
 def test_p50_khong_nhan_lai_tang_truong_cua_hai_cua_so():

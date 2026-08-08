@@ -53,7 +53,7 @@ export default function DieuChinhTieuChi({ profile }) {
     } else {
       const [cua, tatCa] = await Promise.all([
         fetchAllRows((f, t) => supabase.from("v_don_vi_nhom").select("ma_quan_ly")
-          .eq("don_vi", profile.khoa).range(f, t)),
+          .eq("don_vi", profile.khoa).range(f, t), { order: "ma_quan_ly" }),
         fetchAllRows((f, t) => supabase.from("v_nhom_co_ma_hang")
           .select("ma_quan_ly, ten_quan_ly, so_ma_hang").order("ma_quan_ly").range(f, t)),
       ]);

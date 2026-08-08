@@ -33,12 +33,12 @@ export default function ChoDuyet({ onDoiSoLuong, onMoHoSo }) {
     const [dx, hs, nm] = await Promise.all([
       fetchAllRows((f, t) =>
         supabase.from("v_de_xuat_tong_hop").select("*").eq("trang_thai", "de_xuat")
-          .order("created_at", { ascending: false }).range(f, t)),
+          .order("created_at", { ascending: false }).range(f, t), { order: "id" }),
       fetchAllRows((f, t) =>
         supabase.from("ho_so_cong_tac")
           .select("id,dot_id,loai_mua_sam,don_vi,nguon_key,ma_ho_so,trang_thai,updated_at,updated_by")
           .eq("trang_thai", "cho_pdd")
-          .order("updated_at", { ascending: false }).range(f, t)),
+          .order("updated_at", { ascending: false }).range(f, t), { order: "id" }),
       supabase.from("khoa_nhom_ky_thuat").select("*").eq("trang_thai", "cho_duyet")
         .order("created_at", { ascending: false }),
     ]);

@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
+import { taiLichSuTheoNam } from "../lib/lichSuSuDung";
 import HoSoTrucTuyen from "./HoSoTrucTuyen";
 import { HO_SO, taoBanThaoHoSo } from "../lib/xuatHoSo";
 
@@ -23,8 +24,18 @@ const NHAN_TRANG_THAI = {
   da_di_thau: "Đã đi thầu · đã khóa",
 };
 
+// Bản DB cũ (patch_t / patch_x) bắt bộ hồ sơ phải có ĐỦ Word cam kết + Excel
+// danh mục. Từ 07/08/2026 Excel đã tách sang tab riêng nên FE chỉ gửi Word —
+// DB chưa chạy patch_zo sẽ chặn lại bằng đúng câu dưới đây. Dịch sang việc
+// người dùng làm được, thay vì đưa nguyên văn lỗi Postgres.
+const dichLoiBatBuocExcel = (msg = "") =>
+  /Word cam kết và Excel danh mục/i.test(msg)
+    ? "Database còn bắt tạo kèm Excel danh mục. Cần chạy backend/sql/patch_zo_word_cam_ket_khong_kem_excel.sql để chỉ tạo Word cam kết."
+    : msg;
+
 // Không gian hồ sơ của ĐVSD:
-// - Gói 18 tháng/bổ sung: 2 tab Word cam kết + Excel danh mục.
+// - Gói 18 tháng/bổ sung: chỉ 1 tab Word cam kết (Excel danh mục đã tách sang
+//   tab riêng #danh-muc-de-xuat/..., chốt 07/08/2026).
 // - Chỉ định thầu: 1 tab Word theo đúng biểu mẫu riêng.
 // Mỗi lần tạo mới sinh một bộ hồ sơ riêng từ danh mục khoa đã gửi trong đợt.
 // Phần chỉnh trực tiếp được lưu ở ho_so_cong_tac, tách khỏi proposals để
@@ -74,7 +85,7 @@ export default function XuatHoSo({
       fetchAllRows((f, t) =>
         supabase.from("v_de_xuat_tong_hop").select("*")
           .eq("loai_mua_sam", goi)
-          .order("created_at", { ascending: false }).range(f, t)),
+          .order("created_at", { ascending: false }).range(f, t), { order: "id" }),
       supabase.from("dot_de_xuat").select("*")
         .eq("loai_mua_sam", goi)
         .order("nam", { ascending: false }).order("thang_moc", { ascending: false }),
@@ -93,20 +104,14 @@ export default function XuatHoSo({
     const codes = [...new Set(ds.map((x) => x.ma_hang).filter(Boolean))];
     if (codes.length) {
       const [u, vt] = await Promise.all([
-        fetchAllRows((f, t) => supabase.from("v_usage_monthly")
-          .select("ma_hang, nam, so_luong").in("ma_hang", codes).range(f, t)),
+        taiLichSuTheoNam(codes),
         fetchAllRows((f, t) => supabase.from("vat_tu")
           .select("ma_hang,ten_thuong_mai,ky_ma_hieu,hang,nuoc_san_xuat,tieu_chi_ky_thuat")
-          .in("ma_hang", codes).range(f, t)),
+          .in("ma_hang", codes).range(f, t), { order: "ma_hang" }),
       ]);
       const thongTin = Object.fromEntries((vt.data || []).map((x) => [x.ma_hang, x]));
       ds = ds.map((x) => ({ ...x, ...(thongTin[x.ma_hang] || {}) }));
-      const acc = {};
-      (u.data || []).forEach((x) => {
-        acc[x.ma_hang] = acc[x.ma_hang] || {};
-        acc[x.ma_hang][x.nam] = (acc[x.ma_hang][x.nam] || 0) + Number(x.so_luong);
-      });
-      setUsage(acc);
+      setUsage(u.data);
     } else {
       setUsage({});
     }
@@ -176,7 +181,7 @@ export default function XuatHoSo({
       .eq("loai_mua_sam", goi)
       .eq("don_vi", donVi)
       .order("updated_at", { ascending: false })
-      .range(f, t));
+      .range(f, t), { order: "id" });
     if (r.error) {
       setLoiHoSo(r.error.message);
       setDsHoSo([]);
@@ -236,11 +241,10 @@ export default function XuatHoSo({
       setGioDaThuTao(khoaGioKhoiTao);
       return;
     }
-    if (!rowsLoc.every((r) => r.trang_thai === "hoan_thanh")) {
-      setLoiHoSo("Chỉ tạo bản cam kết Word sau khi Phòng Điều dưỡng đã hoàn thành duyệt cả giỏ.");
-      setGioDaThuTao(khoaGioKhoiTao);
-      return;
-    }
+    // (Trước 08/08/2026 ở đây chặn tới khi cả giỏ `hoan_thanh`. Đã bỏ: khoa
+    // GỬI giỏ là tạo được cam kết luôn. Bản cam kết không chứa số lượng nào —
+    // chỉ là văn bản "đảm bảo dùng đạt 80%, đính kèm danh mục" — nên PĐD sửa
+    // số lúc duyệt cũng không làm nó sai. Xem patch_zq.)
 
     setGioDaThuTao(khoaGioKhoiTao);
     setDangTao(true);
@@ -270,7 +274,7 @@ export default function XuatHoSo({
         const canPatch = error.code === "PGRST202" || /tao_ho_so_tu_gio_da_duyet/i.test(error.message || "");
         setLoiHoSo(canPatch
           ? "Staging chưa có chức năng tạo cam kết Word theo giỏ. Cần chạy backend/sql/patch_x_quyen_khoa_va_ho_so_theo_gio.sql."
-          : error.message);
+          : dichLoiBatBuocExcel(error.message));
         setDangTao(false);
         return;
       }
@@ -317,7 +321,7 @@ export default function XuatHoSo({
       const canPatch = error.code === "PGRST202" || /tao_bo_ho_so_moi/i.test(error.message || "");
       setLoiHoSo(canPatch
         ? "Staging chưa có chức năng tạo nhiều bộ hồ sơ. Cần chạy backend/sql/patch_t_tao_nhieu_bo_ho_so.sql."
-        : error.message);
+        : dichLoiBatBuocExcel(error.message));
       setDangTao(false);
       return;
     }
@@ -337,7 +341,13 @@ export default function XuatHoSo({
     const ids = hoSoDangMo?.noi_dung?.source_ids || [];
     if (!ids.length) return rowsLoc;
     const tapId = new Set(ids.map(Number));
-    return rowsTrongDot.filter((r) => r.don_vi === donVi && tapId.has(Number(r.id)));
+    const khop = rowsTrongDot.filter((r) => r.don_vi === donVi && tapId.has(Number(r.id)));
+    // Từ 08/08/2026 cam kết được tạo NGAY KHI GỬI giỏ, nên giỏ còn có thể bị
+    // PĐD trả lại rồi khoa sửa và gửi lại — `proposals` là bảng versioned nên
+    // lần gửi mới sinh id mới, `source_ids` đã lưu trong hồ sơ thành lạc hậu.
+    // Không có dòng nào khớp thì lùi về giỏ hiện tại, đừng trả rỗng: rỗng thì
+    // `nguoi_lap` trên bản cam kết mất tên người lập.
+    return khop.length ? khop : rowsLoc;
   }, [hoSoDangMo, rowsLoc, rowsTrongDot, donVi]);
   const laDanhMucGop = nguonDangMo.startsWith("gop:");
   const taiLieuDangMo = laDanhMucGop

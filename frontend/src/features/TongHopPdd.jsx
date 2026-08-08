@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Lock, Unlock, RefreshCw, Download, ChevronLeft, ChevronRight, ChevronDown, History, Users, EyeOff, AlertTriangle } from "lucide-react";
+import { Lock, Unlock, RefreshCw, Download, ChevronLeft, ChevronRight, ChevronDown, History, Users, EyeOff, AlertTriangle, AlignLeft } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import { tinhTuyChonMuaThem30 } from "../lib/tuyChonMuaThem";
 import {
   COT_PDD, NHOM_COT_PDD, GOI_ID_MAP, sapXepFreezeTruoc, tinhLeftFreeze,
   tinhSegmentsGroup, taoCotLichSu, thayCotLichSu, suyRaNamCoDuLieu,
+  taoCotLichSuNhom, chenCotLichSuNhom,
 } from "../lib/cotChuan";
 import { docTenCotTuMau, ganTenMau } from "../lib/tenCotBieuMau";
+import { taiLichSuTheoThang, gomTheoThang } from "../lib/lichSuSuDung";
 import { StyleTable, StyleToolbar, formatCell } from "./DanhMucDeXuatKhoa";
 import { xuatExcelDong, tenFileAnToan } from "../lib/xuatExcelDong";
 
@@ -84,7 +86,7 @@ async function taiDuLieuGoc(goiId) {
     .eq("loai_mua_sam", bo.loai_mua_sam);
   if (bo.goi) qProposals = qProposals.eq("goi", bo.goi);
   const { data: propRows, error: loiProposals } = await fetchAllRows((f, t) =>
-    qProposals.range(f, t));
+    qProposals.range(f, t), { order: "id" });
   if (loiProposals) throw loiProposals;
 
   const theoMa = new Map();
@@ -98,30 +100,45 @@ async function taiDuLieuGoc(goiId) {
   const { data: vatTuRows, error: loiVatTu } = await fetchAllRows((f, t) =>
     supabase.from("vat_tu")
       .select("ma_hang, ten_vat_tu, dvt, ma_quan_ly, tieu_chi_ky_thuat, ten_thuong_mai, ky_ma_hieu, hang, nuoc_san_xuat")
-      .in("ma_hang", dsMaHang).range(f, t));
+      .in("ma_hang", dsMaHang).range(f, t), { order: "ma_hang" });
   if (loiVatTu) throw loiVatTu;
   const vatTuTheoMa = new Map((vatTuRows || []).map((v) => [v.ma_hang, v]));
 
   const dsMaQuanLy = [...new Set((vatTuRows || []).map((v) => v.ma_quan_ly).filter(Boolean))];
-  const { data: nhomRows } = dsMaQuanLy.length
-    ? await fetchAllRows((f, t) => supabase.from("nhom_ky_thuat")
-        .select("ma_quan_ly, ten_quan_ly").in("ma_quan_ly", dsMaQuanLy).range(f, t))
-    : { data: [] };
-  const tenNhomTheoMa = new Map((nhomRows || []).map((n) => [n.ma_quan_ly, n.ten_quan_ly]));
 
-  const { data: usageRows, error: loiUsage } = await fetchAllRows((f, t) =>
-    supabase.from("usage_history_current")
-      .select("ma_hang, nam, thang, so_luong").in("ma_hang", dsMaHang).range(f, t));
-  if (loiUsage) throw loiUsage;
-  const usageTheoMa = new Map();
-  (usageRows || []).forEach((r) => {
-    if (!usageTheoMa.has(r.ma_hang)) usageTheoMa.set(r.ma_hang, new Map());
-    const theoThang = usageTheoMa.get(r.ma_hang);
-    const m = monthId(Number(r.nam), Number(r.thang));
-    theoThang.set(m, (theoThang.get(m) || 0) + (Number(r.so_luong) || 0));
+  // Ba truy vấn này KHÔNG phụ thuộc nhau — trước đây chạy tuần tự nên cộng đủ
+  // 3 lượt chờ mạng. Lịch sử là truy vấn nặng nhất nên để nó chạy song song
+  // với 2 cái kia là bớt được gần trọn thời gian của chúng.
+  const [nhomRes, usageRes, nhomNamRes] = await Promise.all([
+    dsMaQuanLy.length
+      ? fetchAllRows((f, t) => supabase.from("nhom_ky_thuat")
+          .select("ma_quan_ly, ten_quan_ly").in("ma_quan_ly", dsMaQuanLy).range(f, t), { order: "ma_quan_ly" })
+      : Promise.resolve({ data: [] }),
+    // Gộp toàn viện sẵn ở DB (patch_zr) — ít hơn ~3 lần số dòng so với đọc
+    // v_usage_monthly rồi tự cộng. Màn này không dùng cột don_vi.
+    taiLichSuTheoThang(dsMaHang),
+    // Lịch sử tổng CẢ NHÓM mã quản lý (mã tương đương thay thế nhau qua các kỳ
+    // hợp đồng) — xem lý do đầy đủ trong patch_zp. Thiếu view (chưa chạy patch)
+    // thì bỏ trống khối cột chứ không làm hỏng cả màn hình.
+    dsMaQuanLy.length
+      ? fetchAllRows((f, t) => supabase.from("v_lich_su_nhom_nam")
+          .select("ma_quan_ly, nam, so_luong, so_ma_co_phat_sinh")
+          .in("ma_quan_ly", dsMaQuanLy).range(f, t), { order: ["ma_quan_ly", "nam"] })
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const tenNhomTheoMa = new Map((nhomRes.data || []).map((n) => [n.ma_quan_ly, n.ten_quan_ly]));
+
+  if (usageRes.error) throw usageRes.error;
+  const usageRows = usageRes.data;
+  const usageTheoMa = gomTheoThang(usageRows, monthId);
+  const dsNamCoDuLieu = suyRaNamCoDuLieu(usageRows);
+
+  const nhomNamTheoMa = new Map();
+  (nhomNamRes.data || []).forEach((r) => {
+    if (!nhomNamTheoMa.has(r.ma_quan_ly)) nhomNamTheoMa.set(r.ma_quan_ly, new Map());
+    nhomNamTheoMa.get(r.ma_quan_ly).set(Number(r.nam), Number(r.so_luong) || 0);
   });
-
-  const dsNamCoDuLieu = suyRaNamCoDuLieu(usageRows || []);
 
   const namNay = new Date().getFullYear();
   const rows = dsMaHang.map((maHang, idx) => {
@@ -149,6 +166,10 @@ async function taiDuLieuGoc(goiId) {
       ...Object.fromEntries(dsNamCoDuLieu.map(({ nam, thangCuoi }) => [
         `sl_${nam}`,
         tongKhoang(theoThang, monthId(nam, 1), monthId(nam, thangCuoi)) || null,
+      ])),
+      ...Object.fromEntries(dsNamCoDuLieu.map(({ nam }) => [
+        `sl_nhom_${nam}`,
+        (vt.ma_quan_ly ? nhomNamTheoMa.get(vt.ma_quan_ly)?.get(nam) : null) || null,
       ])),
       theo_18t_2024: theo18t(2024) || null,
       theo_18t_2025: theo18t(2025) || null,
@@ -183,10 +204,10 @@ async function taiOverrideVaKhoa(goiId, namDeXuat) {
   const [{ data: oRows, error: loiO }, { data: khoaRows, error: loiKhoa }] = await Promise.all([
     fetchAllRows((f, t) => supabase.from("danh_muc_tong_hop_o")
       .select("ma_hang, cot, gia_tri")
-      .eq("goi_id", goiId).eq("nam_de_xuat", namDeXuat).range(f, t)),
+      .eq("goi_id", goiId).eq("nam_de_xuat", namDeXuat).range(f, t), { order: "id" }),
     fetchAllRows((f, t) => supabase.from("danh_muc_tong_hop_khoa")
       .select("loai, khoa_key")
-      .eq("goi_id", goiId).eq("nam_de_xuat", namDeXuat).range(f, t)),
+      .eq("goi_id", goiId).eq("nam_de_xuat", namDeXuat).range(f, t), { order: "id" }),
   ]);
   if (loiO) throw loiO;
   if (loiKhoa) throw loiKhoa;
@@ -270,13 +291,19 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
   // Công tắc chung cho "bảng con" (chi tiết từng khoa). Tắt thì không bung
   // được trên web VÀ Excel cũng không có các cột khoa — chốt 07/08/2026.
   const [hienChiTietKhoa, setHienChiTietKhoa] = useState(true);
+  // Mặc định hiện ĐẦY ĐỦ nội dung mọi ô (wraptext) — xem StyleTable.
+  const [dongGon, setDongGon] = useState(false);
   const [dangXuat, setDangXuat] = useState(false);
   const [audit, setAudit] = useState(null); // { maHang, cot, dsAudit, dangTai }
   const [dsNamCoDuLieu, setDsNamCoDuLieu] = useState([]);
 
-  // COT_PDD nhưng khối cột năm được thay bằng đúng năm đang có dữ liệu.
+  // COT_PDD nhưng khối cột năm được thay bằng đúng năm đang có dữ liệu, rồi
+  // chèn thêm khối "lịch sử cả nhóm mã quản lý" ngay cạnh để so sánh bằng mắt.
   const cotDayDu = useMemo(
-    () => thayCotLichSu(COT_PDD, taoCotLichSu(dsNamCoDuLieu, { theoKhoa: false })),
+    () => chenCotLichSuNhom(
+      thayCotLichSu(COT_PDD, taoCotLichSu(dsNamCoDuLieu, { theoKhoa: false })),
+      taoCotLichSuNhom(dsNamCoDuLieu, { theoKhoa: false })
+    ),
     [dsNamCoDuLieu]
   );
 
@@ -566,6 +593,10 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
               title="Bật/tắt bảng con chi tiết theo khoa — tắt thì Excel cũng không có cột khoa">
               <Users size={13} /> Chi tiết theo khoa: {hienChiTietKhoa ? "BẬT" : "TẮT"}
             </button>
+            <button className="qtdx-tb" onClick={() => setDongGon((v) => !v)}
+              title="Đầy đủ = mọi ô hiện trọn nội dung (dòng cao). Gọn = cắt còn 4 dòng cho dễ cuộn; bấm vào ô vẫn xem/sửa được đủ.">
+              <AlignLeft size={13} /> Nội dung ô: {dongGon ? "GỌN" : "ĐẦY ĐỦ"}
+            </button>
             <button className="qtdx-tb" onClick={xuatExcel} disabled={dangXuat || !rows.length}>
               <Download size={13} /> {dangXuat ? "Đang xuất…" : "Xuất Excel đi thầu"}
             </button>
@@ -586,7 +617,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
 
       {/* Table */}
       <div className="flex-1 overflow-auto bg-white">
-        <table className="qtdx-table border-collapse w-max">
+        <table className={`qtdx-table border-collapse w-max ${dongGon ? "dong-gon" : ""}`}>
           {/* Bắt buộc table-layout: fixed (xem StyleTable) mới ăn colgroup —
               không có colgroup, cột auto-layout theo nội dung DÀI NHẤT trong
               cột (bảng HTML dùng CHUNG 1 độ rộng cho mọi dòng của 1 cột), lệch
@@ -692,9 +723,10 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
                     ].filter(Boolean).join(" ");
                     return (
                       <td key={c.key} className={cn}
+                        // .qtdx-cell đã wraptext mọi ô — xem StyleTable. Đặt
+                        // whiteSpace:"normal" ở đây sẽ ghi đè pre-wrap.
                         style={{
                           minWidth: c.width, maxWidth: c.width * 1.3,
-                          ...(c.kieu === "wide" ? { whiteSpace: "normal", wordBreak: "break-word" } : {}),
                           ...(c.freeze ? { left: leftFreezeCell(c.key) } : {}),
                         }}
                         title={daSuaDe

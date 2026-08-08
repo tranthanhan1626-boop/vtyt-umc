@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
+import { taiLichSuTheoNam } from "../lib/lichSuSuDung";
 import { fmt } from "../components/ChartDongBo";
 import HoSoTrucTuyen from "./HoSoTrucTuyen";
 
@@ -120,7 +121,7 @@ export default function TongHopPhongDieuDuong({
     const [deXuat, dotRes] = await Promise.all([
       fetchAllRows((f, t) => supabase.from("v_de_xuat_tong_hop").select("*")
         .eq("loai_mua_sam", goi)
-        .order("created_at", { ascending: false }).range(f, t)),
+        .order("created_at", { ascending: false }).range(f, t), { order: "id" }),
       supabase.from("dot_de_xuat").select("*")
         .eq("loai_mua_sam", goi)
         .order("nam", { ascending: false }).order("thang_moc", { ascending: false }),
@@ -143,20 +144,14 @@ export default function TongHopPhongDieuDuong({
     const codes = [...new Set(ds.map((r) => r.ma_hang).filter(Boolean))];
     if (codes.length) {
       const [u, vt] = await Promise.all([
-        fetchAllRows((f, t) => supabase.from("v_usage_monthly")
-          .select("ma_hang, nam, so_luong").in("ma_hang", codes).range(f, t)),
+        taiLichSuTheoNam(codes),
         fetchAllRows((f, t) => supabase.from("vat_tu")
           .select("ma_hang,ten_thuong_mai,ky_ma_hieu,hang,nuoc_san_xuat,tieu_chi_ky_thuat")
-          .in("ma_hang", codes).range(f, t)),
+          .in("ma_hang", codes).range(f, t), { order: "ma_hang" }),
       ]);
       const thongTin = Object.fromEntries((vt.data || []).map((x) => [x.ma_hang, x]));
       ds = ds.map((x) => ({ ...x, ...(thongTin[x.ma_hang] || {}) }));
-      const acc = {};
-      (u.data || []).forEach((x) => {
-        acc[x.ma_hang] = acc[x.ma_hang] || {};
-        acc[x.ma_hang][x.nam] = (acc[x.ma_hang][x.nam] || 0) + Number(x.so_luong);
-      });
-      setUsage(acc);
+      setUsage(u.data);
     } else {
       setUsage({});
     }

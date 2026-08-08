@@ -40,8 +40,11 @@ def test_trong_khoang_mac_dinh_lich_su_ngoai_khoang_bat_buoc_ly_do_va_ghi_chu():
     assert 'const CO_GOI_Y_SO_LUONG = (goi) => goi !== "chi_dinh_thau"' in FUNCTION_1
     assert 'tiep.loaiLyDo = "theo_lich_su"' in FUNCTION_1
     assert "LY_DO_GIAI_TRINH_OPTIONS" in FUNCTION_1
-    assert "Số lượng ngoài khoảng P50–P75 bắt buộc nhập ghi chú thêm." in FUNCTION_1
-    assert "Bắt buộc ghi chú cụ thể khi số lượng ngoài khoảng P50–P75." in FUNCTION_1
+    # Chốt sau này: chỉ CHẶN khi vượt P75 (dưới P50 là tiết kiệm, không bắt
+    # giải trình). Ràng buộc "ra ngoài dải phải có ghi chú" vẫn còn.
+    assert "Số lượng > P75 bắt buộc nhập ghi chú thêm." in FUNCTION_1
+    # Câu chặn lúc LƯU cả giỏ (không chỉ lúc gõ từng dòng) — vẫn bắt buộc.
+    assert "ghi chú bắt buộc khi chọn ngoài khoảng" in FUNCTION_1
     assert "Ghi chú thêm" in FUNCTION_1
     assert "So với {namCuoi}" not in FUNCTION_1
     assert "canhBaoBienDong" not in FUNCTION_1
@@ -94,6 +97,11 @@ def test_tao_nhieu_bo_ho_so_khong_ghi_de_lich_su():
     assert "insert into ho_so_cong_tac_lich_su" in PATCH_T
     assert "Tạo hồ sơ mới" in XUAT_HO_SO_KHOA
     assert "Chọn biểu mẫu" in XUAT_HO_SO_KHOA
-    assert 'aria-label="Loại hồ sơ"' in XUAT_HO_SO_KHOA
+    # (Bỏ) aria-label="Loại hồ sơ": nút chuyển Word/Excel đã biến mất từ
+    # 07/08/2026 khi Excel danh mục tách sang tab riêng — giờ chỉ còn Word,
+    # không còn gì để chuyển. Thay bằng ràng buộc thật sự của test này:
+    # mỗi lần bấm + phải sinh một nguon_key MỚI, không ghi đè bộ cũ.
+    assert "taoBoHoSoMoi" in XUAT_HO_SO_KHOA
+    assert "setNguonDangMo(data.nguon_key)" in XUAT_HO_SO_KHOA
     assert "hoSoTheoLoai.map" in XUAT_HO_SO_KHOA
     assert "nguonKey={nguonDangMo}" in XUAT_HO_SO_KHOA

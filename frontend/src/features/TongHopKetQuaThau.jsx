@@ -36,7 +36,7 @@ export default function TongHopKetQuaThau({ profile }) {
   const tai = useCallback(async () => {
     setDangTai(true);
     const r = await fetchAllRows((f, t) => supabase.from("v_ket_qua_thau_theo_khoa")
-      .select("*").order("ma_hang").range(f, t));
+      .select("*").order("ma_hang").range(f, t), { order: "ket_qua_id" });
     setRows(r.error ? [] : r.data || []);
     setDangTai(false);
   }, []);

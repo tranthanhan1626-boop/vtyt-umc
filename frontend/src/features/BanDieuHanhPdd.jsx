@@ -103,13 +103,13 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
 
     const [rDeXuat, rKhoa, rHoSo, rKetQua] = await Promise.all([
       fetchAllRows((f, t) => supabase.from("v_de_xuat_tong_hop").select("*")
-        .eq("loai_mua_sam", dot.loai_mua_sam).eq("dot_id", dot.id).range(f, t)),
+        .eq("loai_mua_sam", dot.loai_mua_sam).eq("dot_id", dot.id).range(f, t), { order: "id" }),
       supabase.from("v_don_vi").select("don_vi"),
       fetchAllRows((f, t) => supabase.from("ho_so_cong_tac")
         .select("don_vi, loai_tai_lieu, ma_ho_so")
-        .eq("dot_id", dot.id).eq("loai_tai_lieu", "word").range(f, t)),
+        .eq("dot_id", dot.id).eq("loai_tai_lieu", "word").range(f, t), { order: "id" }),
       fetchAllRows((f, t) => supabase.from("v_ket_qua_thau_theo_khoa").select("*")
-        .eq("loai_mua_sam", dot.loai_mua_sam).eq("ket_qua", "khong_trung").range(f, t)),
+        .eq("loai_mua_sam", dot.loai_mua_sam).eq("ket_qua", "khong_trung").range(f, t), { order: "ket_qua_id" }),
     ]);
 
     if (rDeXuat.error) {

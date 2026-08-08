@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { EyeOff, ChevronLeft, ChevronDown as ChevronDownIcon, Download, Search, ExternalLink, XCircle, PackagePlus, RefreshCw, AlertTriangle, Lock, LockOpen, Pin, CheckCircle2, Unlock } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { EyeOff, ChevronLeft, ChevronDown as ChevronDownIcon, Download, Search, ExternalLink, XCircle, PackagePlus, RefreshCw, AlertTriangle, Lock, LockOpen, Pin, CheckCircle2, Unlock, History, AlignLeft } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import { tinhTuyChonMuaThem30 } from "../lib/tuyChonMuaThem";
 import {
   COT_KHOA, NHOM_COT_KHOA, GOI_ID_MAP, sapXepFreezeTruoc, tinhLeftFreeze,
   tinhSegmentsGroup, taoCotLichSu, thayCotLichSu, suyRaNamCoDuLieu,
+  taoCotLichSuNhom, chenCotLichSuNhom,
 } from "../lib/cotChuan";
 import { xuatExcelDong, tenFileAnToan } from "../lib/xuatExcelDong";
 import { docTenCotTuMau, ganTenMau } from "../lib/tenCotBieuMau";
+import { gomTheoThang } from "../lib/lichSuSuDung";
 
 /*
  * DanhMucDeXuatKhoa — Bản chính thức 34 cột của MỘT khoa (mục 3.2 tài liệu
@@ -72,7 +75,7 @@ async function taiDuLieuKhoa(goiId, khoa) {
     .eq("nam_de_xuat", NAM_DE_XUAT).eq("is_current", true)
     .eq("loai_mua_sam", bo.loai_mua_sam).eq("don_vi", khoa);
   if (bo.goi) qProposals = qProposals.eq("goi", bo.goi);
-  const { data: propRows, error: loiProposals } = await fetchAllRows((f, t) => qProposals.range(f, t));
+  const { data: propRows, error: loiProposals } = await fetchAllRows((f, t) => qProposals.range(f, t), { order: "id" });
   if (loiProposals) throw loiProposals;
   if (!propRows?.length) return { bo, rows: [] };
 
@@ -82,33 +85,49 @@ async function taiDuLieuKhoa(goiId, khoa) {
   const { data: vatTuRows, error: loiVatTu } = await fetchAllRows((f, t) =>
     supabase.from("vat_tu")
       .select("ma_hang, ten_vat_tu, dvt, ma_quan_ly, tieu_chi_ky_thuat, ten_thuong_mai, ky_ma_hieu, hang, nuoc_san_xuat")
-      .in("ma_hang", dsMaHang).range(f, t));
+      .in("ma_hang", dsMaHang).range(f, t), { order: "ma_hang" });
   if (loiVatTu) throw loiVatTu;
   const vatTuTheoMa = new Map((vatTuRows || []).map((v) => [v.ma_hang, v]));
 
   const dsMaQuanLy = [...new Set((vatTuRows || []).map((v) => v.ma_quan_ly).filter(Boolean))];
-  const { data: nhomRows } = dsMaQuanLy.length
-    ? await fetchAllRows((f, t) => supabase.from("nhom_ky_thuat")
-        .select("ma_quan_ly, ten_quan_ly").in("ma_quan_ly", dsMaQuanLy).range(f, t))
-    : { data: [] };
-  const tenNhomTheoMa = new Map((nhomRows || []).map((n) => [n.ma_quan_ly, n.ten_quan_ly]));
 
-  const { data: usageRows, error: loiUsage } = await fetchAllRows((f, t) =>
-    supabase.from("usage_history_current")
+  // Ba truy vấn độc lập nhau — chạy song song thay vì cộng dồn 3 lượt chờ mạng.
+  const [nhomRes, usageRes, nhomNamRes] = await Promise.all([
+    dsMaQuanLy.length
+      ? fetchAllRows((f, t) => supabase.from("nhom_ky_thuat")
+          .select("ma_quan_ly, ten_quan_ly").in("ma_quan_ly", dsMaQuanLy).range(f, t), { order: "ma_quan_ly" })
+      : Promise.resolve({ data: [] }),
+    // Màn này CÓ lọc theo khoa nên vẫn đọc thẳng bảng gốc (không dùng view gộp
+    // toàn viện của patch_zr — view đó bỏ mất chiều khoa).
+    fetchAllRows((f, t) => supabase.from("usage_history_current")
       .select("ma_hang, nam, thang, so_luong")
-      .in("ma_hang", dsMaHang).eq("don_vi", khoa).range(f, t));
-  if (loiUsage) throw loiUsage;
-  const usageTheoMa = new Map();
-  (usageRows || []).forEach((r) => {
-    if (!usageTheoMa.has(r.ma_hang)) usageTheoMa.set(r.ma_hang, new Map());
-    const theoThang = usageTheoMa.get(r.ma_hang);
-    const m = monthId(Number(r.nam), Number(r.thang));
-    theoThang.set(m, (theoThang.get(m) || 0) + (Number(r.so_luong) || 0));
-  });
+      .in("ma_hang", dsMaHang).eq("don_vi", khoa).range(f, t), { order: "id" }),
+    // Lịch sử tổng CẢ NHÓM mã quản lý, vẫn chỉ tính phần của KHOA này (cột lịch
+    // sử ở màn này là "của khoa"). Vì sao cần: các mã hàng trong cùng mã quản lý
+    // thay thế nhau qua từng kỳ hợp đồng, nhìn riêng 1 mã sẽ tưởng nhu cầu tụt —
+    // xem ví dụ mã 62993 trong patch_zp. Chưa chạy patch thì để trống, không vỡ.
+    dsMaQuanLy.length
+      ? fetchAllRows((f, t) => supabase.from("v_lich_su_nhom_nam_khoa")
+          .select("ma_quan_ly, nam, so_luong")
+          .eq("don_vi", khoa).in("ma_quan_ly", dsMaQuanLy).range(f, t), { order: ["ma_quan_ly", "nam"] })
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const tenNhomTheoMa = new Map((nhomRes.data || []).map((n) => [n.ma_quan_ly, n.ten_quan_ly]));
+
+  if (usageRes.error) throw usageRes.error;
+  const usageRows = usageRes.data;
+  const usageTheoMa = gomTheoThang(usageRows, monthId);
 
   // Năm nào ĐANG CÓ dữ liệu thì có cột đó — không đóng đinh 2022..2025 theo
   // biểu mẫu kỳ 2026-2027 nữa (xem taoCotLichSu trong cotChuan.js).
-  const dsNamCoDuLieu = suyRaNamCoDuLieu(usageRows || []);
+  const dsNamCoDuLieu = suyRaNamCoDuLieu(usageRows);
+
+  const nhomNamTheoMa = new Map();
+  (nhomNamRes.data || []).forEach((r) => {
+    if (!nhomNamTheoMa.has(r.ma_quan_ly)) nhomNamTheoMa.set(r.ma_quan_ly, new Map());
+    nhomNamTheoMa.get(r.ma_quan_ly).set(Number(r.nam), Number(r.so_luong) || 0);
+  });
 
   const rows = dsMaHang.map((maHang) => {
     const vt = vatTuTheoMa.get(maHang) || {};
@@ -129,6 +148,10 @@ async function taiDuLieuKhoa(goiId, khoa) {
       ...Object.fromEntries(dsNamCoDuLieu.map(({ nam, thangCuoi }) => [
         `sl_${nam}`,
         tongKhoang(theoThang, monthId(nam, 1), monthId(nam, thangCuoi)) || null,
+      ])),
+      ...Object.fromEntries(dsNamCoDuLieu.map(({ nam }) => [
+        `sl_nhom_${nam}`,
+        (vt.ma_quan_ly ? nhomNamTheoMa.get(vt.ma_quan_ly)?.get(nam) : null) || null,
       ])),
       sl_de_xuat_18t: slDeXuat,
       mua_them_30: tinhTuyChonMuaThem30(slDeXuat),
@@ -161,7 +184,7 @@ async function taiKetQuaThau(loaiMuaSam, khoa, dsMaHang) {
     supabase.from("v_ket_qua_thau_theo_khoa")
       .select("goi_id, ten_goi, ma_hang, ket_qua, ma_moc_rot, ly_do_khong_trung, so_luong_de_xuat, so_luong_thieu, da_xu_ly, ket_qua_id")
       .eq("don_vi", khoa).eq("loai_mua_sam", loaiMuaSam).eq("ket_qua", "khong_trung")
-      .in("ma_hang", dsMaHang).range(f, t));
+      .in("ma_hang", dsMaHang).range(f, t), { order: "ket_qua_id" });
   if (error) throw error;
   const m = new Map();
   (data || []).forEach((r) => m.set(r.ma_hang, r));
@@ -192,6 +215,12 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
 
   const [oDangChon, setODangChon] = useState(null);
   const [openMenuCot, setOpenMenuCot] = useState(false);
+  // Lịch sử sửa từng ô — giống Danh mục tổng hợp PĐD (TongHopPdd.jsx). Bảng
+  // audit `danh_muc_khoa_o_audit` đã có sẵn từ patch_zm (trigger tự ghi mỗi
+  // lần giá trị một ô THỰC SỰ đổi), trước giờ chỉ chưa có chỗ nào xem được.
+  const [audit, setAudit] = useState(null); // { maHang, cot, dsAudit, dangTai, loi }
+  // Mặc định hiện ĐẦY ĐỦ nội dung mọi ô (wraptext) — xem StyleTable.
+  const [dongGon, setDongGon] = useState(false);
   // Cấu hình cột dùng CHUNG theo (goiId, năm, khoa), lưu server qua
   // danh_muc_khoa_cot_cau_hinh (patch_zh + patch_zi). Cả ĐVSD và PĐD tick
   // được; { [colKey]: { an, khoa_cot, khoa_sua } }.
@@ -322,7 +351,10 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
   // Bộ cột thật của màn này = COT_KHOA nhưng khối "lịch sử sử dụng" được thay
   // bằng đúng những năm đang có dữ liệu.
   const cotDayDu = useMemo(
-    () => thayCotLichSu(COT_KHOA, taoCotLichSu(dsNamCoDuLieu)),
+    () => chenCotLichSuNhom(
+      thayCotLichSu(COT_KHOA, taoCotLichSu(dsNamCoDuLieu)),
+      taoCotLichSuNhom(dsNamCoDuLieu)
+    ),
     [dsNamCoDuLieu]
   );
 
@@ -430,6 +462,24 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
     if (COT_CHI_DOC_THEM.has(colKey) || daKhoaSua(colKey)) return;
     const giaTri = rows.find((r) => r.ma_hang === maHang)?.[colKey];
     await luuOLenServer(maHang, colKey, giaTri);
+  };
+
+  const xemAudit = async (maHang, colKey) => {
+    setAudit({ maHang, cot: colKey, dsAudit: [], dangTai: true });
+    const { data, error } = await supabase.from("danh_muc_khoa_o_audit")
+      .select("gia_tri_cu, gia_tri_moi, nguoi_sua, thoi_gian")
+      .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT).eq("khoa", khoaHienTai)
+      .eq("ma_hang", maHang).eq("cot", colKey)
+      .order("thoi_gian", { ascending: false }).limit(20);
+    const chuaCoBang = error && (error.code === "42P01"
+      || /danh_muc_khoa_o_audit/i.test(error.message || ""));
+    setAudit({
+      maHang, cot: colKey, dangTai: false,
+      dsAudit: error ? [] : (data || []),
+      loi: chuaCoBang
+        ? "Staging chưa có bảng lịch sử sửa ô. Cần chạy backend/sql/patch_zm_luu_o_danh_muc_khoa.sql."
+        : error?.message,
+    });
   };
 
   // Cột khóa sửa: KHÔNG AI sửa được (kể cả PĐD), phải mở khóa trước — đúng
@@ -612,6 +662,10 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
                 </div>
               )}
             </div>
+            <button className="qtdx-tb" onClick={() => setDongGon((v) => !v)}
+              title="Đầy đủ = mọi ô hiện trọn nội dung (dòng cao). Gọn = cắt còn 4 dòng cho dễ cuộn; bấm vào ô vẫn xem/sửa được đủ.">
+              <AlignLeft size={13} /> Nội dung ô: {dongGon ? "GỌN" : "ĐẦY ĐỦ"}
+            </button>
             <button className="qtdx-tb" onClick={xuatExcel} disabled={dangXuatExcel || !rows.length}>
               <Download size={13} /> {dangXuatExcel ? "Đang xuất…" : "Xuất Excel in trình ký"}
             </button>
@@ -647,7 +701,7 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
 
       {/* Table */}
       <div className="flex-1 overflow-auto bg-white">
-        <table className="qtdx-table border-collapse w-max">
+        <table className={`qtdx-table border-collapse w-max ${dongGon ? "dong-gon" : ""}`}>
           <colgroup>
             {cotHienThi.map((c) => <col key={c.key} style={{ width: c.width }} />)}
           </colgroup>
@@ -710,6 +764,7 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
               <RowKhoa key={r.ma_hang} r={r} cotHienThi={cotHienThi} oDangChon={oDangChon}
                 setODangChon={setODangChon} oCoTheSua={oCoTheSua} capNhatO={capNhatO}
                 daKhoaSua={daKhoaSua} ketThucSuaO={ketThucSuaO} oDaSua={oDaSua}
+                xemAudit={xemAudit}
                 dangChonMaDay={dangChonMaDay} moFormDay={moFormDay} setDangChonMaDay={setDangChonMaDay}
                 ungVienDay={ungVienDay} formDay={formDay} setFormDay={setFormDay}
                 luuDaySL={luuDaySL} dangLuuDay={dangLuuDay} thongBaoDay={thongBaoDay} />
@@ -724,13 +779,55 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
       </div>
 
       <StyleToolbar />
+
+      {/* Panel lịch sử sửa 1 ô — giống hệt Danh mục tổng hợp PĐD */}
+      <AnimatePresence>
+        {audit && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+            className="fixed right-4 top-20 bottom-4 w-80 bg-white border border-slate-200 rounded-lg shadow-xl z-50 flex flex-col"
+          >
+            <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100">
+              <div className="text-xs">
+                <div className="font-semibold text-slate-800">Lịch sử sửa ô</div>
+                <div className="text-slate-400">
+                  {audit.maHang} · {cotDayDu.find((c) => c.key === audit.cot)?.nhan || audit.cot}
+                </div>
+              </div>
+              <button onClick={() => setAudit(null)} className="text-slate-400 hover:text-slate-700 text-xs">Đóng</button>
+            </div>
+            <div className="flex-1 overflow-auto p-3 space-y-2">
+              {audit.dangTai ? (
+                <p className="text-xs text-slate-400">Đang tải...</p>
+              ) : audit.loi ? (
+                <p className="text-xs text-red-600">{audit.loi}</p>
+              ) : audit.dsAudit.length === 0 ? (
+                <p className="text-xs text-slate-400">Chưa có lần sửa nào.</p>
+              ) : (
+                audit.dsAudit.map((a, i) => (
+                  <div key={i} className="text-xs border-b border-slate-100 pb-2">
+                    <div className="text-slate-400">
+                      {new Date(a.thoi_gian).toLocaleString("vi-VN")} · {a.nguoi_sua}
+                    </div>
+                    <div className="mt-0.5 whitespace-pre-wrap break-words">
+                      <span className="text-slate-400 line-through">{a.gia_tri_cu ?? "(trống)"}</span>
+                      {" → "}
+                      <span className="text-slate-800 font-medium">{a.gia_tri_moi ?? "(trống)"}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
 function RowKhoa({
   r, cotHienThi, oDangChon, setODangChon, oCoTheSua, capNhatO, daKhoaSua,
-  ketThucSuaO, oDaSua,
+  ketThucSuaO, oDaSua, xemAudit,
   dangChonMaDay, moFormDay, setDangChonMaDay, ungVienDay, formDay, setFormDay,
   luuDaySL, dangLuuDay, thongBaoDay,
 }) {
@@ -754,9 +851,11 @@ function RowKhoa({
           ].filter(Boolean).join(" ");
           return (
             <td key={c.key} className={cn}
+              // Không còn nhánh riêng cho kieu="wide": .qtdx-cell đã wraptext
+              // cho MỌI ô, đặt whiteSpace:"normal" ở đây sẽ ghi đè pre-wrap và
+              // nuốt mất các dòng người dùng tự xuống trong textarea.
               style={{
                 minWidth: c.width, maxWidth: c.width * 1.3,
-                ...(c.kieu === "wide" ? { whiteSpace: "normal", wordBreak: "break-word" } : {}),
                 ...(c.freeze ? { left: tinhLeftFreeze(cotHienThi, c.key) } : {}),
               }}
               onClick={() => canSua && setODangChon({ maHang: r.ma_hang, colKey: c.key })}
@@ -781,6 +880,15 @@ function RowKhoa({
                       <XCircle size={10} /> Rớt ở {NHAN_GIAI_DOAN[r.rot.ma_moc_rot] || r.rot.ma_moc_rot} — Đẩy SL
                     </button>
                   )}
+                  {/* Lịch sử sửa ô — hiện ở MỌI ô như bên Tổng hợp PĐD, kể cả
+                      ô chưa từng sửa (bấm vào thì panel báo "chưa có lần sửa
+                      nào"), để không phải đoán ô nào có lịch sử. */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); xemAudit(r.ma_hang, c.key); }}
+                    className="ml-1 opacity-40 hover:opacity-100"
+                    title="Xem lịch sử sửa ô này">
+                    <History size={9} className="inline text-slate-400" />
+                  </button>
                 </span>
               )}
             </td>
@@ -851,10 +959,17 @@ export function StyleTable() {
          width:100% + colgroup mới thật sự chốt độ rộng; w-max trên table không
          đủ vì fixed-layout không tự co giãn theo nội dung. */
       table.qtdx-table { table-layout: fixed; width: 100%; }
-      /* Mặc định 1 dòng + ellipsis để không tràn ra cột khác; cột kieu="wide"
-         đã tự set white-space:normal qua inline style (Function1/TongHopPdd),
-         inline style thắng class nên tự bỏ ellipsis đúng lúc cần wrap. */
-      .qtdx-cell { padding: 6px 10px; font-size: 12.5px; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      /* WRAPTEXT MỌI Ô (chốt 08/08/2026). Trước đây mặc định là 1 dòng +
+         ellipsis, chỉ cột kieu="wide" mới xuống dòng — hậu quả: TSKT, tên vật
+         tư, tên thương mại dài bị cắt "..." và người dùng phải bấm vào ô mới
+         đọc được hết. Giờ mọi ô đều xuống dòng và hiện ĐỦ nội dung.
+         Vẫn giữ table-layout:fixed + colgroup: wrap chỉ làm dòng CAO lên, độ
+         rộng cột không đổi, nên tinhLeftFreeze() vẫn tính đúng left của cột
+         freeze (xem lý do dài ở trên).
+         pre-wrap giữ nguyên xuống dòng người dùng gõ trong textarea; break-word
+         + anywhere xử lý chuỗi dài không có khoảng trắng (mã, ký mã hiệu).
+         vertical-align: top để ô ngắn không bị "trôi" xuống giữa dòng cao. */
+      .qtdx-cell { padding: 6px 10px; font-size: 12.5px; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; vertical-align: top; overflow: hidden; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; }
       .qtdx-cell input, .qtdx-cell textarea { background: transparent; outline: none; width: 100%; border: 0; font-size: 12.5px; font-family: inherit; resize: vertical; }
       .qtdx-cell:hover { background: #fefce8; }
       .qtdx-cell.editing { outline: 2px solid #2563eb; outline-offset: -2px; background: #eff6ff !important; }
@@ -884,6 +999,15 @@ export function StyleTable() {
          Đặc hiệu hoá riêng cho .col-row.freeze để luôn thắng, không phụ
          thuộc thứ tự khai báo. */
       thead tr.col-row th.freeze { z-index: 32; }
+      /* Chế độ GỌN (tùy chọn, mặc định TẮT). Wraptext đầy đủ là đúng yêu cầu,
+         nhưng TSKT thật dài 15-20 dòng nên 1 dòng bảng có thể chiếm trọn màn
+         hình — cuộn qua 200 mã thành cực hình. Bật "Gọn" thì mỗi ô cắt còn 4
+         dòng; nội dung KHÔNG mất, bấm vào ô là mở textarea thấy đủ, và file
+         Excel xuất ra luôn có nguyên văn bất kể đang ở chế độ nào. */
+      table.qtdx-table.dong-gon td.qtdx-cell > span {
+        display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
     `}</style>
   );
 }

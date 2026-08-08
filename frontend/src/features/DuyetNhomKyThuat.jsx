@@ -45,7 +45,7 @@ export default function DuyetNhomKyThuat() {
     setLoading(true);
     const { data, error } = await fetchAllRows((f, t) =>
       supabase.from("khoa_nhom_ky_thuat").select("*").order("created_at", { ascending: false }).range(f, t)
-    );
+    , { order: "id" });
     if (error) setLoi("Không đọc được khoa_nhom_ky_thuat — kiểm tra bảng/RLS trong Supabase (schema xem backend/sql/schema.sql).");
     else { setRows(data); setLoi(""); }
     setLoading(false);

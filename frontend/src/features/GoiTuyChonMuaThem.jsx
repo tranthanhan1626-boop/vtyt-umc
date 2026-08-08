@@ -87,7 +87,7 @@ export default function GoiTuyChonMuaThem({ profile }) {
         .order("nam", { ascending: false })
         .order("thang_moc", { ascending: false })
         .range(f, t)
-    );
+    , { order: "proposal_id" });
 
     if (!view.error) {
       setRows(view.data || []);
@@ -103,7 +103,7 @@ export default function GoiTuyChonMuaThem({ profile }) {
         supabase.from("v_de_xuat_tong_hop").select("*")
           .in("loai_mua_sam", ["dau_thau_rong_rai", "mua_sam_bo_sung"])
           .order("created_at", { ascending: false }).range(f, t)
-      ),
+      , { order: "id" }),
       supabase.from("dot_de_xuat").select("id,ten,nam,thang_moc,loai_mua_sam"),
     ]);
 

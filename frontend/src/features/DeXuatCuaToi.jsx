@@ -49,7 +49,7 @@ export default function DeXuatCuaToi({ profile, goi, onMoHoSo }) {
         supabase.from("v_de_xuat_tong_hop").select("*")
           .eq("loai_mua_sam", goi)
           .order("created_at", { ascending: false }).range(f, t)
-      );
+      , { order: "id" });
       if (error) { setLoi("Không đọc được v_de_xuat_tong_hop — kiểm tra view/RLS trong Supabase (schema hiện tại xem backend/sql/schema.sql)."); setLoading(false); return; }
       setRows(data);
       const { data: dots } = await supabase.from("dot_de_xuat")
@@ -194,16 +194,25 @@ export default function DeXuatCuaToi({ profile, goi, onMoHoSo }) {
                 <span className={`inline-block px-2 py-0.5 rounded-full font-medium ${MAU_TRANG_THAI[g.trangThai]}`}>
                   {g.trangThai === "hon_hop" ? "Hỗn hợp" : NHAN_TRANG_THAI[g.trangThai]}
                 </span>
-                {g.trangThai === "hoan_thanh" && goi !== "chi_dinh_thau" && (
+                {/* Giỏ đã GỬI là mở được Word cam kết, không chờ PĐD duyệt
+                    xong (chốt 08/08/2026, xem patch_zq). Có thẻ ở đây nghĩa là
+                    giỏ đã nằm trong `proposals`, tức đã gửi. */}
+                {goi !== "chi_dinh_thau" && (
                   <div className="ml-auto flex flex-wrap items-center gap-2">
                     <button type="button" onClick={() => moHoSo("cam_ket_sl")}
                       className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-white px-2.5 py-1.5 font-medium text-blue-700 hover:bg-blue-50">
                       <FileText size={13} /> Mở phiếu Word cam kết
                     </button>
-                    <button type="button" onClick={() => moHoSo("danh_muc_dvsd")}
-                      className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-white px-2.5 py-1.5 font-medium text-emerald-700 hover:bg-emerald-50">
-                      <Sheet size={13} /> Mở phiếu Excel danh mục
-                    </button>
+                    {/* Excel danh mục KHÔNG còn là tài liệu trong bộ hồ sơ
+                        (chốt 07/08/2026) — nó là tab riêng, gộp mọi giỏ cùng
+                        gói con. Nút này chỉ điều hướng sang đó; bấm "Mở phiếu
+                        Excel" kiểu cũ sẽ mở một hồ sơ không bao giờ tồn tại. */}
+                    {g.goiId && (
+                      <a href={`#danh-muc-de-xuat/${g.goiId}/${encodeURIComponent(g.don_vi)}`}
+                        className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-white px-2.5 py-1.5 font-medium text-emerald-700 hover:bg-emerald-50">
+                        <Sheet size={13} /> Mở Excel danh mục đề xuất
+                      </a>
+                    )}
                   </div>
                 )}
               </div>

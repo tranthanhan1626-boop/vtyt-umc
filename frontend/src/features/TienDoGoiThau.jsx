@@ -71,14 +71,14 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
       supabase.from("goi_thau_tien_do").select("*")
         .order("nam", { ascending: false }).order("created_at", { ascending: false }),
       fetchAllRows((f, t) => supabase.from("v_ket_qua_thau_theo_khoa")
-        .select("*").eq("ket_qua", "khong_trung").order("ma_hang").range(f, t)),
+        .select("*").eq("ket_qua", "khong_trung").order("ma_hang").range(f, t), { order: "ket_qua_id" }),
       supabase.from("dot_de_xuat").select("*")
         .order("nam", { ascending: false }).order("thang_moc", { ascending: false }),
     ];
     if (laPdd) {
       tacVu.push(fetchAllRows((f, t) => supabase.from("v_de_xuat_tong_hop")
         .select("*").eq("trang_thai", "hoan_thanh")
-        .order("ma_hang").range(f, t)));
+        .order("ma_hang").range(f, t), { order: "id" }));
     }
     const [g, k, d, p] = await Promise.all(tacVu);
     if (g.error) setLoi(`Không đọc được danh sách gói thầu: ${g.error.message}`);

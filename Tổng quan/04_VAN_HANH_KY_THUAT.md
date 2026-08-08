@@ -251,6 +251,27 @@ Backup chưa thử restore không được coi là backup. Phải diễn tập t
     đang dở thì cộng thiếu tháng. Sinh cột theo đúng năm có trong dữ liệu
     (`taoCotLichSu`/`suyRaNamCoDuLieu` trong `cotChuan.js`).
 
+21. **Phân trang mà KHÔNG có `ORDER BY` → mất dòng ÂM THẦM.** Bẫy 1 mới giải
+    quyết được nửa vấn đề: phân trang rồi, nhưng `LIMIT/OFFSET` không kèm
+    `ORDER BY` thì Postgres **không hứa** thứ tự dòng giống nhau giữa các lần
+    chạy — trang 2 có thể trả lại dòng của trang 1 và bỏ sót dòng khác. Không
+    phải rủi ro lý thuyết: `usage_history_current` đang 141.623 dòng nên
+    Postgres bật parallel seq scan, thứ tự đổi theo từng lần chạy. Rà 08/08/2026
+    thấy **32/60 lời gọi `fetchAllRows` không có order**, gồm cả truy vấn lịch
+    sử dùng để tính số đề xuất. Đã vá: `fetchAllRows` nhận tham số `order` và tự
+    gắn vào query; cột sắp xếp phải là **khoá định danh** (hoặc bộ cột đủ phân
+    biệt) — `.order("created_at")` KHÔNG đủ vì cả giỏ gửi cùng lúc trùng
+    `created_at`. Ở chế độ dev, hàm tự `console.warn` nếu phải sang trang 2 mà
+    không có order.
+22. **Tối ưu bằng cách gộp ở DB, không gộp ở trình duyệt.** Đo 08/08/2026: màn
+    Tổng hợp PĐD kéo `v_usage_monthly` (122.159 dòng) về rồi cộng bằng
+    JavaScript, trong khi **không hề dùng cột `don_vi`**. Ở quy mô đủ mã hàng
+    là **123 vòng HTTP tuần tự**. `patch_zr` thêm 2 view gộp sẵn (bỏ chiều
+    khoa): theo tháng ít hơn 3 lần, theo năm ít hơn 18 lần số dòng. Quy tắc
+    rút ra: **trước khi tải một bảng lớn về FE, hỏi xem FE có dùng hết các
+    chiều dữ liệu đó không** — nếu không thì gộp ở view. Nhớ giữ
+    `security_invoker = true` để phạm vi quyền không đổi.
+
 ## 6b. Dung lượng Supabase — dự án chỉ dùng gói FREE (500MB)
 
 Đo thật 07/08/2026: **142MB / 500MB**.

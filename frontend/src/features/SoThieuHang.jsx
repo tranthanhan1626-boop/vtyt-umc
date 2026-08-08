@@ -50,7 +50,7 @@ export default function SoThieuHang({ profile }) {
     setDangTai(true);
     const r = await fetchAllRows((f, t) => supabase.from("su_kien_thieu_hang")
       .select("*").eq("an_khoi_bao_cao", false)
-      .order("ngay_bao", { ascending: false }).range(f, t));
+      .order("ngay_bao", { ascending: false }).range(f, t), { order: "id" });
     setRows(r.error ? [] : r.data || []);
     if (!laPdd) {
       const nay = new Date();

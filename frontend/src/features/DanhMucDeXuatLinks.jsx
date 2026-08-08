@@ -24,7 +24,7 @@ export default function DanhMucDeXuatLinks({ profile, goi }) {
       const { data, error } = await fetchAllRows((f, t) =>
         supabase.from("v_de_xuat_tong_hop").select("goi, loai_mua_sam")
           .eq("loai_mua_sam", goi).range(f, t)
-      );
+      , { order: "id" });
       if (huy) return;
       if (error) {
         setLoi("Không đọc được v_de_xuat_tong_hop — kiểm tra view/RLS trong Supabase.");
