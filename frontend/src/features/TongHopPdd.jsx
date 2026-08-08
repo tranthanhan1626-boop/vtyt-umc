@@ -590,7 +590,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
           <span className="font-semibold text-slate-800">Danh mục tổng hợp PĐD</span>
         </div>
         <a href="#" onClick={(e) => { e.preventDefault(); window.location.hash = ""; }}
-          className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-teal-700">
+          className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-umc-700">
           <ChevronLeft size={13} /> Về màn chính
         </a>
       </div>
@@ -617,7 +617,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
                 <div className="absolute right-0 top-full mt-1 w-72 max-h-96 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg z-40">
                   <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
                     <span className="text-xs font-semibold text-slate-700">Chọn cột hiển thị</span>
-                    <button className="text-xs text-teal-700 hover:underline" onClick={() => setCotAn(new Set())}>Hiện tất cả</button>
+                    <button className="text-xs text-umc-700 hover:underline" onClick={() => setCotAn(new Set())}>Hiện tất cả</button>
                   </div>
                   {NHOM_COT_PDD.map((n) => {
                     const dsCot = cotDayDu.filter((c) => c.group === n.key);
@@ -756,7 +756,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
                   <td className="freeze" style={{ width: 30, left: 0, background: "#f1f5f9", padding: 0, textAlign: "center", borderBottom: "1px solid #e2e8f0", borderRight: "1px solid #e2e8f0" }}>
                     <span className="inline-flex items-center">
                       <button onClick={() => toggleExpand(r.ma_hang)}
-                        className="text-slate-500 hover:text-teal-700 p-1"
+                        className="text-slate-500 hover:text-umc-700 p-1"
                         title={rowMoRong.has(r.ma_hang) ? "Thu gọn" : "Sổ chi tiết"}>
                         {rowMoRong.has(r.ma_hang) ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                       </button>
@@ -813,7 +813,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
                             <div className="flex items-center gap-2 mt-1">
                               <button type="button" disabled={dangLuu}
                                 onClick={luuO}
-                                className="text-[10px] rounded bg-teal-700 text-white px-1.5 py-0.5">
+                                className="text-[10px] rounded bg-umc-700 text-white px-1.5 py-0.5">
                                 {dangLuu ? "Đang lưu..." : "Lưu"}
                               </button>
                               <button type="button" onClick={() => setODangChon(null)}

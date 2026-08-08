@@ -19,7 +19,7 @@ const MOC = [
 ];
 const NHAN_KQ = {
   cho_ket_qua: ["Chờ kết quả", "bg-slate-100 text-slate-600"],
-  trung_thau: ["Trúng", "bg-teal-100 text-teal-800"],
+  trung_thau: ["Trúng", "bg-umc-100 text-umc-800"],
   khong_trung: ["Không trúng", "bg-red-100 text-red-700"],
 };
 const so = (v) => (v == null ? "—" : Number(v).toLocaleString("vi-VN"));
@@ -125,7 +125,7 @@ export default function TongHopKetQuaThau({ profile }) {
               <span className="shrink-0 text-sm tabular-nums">
                 <span className="text-slate-500">{so(g.tongDeXuat)}</span>
                 <span className="mx-1 text-slate-300">→</span>
-                <span className={thieu > 0 ? "font-medium text-red-700" : "font-medium text-teal-800"}>
+                <span className={thieu > 0 ? "font-medium text-red-700" : "font-medium text-umc-800"}>
                   {so(g.tongTrung)}
                 </span>
                 <span className="ml-1 text-xs text-slate-400">{g.dvt}</span>
@@ -169,7 +169,7 @@ export default function TongHopKetQuaThau({ profile }) {
                               ["cho_ket_qua", "Chờ kết quả", Clock]].map(([v, n, I]) => (
                               <button key={v} onClick={() => setForm((p) => ({ ...p, ket_qua: v }))}
                                 className={`flex items-center gap-1 rounded-md border px-2 py-1 text-xs ${
-                                  form.ket_qua === v ? "border-teal-600 bg-teal-700 text-white"
+                                  form.ket_qua === v ? "border-umc-600 bg-umc-700 text-white"
                                                      : "border-slate-300 bg-white text-slate-600"}`}>
                                 <I size={11} /> {n}
                               </button>
@@ -207,7 +207,7 @@ export default function TongHopKetQuaThau({ profile }) {
 
                           <div className="flex gap-2">
                             <button onClick={() => luu(r)}
-                              className="rounded-md bg-teal-700 px-3 py-1 text-xs font-medium text-white">Lưu</button>
+                              className="rounded-md bg-umc-700 px-3 py-1 text-xs font-medium text-white">Lưu</button>
                             <button onClick={() => setSua(null)}
                               className="rounded-md border border-slate-300 px-3 py-1 text-xs text-slate-600">Huỷ</button>
                           </div>

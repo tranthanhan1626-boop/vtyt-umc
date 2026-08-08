@@ -403,13 +403,14 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
 
         {/* Thanh tổng quan */}
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-          <ONhanh nhan="Khoa toàn viện" so={tongQuan.soKhoaToanVien} />
-          <ONhanh nhan="Đã đề xuất" so={tongQuan.soKhoaDaDeXuat} mau="text-teal-700" />
+          <ONhanh nhan="Khoa toàn viện" so={tongQuan.soKhoaToanVien} vach="bg-slate-300" />
+          <ONhanh nhan="Đã đề xuất" so={tongQuan.soKhoaDaDeXuat} mau="text-emerald-600" vach="bg-emerald-500" />
           <ONhanh nhan="Chưa đề xuất" so={tongQuan.soKhoaChuaDeXuat}
-            mau={tongQuan.soKhoaChuaDeXuat > 0 ? "text-red-600" : "text-slate-800"} />
-          <ONhanh nhan="Đủ Word cam kết" so={`${tongQuan.soKhoaCoWord}/${tongQuan.soKhoaDaDeXuat}`} />
-          <ONhanh nhan="Đã chốt danh mục" so={`${tongQuan.soKhoaDaChot}/${tongQuan.soKhoaDaDeXuat}`} />
-          <ONhanh nhan="Tổng SL toàn viện" so={fmt(tongQuan.tongSoLuong)} mau="text-[var(--umc-blue)]" />
+            mau={tongQuan.soKhoaChuaDeXuat > 0 ? "text-red-600" : "text-slate-800"}
+            vach={tongQuan.soKhoaChuaDeXuat > 0 ? "bg-red-500" : "bg-emerald-500"} />
+          <ONhanh nhan="Đủ Word cam kết" so={`${tongQuan.soKhoaCoWord}/${tongQuan.soKhoaDaDeXuat}`} vach="bg-cyan-400" />
+          <ONhanh nhan="Đã chốt danh mục" so={`${tongQuan.soKhoaDaChot}/${tongQuan.soKhoaDaDeXuat}`} vach="bg-cyan-400" />
+          <ONhanh nhan="Tổng SL toàn viện" so={fmt(tongQuan.tongSoLuong)} mau="text-umc-600" vach="bg-umc-600" />
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
           <span>
@@ -425,7 +426,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
               {mocHis ? `T${mocHis.thang}/${mocHis.nam}` : "chưa có"}
             </b>
             <button type="button" onClick={() => onMoManKhac?.({ nhom: "chung", man: "napdulieu" })}
-              className="ml-1 rounded border border-teal-200 bg-white px-2 py-0.5 font-medium text-teal-700 hover:bg-teal-50">
+              className="ml-1 rounded border border-umc-200 bg-white px-2 py-0.5 font-medium text-umc-700 hover:bg-umc-50">
               Nạp thêm dữ liệu
             </button>
           </span>
@@ -450,7 +451,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
             <AlertTriangle size={12} className="mt-0.5 shrink-0" /> {canhBaoChot}
           </p>
         )}
-        {thongBao && <p className="mt-2 text-sm text-teal-700">{thongBao}</p>}
+        {thongBao && <p className="mt-2 text-sm text-emerald-700">{thongBao}</p>}
       </div>
 
       {/* Tab */}
@@ -459,7 +460,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
           <button key={ma} type="button" role="tab" aria-selected={tab === ma}
             onClick={() => { setTab(ma); setTuKhoa(""); }}
             className={`flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold ${
-              tab === ma ? "border-b-2 border-teal-600 bg-white text-slate-900" : "bg-slate-50 text-slate-500 hover:bg-white"}`}>
+              tab === ma ? "border-b-2 border-umc-600 bg-white text-umc-800" : "bg-slate-50 text-slate-500 hover:bg-white"}`}>
             <Icon size={16} /> {ten}
           </button>
         ))}
@@ -540,11 +541,16 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   );
 }
 
-function ONhanh({ nhan, so, mau = "text-slate-800" }) {
+// 6 ô tổng quan trước đây có trọng số thị giác bằng nhau, nhưng ý nghĩa thì
+// không: "Chưa đề xuất" là con số PHẢI hành động, "Khoa toàn viện" chỉ là mẫu
+// số. `vach` thêm một vạch màu mảnh bên trái để mắt bắt ngay ô cần chú ý mà
+// không phải đọc hết 6 nhãn. tabular-nums giữ các chữ số thẳng cột khi số đổi.
+function ONhanh({ nhan, so, mau = "text-slate-800", vach = "bg-slate-200" }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
+    <div className="relative overflow-hidden rounded-lg border border-slate-200 bg-white px-3 py-2 pl-3.5 transition-colors hover:border-umc-200">
+      <span aria-hidden className={`absolute inset-y-0 left-0 w-[3px] ${vach}`} />
       <p className="text-[11px] leading-tight text-slate-500">{nhan}</p>
-      <p className={`mt-0.5 text-lg font-semibold leading-tight ${mau}`}>{so}</p>
+      <p className={`mt-0.5 text-lg font-semibold leading-tight tabular-nums ${mau}`}>{so}</p>
     </div>
   );
 }
@@ -566,7 +572,7 @@ function TabKhoa({
         {BO_LOC.map((b) => (
           <button key={b.ma} type="button" onClick={() => setLocKhoa(b.ma)}
             className={`rounded-full px-3 py-1 text-xs font-medium ${
-              locKhoa === b.ma ? "bg-slate-800 text-white" : "border border-slate-300 text-slate-600 hover:bg-white"}`}>
+              locKhoa === b.ma ? "bg-umc-800 text-white" : "border border-slate-300 text-slate-600 hover:bg-white"}`}>
             {b.ten}
           </button>
         ))}
@@ -579,8 +585,8 @@ function TabKhoa({
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-slate-100 text-xs uppercase tracking-wide text-slate-500">
-            <tr>
+          <thead className="bg-umc-50 text-xs uppercase tracking-wide text-umc-800 [&_th]:font-semibold">
+            <tr className="border-b border-umc-200">
               <th className="px-4 py-2 text-left">Khoa</th>
               <th className="px-3 py-2 text-center">Đề xuất</th>
               <th className="px-3 py-2 text-right">Mã QL</th>
@@ -594,21 +600,25 @@ function TabKhoa({
             {khoaHienThi.length === 0 ? (
               <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-400">Không có khoa nào khớp bộ lọc.</td></tr>
             ) : khoaHienThi.map((k) => (
-              <tr key={k.don_vi} className={`border-b border-slate-100 last:border-0 ${!k.daDeXuat ? "bg-red-50/40" : ""}`}>
-                <td className="px-4 py-2">{k.don_vi}</td>
+              // Sọc ngựa vằn + đổi nền khi rê chuột: bảng 7 cột × 62 khoa, mắt
+              // phải dò ngang từ tên khoa sang cột "Chốt danh mục" tận bên phải.
+              // Hàng khoa CHƯA đề xuất vẫn giữ nền đỏ nhạt, đè lên sọc.
+              <tr key={k.don_vi} className={`border-b border-slate-100 transition-colors last:border-0 hover:bg-umc-50/70 ${
+                !k.daDeXuat ? "bg-red-50/40" : "even:bg-slate-50/60"}`}>
+                <td className="px-4 py-2 font-medium text-slate-800">{k.don_vi}</td>
                 <td className="px-3 py-2 text-center">
                   {k.daDeXuat
-                    ? <CheckCircle2 size={15} className="mx-auto text-teal-600" />
+                    ? <CheckCircle2 size={15} className="mx-auto text-emerald-600" />
                     : <span className="text-xs font-medium text-red-600">Chưa</span>}
                 </td>
                 <td className="px-3 py-2 text-right font-mono text-xs">{k.daDeXuat ? fmt(k.soMaQuanLy) : "—"}</td>
                 <td className="px-3 py-2 text-right font-mono text-xs">{k.daDeXuat ? fmt(k.soMaHang) : "—"}</td>
                 <td className="px-3 py-2 text-center">
-                  {k.coWord ? <CheckCircle2 size={15} className="mx-auto text-teal-600" />
+                  {k.coWord ? <CheckCircle2 size={15} className="mx-auto text-emerald-600" />
                     : <span className="text-xs text-slate-300">—</span>}
                 </td>
                 <td className="px-3 py-2 text-center">
-                  {k.daChot ? <CheckCircle2 size={15} className="mx-auto text-teal-600" />
+                  {k.daChot ? <CheckCircle2 size={15} className="mx-auto text-emerald-600" />
                     : <span className="text-xs text-slate-300">—</span>}
                 </td>
                 <td className="px-3 py-2">
@@ -616,7 +626,7 @@ function TabKhoa({
                     {k.daDeXuat && (
                       <>
                         <button type="button" onClick={() => moDanhMucKhoa(k.don_vi)}
-                          className="inline-flex items-center gap-1 rounded border border-teal-200 bg-teal-50 px-2 py-1 text-[11px] font-medium text-teal-800 hover:bg-teal-100">
+                          className="inline-flex items-center gap-1 rounded border border-umc-200 bg-umc-50 px-2 py-1 text-[11px] font-medium text-umc-700 hover:bg-umc-100">
                           <ExternalLink size={11} /> Danh mục
                         </button>
                         <button type="button" onClick={() => onMoCamKet(k.don_vi)}
@@ -812,7 +822,7 @@ function TabKetQua({ ketQuaRot, dot, boRot }) {
   if (!ketQuaRot.length) {
     return (
       <section className="rounded-xl border border-slate-200 bg-white p-8 text-center">
-        <CheckCircle2 size={28} className="mx-auto text-teal-600" />
+        <CheckCircle2 size={28} className="mx-auto text-emerald-600" />
         <p className="mt-2 text-sm text-slate-600">
           Chưa có mã nào bị tích rớt ở đợt "{dot?.ten}".
         </p>
@@ -845,7 +855,7 @@ function TabKetQua({ ketQuaRot, dot, boRot }) {
                   {soNgayTu(k.cuNhat) != null && ` · ${soNgayTu(k.cuNhat)} ngày`}
                 </span>
               ) : (
-                <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[11px] font-medium text-teal-800">Đã xử lý hết</span>
+                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800">Đã xử lý hết</span>
               )}
             </div>
             <div className="mt-2 flex flex-wrap gap-1.5">
@@ -890,7 +900,7 @@ function HopThoaiRot({
           {GIAI_DOAN.map((g) => (
             <button key={g.ma} type="button" onClick={() => setMocRot(g.ma)}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
-                mocRot === g.ma ? "bg-slate-800 text-white" : "border border-slate-300 text-slate-600 hover:bg-slate-50"}`}>
+                mocRot === g.ma ? "bg-umc-800 text-white" : "border border-slate-300 text-slate-600 hover:bg-slate-50"}`}>
               {g.ten}
             </button>
           ))}
@@ -901,7 +911,7 @@ function HopThoaiRot({
         </label>
         <textarea value={lyDoRot} onChange={(e) => setLyDoRot(e.target.value)} rows={3}
           placeholder="Vd: không có nhà thầu tham dự / giá vượt dự toán / không đạt tiêu chí kỹ thuật…"
-          className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none" />
+          className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-umc-500 focus:outline-none" />
         <p className="mt-1 text-[11px] text-slate-400">
           Lý do là dữ liệu để trình hội đồng và giải thích vì sao phát sinh gói bổ sung — bắt buộc nhập.
         </p>

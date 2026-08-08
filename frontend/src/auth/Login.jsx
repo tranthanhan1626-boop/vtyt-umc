@@ -73,7 +73,18 @@ export default function Login({ signIn, signUp, sendPasswordReset }) {
         <div className="umc-auth-overlay" />
         <img src="/brand/umc-pattern.png" alt="" className="umc-auth-pattern" />
         <div className="umc-auth-visual-content">
-          <img src="/brand/umc-logo-horizontal.png" alt="Bệnh viện Đại học Y Dược Thành phố Hồ Chí Minh" className="w-full max-w-[430px] brightness-0 invert" />
+          {/* Logo PHẢI giữ nguyên màu gốc của bộ nhận diện. Bản trước dùng
+              brightness-0 invert để bôi trắng toàn bộ cho nổi trên ảnh tối —
+              làm vậy là sửa màu thương hiệu, không được phép. Thay bằng tấm nền
+              trắng đặt dưới logo: đây là cách chuẩn để đặt logo màu lên ảnh,
+              vừa giữ đúng màu vừa đủ tương phản. */}
+          <div className="inline-flex w-full max-w-[430px] rounded-2xl bg-white/95 px-6 py-5 shadow-lg shadow-[rgba(4,28,63,0.28)] backdrop-blur-sm">
+            <img
+              src="/brand/umc-logo-horizontal.png"
+              alt="Bệnh viện Đại học Y Dược Thành phố Hồ Chí Minh"
+              className="w-full"
+            />
+          </div>
           <div className="mt-auto max-w-xl">
             <div className="mb-5 h-1 w-14 rounded-full bg-[var(--umc-cyan)]" />
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-sky-200">Hệ thống nghiệp vụ nội bộ</p>

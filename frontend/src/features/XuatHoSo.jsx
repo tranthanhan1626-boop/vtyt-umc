@@ -386,7 +386,7 @@ export default function XuatHoSo({
               </option>
             ))}
           </select>
-          <span className="inline-flex items-center gap-1 text-xs text-teal-700">
+          <span className="inline-flex items-center gap-1 text-xs text-umc-700">
             <CheckCircle2 size={13} />
             {rowsLoc.length} mã hàng đã gửi trong đợt
           </span>
@@ -493,7 +493,7 @@ export default function XuatHoSo({
                       setMoChonMau(false);
                     }}
                     className={`flex items-start gap-3 rounded-xl border p-3 text-left ${
-                      dangMo ? "border-teal-400 bg-teal-50" : "border-slate-200 bg-white hover:border-slate-300"
+                      dangMo ? "border-umc-400 bg-umc-50" : "border-slate-200 bg-white hover:border-slate-300"
                     }`}>
                     <span className={`rounded-lg p-2 ${h.loai_tai_lieu === "word" ? "bg-blue-50 text-blue-700" : "bg-emerald-50 text-emerald-700"}`}>
                       <Icon size={17} />

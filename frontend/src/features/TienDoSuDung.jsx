@@ -177,7 +177,7 @@ export default function TienDoSuDung({ profile }) {
             <AlertTriangle size={21} /> CẢNH BÁO: {tongTre} mã chậm tiến độ
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1.5 rounded-md bg-teal-50 px-2.5 py-1 text-sm text-teal-800">
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-umc-50 px-2.5 py-1 text-sm text-umc-800">
             <CheckCircle2 size={14} /> Tất cả đang đạt tiến độ
           </span>
         )}
@@ -288,7 +288,7 @@ export default function TienDoSuDung({ profile }) {
                                     <span className="font-mono text-xs text-slate-500">{h.ma_hang}</span>
                                     <span className="min-w-0 flex-1 truncate text-sm text-slate-800">{h.ten_vat_tu}</span>
                                     <span className="text-sm tabular-nums">
-                                      <span className={h.tre ? "font-semibold text-red-700" : "font-semibold text-teal-800"}>
+                                      <span className={h.tre ? "font-semibold text-red-700" : "font-semibold text-umc-800"}>
                                         {so(h.da_dung)}
                                       </span>
                                       <span className="text-slate-400"> / {so(h.sl_trung)} {h.dvt}</span>
@@ -296,7 +296,7 @@ export default function TienDoSuDung({ profile }) {
                                   </div>
 
                                   <div className="relative h-2.5 w-full rounded-full bg-slate-100">
-                                    <div className={`h-2.5 rounded-full ${h.tre ? "bg-red-500" : "bg-teal-600"}`}
+                                    <div className={`h-2.5 rounded-full ${h.tre ? "bg-red-500" : "bg-umc-600"}`}
                                       style={{ width: `${Math.min(100, pt)}%` }} />
                                     {vach.map((v) => (
                                       <span key={v.thang} className="absolute top-0 h-2.5 w-px bg-slate-400"
@@ -365,7 +365,7 @@ export default function TienDoSuDung({ profile }) {
                                                   <td className="py-1 pr-2 text-right text-slate-500">{so(r.sl_de_xuat)}</td>
                                                   <td className="py-1 pr-2 text-right text-slate-700">{so(r.sl_trung)}</td>
                                                   <td className="py-1 pr-2 text-right font-medium text-slate-800">{so(r.da_dung)}</td>
-                                                  <td className={`py-1 pr-2 text-right ${tre ? "font-semibold text-red-700" : "text-teal-800"}`}>
+                                                  <td className={`py-1 pr-2 text-right ${tre ? "font-semibold text-red-700" : "text-umc-800"}`}>
                                                     {r.phan_tram_da_dung == null ? "—" : `${Number(r.phan_tram_da_dung).toFixed(1)}%`}
                                                   </td>
                                                   <td className="py-1 pr-2 text-right text-slate-600">{so1(r.tb_thang)}</td>

@@ -424,7 +424,7 @@ export default function TongHopPhongDieuDuong({
             <label className="mb-1.5 block text-xs text-slate-500">Đợt lập hồ sơ</label>
             <div className="relative">
               <select value={dotId} onChange={(e) => setDotId(e.target.value)}
-                className="w-full appearance-none rounded-md border border-slate-300 px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                className="w-full appearance-none rounded-md border border-slate-300 px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-umc-500">
                 <option value="">— chọn đợt —</option>
                 {dots.map((d) => (
                   <option key={d.id} value={d.id}>
@@ -459,7 +459,7 @@ export default function TongHopPhongDieuDuong({
         </div>
       )}
       {loi && <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{loi}</p>}
-      {thongBao && <p className="rounded-lg border border-teal-200 bg-teal-50 p-3 text-sm text-teal-800">{thongBao}</p>}
+      {thongBao && <p className="rounded-lg border border-umc-200 bg-umc-50 p-3 text-sm text-umc-800">{thongBao}</p>}
 
       <div className="rounded-xl border border-slate-200 bg-white">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
@@ -472,7 +472,7 @@ export default function TongHopPhongDieuDuong({
               return (
                 <button key={m.ma} type="button" onClick={() => setCheDo(m.ma)}
                   className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium ${
-                    cheDo === m.ma ? "bg-white text-teal-800 shadow-sm" : "text-slate-500 hover:text-slate-800"
+                    cheDo === m.ma ? "bg-white text-umc-800 shadow-sm" : "text-slate-500 hover:text-slate-800"
                   }`}>
                   <Icon size={13} /> {m.ten}
                 </button>
@@ -483,7 +483,7 @@ export default function TongHopPhongDieuDuong({
             <div className="flex flex-wrap gap-2">
               <input value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)}
                 placeholder="Tìm mã, tên vật tư…"
-                className="rounded-md border border-slate-300 px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                className="rounded-md border border-slate-300 px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-umc-500" />
               <select value={khoaLoc} onChange={(e) => setKhoaLoc(e.target.value)}
                 className="rounded-md border border-slate-300 px-2 py-1.5 text-xs">
                 <option value="">Tất cả khoa</option>
@@ -525,14 +525,14 @@ export default function TongHopPhongDieuDuong({
                     return (
                     <div key={g.don_vi} className="rounded-lg border border-slate-200 p-3">
                       <div className="flex items-start gap-2">
-                        <span className="rounded-md bg-teal-50 p-1.5 text-teal-700"><Building2 size={15} /></span>
+                        <span className="rounded-md bg-umc-50 p-1.5 text-umc-700"><Building2 size={15} /></span>
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-slate-800">{g.don_vi}</p>
                           <p className="mt-0.5 text-xs text-slate-500">
                             {g.soNhom} giỏ đề xuất · {g.rows.length} dòng đã gửi
                           </p>
                         </div>
-                        <CheckCircle2 size={16} className="ml-auto shrink-0 text-teal-600" />
+                        <CheckCircle2 size={16} className="ml-auto shrink-0 text-emerald-600" />
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
@@ -616,7 +616,7 @@ export default function TongHopPhongDieuDuong({
                                         </td>
                                         <td className="px-3 py-3">
                                           <button type="button" onClick={() => setMoDong(moDong === key ? null : key)}
-                                            className="text-slate-400 hover:text-teal-700" aria-label="Xem chi tiết theo khoa">
+                                            className="text-slate-400 hover:text-umc-700" aria-label="Xem chi tiết theo khoa">
                                             <ChevronDown size={16} className={moDong === key ? "rotate-180" : ""} />
                                           </button>
                                         </td>
@@ -739,18 +739,18 @@ export default function TongHopPhongDieuDuong({
           </div>
           <button type="button" onClick={chotPhien}
             disabled={!dotId || !tongHop.length || dangChot || chuaPatch || (canhBaoDvt.length > 0 && !xacNhanDvt)}
-            className="inline-flex items-center gap-1.5 rounded-md bg-teal-700 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-800 disabled:opacity-40">
+            className="inline-flex items-center gap-1.5 rounded-md bg-umc-700 px-3 py-2 text-xs font-semibold text-white hover:bg-umc-800 disabled:opacity-40">
             <FileCheck2 size={14} />
             {dangChot ? "Đang chốt…" : phien ? "Tạo phiên bản mới" : "Chốt bản tổng hợp"}
           </button>
         </div>
 
         {phien && (
-          <div className={`mt-3 rounded-lg border p-3 ${phienConMoi ? "border-teal-200 bg-teal-50" : "border-amber-200 bg-amber-50"}`}>
-            <p className={`text-sm font-medium ${phienConMoi ? "text-teal-900" : "text-amber-900"}`}>
+          <div className={`mt-3 rounded-lg border p-3 ${phienConMoi ? "border-umc-200 bg-umc-50" : "border-amber-200 bg-amber-50"}`}>
+            <p className={`text-sm font-medium ${phienConMoi ? "text-umc-900" : "text-amber-900"}`}>
               Phiên bản #{phien.id} · {phien.so_khoa} khoa · {phien.so_dong} mã
             </p>
-            <p className={`mt-0.5 text-xs ${phienConMoi ? "text-teal-700" : "text-amber-700"}`}>
+            <p className={`mt-0.5 text-xs ${phienConMoi ? "text-umc-700" : "text-amber-700"}`}>
               {new Date(phien.created_at).toLocaleString("vi-VN")} · {phien.created_by}
               {!phienConMoi && " · Dữ liệu đã duyệt hiện tại đã thay đổi; hãy tạo phiên bản mới nếu muốn cập nhật."}
             </p>

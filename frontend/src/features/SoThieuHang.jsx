@@ -17,13 +17,13 @@ import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
 const TINH_TRANG = [
   { v: "het_hang",    nhan: "Hết hàng",      mau: "bg-red-600" },
   { v: "cap_han_che", nhan: "Cấp hạn chế",   mau: "bg-amber-500" },
-  { v: "du_hang",     nhan: "Đủ hàng",       mau: "bg-teal-600" },
+  { v: "du_hang",     nhan: "Đủ hàng",       mau: "bg-umc-600" },
 ];
 const NHAN_XU_LY = {
   moi_bao: ["Mới báo", "bg-slate-100 text-slate-600"],
   da_xem: ["Đã xem", "bg-blue-100 text-blue-700"],
   dang_xu_ly: ["Đang xử lý", "bg-amber-100 text-amber-800"],
-  da_xu_ly: ["Đã xử lý", "bg-teal-100 text-teal-800"],
+  da_xu_ly: ["Đã xử lý", "bg-umc-100 text-umc-800"],
 };
 
 export default function SoThieuHang({ profile }) {
@@ -124,7 +124,7 @@ export default function SoThieuHang({ profile }) {
   return (
     <div className="space-y-4">
       {xong && (
-        <div className="flex items-center gap-2 bg-teal-50 border border-teal-200 text-teal-800 rounded-lg px-3 py-2 text-sm">
+        <div className="flex items-center gap-2 bg-umc-50 border border-umc-200 text-umc-800 rounded-lg px-3 py-2 text-sm">
           <CheckCircle2 size={16} /> Đã gửi Phòng Điều dưỡng. Bạn xem trạng thái xử lý bên dưới.
         </div>
       )}
@@ -157,8 +157,8 @@ export default function SoThieuHang({ profile }) {
                 <div className="mt-1 border border-slate-200 bg-white rounded-md divide-y max-h-56 overflow-y-auto">
                   {dsMa.map((m) => (
                     <button key={m.ma_hang} onClick={() => { setMaChon(m); setDsMa([]); }}
-                      className="w-full text-left px-2 py-2 hover:bg-teal-50">
-                      <span className="font-mono text-xs text-teal-700 mr-2">{m.ma_hang}</span>
+                      className="w-full text-left px-2 py-2 hover:bg-umc-50">
+                      <span className="font-mono text-xs text-umc-700 mr-2">{m.ma_hang}</span>
                       <span className="text-sm">{m.ten_vat_tu}</span>
                     </button>
                   ))}
@@ -209,7 +209,7 @@ export default function SoThieuHang({ profile }) {
 
       {!laPdd && !moForm && (
         daXacNhanThang ? (
-          <p className="text-xs text-teal-700 flex items-center gap-1.5">
+          <p className="text-xs text-umc-700 flex items-center gap-1.5">
             <CheckCircle2 size={13} /> Đã xác nhận tháng này. Cảm ơn khoa.
           </p>
         ) : (
@@ -218,7 +218,7 @@ export default function SoThieuHang({ profile }) {
               Tháng này khoa có mã nào <b>không lĩnh đủ</b> mà chưa báo không?
             </p>
             <button onClick={xacNhanThang}
-              className="px-3 py-2 text-sm rounded-md border border-teal-300 text-teal-800 hover:bg-teal-50">
+              className="px-3 py-2 text-sm rounded-md border border-umc-300 text-umc-800 hover:bg-umc-50">
               Tháng này khoa không thiếu gì
             </button>
             <p className="text-xs text-slate-400 mt-1.5">
@@ -274,7 +274,7 @@ export default function SoThieuHang({ profile }) {
                       <button onClick={() => doiXuLy(r, "dang_xu_ly")}
                         className="px-2 py-1 text-xs rounded border border-amber-300 text-amber-800"><Clock size={11} className="inline" /> Đang xử lý</button>
                       <button onClick={() => doiXuLy(r, "da_xu_ly")}
-                        className="px-2 py-1 text-xs rounded border border-teal-300 text-teal-800"><Check size={11} className="inline" /> Đã xử lý</button>
+                        className="px-2 py-1 text-xs rounded border border-emerald-300 text-emerald-800"><Check size={11} className="inline" /> Đã xử lý</button>
                     </div>
                   )}
                 </div>

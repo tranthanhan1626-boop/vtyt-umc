@@ -58,7 +58,7 @@ export default function DanhMucDeXuatLinks({ profile, goi }) {
   return (
     <div className="bg-white border border-slate-200 rounded-lg p-4">
       <div className="flex items-start gap-2">
-        <span className="rounded-lg bg-teal-50 p-2 text-teal-700">
+        <span className="rounded-lg bg-umc-50 p-2 text-umc-700">
           <Sheet size={18} />
         </span>
         <div className="min-w-0 flex-1">
@@ -78,7 +78,7 @@ export default function DanhMucDeXuatLinks({ profile, goi }) {
         <div className="mt-4 flex flex-wrap gap-2">
           {danhSachGoiId.map((goiId) => (
             <a key={goiId} href={`#danh-muc-de-xuat/${goiId}/${encodeURIComponent(profile.khoa)}`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-sm font-medium text-teal-800 hover:bg-teal-100">
+              className="inline-flex items-center gap-1.5 rounded-lg border border-umc-200 bg-umc-50 px-3 py-2 text-sm font-medium text-umc-800 hover:bg-umc-100">
               <ExternalLink size={15} /> {GOI_ID_MAP[goiId]?.nhan || goiId}
             </a>
           ))}

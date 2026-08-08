@@ -47,7 +47,7 @@ const NHOM_COT = [
     { key: "quy_cach", nhan: "Quy cách đóng gói", width: 140, readonly: true },
     { key: "hang_sx", nhan: "Nhà SX tham chiếu", width: 160, readonly: true },
   ]},
-  { key: "tskt_khoa", nhan: "TSKT khoa đề xuất", mau: "bg-teal-800", cols: [
+  { key: "tskt_khoa", nhan: "TSKT khoa đề xuất", mau: "bg-umc-800", cols: [
     { key: "tskt_khoa", nhan: "TSKT khoa đề xuất", width: 260 },
     { key: "ly_do_khoa", nhan: "Lý do khoa đổi", width: 180 },
     { key: "dinh_kem", nhan: "Tài liệu đính kèm", width: 140 },
@@ -70,7 +70,7 @@ const NHOM_COT = [
     { key: "p90", nhan: "P90", width: 70, readonly: true, kieu: "num" },
     { key: "p95", nhan: "P95", width: 70, readonly: true, kieu: "num" },
   ]},
-  { key: "so_luong", nhan: "Số lượng & phân bổ", mau: "bg-teal-700", cols: [
+  { key: "so_luong", nhan: "Số lượng & phân bổ", mau: "bg-umc-700", cols: [
     { key: "sl_mq", nhan: "SL tổng MQ", width: 100, kieu: "num" },
     { key: "sl_mh", nhan: "SL mã hàng", width: 100, kieu: "num" },
     { key: "muc", nhan: "Mức chọn", width: 100 },
@@ -292,7 +292,7 @@ export default function QuaTrinhDeXuat({ gioId = "mock" }) {
           <span>Khoa Nội tổng hợp</span>
         </div>
         <a href="#" onClick={(e) => { e.preventDefault(); window.location.hash = ""; window.location.reload(); }}
-          className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-teal-700">
+          className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-umc-700">
           <ChevronLeft size={13} /> Về màn chính
         </a>
       </div>
@@ -477,7 +477,7 @@ export default function QuaTrinhDeXuat({ gioId = "mock" }) {
 }
 
 function AuditItem({ who, when, content, vaiTro }) {
-  const borderColor = vaiTro === "pdd" ? "border-indigo-500" : "border-teal-500";
+  const borderColor = vaiTro === "pdd" ? "border-indigo-500" : "border-umc-500";
   return (
     <div className={`border-l-2 ${borderColor} pl-2 py-0.5`}>
       <div className="text-[10.5px] text-slate-500">{when} · {who}</div>

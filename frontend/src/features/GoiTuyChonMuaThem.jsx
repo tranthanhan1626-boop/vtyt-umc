@@ -288,7 +288,7 @@ export default function GoiTuyChonMuaThem({ profile }) {
                       <div className="mt-1 text-xs text-slate-500">{nhanThoiGian(g)} · {g.rows.length} dòng mã hàng</div>
                       <div className="mt-2 flex gap-3 text-[11px]">
                         <span className="text-slate-500">Trần: <b className="font-mono text-slate-700">{fmt(tongTran)}</b></span>
-                        <span className="text-teal-700">Đã kích hoạt: <b className="font-mono">{fmt(tongDa)}</b></span>
+                        <span className="text-emerald-700">Đã kích hoạt: <b className="font-mono">{fmt(tongDa)}</b></span>
                       </div>
                     </div>
                   </div>
@@ -327,7 +327,7 @@ export default function GoiTuyChonMuaThem({ profile }) {
           </div>
 
           {thongBao && (
-            <div className="flex items-center gap-2 border-b border-teal-100 bg-teal-50 px-4 py-2.5 text-xs text-teal-800">
+            <div className="flex items-center gap-2 border-b border-umc-100 bg-umc-50 px-4 py-2.5 text-xs text-umc-800">
               <CheckCircle2 size={15} /> {thongBao}
             </div>
           )}
@@ -368,7 +368,7 @@ export default function GoiTuyChonMuaThem({ profile }) {
                                   <div className="font-mono text-xs text-slate-600">{r.ma_hang}</div>
                                   <div className="max-w-sm text-xs leading-snug text-slate-500">{r.ten_vat_tu}</div>
                                   <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] ${
-                                    hoanThanh ? "bg-teal-50 text-teal-700" : "bg-amber-50 text-amber-700"
+                                    hoanThanh ? "bg-umc-50 text-umc-700" : "bg-amber-50 text-amber-700"
                                   }`}>
                                     {NHAN_TRANG_THAI[r.trang_thai_de_xuat] || r.trang_thai_de_xuat}
                                   </span>
@@ -381,7 +381,7 @@ export default function GoiTuyChonMuaThem({ profile }) {
                                   {fmt(r.tran_mua_them_30)}
                                   <div className="text-[10px] font-normal text-slate-400">chỉ đọc</div>
                                 </td>
-                                <td className="px-3 py-2 text-right align-top font-mono text-teal-700">{fmt(r.da_kich_hoat)}</td>
+                                <td className="px-3 py-2 text-right align-top font-mono text-umc-700">{fmt(r.da_kich_hoat)}</td>
                                 <td className="px-3 py-2 text-right align-top font-mono text-slate-700">{fmt(con)}</td>
                                 <td className="px-4 py-2 align-top">
                                   <div className="flex items-center gap-2">

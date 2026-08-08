@@ -226,6 +226,10 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
   // Ô PĐD đã sửa đè trên bản tổng hợp: Map<ma_hang, Map<cot_pdd, {gia_tri,...}>>
   const [suaDeCuaPdd, setSuaDeCuaPdd] = useState(new Map());
   // Mặc định hiện ĐẦY ĐỦ nội dung mọi ô (wraptext) — xem StyleTable.
+  // Mặc định ĐẦY ĐỦ — chủ dự án chốt: mọi thông tin phải hiện đủ, wraptext
+  // nguyên vẹn, không cắt dòng. Hàng cao thấp không đều là chấp nhận được;
+  // đọc thiếu nội dung thì không. Nút "Nội dung ô" trên thanh công cụ vẫn cho
+  // chuyển sang GỌN khi cần lướt nhanh qua nhiều mã.
   const [dongGon, setDongGon] = useState(false);
   // Cấu hình cột dùng CHUNG theo (goiId, năm, khoa), lưu server qua
   // danh_muc_khoa_cot_cau_hinh (patch_zh + patch_zi). Cả ĐVSD và PĐD tick
@@ -655,7 +659,7 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
           <span className="font-semibold text-slate-800">{khoaHienTai || "Danh mục đề xuất"}</span>
         </div>
         <a href="#" onClick={(e) => { e.preventDefault(); window.location.hash = ""; }}
-          className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-teal-700">
+          className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-umc-700">
           <ChevronLeft size={13} /> Về màn chính
         </a>
       </div>
@@ -684,7 +688,7 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
                 <div className="absolute right-0 top-full mt-1 w-80 max-h-96 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg z-40">
                   <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
                     <span className="text-xs font-semibold text-slate-700">Ẩn/khóa cột — dùng chung cho khoa này</span>
-                    <button className="text-xs text-teal-700 hover:underline" onClick={hienTatCaCot}>Hiện tất cả</button>
+                    <button className="text-xs text-umc-700 hover:underline" onClick={hienTatCaCot}>Hiện tất cả</button>
                   </div>
                   {loiCauHinhCot && (
                     <p className="px-3 py-2 text-[11px] text-red-600 border-b border-slate-100">{loiCauHinhCot}</p>
@@ -1063,7 +1067,7 @@ export function StyleTable() {
       .qtdx-cell { padding: 6px 10px; font-size: 12.5px; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; vertical-align: top; overflow: hidden; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; }
       .qtdx-cell input, .qtdx-cell textarea { background: transparent; outline: none; width: 100%; border: 0; font-size: 12.5px; font-family: inherit; resize: vertical; }
       .qtdx-cell:hover { background: #fefce8; }
-      .qtdx-cell.editing { outline: 2px solid #2563eb; outline-offset: -2px; background: #eff6ff !important; }
+      .qtdx-cell.editing { outline: 2px solid var(--umc-blue); outline-offset: -2px; background: #eff6fd !important; }
       .qtdx-cell.readonly { background: #f8fafc; color: #475569; }
       .qtdx-cell.locked { background: #eef2ff; }
       /* Ô PĐD đã sửa đè lên số gốc (Danh mục tổng hợp) — phải phân biệt được
@@ -1075,8 +1079,10 @@ export function StyleTable() {
       tr.row-failed td.qtdx-cell { background: #fef2f2; }
       tr.row-partial td.qtdx-cell { background: #fff7ed; }
       tr.row-expand td.qtdx-cell { background: #f8fafc; font-size: 11.5px; }
-      thead th { position: sticky; top: 0; background: #0f172a; color: #f8fafc; z-index: 20; font-weight: 600; font-size: 11.5px; padding: 6px 10px; border-right: 1px solid #1e293b; border-bottom: 1px solid #1e293b; text-align: left; }
-      thead tr.group-row th { text-transform: uppercase; letter-spacing: 0.04em; font-size: 10.5px; top: 0; }
+      thead th { position: sticky; top: 0; background: var(--umc-navy); color: #f1f7fd; z-index: 20; font-weight: 600; font-size: 11.5px; padding: 6px 10px; border-right: 1px solid rgba(255,255,255,0.13); border-bottom: 1px solid rgba(255,255,255,0.13); text-align: left; }
+      /* Dải nhóm cột dùng navy đậm hơn 1 bậc để phân tầng header 2 dòng mà
+         không cần thêm đường kẻ — mắt đọc theo mảng màu, đỡ rối. */
+      thead tr.group-row th { background: #0f3364; text-transform: uppercase; letter-spacing: 0.04em; font-size: 10.5px; top: 0; }
       thead tr.col-row th { top: 30px; z-index: 22; }
       /* Cột đang KHÓA SỬA (patch_zi) — nền vàng nhạt để phân biệt với ô chỉ
          đọc do bản chất dữ liệu (readonly, nền xám). */
@@ -1086,8 +1092,11 @@ export function StyleTable() {
          không đụng vạch cam của "khoa đã sửa" bên mép trái. */
       td.qtdx-cell.pdd-sua { box-shadow: inset -3px 0 0 #7c3aed; }
       th.freeze, td.freeze { position: sticky; z-index: 15; }
-      th.freeze { background: #0f172a; color: #f8fafc; z-index: 30; }
-      td.freeze { background: #f1f5f9; color: #0f172a; z-index: 10; }
+      th.freeze { background: var(--umc-navy); color: #f1f7fd; z-index: 30; }
+      /* Cột ghim: nền xanh rất nhạt + vạch phải để người dùng thấy rõ ranh
+         giới "vùng đứng yên" khi cuộn ngang qua vài chục cột. */
+      td.freeze { background: #eef5fb; color: var(--umc-ink); z-index: 10; }
+      table.qtdx-table td.freeze:last-of-type, table.qtdx-table th.freeze:last-of-type { box-shadow: inset -1px 0 0 #c3d9ee, 6px 0 12px -6px rgba(18,61,121,0.16); }
       /* "thead tr.col-row th" (3 phần tử) đặc hiệu hơn "th.freeze" (1 phần
          tử + 1 lớp) nên z-index:22 của nó thắng z-index:30 của freeze —
          cột freeze thứ 2/3 trở đi bị cột thường cuộn qua đè lên header.
@@ -1110,10 +1119,12 @@ export function StyleTable() {
 export function StyleToolbar() {
   return (
     <style>{`
-      .qtdx-tb { display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; border: 1px solid #cbd5e1; background: white; color: #0f172a; }
-      .qtdx-tb:hover { background: #f1f5f9; }
-      .qtdx-tb.primary { background: #0f766e; color: white; border-color: #0f766e; }
-      .qtdx-tb.primary:hover { background: #115e59; }
+      .qtdx-tb { display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; border: 1px solid #cbd9e8; background: white; color: var(--umc-ink); transition: background-color 150ms ease, border-color 150ms ease; }
+      .qtdx-tb:hover { background: #eff5fb; border-color: #a9c6e2; }
+      .qtdx-tb:focus-visible { outline: 2px solid var(--umc-cyan); outline-offset: 1px; }
+      /* Nút chính đổi từ teal #0f766e (không thuộc bộ nhận diện) sang xanh UMC. */
+      .qtdx-tb.primary { background: var(--umc-blue); color: white; border-color: var(--umc-blue); }
+      .qtdx-tb.primary:hover { background: var(--umc-blue-dark); border-color: var(--umc-blue-dark); }
       .qtdx-badge { display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 9999px; font-weight: 500; }
       .qtdx-badge.green { background: #d1fae5; color: #065f46; }
       .qtdx-badge.amber { background: #fef3c7; color: #92400e; }

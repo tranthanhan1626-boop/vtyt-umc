@@ -123,7 +123,7 @@ export default function ChoDuyet({ onDoiSoLuong, onMoHoSo }) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-slate-600">
-        <span className="font-semibold text-teal-800">{tongViec}</span> việc đang chờ Phòng Điều dưỡng xử lý.
+        <span className="font-semibold text-umc-800">{tongViec}</span> việc đang chờ Phòng Điều dưỡng xử lý.
         Khoa không đi tiếp được cho tới khi bạn duyệt hoặc trả lại.
       </p>
 
@@ -167,7 +167,7 @@ export default function ChoDuyet({ onDoiSoLuong, onMoHoSo }) {
               <li key={n.id} className="text-xs text-slate-600">
                 <span className="font-medium text-slate-800">{n.don_vi}</span> — {n.ten_vat_tu_moi}
                 {n.la_nhom_moi === false && n.ma_quan_ly
-                  ? <span className="text-teal-700"> · gộp vào {n.ma_quan_ly}</span>
+                  ? <span className="text-umc-700"> · gộp vào {n.ma_quan_ly}</span>
                   : <span className="text-amber-700"> · mã mới hoàn toàn</span>}
               </li>
             ))}

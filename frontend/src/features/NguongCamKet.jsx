@@ -164,7 +164,7 @@ export default function NguongCamKet({ moc, onLuuXong }) {
       </table>
 
       <button onClick={() => setNhap((p) => [...p, trong()])}
-        className="mt-2 inline-flex items-center gap-1 text-sm text-teal-800 hover:underline">
+        className="mt-2 inline-flex items-center gap-1 text-sm text-umc-800 hover:underline">
         <Plus size={14} /> Thêm mốc
       </button>
 
@@ -178,7 +178,7 @@ export default function NguongCamKet({ moc, onLuuXong }) {
 
       <div className="mt-3 flex gap-2 border-t border-slate-100 pt-3">
         <button onClick={luu} disabled={dangLuu || !thayDoi}
-          className="rounded-md bg-teal-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-teal-800 disabled:opacity-40">
+          className="rounded-md bg-umc-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-umc-800 disabled:opacity-40">
           {dangLuu ? "Đang lưu..." : "Lưu ngưỡng"}
         </button>
         <button onClick={() => { setMo(false); setLoi(""); }} disabled={dangLuu}

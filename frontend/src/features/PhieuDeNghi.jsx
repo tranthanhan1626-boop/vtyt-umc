@@ -140,7 +140,7 @@ export default function PhieuDeNghi({ phieuId, profile }) {
     </div>
   );
 
-  const inputCls = "w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500";
+  const inputCls = "w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-umc-500";
   const taCls = inputCls + " resize-y";
 
   return (
@@ -154,7 +154,7 @@ export default function PhieuDeNghi({ phieuId, profile }) {
             Phiếu đề nghị
           </span>
           {daLuuLuc
-            ? <span className="flex items-center gap-1 text-xs text-teal-700"><Check size={13} /> Đã lưu {daLuuLuc.toLocaleTimeString("vi-VN")}</span>
+            ? <span className="flex items-center gap-1 text-xs text-emerald-700"><Check size={13} /> Đã lưu {daLuuLuc.toLocaleTimeString("vi-VN")}</span>
             : <span className="text-xs text-slate-400">Phòng Điều dưỡng xem được ngay sau khi lưu</span>}
           {loi && <span className="text-xs text-red-600">{loi}</span>}
           <div className="flex-1" />
@@ -163,7 +163,7 @@ export default function PhieuDeNghi({ phieuId, profile }) {
             <Download size={14} /> Tải file Word
           </button>
           <button onClick={luu} disabled={dangLuu}
-            className="px-4 py-1.5 text-sm rounded-md bg-teal-700 text-white hover:bg-teal-800 disabled:opacity-40 font-medium">
+            className="px-4 py-1.5 text-sm rounded-md bg-umc-700 text-white hover:bg-umc-800 disabled:opacity-40 font-medium">
             {dangLuu ? "Đang lưu..." : "Lưu phiếu"}
           </button>
           <NutXoaDuLieuTest
@@ -186,19 +186,19 @@ export default function PhieuDeNghi({ phieuId, profile }) {
             <p className="text-sm font-medium">BỆNH VIỆN ĐẠI HỌC Y DƯỢC TP HỒ CHÍ MINH</p>
             <input value={nd.khoa} onChange={(e) => suaND("khoa", e.target.value)}
               placeholder="TÊN KHOA (vd KHOA PHẪU THUẬT HÀM MẶT – RĂNG HÀM MẶT)"
-              className="mt-1 text-center font-semibold text-sm border-b border-dashed border-slate-300 focus:outline-none focus:border-teal-500 w-full max-w-lg mx-auto block" />
+              className="mt-1 text-center font-semibold text-sm border-b border-dashed border-slate-300 focus:outline-none focus:border-umc-500 w-full max-w-lg mx-auto block" />
           </div>
 
           <div className="flex flex-wrap gap-4 items-center justify-between text-sm">
             <div className="flex items-center gap-2">
               <span className="text-slate-500">Số:</span>
               <input value={nd.so_phieu} onChange={(e) => suaND("so_phieu", e.target.value)}
-                placeholder="…/ĐN-…" className="border-b border-dashed border-slate-300 focus:outline-none focus:border-teal-500 w-40" />
+                placeholder="…/ĐN-…" className="border-b border-dashed border-slate-300 focus:outline-none focus:border-umc-500 w-40" />
             </div>
             <div className="flex items-center gap-2">
               <span className="text-slate-500">Ngày:</span>
               <input type="date" value={nd.ngay} onChange={(e) => suaND("ngay", e.target.value)}
-                className="border border-slate-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                className="border border-slate-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-umc-500" />
             </div>
           </div>
 

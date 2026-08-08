@@ -56,7 +56,7 @@ export default function QuanLyDot() {
       </div>
 
       {moForm ? (
-        <div className="border border-teal-200 bg-teal-50/40 rounded-lg p-3 space-y-2">
+        <div className="border border-umc-200 bg-umc-50/40 rounded-lg p-3 space-y-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <select value={f.loai_mua_sam} onChange={(e) => set("loai_mua_sam", e.target.value)} className={cls}>
               {GOI.map((g) => <option key={g.ma} value={g.ma}>{g.ten}</option>)}
@@ -74,13 +74,13 @@ export default function QuanLyDot() {
             placeholder="Tên đợt, vd: Gói 18 tháng 2027-2028" className={cls} />
           {loi && <p className="text-xs text-red-600">{loi}</p>}
           <div className="flex gap-2">
-            <button onClick={tao} className="px-3 py-1.5 text-xs rounded-md bg-teal-700 text-white font-medium">Tạo đợt</button>
+            <button onClick={tao} className="px-3 py-1.5 text-xs rounded-md bg-umc-700 text-white font-medium">Tạo đợt</button>
             <button onClick={() => setMoForm(false)} className="px-3 py-1.5 text-xs rounded-md border border-slate-300 text-slate-600">Huỷ</button>
           </div>
         </div>
       ) : (
         <button onClick={() => setMoForm(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-teal-300 text-teal-800 hover:bg-teal-50">
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-umc-300 text-umc-800 hover:bg-umc-50">
           <Plus size={13} /> Tạo đợt mới
         </button>
       )}
@@ -107,13 +107,13 @@ export default function QuanLyDot() {
                   </p>
                 </div>
                 <span className={`text-xs px-2 py-0.5 rounded ${
-                  mo ? "bg-teal-100 text-teal-800" : "bg-slate-100 text-slate-600"}`}>
+                  mo ? "bg-umc-100 text-umc-800" : "bg-slate-100 text-slate-600"}`}>
                   {mo ? "Đang mở" : "Đã đóng"}
                 </span>
                 <button onClick={() => doiTrangThai(d)}
                   className={`flex items-center gap-1 px-2.5 py-1 text-xs rounded-md border ${
                     mo ? "border-red-300 text-red-700 hover:bg-red-50"
-                       : "border-teal-300 text-teal-800 hover:bg-teal-50"}`}>
+                       : "border-umc-300 text-umc-800 hover:bg-umc-50"}`}>
                   {mo ? <><Lock size={12} /> Đóng đợt</> : <><Unlock size={12} /> Mở đợt</>}
                 </button>
                 <NutXoaDuLieuTest

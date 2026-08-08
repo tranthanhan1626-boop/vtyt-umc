@@ -12,6 +12,30 @@
   --umc-ink: #12233d;
   --umc-border: #dce7f2;
   --umc-surface: #f4f8fc;
+
+  /* Token shadcn/ui — quy chiếu về đúng màu UMC ở trên, không dùng
+     mặc định slate/zinc của shadcn. primary = --umc-blue, ring = --umc-cyan,
+     nhờ vậy nút/ô nhập/tiêu điểm bàn phím ăn màu thương hiệu sẵn. */
+  --background: 0 0% 100%;
+  --foreground: 216 54% 15%;
+  --card: 0 0% 100%;
+  --card-foreground: 216 54% 15%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 216 54% 15%;
+  --primary: 213 67% 40%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 57% 97%;
+  --secondary-foreground: 213 73% 27%;
+  --muted: 210 57% 97%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 195 77% 95%;
+  --accent-foreground: 213 73% 27%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 210 46% 91%;
+  --input: 210 46% 91%;
+  --ring: 195 77% 62%;
+  --radius: 0.65rem;
 }
 
 @layer base {
@@ -19,8 +43,12 @@
     box-sizing: border-box;
   }
 
+  /* Cỡ hiển thị toàn app — xem lib/coManHinh.js. Tailwind khai cỡ chữ và
+     khoảng cách bằng rem, nên đổi cỡ gốc ở đây là phóng/thu đồng đều cả giao
+     diện, giữ nguyên tỉ lệ giữa chữ và đệm. Mặc định 1 = 16px. */
   html {
     min-width: 320px;
+    font-size: calc(16px * var(--ty-le-hien-thi, 1));
     background: var(--umc-surface);
   }
 
@@ -217,11 +245,14 @@
     color: var(--umc-blue-dark);
   }
 
+  /* 16.75rem = 268px ở cỡ mặc định. Dùng rem để cột trái nở ra theo khi người
+     dùng chọn cỡ hiển thị lớn hơn — để px cứng thì chữ to lên mà cột không
+     rộng thêm, tên màn dài sẽ bị ngắt dòng lem nhem. */
   .umc-layout {
     position: relative;
     z-index: 1;
     display: grid;
-    grid-template-columns: 268px minmax(0, 1fr);
+    grid-template-columns: 16.75rem minmax(0, 1fr);
     gap: 1.25rem;
     align-items: start;
   }
@@ -485,14 +516,22 @@
       linear-gradient(to top, rgba(4, 28, 63, 0.7), transparent 54%);
   }
 
+  /* Hoa văn UMC là dải chéo neo góc dưới. `cover` trước đây cắt méo dải và
+     `screen` cho mép trên cứng như vết xước trên ảnh tòa nhà. Đổi sang:
+     - object-fit: contain -> giữ đúng góc nghiêng của dải theo bộ nhận diện
+     - soft-light -> dải hoà vào ảnh thay vì bật sáng đè lên
+     - mask gradient -> mép trên tan dần, không còn đường cắt ngang. */
   .umc-auth-pattern {
     top: auto;
-    bottom: -7%;
-    height: 58%;
-    object-fit: cover;
+    right: 0;
+    bottom: -2%;
+    width: 100%;
+    height: 46%;
+    object-fit: contain;
     object-position: bottom right;
-    opacity: 0.16;
-    mix-blend-mode: screen;
+    opacity: 0.5;
+    mix-blend-mode: soft-light;
+    mask-image: linear-gradient(to top, black 45%, transparent 100%);
   }
 
   .umc-auth-visual-content {
@@ -930,22 +969,11 @@
   box-shadow: 0 8px 28px rgba(28, 75, 126, 0.045);
 }
 
-.umc-content .bg-teal-700 {
-  background-color: var(--umc-blue);
-}
-
-.umc-content .text-teal-700,
-.umc-content .text-teal-800 {
-  color: var(--umc-blue-dark);
-}
-
-.umc-content .border-teal-200 {
-  border-color: #bfe2f1;
-}
-
-.umc-content .bg-teal-50 {
-  background-color: #edf8fc;
-}
+/* Bốn quy tắc ép `teal-*` thành màu UMC từng nằm ở đây đã được GỠ BỎ.
+   Chúng chỉ có tác dụng bên trong `.umc-content`, nên màn nào nằm ngoài phạm
+   vi đó vẫn hiện teal — đó là lý do hệ thống trông chắp vá. Nay teal đã được
+   thay tận gốc bằng thang `umc-*` trong toàn bộ mã nguồn (251 lượt, 26 file),
+   nên lớp vá này thừa và việc giữ lại chỉ che mất teal mới nếu ai đó lỡ thêm. */
 
 .umc-content input:not([type="checkbox"]):not([type="radio"]),
 .umc-content select,

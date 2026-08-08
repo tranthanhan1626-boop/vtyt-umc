@@ -56,13 +56,13 @@ export const NHAN_TT_NHOM = {
 };
 export const MAU_TT_NHOM = {
   cho_duyet: "bg-amber-100 text-amber-800",
-  da_duyet: "bg-teal-100 text-teal-800",
+  da_duyet: "bg-umc-100 text-umc-800",
   tu_choi: "bg-red-100 text-red-700",
 };
 
 /** 1 mốc thời gian tháng/năm — dùng cho cả mốc bắt đầu và mốc kết thúc. */
 function ChonKyThang({ gtThang, gtNam, doiThang, doiNam }) {
-  const cls = "border border-slate-300 rounded-md px-1.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500";
+  const cls = "border border-slate-300 rounded-md px-1.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-umc-500";
   return (
     <span className="inline-flex items-center gap-1">
       <select value={gtThang} onChange={(e) => doiThang(Number(e.target.value))}
@@ -167,7 +167,7 @@ export const FORM_NHOM_TRONG = {
 export function FormNhomKyThuat({ giaTri, doiGiaTri, onLuu, onHuy, dangLuu, loi, dsNhom }) {
   const f = giaTri;
   const set = (k, v) => doiGiaTri({ ...f, [k]: v });
-  const cls = "w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500";
+  const cls = "w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-umc-500";
   const dvKy = doDaiKy(f);
   const laGop = f.che_do === "gop";
 
@@ -189,15 +189,15 @@ export function FormNhomKyThuat({ giaTri, doiGiaTri, onLuu, onHuy, dangLuu, loi,
     <button type="button" onClick={() => doiGiaTri({ ...f, che_do: gt, ma_quan_ly: "", ten_quan_ly_moi: "" })}
       className={`flex-1 text-left px-3 py-2 rounded-md border text-xs transition ${
         f.che_do === gt
-          ? "border-teal-600 bg-white ring-1 ring-teal-600"
+          ? "border-umc-600 bg-white ring-1 ring-umc-600"
           : "border-slate-300 bg-white/60 hover:bg-white"}`}>
-      <span className={`block font-medium ${f.che_do === gt ? "text-teal-800" : "text-slate-700"}`}>{nhan}</span>
+      <span className={`block font-medium ${f.che_do === gt ? "text-umc-800" : "text-slate-700"}`}>{nhan}</span>
       <span className="block text-slate-500 leading-snug mt-0.5">{mo_ta}</span>
     </button>
   );
 
   return (
-    <div className="border border-teal-200 bg-teal-50/40 rounded-lg p-3 space-y-3">
+    <div className="border border-umc-200 bg-umc-50/40 rounded-lg p-3 space-y-3">
       <div className="flex gap-2">
         {nutCheDo("gop", "Tương đương mã đã có",
           "Cùng chức năng với vật tư đang dùng — gộp vào mã quản lý sẵn có")}
@@ -211,9 +211,9 @@ export function FormNhomKyThuat({ giaTri, doiGiaTri, onLuu, onHuy, dangLuu, loi,
             Gộp vào mã quản lý <span className="text-red-500">*</span>
           </label>
           {nhomDaChon ? (
-            <div className="flex items-center gap-2 border border-teal-300 bg-white rounded-md px-2 py-1.5">
-              <Check size={14} className="text-teal-700 shrink-0" />
-              <span className="font-mono text-xs text-teal-800">{nhomDaChon.ma_quan_ly}</span>
+            <div className="flex items-center gap-2 border border-umc-300 bg-white rounded-md px-2 py-1.5">
+              <Check size={14} className="text-umc-700 shrink-0" />
+              <span className="font-mono text-xs text-umc-800">{nhomDaChon.ma_quan_ly}</span>
               <span className="text-xs text-slate-600 truncate flex-1">{nhomDaChon.ten_quan_ly}</span>
               <button type="button" onClick={() => { set("ma_quan_ly", ""); setTimNhom(""); }}
                 className="text-slate-400 hover:text-red-600 shrink-0" title="Chọn lại">
@@ -229,8 +229,8 @@ export function FormNhomKyThuat({ giaTri, doiGiaTri, onLuu, onHuy, dangLuu, loi,
                   {nhomKhop.map((n) => (
                     <button type="button" key={n.ma_quan_ly}
                       onClick={() => set("ma_quan_ly", n.ma_quan_ly)}
-                      className="w-full text-left px-2 py-1.5 hover:bg-teal-50 flex items-baseline gap-2">
-                      <span className="font-mono text-xs text-teal-700 shrink-0">{n.ma_quan_ly}</span>
+                      className="w-full text-left px-2 py-1.5 hover:bg-umc-50 flex items-baseline gap-2">
+                      <span className="font-mono text-xs text-umc-700 shrink-0">{n.ma_quan_ly}</span>
                       <span className="text-xs text-slate-700 leading-tight">{n.ten_quan_ly}</span>
                       <span className="text-xs text-slate-400 ml-auto shrink-0">{n.so_ma_hang} mã</span>
                     </button>
@@ -359,7 +359,7 @@ export function FormNhomKyThuat({ giaTri, doiGiaTri, onLuu, onHuy, dangLuu, loi,
       {loi && <p className="text-xs text-red-600">{loi}</p>}
       <div className="flex gap-2">
         <button onClick={onLuu} disabled={dangLuu}
-          className="px-3 py-1.5 text-xs rounded-md bg-teal-700 text-white hover:bg-teal-800 disabled:opacity-40 font-medium">
+          className="px-3 py-1.5 text-xs rounded-md bg-umc-700 text-white hover:bg-umc-800 disabled:opacity-40 font-medium">
           {dangLuu ? "Đang gửi..." : "Gửi đề nghị"}
         </button>
         <button onClick={onHuy} className="px-3 py-1.5 text-xs rounded-md border border-slate-300 text-slate-600 hover:bg-white">
@@ -1420,7 +1420,7 @@ export default function Function1({
       {!toanVien && (
         <>
           <button type="button" onClick={() => setMoGio(true)}
-            className="fixed right-6 top-20 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full border border-teal-200 bg-white text-teal-800 shadow-lg hover:bg-teal-50"
+            className="fixed right-6 top-20 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full border border-umc-200 bg-white text-umc-800 shadow-lg hover:bg-umc-50"
             title="Mở giỏ đề xuất" aria-label="Mở giỏ đề xuất">
             <ShoppingCart size={21} />
             {gioTheoNhom.length > 0 && (
@@ -1460,7 +1460,7 @@ export default function Function1({
                             <button type="button"
                               onClick={() => setGoiGioMo(dangMo ? null : tenGoi)}
                               className="flex w-full items-center gap-2 bg-slate-50 px-3 py-2.5 text-left">
-                              <Package size={15} className="text-teal-700" />
+                              <Package size={15} className="text-umc-700" />
                               <span className="flex-1 text-sm font-medium text-slate-700">{tenGoi}</span>
                               <span className="text-xs text-slate-400">{dsNhomGoi.length} mã quản lý</span>
                               <ChevronDown size={14} className={dangMo ? "rotate-180" : ""} />
@@ -1473,7 +1473,7 @@ export default function Function1({
                                       <div className="min-w-0 flex-1">
                                         <div className="font-mono text-xs font-semibold text-blue-700">{g.ma}</div>
                                         <div className="truncate text-xs text-slate-600">{g.ten}</div>
-                                        <div className="mt-1 text-xs font-medium text-teal-800">
+                                        <div className="mt-1 text-xs font-medium text-umc-800">
                                           Tổng mã quản lý: {fmt(g.tong)} {g.dvt}
                                         </div>
                                         {g.bangQuyDoi && (
@@ -1495,7 +1495,7 @@ export default function Function1({
                                           <span className="w-16 font-mono text-slate-400">{n.ma_hang}</span>
                                           <span className="min-w-0 flex-1 truncate">{n.ten_vat_tu}</span>
                                           <span className="font-mono text-slate-600">{fmt(n.soLuong)} {n.dvt}</span>
-                                          <span className="font-mono text-teal-700">= {fmt(n.soLuongQuyDoi)} {n.dvtMaQuanLy}</span>
+                                          <span className="font-mono text-umc-700">= {fmt(n.soLuongQuyDoi)} {n.dvtMaQuanLy}</span>
                                         </div>
                                       ))}
                                     </div>
@@ -1522,7 +1522,7 @@ export default function Function1({
                   <div className="flex items-center gap-2">
                     <button type="button" onClick={submit}
                       disabled={dangLuu || dangTaiDot || gioHang.length === 0 || !dotDung}
-                      className="flex-1 rounded-md bg-teal-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-40">
+                      className="flex-1 rounded-md bg-umc-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-40">
                       {dangLuu ? "Đang gửi…" : `Gửi ${gioTheoNhom.length} mã quản lý`}
                     </button>
                     {gioHang.length > 0 && (
@@ -1547,7 +1547,7 @@ export default function Function1({
             <label className="text-xs text-slate-400 block mb-1.5">Khoa đề xuất</label>
             <div className="relative">
               <select value={donVi} onChange={(e) => setDonVi(e.target.value)}
-                className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-umc-500">
                 {!dsDonVi.includes(donVi) && donVi !== TOAN_VIEN && <option value={donVi}>{donVi || "—"}</option>}
                 <option value={TOAN_VIEN}>— Toàn viện (chỉ để xem) —</option>
                 {dsDonVi.map((dv) => <option key={dv} value={dv}>{dv}</option>)}
@@ -1564,7 +1564,7 @@ export default function Function1({
 
         {!toanVien && khoaHienTai && goiIdDanhMuc && (
           <a href={`#danh-muc-de-xuat/${goiIdDanhMuc}/${encodeURIComponent(khoaHienTai)}`}
-            className="flex items-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2.5 text-sm font-medium text-teal-800 hover:bg-teal-100">
+            className="flex items-center gap-2 rounded-lg border border-umc-200 bg-umc-50 px-3 py-2.5 text-sm font-medium text-umc-800 hover:bg-umc-100">
             <ExternalLink size={15} />
             Xem Danh mục đề xuất của khoa
           </a>
@@ -1576,7 +1576,7 @@ export default function Function1({
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)}
               placeholder="vd K00.22.000.04, tên nhóm, mã hàng hoặc tên vật tư"
-              className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-teal-500" />
+              className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-umc-500" />
           </div>
           <p className="text-xs text-slate-400 mb-2">
             {tuKhoa.trim() ? `${nhomLoc.length} nhóm khớp` : `${dsNhomHienThi.length} nhóm — gõ để tìm`}
@@ -1590,7 +1590,7 @@ export default function Function1({
           {!toanVien && (
             <label className="flex items-start gap-2 mb-3 text-xs text-slate-500 cursor-pointer">
               <input type="checkbox" checked={hienCaChuaDung} onChange={(e) => setHienCaChuaDung(e.target.checked)}
-                className="mt-0.5 rounded border-slate-300 text-teal-700 focus:ring-teal-500" />
+                className="mt-0.5 rounded border-slate-300 text-umc-700 focus:ring-umc-500" />
               <span>Hiện cả mã chưa từng dùng ở khoa này <span className="text-slate-400">(để đề xuất kỹ thuật mới)</span></span>
             </label>
           )}
@@ -1605,13 +1605,13 @@ export default function Function1({
             {nhomTrang.map((n) => (
               <button key={n.ma_quan_ly} onClick={() => setNhomChon(n.ma_quan_ly)}
                 className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                  n.ma_quan_ly === nhomChon ? "bg-teal-50 text-teal-900 border border-teal-200" : "hover:bg-slate-50 border border-transparent"
+                  n.ma_quan_ly === nhomChon ? "bg-umc-50 text-umc-900 border border-umc-200" : "hover:bg-slate-50 border border-transparent"
                 }`}>
                 <div className="font-mono text-[15px] font-bold tracking-wide text-blue-700">{n.ma_quan_ly}</div>
                 <div className="mt-0.5 leading-snug text-slate-800">{n.ten_quan_ly}</div>
                 <div className="text-xs text-slate-400 mt-0.5">{n.so_ma_hang} mã hàng</div>
                 {n.maHangKhop && (
-                  <div className="text-xs text-teal-700 mt-1 border-t border-teal-100 pt-1">
+                  <div className="text-xs text-umc-700 mt-1 border-t border-umc-100 pt-1">
                     Khớp mã hàng: {n.maHangKhop.map((v) => v.ma_hang).join(", ")}
                   </div>
                 )}
@@ -1653,7 +1653,7 @@ export default function Function1({
           <>
             <div className="bg-white border border-slate-200 rounded-lg p-4">
               <div className="flex items-baseline gap-2 mb-1">
-                <Package size={16} className="text-teal-700 shrink-0" />
+                <Package size={16} className="text-umc-700 shrink-0" />
                 <h2 className="text-lg font-semibold text-slate-800">{nhomDangChon?.ten_quan_ly}</h2>
               </div>
               <p className="text-xs text-slate-500">
@@ -1723,9 +1723,9 @@ export default function Function1({
               </div>
 
               {tongNhom.nam.length > 0 && (
-                <div className="mb-3 border border-teal-200 bg-teal-50/50 rounded-lg p-3">
+                <div className="mb-3 border border-umc-200 bg-umc-50/50 rounded-lg p-3">
                   <div className="flex items-baseline gap-2 flex-wrap mb-2">
-                    <span className="text-sm font-medium text-teal-900">
+                    <span className="text-sm font-medium text-umc-900">
                       Tổng theo mã quản lý {nhomChon}
                     </span>
                     <span className="text-xs text-slate-600">
@@ -1738,7 +1738,7 @@ export default function Function1({
                     {tongNhom.nam.map((n) => (
                       <div key={n}>
                         <div className="text-xs text-slate-500">{n}</div>
-                        <div className="text-lg font-semibold text-teal-900 tabular-nums leading-tight">
+                        <div className="text-lg font-semibold text-umc-900 tabular-nums leading-tight">
                           {fmt(tongNhom.theoNam[n])}
                           <span className="text-xs font-normal text-slate-500 ml-1">{tongNhom.dvtChuan}</span>
                         </div>
@@ -1885,7 +1885,7 @@ export default function Function1({
                           onChange={(e) => capNhatPhanBo(m.ma_hang, e.target.value)}
                           className="w-full rounded border border-slate-300 px-1.5 py-1 text-right font-mono disabled:bg-slate-100 mt-0.5"
                         />
-                        <span className="text-right font-mono text-teal-800 pt-0.5">
+                        <span className="text-right font-mono text-umc-800 pt-0.5">
                           {fmt(soPhanBo * Number(heSo || 0))} {dvtChuan}
                         </span>
                       </div>
@@ -1893,7 +1893,7 @@ export default function Function1({
                   })}
                   <div className={`flex items-center justify-between px-3 py-2 text-xs font-medium ${
                     saiSoPhanBo(nhapNhom.soLuong, tongDaPhanBo) <= 0.001
-                      ? "bg-teal-50 text-teal-800"
+                      ? "bg-umc-50 text-umc-800"
                       : "bg-amber-50 text-amber-800"
                   }`}>
                     <span>Tổng đã phân bổ</span>
@@ -1912,7 +1912,7 @@ export default function Function1({
                         className={`flex items-start gap-1.5 px-3 py-2 text-[11px] border-t ${
                           ngoaiKhoangPhanBo
                             ? "border-red-200 bg-red-50 text-red-800"
-                            : "border-teal-100 bg-white text-teal-700"
+                            : "border-umc-100 bg-white text-umc-700"
                         }`}
                       >
                         {ngoaiKhoangPhanBo ? (
@@ -1942,7 +1942,7 @@ export default function Function1({
                       Lý do đề xuất {ngoaiKhoangNhom && <span className="text-red-500">*</span>}
                     </label>
                     {!ngoaiKhoangNhom && CO_GOI_Y_SO_LUONG(goi) ? (
-                      <div className="rounded-md border border-teal-200 bg-teal-50 px-3 py-2 text-sm text-teal-800">
+                      <div className="rounded-md border border-umc-200 bg-umc-50 px-3 py-2 text-sm text-umc-800">
                         Theo lịch sử sử dụng
                       </div>
                     ) : (
@@ -1992,7 +1992,7 @@ export default function Function1({
                   {loiNhapNhom && <span className="text-xs text-red-600">{loiNhapNhom}</span>}
                   <button type="button" onClick={themMaQuanLyVaoGio}
                     disabled={!coSchemaMaQuanLy || !tinhTrangQuyDoi.hopLe}
-                    className="inline-flex items-center gap-1.5 rounded-md bg-teal-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-40">
+                    className="inline-flex items-center gap-1.5 rounded-md bg-umc-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-40">
                     <ShoppingCart size={15} /> Thêm cả mã quản lý vào giỏ
                   </button>
                 </div>
@@ -2049,7 +2049,7 @@ export default function Function1({
                                       [n.ma_hang]: { ...prev[n.ma_hang], soLuong: v },
                                     }));
                                   }}
-                                  className="w-24 rounded border border-slate-300 bg-white px-1.5 py-1 text-right font-mono text-xs text-teal-800 focus:border-teal-500 focus:outline-none"
+                                  className="w-24 rounded border border-slate-300 bg-white px-1.5 py-1 text-right font-mono text-xs text-umc-800 focus:border-umc-500 focus:outline-none"
                                   aria-label={`Số lượng đề xuất mã ${n.ma_hang}`}
                                 />
                                 <span>{n.dvt}</span>
@@ -2103,7 +2103,7 @@ export default function Function1({
                   </div>
                 )}
                 <button onClick={submit} disabled={dangLuu || dangTaiDot || gioHang.length === 0 || chuaMoDot || !dotDung}
-                  className="px-4 py-2 bg-teal-700 text-white text-sm rounded-md hover:bg-teal-800 disabled:opacity-40 font-medium">
+                  className="px-4 py-2 bg-umc-700 text-white text-sm rounded-md hover:bg-umc-800 disabled:opacity-40 font-medium">
                   {dangLuu ? "Đang lưu..." : `Gửi đề xuất (${gioHang.length} mã hàng)`}
                 </button>
                 {gioHang.length > 0 && !dangLuu && (
@@ -2118,8 +2118,8 @@ export default function Function1({
 
         {/* Bảng kết quả sau khi gửi */}
         {daGui.length > 0 && (
-              <div className="bg-white border border-teal-200 rounded-lg overflow-hidden">
-                <div className="flex items-center gap-1.5 px-4 py-2.5 bg-teal-50 text-teal-800 text-sm font-medium border-b border-teal-200">
+              <div className="bg-white border border-umc-200 rounded-lg overflow-hidden">
+                <div className="flex items-center gap-1.5 px-4 py-2.5 bg-umc-50 text-umc-800 text-sm font-medium border-b border-umc-200">
                   <Check size={15} /> Đã gửi {daGui.length} đề xuất cho năm {NAM_DE_XUAT}
                 </div>
                 <div className="overflow-x-auto">

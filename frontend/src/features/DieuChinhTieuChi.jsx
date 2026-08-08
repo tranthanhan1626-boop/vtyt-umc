@@ -24,7 +24,7 @@ const TRUONG_MA_HANG = [
 const TRUONG_NHOM = [{ k: "ten_quan_ly", n: "Tên mã quản lý", dai: true }];
 const NHAN_TT = {
   cho_duyet: ["Chờ PĐD duyệt", "bg-amber-100 text-amber-800"],
-  da_duyet: ["Đã duyệt", "bg-teal-100 text-teal-800"],
+  da_duyet: ["Đã duyệt", "bg-umc-100 text-umc-800"],
   tu_choi: ["Bị từ chối", "bg-red-100 text-red-700"],
 };
 
@@ -173,7 +173,7 @@ export default function DieuChinhTieuChi({ profile }) {
           </div>
 
           <div>
-            <p className="mb-1 text-xs font-medium uppercase text-teal-700">
+            <p className="mb-1 text-xs font-medium uppercase text-umc-700">
               {dangSua ? "Bản sửa của khoa" : cho ? "Đang chờ duyệt" : "Chưa đề nghị sửa"}
             </p>
             {dangSua ? (
@@ -184,10 +184,10 @@ export default function DieuChinhTieuChi({ profile }) {
                     {t.dai
                       ? <textarea rows={3} value={form[t.k] ?? ""}
                           onChange={(e) => setForm((p) => ({ ...p, [t.k]: e.target.value }))}
-                          className="w-full rounded-md border border-teal-300 px-2 py-1 text-sm" />
+                          className="w-full rounded-md border border-umc-300 px-2 py-1 text-sm" />
                       : <input value={form[t.k] ?? ""}
                           onChange={(e) => setForm((p) => ({ ...p, [t.k]: e.target.value }))}
-                          className="w-full rounded-md border border-teal-300 px-2 py-1 text-sm" />}
+                          className="w-full rounded-md border border-umc-300 px-2 py-1 text-sm" />}
                   </div>
                 ))}
                 <input value={lyDo} onChange={(e) => setLyDo(e.target.value)}
@@ -195,7 +195,7 @@ export default function DieuChinhTieuChi({ profile }) {
                   className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm" />
                 <div className="flex gap-2 pt-1">
                   <button onClick={() => guiDeNghi(cu)}
-                    className="rounded-md bg-teal-700 px-3 py-1 text-xs font-medium text-white">Gửi PĐD duyệt</button>
+                    className="rounded-md bg-umc-700 px-3 py-1 text-xs font-medium text-white">Gửi PĐD duyệt</button>
                   <button onClick={() => setSua(null)}
                     className="rounded-md border border-slate-300 px-3 py-1 text-xs text-slate-600">Huỷ</button>
                 </div>
@@ -229,7 +229,7 @@ export default function DieuChinhTieuChi({ profile }) {
                   ) : (
                     <div className="mt-2 flex gap-2">
                       <button onClick={() => duyet(cho)}
-                        className="flex items-center gap-1 rounded-md bg-teal-700 px-3 py-1 text-xs font-medium text-white">
+                        className="flex items-center gap-1 rounded-md bg-umc-700 px-3 py-1 text-xs font-medium text-white">
                         <Check size={11} /> Duyệt, ghi vào danh mục
                       </button>
                       <button onClick={() => { setTuChoi(cho.id); setLyDo(""); }}

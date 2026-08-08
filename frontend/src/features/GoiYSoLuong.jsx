@@ -52,9 +52,9 @@ export default function GoiYSoLuong({ lichSu, thieu, H, abc, giaTri, onChon, tha
   const tongNeuDungHetTuyChon = so > 0 ? Math.round(so) + tranTuyChon : 0;
 
   return (
-    <div className="mt-2 rounded-md border border-teal-200 bg-teal-50/60 px-2.5 py-2">
+    <div className="mt-2 rounded-md border border-umc-200 bg-umc-50/60 px-2.5 py-2">
       <div className="mb-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-        <span className="text-xs font-semibold text-teal-900">Dải thông thường P50–P75</span>
+        <span className="text-xs font-semibold text-umc-900">Dải thông thường P50–P75</span>
         <span className="text-[11px] text-slate-500">
           {kq.soThang} tháng gần nhất · mức dự báo {fmt(Math.round(kq.mu))}/tháng
           {" · "}TB 6 tháng {fmt(Math.round(kq.trungBinh6))}
@@ -69,8 +69,8 @@ export default function GoiYSoLuong({ lichSu, thieu, H, abc, giaTri, onChon, tha
 
       {/* Thước P50 → P95 để còn thấy hai mốc ngoại lệ. Dải không cần giải
           trình thực tế chỉ kết thúc ở P75. */}
-      <div className="relative mb-1.5 h-1.5 w-full rounded-full bg-teal-100">
-        <div className="h-1.5 rounded-full bg-teal-300"
+      <div className="relative mb-1.5 h-1.5 w-full rounded-full bg-umc-100">
+        <div className="h-1.5 rounded-full bg-umc-300"
           style={{ width: `${viTriTrongDai(chon, kq) ?? 0}%` }} />
         {viTri != null && (
           <span className="absolute -top-1 h-3.5 w-0.5 rounded bg-slate-800"
@@ -134,7 +134,7 @@ export default function GoiYSoLuong({ lichSu, thieu, H, abc, giaTri, onChon, tha
       )}
 
       {kq.coPhucHoi && (
-        <p className="mt-1.5 text-[11px] leading-snug text-teal-800">
+        <p className="mt-1.5 text-[11px] leading-snug text-umc-800">
           Đã <b>cộng lại phần thiếu có bằng chứng</b> từ Sổ thiếu hàng vào các tháng
           bị cấp hạn chế.
         </p>
@@ -165,9 +165,9 @@ function NutChon({ nhan, so, phu, chinh, cao, dangChon, onChon }) {
   return (
     <button type="button" onClick={() => onChon(so)} title={phu}
       className={`rounded-md border px-2 py-1 text-left transition ${
-        dangChon ? "border-teal-700 bg-teal-700 text-white"
+        dangChon ? "border-umc-700 bg-umc-700 text-white"
         : cao ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"
-        : chinh ? "border-teal-600 bg-white text-teal-900 hover:bg-teal-50"
+        : chinh ? "border-umc-600 bg-white text-umc-900 hover:bg-umc-50"
         : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"}`}>
       <span className="block text-[10px] uppercase tracking-wide opacity-70">{nhan}</span>
       <span className="block font-mono text-sm leading-tight">{fmt(so)}</span>

@@ -368,13 +368,13 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
         <div className="flex gap-1.5 border-b border-slate-200">
           <button onClick={() => setTab("theo_goi")}
             className={`px-3 py-1.5 text-xs font-medium border-b-2 -mb-px ${
-              tab === "theo_goi" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"
+              tab === "theo_goi" ? "border-umc-700 text-umc-800" : "border-transparent text-slate-500 hover:text-slate-700"
             }`}>
             Theo gói thầu
           </button>
           <button onClick={() => setTab("gio_rot_toan_vien")}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-b-2 -mb-px ${
-              tab === "gio_rot_toan_vien" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-700"
+              tab === "gio_rot_toan_vien" ? "border-umc-700 text-umc-800" : "border-transparent text-slate-500 hover:text-slate-700"
             }`}>
             <Users size={13} /> Giỏ rớt toàn viện
             {gioRotToanVien.length > 0 && (
@@ -413,7 +413,7 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
         </div>
       ) : laPdd && (
         moTao ? (
-          <div className="space-y-3 rounded-lg border border-teal-200 bg-white p-3">
+          <div className="space-y-3 rounded-lg border border-umc-200 bg-white p-3">
             <div className="grid gap-2 md:grid-cols-2">
               <input value={formGoi.ten}
                 onChange={(e) => setFormGoi((p) => ({ ...p, ten: e.target.value }))}
@@ -434,13 +434,13 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
               </select>
             </div>
             <div className="flex gap-2">
-              <button onClick={taoGoi} className="rounded-md bg-teal-700 px-3 py-1.5 text-xs font-medium text-white">Tạo gói</button>
+              <button onClick={taoGoi} className="rounded-md bg-umc-700 px-3 py-1.5 text-xs font-medium text-white">Tạo gói</button>
               <button onClick={() => setMoTao(false)} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-600">Hủy</button>
             </div>
           </div>
         ) : (
           <button onClick={() => setMoTao(true)}
-            className="inline-flex items-center gap-1.5 rounded-md border border-teal-300 px-3 py-1.5 text-xs text-teal-800 hover:bg-teal-50">
+            className="inline-flex items-center gap-1.5 rounded-md border border-umc-300 px-3 py-1.5 text-xs text-umc-800 hover:bg-umc-50">
             <Plus size={13} /> Tạo gói theo dõi
           </button>
         )
@@ -452,7 +452,7 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
         </div>
       )}
       {thongBao && (
-        <div className="flex items-center gap-2 rounded-lg border border-teal-200 bg-teal-50 p-3 text-sm text-teal-800">
+        <div className="flex items-center gap-2 rounded-lg border border-umc-200 bg-umc-50 p-3 text-sm text-umc-800">
           <CheckCircle2 size={15} /> {thongBao}
         </div>
       )}

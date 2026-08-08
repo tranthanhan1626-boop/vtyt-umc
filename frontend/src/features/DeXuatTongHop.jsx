@@ -31,7 +31,7 @@ export const NHAN_TRANG_THAI = {
 const MAU_TRANG_THAI = {
   de_xuat: "bg-slate-100 text-slate-600",
   xet_duyet: "bg-amber-100 text-amber-800",
-  hoan_thanh: "bg-teal-100 text-teal-800",
+  hoan_thanh: "bg-umc-100 text-umc-800",
   tu_choi: "bg-red-100 text-red-700",
   hon_hop: "bg-slate-100 text-slate-500",
 };
@@ -351,7 +351,7 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
           <div className="relative">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)}
-              className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+              className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-umc-500" />
           </div>
         </div>
 
@@ -359,7 +359,7 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
           <label className="text-xs text-slate-400 block mb-1.5">Khoa</label>
           <div className="relative">
             <select value={khoaLoc} onChange={(e) => setKhoaLoc(e.target.value)}
-              className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-teal-500">
+              className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-umc-500">
               <option value="">Tất cả khoa</option>
               {dsKhoa.map((k) => <option key={k} value={k}>{k}</option>)}
             </select>
@@ -371,7 +371,7 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
           <label className="text-xs text-slate-400 block mb-1.5">Gói thầu</label>
           <div className="relative">
             <select value={goiLoc} onChange={(e) => setGoiLoc(e.target.value)}
-              className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-teal-500">
+              className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-umc-500">
               <option value="">Tất cả gói</option>
               {dsGoi.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
@@ -383,7 +383,7 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
           <label className="text-xs text-slate-400 block mb-1.5">Sắp xếp</label>
           <div className="relative">
             <select value={sapXep} onChange={(e) => setSapXep(e.target.value)}
-              className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-teal-500">
+              className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-umc-500">
               <option value="moi">Mới nhất trước</option>
               <option value="goi">Theo gói thầu</option>
             </select>
@@ -395,7 +395,7 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
           <label className="text-xs text-slate-400 block mb-1.5">Lý do</label>
           <div className="relative">
             <select value={lyDoLoc} onChange={(e) => setLyDoLoc(e.target.value)}
-              className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-teal-500">
+              className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-umc-500">
               <option value="">Tất cả lý do</option>
               {Object.entries(NHAN_LY_DO).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
@@ -407,7 +407,7 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
           <label className="text-xs text-slate-400 block mb-1.5">Trạng thái</label>
           <div className="relative">
             <select value={trangThaiLoc} onChange={(e) => setTrangThaiLoc(e.target.value)}
-              className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-teal-500">
+              className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-umc-500">
               <option value="">Tất cả trạng thái</option>
               {Object.entries(NHAN_TRANG_THAI).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
@@ -461,11 +461,11 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
                       className="rounded border-slate-300 text-emerald-700 focus:ring-emerald-500 disabled:opacity-35" />
                   )}
                   <span className="inline-flex items-center gap-1.5 font-medium text-slate-700">
-                    <Package size={13} className="text-teal-700" />
+                    <Package size={13} className="text-umc-700" />
                     {g.don_vi}
                   </span>
                   <span className="text-slate-400">{g.items.length} mã hàng · năm {g.nam_de_xuat}</span>
-                  {g.goi && <span className="text-teal-700 font-medium">Gói: {g.goi}</span>}
+                  {g.goi && <span className="text-umc-700 font-medium">Gói: {g.goi}</span>}
                   <span className="text-slate-400">{fmtNgayGio(g.created_at)}</span>
                   <span className="text-slate-400">{g.created_by_ho_ten || g.created_by}</span>
                   <span className={`ml-auto inline-block px-2 py-0.5 rounded-full font-medium ${MAU_TRANG_THAI[g.trangThai]}`}>
@@ -516,7 +516,7 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
                             <div className="text-xs text-slate-300 font-mono mt-0.5">{r.ma_quan_ly}</div>
                             {r.so_luong_ma_quan_ly != null
                               && g.items.findIndex((x) => x.ma_quan_ly === r.ma_quan_ly) === index && (
-                              <div className="mt-1 text-xs font-medium text-teal-700">
+                              <div className="mt-1 text-xs font-medium text-umc-700">
                                 Tổng mã quản lý: {fmt(r.so_luong_ma_quan_ly)} {r.dvt_ma_quan_ly}
                                 {r.bang_quy_doi && (
                                   <div className="font-normal text-slate-400">
@@ -542,7 +542,7 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
                             {r.ghi_chu && <div className="text-slate-400 italic">{r.ghi_chu}</div>}
                           </td>
                           <td className="px-4 py-2 align-top text-xs">
-                            {r.goi && <div className="text-teal-700">Gói: {r.goi}</div>}
+                            {r.goi && <div className="text-umc-700">Gói: {r.goi}</div>}
                             {r.loai_mua_sam && <div className="text-slate-700">{NHAN_GOI_THAU[r.loai_mua_sam]}</div>}
                             {r.tu_thang
                               ? <div className="text-slate-400">T{r.tu_thang}/{r.tu_nam} – T{r.den_thang}/{r.den_nam} ({r.so_thang_du_kien} tháng)</div>
@@ -569,7 +569,7 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
                       {g.trangThai === "xet_duyet" && (
                         <>
                           <button onClick={() => doiTrangThai(g, "hoan_thanh")} disabled={dangCapNhat === g.key}
-                            className="flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-teal-300 text-teal-700 hover:bg-teal-50 disabled:opacity-40">
+                            className="flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-umc-300 text-umc-700 hover:bg-umc-50 disabled:opacity-40">
                             <Check size={12} /> Hoàn thành
                           </button>
                           <button onClick={() => doiTrangThai(g, "tu_choi")} disabled={dangCapNhat === g.key}
@@ -593,7 +593,7 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
                       <div className="relative">
                         <select value={phieu?.bieu_mau_id || ""}
                           onChange={(e) => e.target.value && chonBieuMau(g, Number(e.target.value))}
-                          className="appearance-none border border-slate-300 rounded-md pl-2 pr-7 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500">
+                          className="appearance-none border border-slate-300 rounded-md pl-2 pr-7 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-umc-500">
                           <option value="">— chọn biểu mẫu —</option>
                           {dsBieuMau.map((b) => <option key={b.id} value={b.id}>{b.ten}</option>)}
                         </select>
@@ -601,7 +601,7 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
                       </div>
                       {phieu && (
                         <a href={`?phieu=${phieu.id}`} target="_blank" rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-teal-700 hover:text-teal-900 hover:underline">
+                          className="inline-flex items-center gap-1 text-xs text-umc-700 hover:text-umc-900 hover:underline">
                           <FileText size={12} /> Mở phiếu để điền <ExternalLink size={10} />
                         </a>
                       )}

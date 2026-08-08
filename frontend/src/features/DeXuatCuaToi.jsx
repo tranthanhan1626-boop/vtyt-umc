@@ -23,7 +23,7 @@ const NHAN_LY_DO = {
 const MAU_TRANG_THAI = {
   de_xuat: "bg-slate-100 text-slate-600",
   xet_duyet: "bg-amber-100 text-amber-800",
-  hoan_thanh: "bg-teal-100 text-teal-800",
+  hoan_thanh: "bg-umc-100 text-umc-800",
   tu_choi: "bg-red-100 text-red-700",
   hon_hop: "bg-slate-100 text-slate-500",
 };
@@ -150,13 +150,13 @@ export default function DeXuatCuaToi({ profile, goi, onMoHoSo }) {
         {nhomLoc.length} đề xuất đã gửi <span className="text-slate-400">({rows.length} mã hàng)</span>
       </div>
       {danhMucTheoGoi.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2.5">
-          <span className="text-xs font-medium text-teal-900">Danh mục đề xuất của khoa (gộp mọi giỏ cùng gói con):</span>
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-umc-200 bg-umc-50 px-3 py-2.5">
+          <span className="text-xs font-medium text-umc-900">Danh mục đề xuất của khoa (gộp mọi giỏ cùng gói con):</span>
           {danhMucTheoGoi.map((d) => (
             <a key={d.goiId} href={`#danh-muc-de-xuat/${d.goiId}/${encodeURIComponent(d.donVi)}`}
-              className="inline-flex items-center gap-1 rounded-md border border-teal-300 bg-white px-2.5 py-1.5 text-xs font-medium text-teal-800 hover:bg-teal-100">
+              className="inline-flex items-center gap-1 rounded-md border border-umc-300 bg-white px-2.5 py-1.5 text-xs font-medium text-umc-800 hover:bg-umc-100">
               <ExternalLink size={13} /> {GOI_ID_MAP[d.goiId]?.nhan || d.goiId}
-              {d.soGio > 1 && <span className="text-teal-500">({d.soGio} giỏ)</span>}
+              {d.soGio > 1 && <span className="text-umc-500">({d.soGio} giỏ)</span>}
             </a>
           ))}
         </div>
@@ -186,7 +186,7 @@ export default function DeXuatCuaToi({ profile, goi, onMoHoSo }) {
             >
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5 bg-slate-50/70 border-b border-slate-100 text-xs">
                 <span className="inline-flex items-center gap-1.5 font-medium text-slate-700">
-                  <Package size={13} className="text-teal-700" />
+                  <Package size={13} className="text-umc-700" />
                   {g.items.length} mã hàng · năm {g.nam_de_xuat}
                 </span>
                 <span className="text-slate-400">{fmtNgayGio(g.created_at)}</span>

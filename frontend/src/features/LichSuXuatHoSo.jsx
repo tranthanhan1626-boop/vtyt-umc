@@ -185,7 +185,7 @@ export default function LichSuXuatHoSo() {
 
       <section className="rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-          <Filter size={16} className="text-teal-700" /> Bộ lọc hồ sơ
+          <Filter size={16} className="text-umc-700" /> Bộ lọc hồ sơ
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <label className="text-xs font-medium text-slate-600">
@@ -239,7 +239,7 @@ export default function LichSuXuatHoSo() {
                 return (
                   <button key={r.id} type="button" onClick={() => setDangChon(r)}
                     className={`flex w-full items-start gap-3 px-4 py-3 text-left ${
-                      dangMo ? "bg-teal-50" : "bg-white hover:bg-slate-50"
+                      dangMo ? "bg-umc-50" : "bg-white hover:bg-slate-50"
                     }`}>
                     <Icon size={16} className={`mt-0.5 shrink-0 ${isExcel ? "text-emerald-700" : "text-blue-700"}`} />
                     <span className="min-w-0">
@@ -282,7 +282,7 @@ export default function LichSuXuatHoSo() {
                   </div>
                   <div className="flex items-center gap-2">
                     <button type="button" onClick={() => taiLaiFile(dangChon)} disabled={dangDung === dangChon.id}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-teal-300 bg-white px-3 py-2 text-xs font-semibold text-teal-800 hover:bg-teal-50 disabled:opacity-40">
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-umc-300 bg-white px-3 py-2 text-xs font-semibold text-umc-800 hover:bg-umc-50 disabled:opacity-40">
                       <Download size={13} /> {dangDung === dangChon.id ? "Đang dựng…" : "Tải lại toàn bộ"}
                     </button>
                     <NutXoaDuLieuTest

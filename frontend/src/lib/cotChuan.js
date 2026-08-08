@@ -64,10 +64,10 @@ export const COT_KHOA = [
 export const NHOM_COT_KHOA = [
   { key: "dinh_danh",  nhan: "Định danh",                            mau: "bg-slate-800" },
   { key: "phan_nhom",  nhan: "Phân nhóm quản lý",                    mau: "bg-slate-700" },
-  { key: "vat_tu",     nhan: "Vật tư & TSKT",                        mau: "bg-teal-800" },
+  { key: "vat_tu",     nhan: "Vật tư & TSKT",                        mau: "bg-umc-800" },
   { key: "lich_su",    nhan: "Lịch sử sử dụng của khoa",             mau: "bg-slate-600" },
   { key: "lich_su_nhom", nhan: "Lịch sử cả nhóm mã quản lý (khoa)",  mau: "bg-indigo-800" },
-  { key: "de_xuat",    nhan: "Số lượng khoa đề xuất",                mau: "bg-teal-700" },
+  { key: "de_xuat",    nhan: "Số lượng khoa đề xuất",                mau: "bg-umc-700" },
   { key: "rot_thau",   nhan: "Rớt thầu DC 2025",                     mau: "bg-rose-800" },
   { key: "giai_trinh", nhan: "Giải trình đề xuất",                   mau: "bg-amber-800" },
   { key: "tm_2526",    nhan: "Thương mại tham khảo 2025-2026",       mau: "bg-sky-800" },
@@ -118,10 +118,10 @@ export const COT_PDD = [
 export const NHOM_COT_PDD = [
   { key: "dinh_danh",  nhan: "Định danh",                            mau: "bg-slate-800" },
   { key: "phan_nhom",  nhan: "Phân nhóm quản lý",                    mau: "bg-slate-700" },
-  { key: "vat_tu",     nhan: "Vật tư & TSKT",                        mau: "bg-teal-800" },
+  { key: "vat_tu",     nhan: "Vật tư & TSKT",                        mau: "bg-umc-800" },
   { key: "lich_su",    nhan: "Lịch sử sử dụng toàn viện (mã hàng)",  mau: "bg-slate-600" },
   { key: "lich_su_nhom", nhan: "Lịch sử toàn viện cả nhóm mã quản lý", mau: "bg-indigo-800" },
-  { key: "de_xuat",    nhan: "Đề xuất tổng hợp toàn viện",           mau: "bg-teal-700" },
+  { key: "de_xuat",    nhan: "Đề xuất tổng hợp toàn viện",           mau: "bg-umc-700" },
   { key: "tm_2627",    nhan: "Thương mại tham khảo 2026-2027",       mau: "bg-sky-800" },
 ];
 

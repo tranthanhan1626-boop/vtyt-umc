@@ -21,7 +21,7 @@ const CHAC_CHAN = [
 ];
 const NHAN_TT = {
   cho_duyet: ["Chờ duyệt", "bg-amber-100 text-amber-800"],
-  da_duyet: ["Đã duyệt", "bg-teal-100 text-teal-800"],
+  da_duyet: ["Đã duyệt", "bg-umc-100 text-umc-800"],
   tu_choi: ["Bị trả lại", "bg-red-100 text-red-700"],
 };
 
@@ -122,14 +122,14 @@ export default function SoSuKienNhuCau({ profile }) {
   return (
     <div className="space-y-4">
       {xong && (
-        <div className="flex items-center gap-2 bg-teal-50 border border-teal-200 text-teal-800 rounded-lg px-3 py-2 text-sm">
+        <div className="flex items-center gap-2 bg-umc-50 border border-umc-200 text-umc-800 rounded-lg px-3 py-2 text-sm">
           <CheckCircle2 size={16} /> Đã gửi. Phòng Điều dưỡng sẽ duyệt.
         </div>
       )}
 
       {!laPdd && !moForm && (
         <button onClick={() => setMoForm(true)}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-md border border-teal-300 text-teal-800 hover:bg-teal-50">
+          className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-md border border-umc-300 text-umc-800 hover:bg-umc-50">
           <Plus size={14} /> Khai một thay đổi nhu cầu sắp tới
         </button>
       )}
@@ -140,7 +140,7 @@ export default function SoSuKienNhuCau({ profile }) {
       )}
 
       {moForm && (
-        <div className="border border-teal-200 bg-teal-50/40 rounded-lg p-3 space-y-3">
+        <div className="border border-umc-200 bg-umc-50/40 rounded-lg p-3 space-y-3">
           <p className="text-xs text-slate-500">
             Khai những thay đổi lịch sử không nhìn thấy được: kỹ thuật mới, máy mới,
             đổi phác đồ, ngưng dùng. Bắt buộc nói rõ <b>bao nhiêu</b>.
@@ -173,8 +173,8 @@ export default function SoSuKienNhuCau({ profile }) {
                   <div className="mt-1 border border-slate-200 bg-white rounded-md divide-y max-h-40 overflow-y-auto">
                     {dsMa.map((m) => (
                       <button key={m.ma_hang} onClick={() => { setMaChon(m); setDsMa([]); }}
-                        className="w-full text-left px-2 py-1.5 hover:bg-teal-50 text-sm">
-                        <span className="font-mono text-xs text-teal-700 mr-2">{m.ma_hang}</span>{m.ten_vat_tu}
+                        className="w-full text-left px-2 py-1.5 hover:bg-umc-50 text-sm">
+                        <span className="font-mono text-xs text-umc-700 mr-2">{m.ma_hang}</span>{m.ten_vat_tu}
                       </button>
                     ))}
                   </div>
@@ -189,7 +189,7 @@ export default function SoSuKienNhuCau({ profile }) {
               {CACH.map((c) => (
                 <button key={c.v} onClick={() => set("cach_dinh_luong", c.v)}
                   className={`px-2 py-2 rounded-md text-xs border ${
-                    f.cach_dinh_luong === c.v ? "bg-teal-700 text-white border-transparent"
+                    f.cach_dinh_luong === c.v ? "bg-umc-700 text-white border-transparent"
                                               : "bg-white text-slate-600 border-slate-300"}`}>
                   {c.nhan}
                 </button>
@@ -237,7 +237,7 @@ export default function SoSuKienNhuCau({ profile }) {
           {loi && <p className="text-xs text-red-600">{loi}</p>}
           <div className="flex gap-2">
             <button onClick={gui} disabled={!sanSang || dangGui}
-              className="px-3 py-2 text-sm rounded-md bg-teal-700 text-white font-medium disabled:opacity-40">
+              className="px-3 py-2 text-sm rounded-md bg-umc-700 text-white font-medium disabled:opacity-40">
               {dangGui ? "Đang gửi..." : "Gửi Phòng Điều dưỡng"}
             </button>
             <button onClick={() => setMoForm(false)}
@@ -289,7 +289,7 @@ export default function SoSuKienNhuCau({ profile }) {
                 ) : (
                   <div className="flex gap-1.5 mt-1.5">
                     <button onClick={() => duyet(r, "da_duyet")}
-                      className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-teal-700 text-white"><Check size={11} /> Duyệt</button>
+                      className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-umc-700 text-white"><Check size={11} /> Duyệt</button>
                     <button onClick={() => { setTraLai(r.id); setLyDoTraLai(""); }}
                       className="flex items-center gap-1 px-2 py-1 text-xs rounded border border-red-300 text-red-700"><X size={11} /> Trả lại</button>
                   </div>

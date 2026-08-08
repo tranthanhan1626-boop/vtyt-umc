@@ -1,6 +1,17 @@
 import { useRef, useCallback } from "react";
+import { duongMuot } from "../lib/duongCong";
+import { useCoChuSvg } from "../lib/coChuSvg";
 
 const THANG_LABEL = ["T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"];
+
+// Năm càng cũ càng mờ. Trước đây mọi năm vẽ đặc như nhau nên 5 năm x 12 điểm
+// = 60 ký hiệu chồng nhau, không đọc được năm nào ra năm nào. Giờ năm mới nhất
+// đặc và dày, các năm cũ lùi dần về nền để làm ngữ cảnh so sánh.
+function doDam(chiSo, tongSoNam) {
+  const luiVe = tongSoNam - 1 - chiSo;   // 0 = mới nhất
+  if (luiVe === 0) return 1;
+  return Math.max(0.32, 0.62 - (luiVe - 1) * 0.1);
+}
 
 // Phân biệt các năm bằng CẢ MÀU LẪN KÝ HIỆU (đã thử chỉ ký hiệu 1 màu — vẫn
 // khó phân biệt theo phản hồi người dùng). Màu chọn tránh trùng với màu cam
@@ -62,31 +73,37 @@ export function BarChartNam({ lichSu }) {
   const slotW = plotW / years.length;
   const barW = Math.min(slotW * 0.5, 90);
 
+  const [refBoc, co] = useCoChuSvg(W);
+
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto select-none">
-      {[0, 0.5, 1].map((f) => (
-        <g key={f}>
-          <line x1={PAD_L} x2={W - PAD_R} y1={PAD_T + plotH * (1 - f)} y2={PAD_T + plotH * (1 - f)} stroke="#e2e8f0" strokeWidth="1" />
-          <text x={PAD_L - 8} y={PAD_T + plotH * (1 - f) + 4} fontSize="10" textAnchor="end" fill="#94a3b8" fontFamily="monospace">
-            {fmt(maxVal * f)}
-          </text>
-        </g>
-      ))}
-      {years.map((yr, yi) => {
-        const v = tongNam[yi];
-        const h = (v / maxVal) * plotH;
-        const cx = PAD_L + slotW * yi + slotW / 2;
-        return (
-          <g key={yr}>
-            <rect x={cx - barW / 2} y={PAD_T + plotH - h} width={barW} height={h}
-              fill={mauNam(yi, years.length)} rx="3" />
-            <text x={cx} y={PAD_T + plotH - h - 6} fontSize="11" textAnchor="middle"
-              fill="#334155" fontFamily="monospace">{fmt(v)}</text>
-            <text x={cx} y={H - 8} fontSize="11" textAnchor="middle" fill="#64748b">{yr}</text>
+    <div ref={refBoc} className="w-full">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto select-none">
+        {[0, 0.5, 1].map((f) => (
+          <g key={f}>
+            <line x1={PAD_L} x2={W - PAD_R} y1={PAD_T + plotH * (1 - f)} y2={PAD_T + plotH * (1 - f)}
+              stroke="#e2e8f0" strokeWidth={co(1)} />
+            <text x={PAD_L - 8} y={PAD_T + plotH * (1 - f) + co(4)} fontSize={co(11)}
+              textAnchor="end" fill="#64748b" fontFamily="ui-monospace, monospace">
+              {fmt(maxVal * f)}
+            </text>
           </g>
-        );
-      })}
-    </svg>
+        ))}
+        {years.map((yr, yi) => {
+          const v = tongNam[yi];
+          const h = (v / maxVal) * plotH;
+          const cx = PAD_L + slotW * yi + slotW / 2;
+          return (
+            <g key={yr}>
+              <rect x={cx - barW / 2} y={PAD_T + plotH - h} width={barW} height={h}
+                fill={mauNam(yi, years.length)} rx={co(3)} />
+              <text x={cx} y={PAD_T + plotH - h - co(6)} fontSize={co(12)} textAnchor="middle"
+                fill="#1e293b" fontWeight="600" fontFamily="ui-monospace, monospace">{fmt(v)}</text>
+              <text x={cx} y={H - co(8)} fontSize={co(12)} textAnchor="middle" fill="#475569">{yr}</text>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
   );
 }
 
@@ -108,9 +125,13 @@ export default function ChartDongBo({ lichSu, deXuat = null, onDragPoint }) {
   const allValues = [...years.flatMap((y) => lichSu[y]), ...(deXuat || [])];
   const maxVal = Math.max(...allValues, 1) * 1.15;
 
+  const [refBoc, co] = useCoChuSvg(W);
+
   const x = (i) => PAD_L + (i / 11) * plotW;
   const y = (v) => PAD_T + plotH - (v / maxVal) * plotH;
-  const toLinePath = (arr) => arr.map((v, i) => `${i === 0 ? "M" : "L"} ${x(i)} ${y(v)}`).join(" ");
+  // Đường cong đơn điệu thay cho đường gãy khúc: mượt mắt nhưng không vọt lố
+  // xuống dưới 0 hay lên quá đỉnh thật (xem lib/duongCong.js).
+  const toLinePath = (arr) => duongMuot(arr.map((v, i) => ({ x: x(i), y: y(v) })));
 
   const handlePointerDown = (idx) => (e) => { e.preventDefault(); draggingIdx.current = idx; };
 
@@ -126,44 +147,58 @@ export default function ChartDongBo({ lichSu, deXuat = null, onDragPoint }) {
   const handlePointerUp = useCallback(() => { draggingIdx.current = null; }, []);
 
   return (
-    <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} className="w-full h-auto touch-none select-none"
-      onPointerMove={choXem ? undefined : handlePointerMove}
-      onPointerUp={choXem ? undefined : handlePointerUp}
-      onPointerLeave={choXem ? undefined : handlePointerUp}>
-      {[0, 0.25, 0.5, 0.75, 1].map((f) => (
-        <g key={f}>
-          <line x1={PAD_L} x2={W - PAD_R} y1={PAD_T + plotH * (1 - f)} y2={PAD_T + plotH * (1 - f)} stroke="#e2e8f0" strokeWidth="1" />
-          <text x={PAD_L - 8} y={PAD_T + plotH * (1 - f) + 4} fontSize="10" textAnchor="end" fill="#94a3b8" fontFamily="monospace">
-            {fmt(maxVal * f)}
-          </text>
-        </g>
-      ))}
-      {THANG_LABEL.map((t, i) => (
-        <text key={t} x={x(i)} y={H - 8} fontSize="10" textAnchor="middle" fill="#64748b">{t}</text>
-      ))}
-      {years.map((yr, yi) => {
-        const moiNhat = yi === years.length - 1;
-        const shape = kyHieuNam(yi, years.length);
-        const mau = mauNam(yi, years.length);
-        return (
-          <g key={yr}>
-            <path d={toLinePath(lichSu[yr])} fill="none" stroke={mau}
-              strokeWidth={moiNhat ? 2.6 : 1.8} />
-            {lichSu[yr].map((v, i) => (
-              <KyHieu key={i} shape={shape} cx={x(i)} cy={y(v)} r={moiNhat ? 5 : 4} fill={mau} />
-            ))}
+    <div ref={refBoc} className="w-full">
+      <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} className="w-full h-auto touch-none select-none"
+        onPointerMove={choXem ? undefined : handlePointerMove}
+        onPointerUp={choXem ? undefined : handlePointerUp}
+        onPointerLeave={choXem ? undefined : handlePointerUp}>
+        {[0, 0.25, 0.5, 0.75, 1].map((f) => (
+          <g key={f}>
+            <line x1={PAD_L} x2={W - PAD_R} y1={PAD_T + plotH * (1 - f)} y2={PAD_T + plotH * (1 - f)}
+              stroke="#e2e8f0" strokeWidth={co(1)} />
+            <text x={PAD_L - 8} y={PAD_T + plotH * (1 - f) + co(4)} fontSize={co(11)}
+              textAnchor="end" fill="#64748b" fontFamily="ui-monospace, monospace">
+              {fmt(maxVal * f)}
+            </text>
           </g>
-        );
-      })}
-      {!choXem && (
-        <>
-          <path d={toLinePath(deXuat)} fill="none" stroke={MAU_DE_XUAT} strokeWidth="2.5" strokeDasharray="5 3" />
-          {deXuat.map((v, i) => (
-            <circle key={i} cx={x(i)} cy={y(v)} r="7" fill={MAU_DE_XUAT} stroke="white" strokeWidth="2"
-              className="cursor-ns-resize" onPointerDown={handlePointerDown(i)} />
-          ))}
-        </>
-      )}
-    </svg>
+        ))}
+        {THANG_LABEL.map((t, i) => (
+          <text key={t} x={x(i)} y={H - co(8)} fontSize={co(11)} textAnchor="middle" fill="#475569">{t}</text>
+        ))}
+        {years.map((yr, yi) => {
+          const moiNhat = yi === years.length - 1;
+          const shape = kyHieuNam(yi, years.length);
+          const mau = mauNam(yi, years.length);
+          const mo = doDam(yi, years.length);
+          return (
+            <g key={yr} opacity={mo}>
+              <path d={toLinePath(lichSu[yr])} fill="none" stroke={mau}
+                strokeWidth={co(moiNhat ? 2.6 : 1.6)}
+                strokeLinecap="round" strokeLinejoin="round" />
+              {/* Năm cũ chỉ chấm ký hiệu ở các tháng lẻ: vẫn đủ nhận dạng năm
+                  qua hình dạng, mà bớt được nửa số ký hiệu chen nhau. */}
+              {lichSu[yr].map((v, i) => (
+                (moiNhat || i % 2 === 0) && (
+                  <KyHieu key={i} shape={shape} cx={x(i)} cy={y(v)}
+                    r={co(moiNhat ? 4.5 : 3.4)} fill={mau} strokeWidth={co(1.4)} />
+                )
+              ))}
+            </g>
+          );
+        })}
+        {!choXem && (
+          <>
+            <path d={toLinePath(deXuat)} fill="none" stroke={MAU_DE_XUAT}
+              strokeWidth={co(2.6)} strokeDasharray={`${co(5)} ${co(3)}`}
+              strokeLinecap="round" strokeLinejoin="round" />
+            {deXuat.map((v, i) => (
+              <circle key={i} cx={x(i)} cy={y(v)} r={co(7)} fill={MAU_DE_XUAT}
+                stroke="white" strokeWidth={co(2)}
+                className="cursor-ns-resize" onPointerDown={handlePointerDown(i)} />
+            ))}
+          </>
+        )}
+      </svg>
+    </div>
   );
 }

@@ -21,7 +21,7 @@ import { fmtNgayGio } from "./DeXuatTongHop";
 
 const MAU_TT = {
   cho_duyet: "bg-amber-100 text-amber-800",
-  da_duyet: "bg-teal-100 text-teal-800",
+  da_duyet: "bg-umc-100 text-umc-800",
   tu_choi: "bg-red-100 text-red-700",
 };
 
@@ -115,7 +115,7 @@ export default function DuyetNhomKyThuat() {
           <label className="text-xs text-slate-400 block mb-1.5">Trạng thái</label>
           <div className="relative">
             <select value={trangThaiLoc} onChange={(e) => setTrangThaiLoc(e.target.value)}
-              className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-teal-500">
+              className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-umc-500">
               <option value="">Tất cả</option>
               {Object.entries(NHAN_TT_NHOM).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
@@ -193,12 +193,12 @@ export default function DuyetNhomKyThuat() {
 
                       {r.trang_thai === "cho_duyet" && (
                         dangDuyet === r.id ? (
-                          <div className="mt-1.5 space-y-1.5 bg-teal-50/60 border border-teal-200 rounded-md p-2">
+                          <div className="mt-1.5 space-y-1.5 bg-umc-50/60 border border-umc-200 rounded-md p-2">
                             <p className="text-xs text-slate-500">Nhập mã cho vật tư trước khi duyệt:</p>
                             <input value={formDuyet.ma_hang}
                               onChange={(e) => setFormDuyet((f) => ({ ...f, ma_hang: e.target.value }))}
                               placeholder="Mã hàng *" autoFocus
-                              className="w-full border border-slate-300 rounded-md px-2 py-1 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                              className="w-full border border-slate-300 rounded-md px-2 py-1 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-umc-500" />
                             {trungMa && (
                               <div className="flex items-start gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-1.5">
                                 <AlertTriangle size={12} className="mt-0.5 shrink-0" />
@@ -208,11 +208,11 @@ export default function DuyetNhomKyThuat() {
                             <input value={formDuyet.ma_quan_ly}
                               onChange={(e) => setFormDuyet((f) => ({ ...f, ma_quan_ly: e.target.value }))}
                               placeholder="Mã quản lý (mã kỹ thuật) *"
-                              className="w-full border border-slate-300 rounded-md px-2 py-1 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                              className="w-full border border-slate-300 rounded-md px-2 py-1 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-umc-500" />
                             <input value={formDuyet.ten_quan_ly}
                               onChange={(e) => setFormDuyet((f) => ({ ...f, ten_quan_ly: e.target.value }))}
                               placeholder="Tên mã quản lý (tên kỹ thuật) *"
-                              className="w-full border border-slate-300 rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                              className="w-full border border-slate-300 rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-umc-500" />
                             {trungMa && (
                               <label className="flex items-start gap-1.5 text-xs text-amber-800 cursor-pointer">
                                 <input type="checkbox" checked={xacNhanTrung}
@@ -224,7 +224,7 @@ export default function DuyetNhomKyThuat() {
                             <div className="flex gap-1 pt-0.5">
                               <button onClick={() => duyet(r.id)}
                                 disabled={dangXuLy === r.id || thieuTruong || (trungMa && !xacNhanTrung)}
-                                className="px-2 py-1 text-xs rounded-md bg-teal-700 text-white hover:bg-teal-800 disabled:opacity-40">
+                                className="px-2 py-1 text-xs rounded-md bg-umc-700 text-white hover:bg-umc-800 disabled:opacity-40">
                                 {dangXuLy === r.id ? "Đang duyệt..." : "Xác nhận duyệt"}
                               </button>
                               <button onClick={() => { setDangDuyet(null); setFormDuyet(FORM_TRONG); }}
@@ -252,7 +252,7 @@ export default function DuyetNhomKyThuat() {
                         ) : (
                           <div className="mt-1.5 flex flex-wrap gap-1">
                             <button onClick={() => moFormDuyet(r)} disabled={dangXuLy === r.id}
-                              className="flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-teal-300 text-teal-700 hover:bg-teal-50 disabled:opacity-40">
+                              className="flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-umc-300 text-umc-700 hover:bg-umc-50 disabled:opacity-40">
                               <Check size={12} /> Duyệt
                             </button>
                             <button onClick={() => { setDangTuChoi(r.id); setLyDo(""); }} disabled={dangXuLy === r.id}

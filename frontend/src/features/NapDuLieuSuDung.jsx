@@ -149,7 +149,7 @@ export default function NapDuLieuSuDung({ profile }) {
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white p-4">
-        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-600 hover:border-teal-400 hover:bg-teal-50/40">
+        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-600 hover:border-umc-400 hover:bg-umc-50/40">
           <UploadCloud size={18} className="text-slate-400" />
           {tenFile || "Chọn file .xlsx"}
           <input type="file" accept=".xlsx" className="hidden" onChange={chonFile} disabled={dangDoc || dangNap} />
@@ -168,7 +168,7 @@ export default function NapDuLieuSuDung({ profile }) {
               <div><span className="text-slate-500">Đọc được</span><br /><b>{fmt(ketQua.rowCountRaw)}</b></div>
               <div><span className="text-slate-500">Dòng rác</span><br /><b>{fmt(ketQua.rowCountJunkStripped)}</b></div>
               <div><span className="text-slate-500">Bị loại</span><br /><b>{fmt(ketQua.rowCountRejected)}</b></div>
-              <div><span className="text-slate-500">Sẽ nạp</span><br /><b className="text-teal-700">{fmt(ketQua.rowCountCommitted)}</b></div>
+              <div><span className="text-slate-500">Sẽ nạp</span><br /><b className="text-umc-700">{fmt(ketQua.rowCountCommitted)}</b></div>
             </div>
 
             {ketQua.warnings.map((w, i) => (
@@ -202,13 +202,13 @@ export default function NapDuLieuSuDung({ profile }) {
             )}
 
             <button type="button" onClick={napThat} disabled={chanNap}
-              className="mt-1 rounded-md bg-teal-600 px-3 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+              className="mt-1 rounded-md bg-umc-600 px-3 py-2 text-sm font-medium text-white hover:bg-umc-700 disabled:cursor-not-allowed disabled:bg-slate-300">
               {dangNap ? `Đang nạp ${fmt(tienDo.done)}/${fmt(tienDo.total)}...` : "Nạp dữ liệu"}
             </button>
 
             {dangNap && (
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                <div className="h-1.5 rounded-full bg-teal-500 transition-all"
+                <div className="h-1.5 rounded-full bg-umc-500 transition-all"
                   style={{ width: `${tienDo.total ? (tienDo.done / tienDo.total) * 100 : 0}%` }} />
               </div>
             )}
@@ -218,7 +218,7 @@ export default function NapDuLieuSuDung({ profile }) {
               </p>
             )}
             {xongBatchId && (
-              <p className="flex items-start gap-1.5 text-teal-700">
+              <p className="flex items-start gap-1.5 text-umc-700">
                 <CheckCircle2 size={14} className="mt-0.5 shrink-0" />
                 Đã nạp xong {fmt(ketQua.rowCountCommitted)} dòng.
               </p>

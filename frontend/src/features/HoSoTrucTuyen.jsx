@@ -637,7 +637,7 @@ export default function HoSoTrucTuyen({
 
           {loi && <p className="mx-4 mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{loi}</p>}
           {thongBao && (
-            <p className="mx-4 mt-4 rounded-lg border border-teal-200 bg-teal-50 p-3 text-sm text-teal-900">
+            <p className="mx-4 mt-4 rounded-lg border border-umc-200 bg-umc-50 p-3 text-sm text-umc-900">
               {thongBao}
             </p>
           )}

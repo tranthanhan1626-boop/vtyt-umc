@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Inbox, LogOut } from "lucide-react";
 import { motion } from "motion/react";
 import { useAuth } from "./auth/useAuth";
+import ChinhCoHienThi from "./components/ChinhCoHienThi";
 import Login from "./auth/Login";
 import DatLaiMatKhau from "./auth/DatLaiMatKhau";
 import Function1 from "./features/Function1";
@@ -285,22 +286,33 @@ export default function App() {
     <div className="umc-app-shell">
       <header className="umc-topbar">
         <div className="umc-topbar-inner">
+          {/* Khoá nhận diện: tên bệnh viện phải LẤY TỪ LOGO chính thức, không
+              gõ lại bằng Inter (bản cũ gõ tay nên sai font so với bộ nhận diện).
+              Biểu tượng chữ lồng đứng riêng ở 44px bị bết nét, nên dùng bản
+              ngang đã kèm chữ. Vạch dọc ngăn logo tổ chức với tên ứng dụng —
+              quy ước chuẩn để không ai hiểu nhầm "VTYT" là một thương hiệu con.
+              Màn hẹp giấu logo, chỉ còn biểu tượng vuông. */}
           <div className="flex min-w-0 items-center gap-3">
-            <img src="/brand/umc-mark.png" alt="UMC" className="h-11 w-11 shrink-0 object-contain sm:h-12 sm:w-12" />
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="truncate text-sm font-bold tracking-[0.01em] text-[var(--umc-navy)] sm:text-base">
-                  Dự trù & đấu thầu VTYT
-                </p>
-                {import.meta.env.DEV && (
-                  <span className="hidden rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sky-700 sm:inline">
-                    Staging local
-                  </span>
-                )}
-              </div>
-              <p className="truncate text-xs text-slate-500">
-                Bệnh viện Đại học Y Dược TP. Hồ Chí Minh
+            <img
+              src="/brand/umc-mark.png"
+              alt=""
+              className="h-10 w-10 shrink-0 object-contain lg:hidden"
+            />
+            <img
+              src="/brand/umc-logo-horizontal.png"
+              alt="Bệnh viện Đại học Y Dược Thành phố Hồ Chí Minh"
+              className="hidden h-11 w-auto shrink-0 object-contain lg:block"
+            />
+            <span aria-hidden className="hidden h-8 w-px shrink-0 bg-[var(--umc-border)] lg:block" />
+            <div className="flex min-w-0 items-center gap-2">
+              <p className="truncate text-sm font-bold tracking-[0.01em] text-[var(--umc-navy)] sm:text-base">
+                Dự trù &amp; đấu thầu VTYT
               </p>
+              {import.meta.env.DEV && (
+                <span className="hidden rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-800 sm:inline">
+                  Staging local
+                </span>
+              )}
             </div>
           </div>
 
@@ -328,6 +340,7 @@ export default function App() {
               </div>
             </div>
 
+            <ChinhCoHienThi />
             <button type="button" onClick={signOut} className="umc-icon-button" title="Đăng xuất" aria-label="Đăng xuất">
               <LogOut size={17} />
             </button>
