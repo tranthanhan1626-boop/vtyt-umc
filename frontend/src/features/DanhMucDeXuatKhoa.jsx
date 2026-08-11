@@ -446,7 +446,9 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
       // Khi khoa đã chuyển xong số lượng của một mã rớt sang mã tương đương,
       // mã nguồn không còn thuộc danh mục làm việc. Dấu vết rớt vẫn nằm ở
       // Tiến độ gói thầu; không giữ một dòng 0 gây hiểu nhầm là còn phải xử lý.
-      setRows(rowsGoc.filter((r) => !ketQuaTheoMa.get(r.ma_hang)?.da_xu_ly).map((r) => {
+      const rowsDangHien = rowsGoc
+        .filter((r) => !ketQuaTheoMa.get(r.ma_hang)?.da_xu_ly)
+        .map((r) => {
         const ov = oDaLuu.get(r.ma_hang);
         const dong = { ...r, rot: ketQuaTheoMa.get(r.ma_hang) || null };
         if (ov) {
@@ -456,7 +458,15 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
           });
         }
         return dong;
-      }));
+      });
+      // Mã nguồn đã được xử lý không còn hiện trong danh mục làm việc. Đánh
+      // lại STT sau khi lọc để Excel/web không bị 1, 2, 4, 5…; STT chỉ là số
+      // thứ tự trình bày, không phải mã định danh hay dấu vết nghiệp vụ.
+      rowsDangHien.forEach((r, i) => {
+        r.stt = i + 1;
+        r.stt_co_dinh = i + 1;
+      });
+      setRows(rowsDangHien);
       setODaSua(daSua);
     } catch (e) {
       setLoi(e.message || "Không tải được dữ liệu.");

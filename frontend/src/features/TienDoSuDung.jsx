@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ChevronRight, ChevronDown, AlertTriangle, CheckCircle2, Clock, PackageOpen,
+  ChevronRight, ChevronDown, AlertTriangle, CheckCircle2, Clock, PackageOpen, UploadCloud,
 } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import NguongCamKet from "./NguongCamKet";
@@ -49,7 +49,7 @@ function gopMaHang(ds) {
   };
 }
 
-export default function TienDoSuDung({ profile }) {
+export default function TienDoSuDung({ profile, onNapDuLieu }) {
   const laPdd = profile.role === "dieu_duong" || profile.role === "admin";
   const [rows, setRows] = useState([]);
   // Ngưỡng lấy từ DB chứ không hằng số trong code — PĐD sửa được (xem NguongCamKet).
@@ -194,7 +194,15 @@ export default function TienDoSuDung({ profile }) {
           </label>
         )}
         {/* Ẩn nút với ĐVSD chỉ là lớp giao diện — RLS mới là chỗ chặn thật. */}
-        {laPdd && <NguongCamKet moc={moc} onLuuXong={tai} />}
+        {laPdd && (
+          <>
+            <button type="button" onClick={onNapDuLieu}
+              className="inline-flex items-center gap-1.5 rounded-md border border-umc-300 px-3 py-1.5 text-sm font-medium text-umc-800 hover:bg-umc-50">
+              <UploadCloud size={15} /> Nạp dữ liệu HIS
+            </button>
+            <NguongCamKet moc={moc} onLuuXong={tai} />
+          </>
+        )}
       </div>
 
       {rows.length === 0 && (

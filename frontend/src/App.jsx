@@ -265,7 +265,8 @@ export default function App() {
     : chon.man === "duyetmakythuat" && xemDuocTongHop ? <DuyetNhomKyThuat />
     : chon.man === "ketquathau" && xemDuocTongHop ? <TongHopKetQuaThau profile={profile} />
     : chon.man === "tieuchi" ? <DieuChinhTieuChi profile={profile} />
-    : chon.man === "tiendosudung" ? <TienDoSuDung profile={profile} />
+    : chon.man === "tiendosudung" ? <TienDoSuDung profile={profile}
+        onNapDuLieu={() => setChon({ nhom: "chung", man: "napdulieu" })} />
     : chon.man === "napdulieu" && xemDuocTongHop ? <NapDuLieuSuDung profile={profile} />
     : chon.man === "quanlydot" && xemDuocTongHop ? <QuanLyDot />
     : chon.man === "choduyet" && xemDuocTongHop ? (
