@@ -16,11 +16,24 @@ export default function Login({ signIn, signUp, sendPasswordReset }) {
   const [dangGui, setDangGui] = useState(false);
   const [loi, setLoi] = useState("");
   const [thongBao, setThongBao] = useState("");
+  // Chế độ đăng ký (patch_zy): "mo" = giai đoạn test, ai cũng tự đăng ký được;
+  // "chi_admin" = vận hành thật, tài khoản do admin cấp. Database mới là nơi
+  // chặn thật — chỗ này chỉ để không mời người dùng vào một form chắc chắn bị
+  // từ chối. Mặc định "mo" để lỗi mạng không làm mất nút đăng ký khi đang test.
+  const [cheDoDangKy, setCheDoDangKy] = useState("mo");
 
   // Danh sách khoa cho form đăng ký — đọc được TRƯỚC KHI đăng nhập nhờ view
   // v_danh_sach_khoa (grant riêng cho anon, xem patch_auth_mat_khau.sql).
   // .order() phải gọi TƯỜNG MINH ở đây — ORDER BY viết sẵn trong định nghĩa
   // view không đảm bảo giữ nguyên thứ tự khi PostgREST trả về qua API.
+  useEffect(() => {
+    supabase.from("cau_hinh_dang_ky").select("che_do").maybeSingle()
+      .then(({ data, error }) => {
+        // Bảng chưa có (chưa chạy patch_zy) -> giữ "mo", đúng hành vi cũ.
+        if (!error && data?.che_do) setCheDoDangKy(data.che_do);
+      });
+  }, []);
+
   useEffect(() => {
     if (cheDo !== CHE_DO.DANG_KY || dsKhoa.length > 0) return;
     supabase.from("v_danh_sach_khoa").select("don_vi").order("don_vi").then(({ data, error }) => {
@@ -203,7 +216,9 @@ export default function Login({ signIn, signUp, sendPasswordReset }) {
           {cheDo === CHE_DO.DANG_NHAP && (
             <div className="mt-7 border-t border-slate-100 pt-5 text-sm text-slate-500">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <p>Chưa có tài khoản? <button type="button" onClick={() => doiCheDo(CHE_DO.DANG_KY)} className="umc-auth-link">Đăng ký ngay</button></p>
+                {cheDoDangKy === "chi_admin"
+                  ? <p>Tài khoản do quản trị cấp — liên hệ Phòng Điều dưỡng nếu chưa có.</p>
+                  : <p>Chưa có tài khoản? <button type="button" onClick={() => doiCheDo(CHE_DO.DANG_KY)} className="umc-auth-link">Đăng ký ngay</button></p>}
                 <button type="button" onClick={() => doiCheDo(CHE_DO.QUEN_MK)} className="umc-auth-link">Quên mật khẩu?</button>
               </div>
             </div>

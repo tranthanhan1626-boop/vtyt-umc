@@ -164,17 +164,67 @@ def main() -> int:
         dvsd_a, dvsd_b, dvsd_other, pdd = clients
         print("PASS 01: tạo session JWT thật cho 2 ĐVSD cùng khoa, 1 khoa khác và PĐD")
 
-        materials = (
-            admin.table("vat_tu")
-            .select("ma_hang,goi")
-            .not_.is_("ma_quan_ly", "null")
-            .order("ma_hang")
-            .limit(6)
+        # Payload submit hiện lưu snapshot quy đổi ở cấp mã quản lý. Chọn mỗi
+        # mã hàng từ một nhóm khác nhau và chỉ dùng nhóm có bộ quy đổi đầy đủ,
+        # để smoke đi đúng đường dữ liệu mà UI đang dùng thay vì phụ thuộc sáu
+        # mã hàng đầu tiên (có thể thuộc nhóm chưa cấu hình quy đổi).
+        materials: list[dict[str, Any]] = []
+        groups = (
+            admin.table("nhom_ky_thuat")
+            .select("ma_quan_ly,dvt_chuan")
+            .not_.is_("dvt_chuan", "null")
+            .order("ma_quan_ly")
+            .limit(300)
             .execute()
             .data
         )
+        for group in groups:
+            standard_unit = str(group.get("dvt_chuan") or "").strip()
+            if not standard_unit:
+                continue
+            group_materials = (
+                admin.table("vat_tu")
+                .select("ma_hang,goi,dvt,he_so_quy_doi,ma_quan_ly")
+                .eq("ma_quan_ly", group["ma_quan_ly"])
+                .order("ma_hang")
+                .limit(1000)
+                .execute()
+                .data
+            )
+            conversion_table: dict[str, float] = {}
+            valid_group = bool(group_materials)
+            for row in group_materials:
+                unit = str(row.get("dvt") or "").strip()
+                raw_factor = row.get("he_so_quy_doi")
+                factor = float(raw_factor) if raw_factor is not None else None
+                if factor is None and unit == standard_unit:
+                    factor = 1.0
+                if not unit or factor is None or factor <= 0:
+                    valid_group = False
+                    break
+                previous = conversion_table.get(unit)
+                if previous is not None and abs(previous - factor) > 0.000001:
+                    valid_group = False
+                    break
+                conversion_table[unit] = factor
+            if (
+                not valid_group
+                or standard_unit not in conversion_table
+                or abs(conversion_table[standard_unit] - 1.0) > 0.000001
+            ):
+                continue
+            selected = dict(group_materials[0])
+            selected["dvt_chuan"] = standard_unit
+            selected["bang_quy_doi"] = conversion_table
+            selected["he_so_hieu_luc"] = conversion_table[str(selected["dvt"]).strip()]
+            materials.append(selected)
+            if len(materials) == 6:
+                break
         if len(materials) < 5:
-            raise AssertionError("Staging cần ít nhất 5 mã hàng nền để chạy full smoke.")
+            raise AssertionError(
+                "Staging cần ít nhất 5 nhóm mã quản lý có bộ quy đổi hợp lệ "
+                "để chạy full smoke."
+            )
 
         dot = (
             pdd.table("dot_de_xuat")
@@ -224,23 +274,28 @@ def main() -> int:
         print("PASS 03: giỏ dùng chung trong khoa và bị RLS chặn với khoa khác")
 
         def submit_group(client: Client, selected: list[dict[str, Any]]) -> tuple[str, list[int]]:
-            items = [
-                {
+            items = []
+            for index, row in enumerate(selected):
+                quantity = 30 + index * 10
+                factor = float(row["he_so_hieu_luc"])
+                items.append({
                     "ma_hang": row["ma_hang"],
-                    "so_luong": 30 + index * 10,
+                    "so_luong": quantity,
                     "loai_mua_sam": "dau_thau_rong_rai",
                     "goi": row.get("goi"),
                     "tu_thang": 1,
                     "tu_nam": year,
                     "den_thang": 12,
                     "den_nam": year,
+                    "so_luong_ma_quan_ly": quantity * factor,
+                    "dvt_ma_quan_ly": row["dvt_chuan"],
+                    "he_so_quy_doi": factor,
+                    "bang_quy_doi": row["bang_quy_doi"],
                     "loai_ly_do": "theo_lich_su",
                     "ten_ky_thuat_moi": None,
                     "uoc_ca_thang": None,
                     "ghi_chu": "FULL SMOKE — tự động dọn",
-                }
-                for index, row in enumerate(selected)
-            ]
+                })
             result = client.rpc(
                 "submit_proposal_group_v2",
                 {

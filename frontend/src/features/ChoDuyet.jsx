@@ -22,7 +22,7 @@ export async function demViecChoDuyet() {
   return bo.size + (nhom.count || 0);
 }
 
-export default function ChoDuyet({ onDoiSoLuong, onMoHoSo }) {
+export default function ChoDuyet({ onDoiSoLuong, onMoHoSo, onMoManKhac }) {
   const [rows, setRows] = useState([]);
   const [hoSoCho, setHoSoCho] = useState([]);
   const [nhomMoi, setNhomMoi] = useState([]);
@@ -122,9 +122,12 @@ export default function ChoDuyet({ onDoiSoLuong, onMoHoSo }) {
 
   return (
     <div className="space-y-4">
+      {/* (Sửa 09/08/2026) Câu cũ "Khoa không đi tiếp được cho tới khi bạn duyệt"
+          mô tả workflow đã bỏ: từ 05/08/2026 khoa submit giỏ là CHÍNH THỨC và
+          đi tiếp được ngay. Hàng chờ này chỉ còn là hai việc thật của PĐD. */}
       <p className="text-sm text-slate-600">
         <span className="font-semibold text-umc-800">{tongViec}</span> việc đang chờ Phòng Điều dưỡng xử lý.
-        Khoa không đi tiếp được cho tới khi bạn duyệt hoặc trả lại.
+        Đề xuất của khoa KHÔNG chờ duyệt — khoa gửi giỏ là chính thức.
       </p>
 
       {boHoSoCho.map((h) => (
@@ -172,9 +175,11 @@ export default function ChoDuyet({ onDoiSoLuong, onMoHoSo }) {
               </li>
             ))}
           </ul>
-          <p className="text-xs text-slate-400 mt-2">
-            Xử lý ở tab <span className="font-medium">Duyệt mã kỹ thuật</span> (cần gán mã hàng/mã quản lý).
-          </p>
+          <button type="button"
+            onClick={() => onMoManKhac?.({ nhom: "chung", man: "duyetmakythuat" })}
+            className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
+            <ExternalLink size={12} /> Mở tab Duyệt mã kỹ thuật (cần gán mã hàng/mã quản lý)
+          </button>
         </div>
       )}
     </div>

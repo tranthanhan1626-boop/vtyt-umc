@@ -206,6 +206,16 @@ function expectText(text, expected, role) {
   }
 }
 
+async function waitForText(cdp, expected, role, attempts = 40) {
+  let text = "";
+  for (let i = 0; i < attempts; i += 1) {
+    text = await bodyText(cdp);
+    if (text.includes(expected)) return text;
+    await sleep(250);
+  }
+  expectText(text, expected, role);
+}
+
 async function testRole(account, role) {
   const cdp = await newPage();
   const storageKey = `sb-${STAGING_REF}-auth-token`;
@@ -226,20 +236,36 @@ async function testRole(account, role) {
     throw new Error(`${role}: menu gói thầu không đọc được trạng thái.`);
   }
 
-  for (const goi of ["Gói 18 tháng", "Gói bổ sung", "Gói chỉ định thầu"]) {
-    await clickText(cdp, goi, true);
-    text = await bodyText(cdp);
-    expectText(text, "Đề xuất số lượng", role);
-    expectText(text, role === "PĐD" ? "Đề xuất các khoa" : "Đề xuất của tôi", role);
-    await clickText(cdp, "Đề xuất số lượng");
-    await clickText(cdp, role === "PĐD" ? "Đề xuất các khoa" : "Đề xuất của tôi");
-    if (goi !== "Gói chỉ định thầu" && role === "PĐD") {
-      await clickText(cdp, "Tổng hợp & xuất hồ sơ");
+  if (role === "ĐVSD") {
+    // Gói 18 tháng và bổ sung hiện có thêm tầng gói con. Màn nhập số lượng
+    // chỉ xuất hiện sau khi chọn gói con, còn các màn hồ sơ nằm ở gói mẹ.
+    for (const { goi, goiCon } of [
+      { goi: "Gói 18 tháng", goiCon: "Dùng chung" },
+      { goi: "Gói bổ sung", goiCon: "Tháng 1" },
+    ]) {
+      await clickText(cdp, goi, true);
+      await clickText(cdp, goiCon);
+      await waitForText(cdp, "Tìm nhóm kỹ thuật hoặc mã hàng", role);
+      await clickText(cdp, "Đề xuất của tôi");
+      await clickText(cdp, "Danh mục đề xuất của khoa");
+      await clickText(cdp, "Cam kết của khoa");
     }
-    await clickText(
-      cdp,
-      goi === "Gói chỉ định thầu" ? "Hồ sơ chỉ định thầu" : "Hồ sơ của khoa",
-    );
+
+    // Chỉ định thầu không có gói con nên vẫn mở màn nhập trực tiếp.
+    await clickText(cdp, "Gói chỉ định thầu", true);
+    await clickText(cdp, "Đề xuất số lượng");
+    await clickText(cdp, "Đề xuất của tôi");
+    await clickText(cdp, "Hồ sơ chỉ định thầu");
+  } else {
+    // PĐD hiện vào thẳng Bàn điều hành; các gói cũ đã được gom thành ba tab.
+    expectText(text, "Bàn điều hành", role);
+    for (const tab of [
+      "Theo dõi khoa",
+      "Danh mục tổng hợp",
+      "Kết quả thầu & giỏ rớt",
+    ]) {
+      await clickText(cdp, tab);
+    }
   }
 
   for (const common of [

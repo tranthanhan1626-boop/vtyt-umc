@@ -31,6 +31,7 @@ import argparse
 import json
 import os
 import re
+import secrets
 import sys
 import urllib.error
 import urllib.parse
@@ -200,6 +201,102 @@ def kiem_so_chot_khop_hai_vai_tro(url, anon, tok_pdd, tok_khoa):
         loi.append("Số chốt PĐD thấy KHÁC số khoa thấy — view bị RLS cắt")
 
 
+def kiem_vong_tra_ma_ve_khoa(service_url, service):
+    """patch_zv — chốt tổng hợp phải TRẢ MÃ VỀ KHOA cho kỳ sau.
+
+    Đây là loại lỗi không tự lộ ra: thiếu nó thì `proposals.da_di_thau` không
+    bao giờ bật, mã quản lý khoa đã đề xuất một lần sẽ biến mất vĩnh viễn khỏi
+    màn đề xuất của khoa — và chỉ phát hiện được ở kỳ đề xuất SAU. Vì vậy phải
+    chặn deploy, không chỉ cảnh báo.
+    """
+    req = urllib.request.Request(service_url + "/rest/v1/", headers={
+        "apikey": service, "Authorization": f"Bearer {service}",
+        "Accept": "application/openapi+json"})
+    spec = json.load(urllib.request.urlopen(req))
+    co = {p[len("/rpc/"):] for p in spec["paths"] if p.startswith("/rpc/")}
+    if "ds_proposal_theo_goi_con" not in co:
+        loi.append(
+            "Chưa chạy backend/sql/patch_zv_chot_tra_ma_ve_khoa.sql — "
+            "chốt số đi thầu sẽ KHÔNG trả mã quản lý về cho khoa ở kỳ sau, "
+            "và tùy chọn mua thêm 30% vẫn còn cổng 'phải duyệt xong' đã bỏ."
+        )
+
+
+def kiem_che_do_dang_ky(url, anon, service, la_production):
+    """patch_zy — công tắc tự đăng ký phải đúng nấc của môi trường.
+
+    Hai nấc, hai kỳ vọng khác hẳn nhau:
+
+    * `mo` (giai đoạn test)  — ai cũng tự đăng ký được, khai "Phòng Điều dưỡng"
+      thì được vai trò dieu_duong. Trên staging đó là CHỦ Ý, không phải lỗi.
+      Trên production thì là lỗ hổng leo quyền: anon key nằm công khai trong
+      bundle JS, nên bất kỳ ai cũng tự cấp cho mình quyền toàn viện.
+    * `chi_admin` (vận hành thật) — tự đăng ký phải bị chặn HẲN ở database.
+
+    Không tin mỗi cột cấu hình: nấc nào cũng THỬ TẠO TÀI KHOẢN THẬT rồi đối
+    chiếu kết quả với nấc đang đặt. Dọn sạch tài khoản dù kết quả thế nào.
+    """
+    from supabase import create_client                      # noqa: PLC0415
+    admin = create_client(url, service)
+
+    ma, d = rest(url, service, service, "cau_hinh_dang_ky?select=che_do&limit=1")
+    if ma != 200 or not isinstance(d, list) or not d:
+        loi.append(
+            "Chưa chạy backend/sql/patch_zy_che_do_dang_ky.sql — không biết môi "
+            "trường này có cho tự đăng ký hay không."
+        )
+        return None
+    che_do = d[0]["che_do"]
+
+    if la_production and che_do != "chi_admin":
+        loi.append(
+            f"Production đang ở chế độ đăng ký '{che_do}': bất kỳ ai cũng tự đăng "
+            "ký và tự khai 'Phòng Điều dưỡng' để có quyền TOÀN VIỆN. Đổi sang "
+            "'chi_admin' (xem cuối patch_zy) trước khi mở cho người dùng thật."
+        )
+
+    email = f"kiem-che-do-{secrets.token_hex(4)}@umc.edu.vn"
+    mat_khau = f"Kiem-{secrets.token_urlsafe(16)}"
+    uid = None
+    try:
+        c = create_client(url, anon)
+        r = c.auth.sign_up({"email": email, "password": mat_khau})
+        uid = str(r.user.id) if r.user else None
+        if not r.session:
+            canh_bao.append("Confirm email đang bật -> bỏ qua phép thử đăng ký")
+            return che_do
+        bi_chan = False
+        try:
+            c.table("users").insert({
+                "email": email, "ho_ten": "Kiem tra truoc deploy",
+                "khoa": "Phòng Điều dưỡng", "role": "dvsd",
+            }).execute()
+        except Exception:                                   # noqa: BLE001
+            bi_chan = True
+
+        if che_do == "chi_admin" and not bi_chan:
+            loi.append(
+                "Chế độ đang là 'chi_admin' nhưng tự đăng ký VẪN TẠO ĐƯỢC tài "
+                "khoản — trigger fn_gac_role_dang_ky không chặn như khai báo."
+            )
+        elif che_do == "mo" and bi_chan:
+            canh_bao.append(
+                "Chế độ 'mo' nhưng tự đăng ký bị chặn — người test sẽ không tạo "
+                "được tài khoản; kiểm lại trigger fn_gac_role_dang_ky."
+            )
+    finally:
+        try:
+            admin.table("users").delete().eq("email", email).execute()
+        except Exception:                                   # noqa: BLE001
+            pass
+        if uid:
+            try:
+                admin.auth.admin.delete_user(uid)
+            except Exception:                               # noqa: BLE001
+                pass
+    return che_do
+
+
 def kiem_goi_con_khop_frontend(url, anon, tok_pdd):
     """`goi_con` (SQL) phải khớp `GOI_ID_MAP` (JS) — lệch là gom sai gói con."""
     js = dict(re.findall(r'"([\w-]+)":\s*\{\s*loai_mua_sam:\s*"(\w+)"',
@@ -249,6 +346,10 @@ def main() -> int:
     kiem_ranh_gioi_quyen(url, anon, tok_pdd, tok_khoa); print("Ranh giới quyền   : đã thử")
     kiem_so_chot_khop_hai_vai_tro(url, anon, tok_pdd, tok_khoa); print("Số chốt 2 vai trò : đã đối chiếu")
     kiem_goi_con_khop_frontend(url, anon, tok_pdd); print("goi_con ↔ JS      : đã đối chiếu")
+    kiem_vong_tra_ma_ve_khoa(url, service); print("Trả mã về khoa    : đã kiểm patch_zv")
+    che_do = kiem_che_do_dang_ky(url, anon, service, args.production)
+    nhan = {"mo": "MỞ (đang test)", "chi_admin": "chỉ admin cấp"}.get(che_do, "?")
+    print(f"Chế độ đăng ký    : {nhan} — đã thử tạo tài khoản thật")
 
     print()
     for c in canh_bao:

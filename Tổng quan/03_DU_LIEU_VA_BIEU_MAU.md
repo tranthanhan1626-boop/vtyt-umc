@@ -47,11 +47,22 @@ Folder nguồn: `Form biểu mẫu/`.
 Hệ thống phải dùng file mẫu thật, không dựng lại bố cục bằng tay. Word dùng form
 sẵn; Excel đổ từng mã hàng theo mã quản lý và giữ đủ metadata.
 
-Biểu mẫu 4 và 5 chính là hai tab Word/Excel của màn "Tổng hợp & xuất hồ sơ"
-(`TongHopPhongDieuDuong.jsx`) — PĐD chốt một snapshot (`phien_tong_hop`) gộp
-đề xuất **nhiều khoa cùng đợt**, cùng mã quản lý/mã hàng thì cộng lại nhưng
-vẫn sổ xuống được theo từng đơn vị sử dụng gửi. Chi tiết ở mục 4 tài liệu
-`01_NGHIEP_VU_VA_QUYET_DINH.md`.
+**Cập nhật 09/08/2026 — nơi tạo 5 biểu mẫu:**
+
+| # | Biểu mẫu | Tạo ở đâu |
+|---|---|---|
+| 1 | Word chỉ định thầu | tab "Hồ sơ chỉ định thầu" (`XuatHoSo.jsx`) |
+| 2 | Word cam kết số lượng | tab "Cam kết của khoa" (`XuatHoSo.jsx`) |
+| 3 | Excel danh mục đề xuất ĐVSD | `#danh-muc-de-xuat/<goiId>/<khoa>` (`DanhMucDeXuatKhoa.jsx`) |
+| 4 | Word đề nghị mua thầu PĐD | Bàn điều hành → tab "Phiếu đề nghị mua thầu" |
+| 5 | Excel tổng hợp đi thầu | `#tong-hop-pdd/<goiId>` (`TongHopPdd.jsx`), nút "Xuất Excel" |
+
+Biểu mẫu 4 và 5 trước đây nằm chung ở màn "Tổng hợp & xuất hồ sơ"
+(`TongHopPhongDieuDuong.jsx`), dựng trên một snapshot `phien_tong_hop` do PĐD
+chốt tay. **Màn đó đã bị gỡ 09/08/2026** — snapshot thủ công là quyết định đã
+bị đảo (xem phụ lục `01_NGHIEP_VU_VA_QUYET_DINH.md`), và giữ hai đường tổng
+hợp song song là cách chắc chắn để hai file trình ký lệch số nhau. Bản tổng hợp
+duy nhất hiện nay là Danh mục tổng hợp live sync, mở từ Bàn điều hành.
 
 ### Cột đã có thể đổ
 

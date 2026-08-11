@@ -26,10 +26,9 @@ import SoSuKienNhuCau from "./features/SoSuKienNhuCau";
 import PhieuDeNghi from "./features/PhieuDeNghi";
 import TrangDungChung, { QuayLaiDungChung } from "./features/TrangDungChung";
 import NhomKyThuatCuaKhoa from "./features/NhomKyThuatCuaKhoa";
-import TongHopPhongDieuDuong from "./features/TongHopPhongDieuDuong";
+import DuyetNhomKyThuat from "./features/DuyetNhomKyThuat";
 import GoiTuyChonMuaThem from "./features/GoiTuyChonMuaThem";
 import QuanLyDuLieuTest from "./features/QuanLyDuLieuTest";
-import QuaTrinhDeXuat from "./features/QuaTrinhDeXuat";
 import DanhMucDeXuatKhoa from "./features/DanhMucDeXuatKhoa";
 import TongHopPdd from "./features/TongHopPdd";
 import NapDuLieuSuDung from "./features/NapDuLieuSuDung";
@@ -60,7 +59,8 @@ function ManHinhDangTai() {
 }
 
 // Hash-based navigation cho các màn full-screen (không nằm trong khung nav chính).
-// Ví dụ #qua-trinh-de-xuat/mock → mở Excel 50-70 cột toàn màn hình.
+// Hiện có hai: #tong-hop-pdd/<goiId>/<dotId> và
+// #danh-muc-de-xuat/<goiId>/<khoa>/<dotId>.
 function useHashRoute() {
   const [hash, setHash] = useState(() => (typeof window !== "undefined" ? window.location.hash : ""));
   useEffect(() => {
@@ -136,17 +136,10 @@ export default function App() {
     return <ManHinhDangTai />;
   }
 
-  // #qua-trinh-de-xuat vẫn MOCK (chưa nối dữ liệu thật, giai đoạn brainstorm)
-  // — đặt trước session check để dev/duyệt UI được mà không cần login.
-  //
-  // #danh-muc-de-xuat KHÔNG còn ở đây — từ 06/08/2026 nó đọc Supabase THẬT
-  // (proposals, usage_history_current, v_ket_qua_thau_theo_khoa...), RLS yêu
-  // cầu phiên đăng nhập thật (current_user_khoa()). Cùng lý do #tong-hop-pdd
-  // đã dời xuống dưới trước đó — xem nhánh sau session+profile check.
-  if (hash.startsWith("#qua-trinh-de-xuat")) {
-    const gioId = hash.replace(/^#qua-trinh-de-xuat\/?/, "") || "mock";
-    return <QuaTrinhDeXuat gioId={gioId} />;
-  }
+  // MỌI hash route đều nằm SAU session + profile check: cả #tong-hop-pdd lẫn
+  // #danh-muc-de-xuat đọc Supabase thật và RLS cần JWT (current_user_khoa()).
+  // (Trước 09/08/2026 ở đây còn #qua-trinh-de-xuat mở màn mock KHÔNG cần đăng
+  // nhập — đã gỡ cùng lớp "Quá trình đề xuất 50–70 cột", xem ghi chú dưới.)
 
   // Vừa bấm link "Quên mật khẩu" trong email, quay lại app — ưu tiên màn hình
   // này TRƯỚC cả kiểm tra session (Supabase tạo 1 phiên tạm cho bước đổi mật
@@ -201,10 +194,15 @@ export default function App() {
         </div>
       );
     }
-    const goiId = hash.replace(/^#tong-hop-pdd\/?/, "") || "18t-dung-chung";
-    return <TongHopPdd goiId={goiId} profile={profile} />;
+    const phan = hash.replace(/^#tong-hop-pdd\/?/, "").split("/");
+    const goiId = phan[0] || "18t-dung-chung";
+    const dotId = phan[1] ? Number(phan[1]) : null;
+    return <TongHopPdd goiId={goiId} dotId={dotId} profile={profile} />;
   }
-  // #danh-muc-de-xuat/<goiId>/<khoaEncoded> — khoaEncoded chỉ cần khi PĐD
+  // #danh-muc-de-xuat/<goiId>/<khoaEncoded>/<dotId> — `dotId` là ranh giới
+  // bắt buộc của từng kỳ 18 tháng và từng đợt bổ sung. Route cũ (không có
+  // dotId) vẫn đọc được lịch sử cũ, nhưng route mới không được trộn dữ liệu.
+  // khoaEncoded chỉ cần khi PĐD
   // muốn xem khoa khác khoa mình (browse toàn viện). ĐVSD bỏ trống, mặc định
   // xem khoa mình — RLS proposals/usage_history_current vẫn chặn dvsd đọc
   // khoa khác dù URL có bị gõ tay (xem "xem đề xuất theo phân quyền khoa").
@@ -212,7 +210,8 @@ export default function App() {
     const phan = hash.replace(/^#danh-muc-de-xuat\/?/, "").split("/");
     const goiId = phan[0] || "18t-dung-chung";
     const khoaTuUrl = phan[1] ? decodeURIComponent(phan[1]) : null;
-    return <DanhMucDeXuatKhoa goiId={goiId} khoa={khoaTuUrl || profile.khoa} profile={profile} />;
+    const dotId = phan[2] ? Number(phan[2]) : null;
+    return <DanhMucDeXuatKhoa goiId={goiId} khoa={khoaTuUrl || profile.khoa} profile={profile} dotId={dotId} />;
   }
   // "Đề xuất của tôi" chỉ dành cho dvsd — admin/dieu_duong đã có tab tổng hợp
   // thấy hết mọi khoa rồi, thêm tab này cho họ là dư thừa.
@@ -236,6 +235,7 @@ export default function App() {
     tieuchi: "Điều chỉnh tiêu chí kỹ thuật",
     tiendosudung: "Tiến độ sử dụng theo cam kết",
     napdulieu: "Nạp dữ liệu sử dụng",
+    duyetmakythuat: "Duyệt mã kỹ thuật khoa đề nghị",
   };
 
   const noiDungChung = chon.man === "ban_dieu_hanh" && xemDuocTongHop
@@ -262,6 +262,7 @@ export default function App() {
     )
     : chon.man === "lichsu" ? <LichSuXuatHoSo profile={profile} />
     : chon.man === "makythuat" ? <NhomKyThuatCuaKhoa profile={profile} />
+    : chon.man === "duyetmakythuat" && xemDuocTongHop ? <DuyetNhomKyThuat />
     : chon.man === "ketquathau" && xemDuocTongHop ? <TongHopKetQuaThau profile={profile} />
     : chon.man === "tieuchi" ? <DieuChinhTieuChi profile={profile} />
     : chon.man === "tiendosudung" ? <TienDoSuDung profile={profile} />
@@ -270,10 +271,14 @@ export default function App() {
     : chon.man === "choduyet" && xemDuocTongHop ? (
       <ChoDuyet
         onDoiSoLuong={capNhatDem}
+        onMoManKhac={setChon}
         onMoHoSo={(h) => setChon({
+          // Mọi gói đều mở ở "Cam kết của khoa" (XuatHoSo). Trước 09/08/2026
+          // gói 18T/bổ sung mở ở màn "Tổng hợp & xuất hồ sơ" — màn đó thuộc
+          // workflow cũ (snapshot phien_tong_hop) và đã bị gỡ.
           nhom: "goi",
           goi: h.loai_mua_sam,
-          man: h.loai_mua_sam === "chi_dinh_thau" ? "bieu_mau" : "tong_hop",
+          man: "bieu_mau",
           dotId: h.dot_id,
           donVi: h.don_vi,
           nguonKey: h.nguon_key,
@@ -381,15 +386,6 @@ export default function App() {
                 />)
           : chon.man === "danh_muc_khoa"
               ? <DanhMucDeXuatLinks profile={profile} goi={chon.goi} />
-          : chon.man === "tong_hop" && xemDuocTongHop
-              ? <TongHopPhongDieuDuong
-                  profile={profile}
-                  goi={chon.goi}
-                  dot={dotTheoGoi[chon.goi]}
-                  dotIdKhoiTao={chon.dotId}
-                  donViKhoiTao={chon.donVi}
-                  nguonKeyKhoiTao={chon.nguonKey}
-                />
           : <XuatHoSo
               profile={profile}
               goi={chon.goi}

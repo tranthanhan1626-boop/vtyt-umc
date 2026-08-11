@@ -470,19 +470,26 @@ export default function Function1({
     }
     let huy = false;
     const taiMaDangCho = async () => {
-      const [r, gioKhac] = await Promise.all([
-        fetchAllRows((f, t) => supabase.from("proposals")
+      // Chỉ khoá mã đã nằm trong CHÍNH đợt đang chọn. Trước đây truy vấn lấy
+      // mọi proposal chưa `da_di_thau` và mọi giỏ của đợt khác; hậu quả là mở
+      // bổ sung T9 vẫn báo mã đang nằm trong giỏ T1/T5, hoặc kỳ 18T sau bị
+      // chặn bởi kỳ trước.
+      const [r, gioCungDot] = await Promise.all([
+        fetchAllRows((f, t) => {
+          let q = supabase.from("proposals")
           .select("ma_hang,vat_tu!inner(ma_quan_ly)")
           .eq("don_vi", khoaHienTai)
           .eq("is_current", true)
           .eq("da_rut", false)
-          .eq("da_di_thau", false)
-          .range(f, t), { order: "id" }),
+          .eq("da_di_thau", false);
+          if (dotDung?.id) q = q.eq("dot_id", dotDung.id);
+          return q.range(f, t);
+        }, { order: "id" }),
         fetchAllRows((f, t) => {
           let q = supabase.from("gio_nhap")
             .select("noi_dung")
             .eq("don_vi", khoaHienTai);
-          if (dotDung?.id) q = q.neq("dot_id", dotDung.id);
+          if (dotDung?.id) q = q.eq("dot_id", dotDung.id);
           return q.range(f, t);
         }, { order: "id" }),
       ]);
@@ -493,8 +500,8 @@ export default function Function1({
       const nhom = new Set(
         r.error ? [] : (r.data || []).map((x) => x.vat_tu?.ma_quan_ly).filter(Boolean)
       );
-      if (!gioKhac.error) {
-        (gioKhac.data || []).forEach((g) => {
+      if (!gioCungDot.error) {
+        (gioCungDot.data || []).forEach((g) => {
           Object.entries(g.noi_dung || {}).forEach(([maHang, nd]) => {
             if (Number(nd?.soLuong) > 0) {
               ma.add(maHang);

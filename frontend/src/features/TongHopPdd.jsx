@@ -77,7 +77,7 @@ function epGiaTri(giaTriText, kieu) {
 
 /** Tải dữ liệu GỐC (chưa áp override PĐD) cho 1 gói con: proposals + vat_tu +
  * nhom_ky_thuat + usage_history_current, ráp thành đúng shape COT_PDD. */
-async function taiDuLieuGoc(goiId) {
+async function taiDuLieuGoc(goiId, dotId = null) {
   const bo = GOI_ID_MAP[goiId] || GOI_ID_MAP["18t-dung-chung"];
 
   // Gói bổ sung: 3 đợt T1/T5/T9 chỉ khác nhau ở dot_de_xuat.thang_moc, không
@@ -89,13 +89,16 @@ async function taiDuLieuGoc(goiId) {
     .eq("is_current", true)
     .eq("loai_mua_sam", bo.loai_mua_sam);
   if (bo.goi) qProposals = qProposals.eq("goi", bo.goi);
-  qProposals = locTheoDot(qProposals, dsDotId);
+  qProposals = dotId ? qProposals.eq("dot_id", Number(dotId)) : locTheoDot(qProposals, dsDotId);
   const { data: propRows, error: loiProposals } = await fetchAllRows((f, t) =>
     qProposals.range(f, t), { order: "id" });
   if (loiProposals) throw loiProposals;
 
   const theoMa = new Map();
-  (propRows || []).forEach((r) => {
+  // Dòng nguồn đã được khoa xử lý sau rớt 1 phần được RPC giảm về 0. Nó chỉ
+  // còn là audit ở Tiến độ gói thầu, không được tiếp tục xuất hiện trong danh
+  // mục tổng hợp PĐD hay làm tổng số giả.
+  (propRows || []).filter((r) => Number(r.so_luong) > 0).forEach((r) => {
     if (!theoMa.has(r.ma_hang)) theoMa.set(r.ma_hang, []);
     theoMa.get(r.ma_hang).push({ don_vi: r.don_vi, so_luong: Number(r.so_luong) || 0 });
   });
@@ -247,7 +250,10 @@ function apOverride(rows, overrideTheoMa, danhSachCot) {
   });
 }
 
-export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
+export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = null }) {
+  // Cùng một biểu mẫu có thể tái diễn ở nhiều kỳ 18 tháng. Scope này được
+  // dùng cho phần Excel web/ghi đè để kỳ sau không đọc hay khoá kỳ trước.
+  const goiScope = dotId ? `${goiId}:dot:${dotId}` : goiId;
   const [rowsGoc, setRowsGoc] = useState([]);
   const [overrideTheoMa, setOverrideTheoMa] = useState(new Map());
   const [boThau, setBoThau] = useState(GOI_ID_MAP[goiId] || GOI_ID_MAP["18t-dung-chung"]);
@@ -265,11 +271,13 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
     setLoi("");
     try {
       const [{ bo, rows, dsNamCoDuLieu: dsNam }, khoaVaOverride, chotRes] = await Promise.all([
-        taiDuLieuGoc(goiId),
-        taiOverrideVaKhoa(goiId, NAM_DE_XUAT),
-        supabase.from("danh_muc_tong_hop_chot")
-          .select("chot_boi, chot_luc")
-          .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT).maybeSingle(),
+        taiDuLieuGoc(goiId, dotId),
+        taiOverrideVaKhoa(goiScope, NAM_DE_XUAT),
+        dotId
+          ? supabase.from("danh_muc_dot_chot").select("chot_boi, chot_luc")
+            .eq("dot_id", Number(dotId)).maybeSingle()
+          : supabase.from("danh_muc_tong_hop_chot").select("chot_boi, chot_luc")
+            .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT).maybeSingle(),
       ]);
       const { overrideTheoMa: ov, cotLocked: cl, dongLocked: dl, cotAn: ca } = khoaVaOverride;
       // Chưa chạy patch_zs -> bảng chưa có; coi như chưa chốt, không làm vỡ màn.
@@ -286,7 +294,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
     } finally {
       setDangTai(false);
     }
-  }, [goiId]);
+  }, [goiId, dotId, goiScope]);
 
   useEffect(() => {
     let huy = false;
@@ -364,12 +372,12 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
   const toggleKhoa = async (loai, khoaKey, dangKhoa) => {
     if (dangKhoa) {
       const { error } = await supabase.from("danh_muc_tong_hop_khoa").delete()
-        .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT).eq("loai", loai).eq("khoa_key", khoaKey);
+        .eq("goi_id", goiScope).eq("nam_de_xuat", NAM_DE_XUAT).eq("loai", loai).eq("khoa_key", khoaKey);
       if (error) { setLoiO(thongBaoLoiKhoa(error, loai)); return; }
       setStateTheoLoai(loai)((prev) => { const n = new Set(prev); n.delete(khoaKey); return n; });
     } else {
       const { error } = await supabase.from("danh_muc_tong_hop_khoa").insert({
-        goi_id: goiId, nam_de_xuat: NAM_DE_XUAT, loai, khoa_key: khoaKey,
+        goi_id: goiScope, nam_de_xuat: NAM_DE_XUAT, loai, khoa_key: khoaKey,
         locked_by: profile.email,
       });
       if (error) { setLoiO(thongBaoLoiKhoa(error, loai)); return; }
@@ -465,12 +473,14 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
     setDangChot(true);
     setLoiO("");
     const dangChot = !!chot;
+    const bangChot = dotId ? "danh_muc_dot_chot" : "danh_muc_tong_hop_chot";
     const { data, error } = dangChot
-      ? await supabase.from("danh_muc_tong_hop_chot").delete()
-          .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT).select()
-      : await supabase.from("danh_muc_tong_hop_chot")
-          .insert({ goi_id: goiId, nam_de_xuat: NAM_DE_XUAT, chot_boi: profile.email })
-          .select();
+      ? (dotId
+        ? await supabase.from(bangChot).delete().eq("dot_id", Number(dotId)).select()
+        : await supabase.from(bangChot).delete().eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT).select())
+      : (dotId
+        ? await supabase.from(bangChot).insert({ dot_id: Number(dotId), chot_boi: profile.email }).select()
+        : await supabase.from(bangChot).insert({ goi_id: goiId, nam_de_xuat: NAM_DE_XUAT, chot_boi: profile.email }).select());
     setDangChot(false);
     if (error) {
       const chuaCoBang = error.code === "42P01"
@@ -504,7 +514,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
     setDangLuu(true);
     setLoiO("");
     const { error } = await supabase.from("danh_muc_tong_hop_o").upsert({
-      goi_id: goiId, nam_de_xuat: NAM_DE_XUAT, ma_hang: maHang, cot: colKey,
+      goi_id: goiScope, nam_de_xuat: NAM_DE_XUAT, ma_hang: maHang, cot: colKey,
       gia_tri: giaTriDangGo === "" ? null : String(giaTriDangGo),
       updated_by: profile.email,
     }, { onConflict: "goi_id,nam_de_xuat,ma_hang,cot" });
@@ -532,7 +542,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
     setLoiO("");
     const { data, error } = await supabase.from("danh_muc_tong_hop_o")
       .delete()
-      .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT)
+      .eq("goi_id", goiScope).eq("nam_de_xuat", NAM_DE_XUAT)
       .eq("ma_hang", maHang).eq("cot", colKey)
       .select();
     if (error) { setLoiO(error.message); return; }
@@ -554,7 +564,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile }) {
     setAudit({ maHang, cot: colKey, dsAudit: [], dangTai: true });
     const { data, error } = await supabase.from("danh_muc_tong_hop_o_audit")
       .select("gia_tri_cu, gia_tri_moi, nguoi_sua, thoi_gian")
-      .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT).eq("ma_hang", maHang).eq("cot", colKey)
+      .eq("goi_id", goiScope).eq("nam_de_xuat", NAM_DE_XUAT).eq("ma_hang", maHang).eq("cot", colKey)
       .order("thoi_gian", { ascending: false }).limit(20);
     setAudit({ maHang, cot: colKey, dsAudit: error ? [] : (data || []), dangTai: false, loi: error?.message });
   };

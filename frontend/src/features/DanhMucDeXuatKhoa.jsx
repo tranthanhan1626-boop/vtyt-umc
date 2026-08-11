@@ -67,7 +67,7 @@ const NAM_DE_XUAT = new Date().getFullYear() + 1;
 
 /** Tải dữ liệu thật cho 1 khoa + 1 gói con: proposals (đúng khoa) + vat_tu +
  * nhom_ky_thuat + usage_history_current (lọc đúng khoa). */
-async function taiDuLieuKhoa(goiId, khoa) {
+async function taiDuLieuKhoa(goiId, khoa, dotId = null) {
   const bo = GOI_ID_MAP[goiId] || GOI_ID_MAP["18t-dung-chung"];
   if (!khoa) return { bo, rows: [] };
 
@@ -78,7 +78,10 @@ async function taiDuLieuKhoa(goiId, khoa) {
     .eq("nam_de_xuat", NAM_DE_XUAT).eq("is_current", true)
     .eq("loai_mua_sam", bo.loai_mua_sam).eq("don_vi", khoa);
   if (bo.goi) qProposals = qProposals.eq("goi", bo.goi);
-  qProposals = locTheoDot(qProposals, dsDotId);
+  // `dot_id` là ranh giới nghiệp vụ cuối cùng. Một gói 18 tháng có thể có
+  // nhiều kỳ kế tiếp nhau và ba đợt bổ sung cùng loại cũng phải tuyệt đối tách
+  // nhau; không được chỉ lọc theo `loai_mua_sam` rồi để kết quả rớt lẫn kỳ.
+  qProposals = dotId ? qProposals.eq("dot_id", Number(dotId)) : locTheoDot(qProposals, dsDotId);
   const { data: propRows, error: loiProposals } = await fetchAllRows((f, t) => qProposals.range(f, t), { order: "id" });
   if (loiProposals) throw loiProposals;
   if (!propRows?.length) return { bo, rows: [] };
@@ -182,20 +185,23 @@ async function taiDuLieuKhoa(goiId, khoa) {
 }
 
 /** Tải kết quả thầu (mục 6) — chỉ dòng của đúng khoa (RLS tự giới hạn). */
-async function taiKetQuaThau(loaiMuaSam, khoa, dsMaHang) {
+async function taiKetQuaThau(loaiMuaSam, khoa, dsMaHang, dotId = null) {
   if (!dsMaHang?.length) return new Map();
-  const { data, error } = await fetchAllRows((f, t) =>
-    supabase.from("v_ket_qua_thau_theo_khoa")
+  const { data, error } = await fetchAllRows((f, t) => {
+    let q = supabase.from("v_ket_qua_thau_theo_khoa")
       .select("goi_id, ten_goi, ma_hang, ket_qua, ma_moc_rot, ly_do_khong_trung, so_luong_de_xuat, so_luong_thieu, da_xu_ly, ket_qua_id")
       .eq("don_vi", khoa).eq("loai_mua_sam", loaiMuaSam).eq("ket_qua", "khong_trung")
-      .in("ma_hang", dsMaHang).range(f, t), { order: "ket_qua_id" });
+      .in("ma_hang", dsMaHang);
+    if (dotId) q = q.eq("dot_id", Number(dotId));
+    return q.range(f, t);
+  }, { order: "ket_qua_id" });
   if (error) throw error;
   const m = new Map();
   (data || []).forEach((r) => m.set(r.ma_hang, r));
   return m;
 }
 
-export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, profile }) {
+export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, profile, dotId = null }) {
   const khoaHienTai = khoa || profile?.khoa || "";
   const laPdd = profile?.role === "dieu_duong" || profile?.role === "admin";
 
@@ -427,9 +433,9 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
     setLoi("");
     try {
       const { bo, rows: rowsGoc, dsMaHang, dsNamCoDuLieu: dsNam } =
-        await taiDuLieuKhoa(goiId, khoaHienTai);
+        await taiDuLieuKhoa(goiId, khoaHienTai, dotId);
       const ketQuaTheoMa = dsMaHang?.length
-        ? await taiKetQuaThau(bo.loai_mua_sam, khoaHienTai, dsMaHang)
+        ? await taiKetQuaThau(bo.loai_mua_sam, khoaHienTai, dsMaHang, dotId)
         : new Map();
       const [oDaLuu, suaDePdd] = await Promise.all([taiODaLuu(), taiSuaDeCuaPdd()]);
       setSuaDeCuaPdd(suaDePdd);
@@ -437,7 +443,10 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
       setDsNamCoDuLieu(dsNam || []);
       // Áp giá trị đã lưu ĐÈ lên số gốc hệ thống dựng ra.
       const daSua = new Map();
-      setRows(rowsGoc.map((r) => {
+      // Khi khoa đã chuyển xong số lượng của một mã rớt sang mã tương đương,
+      // mã nguồn không còn thuộc danh mục làm việc. Dấu vết rớt vẫn nằm ở
+      // Tiến độ gói thầu; không giữ một dòng 0 gây hiểu nhầm là còn phải xử lý.
+      setRows(rowsGoc.filter((r) => !ketQuaTheoMa.get(r.ma_hang)?.da_xu_ly).map((r) => {
         const ov = oDaLuu.get(r.ma_hang);
         const dong = { ...r, rot: ketQuaTheoMa.get(r.ma_hang) || null };
         if (ov) {
@@ -454,7 +463,7 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
     } finally {
       setDangTai(false);
     }
-  }, [goiId, khoaHienTai, taiODaLuu, taiSuaDeCuaPdd]);
+  }, [goiId, khoaHienTai, dotId, taiODaLuu, taiSuaDeCuaPdd]);
 
   useEffect(() => { taiLai(); }, [taiLai]);
 

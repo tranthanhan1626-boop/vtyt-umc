@@ -15,10 +15,12 @@ const NHAN_LOAI = {
   mua_sam_bo_sung: "Gói bổ sung",
 };
 
+// Không còn bước "PĐD duyệt giỏ" (bỏ 05/08/2026) — `de_xuat` là trạng thái
+// chính thức. Hai nhãn giữa chỉ còn gặp ở dữ liệu tạo trước ngày đó.
 const NHAN_TRANG_THAI = {
-  de_xuat: "Đang đề xuất",
-  xet_duyet: "Đang xét duyệt",
-  hoan_thanh: "Đã hoàn thành",
+  de_xuat: "Đang hiệu lực",
+  xet_duyet: "Đang xét duyệt (dữ liệu cũ)",
+  hoan_thanh: "Hoàn thành (dữ liệu cũ)",
   tu_choi: "Đã từ chối",
 };
 
@@ -358,9 +360,14 @@ export default function GoiTuyChonMuaThem({ profile }) {
                       </thead>
                       <tbody>
                         {nhom.rows.map((r) => {
-                          const hoanThanh = r.trang_thai_de_xuat === "hoan_thanh";
+                          // (Sửa 09/08/2026) Trước đây chỉ mở khoá khi đề xuất
+                          // ở `hoan_thanh`, tức đã qua bước "PĐD duyệt giỏ" —
+                          // bước đã bỏ từ 05/08/2026. Giữ nguyên sẽ khoá vĩnh
+                          // viễn quyền 30% của mọi đề xuất mới. Nay chỉ chặn
+                          // đề xuất đã bị từ chối.
+                          const conHieuLuc = r.trang_thai_de_xuat !== "tu_choi";
                           const con = Number(r.con_lai) || 0;
-                          const khoa = chuaPatch || !hoanThanh || con <= 0;
+                          const khoa = chuaPatch || !conHieuLuc || con <= 0;
                           return (
                             <Fragment key={r.proposal_id}>
                               <tr className="border-b border-slate-50 last:border-0">
@@ -368,7 +375,7 @@ export default function GoiTuyChonMuaThem({ profile }) {
                                   <div className="font-mono text-xs text-slate-600">{r.ma_hang}</div>
                                   <div className="max-w-sm text-xs leading-snug text-slate-500">{r.ten_vat_tu}</div>
                                   <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] ${
-                                    hoanThanh ? "bg-umc-50 text-umc-700" : "bg-amber-50 text-amber-700"
+                                    conHieuLuc ? "bg-umc-50 text-umc-700" : "bg-red-50 text-red-700"
                                   }`}>
                                     {NHAN_TRANG_THAI[r.trang_thai_de_xuat] || r.trang_thai_de_xuat}
                                   </span>
@@ -397,8 +404,8 @@ export default function GoiTuyChonMuaThem({ profile }) {
                                       {dangLuu === r.proposal_id ? "Đang lưu…" : "Kích hoạt"}
                                     </button>
                                   </div>
-                                  {!hoanThanh && (
-                                    <p className="mt-1 text-[10px] text-amber-700">Chỉ kích hoạt sau khi đề xuất hoàn thành xét duyệt.</p>
+                                  {!conHieuLuc && (
+                                    <p className="mt-1 text-[10px] text-red-700">Đề xuất đã bị từ chối — không kích hoạt được quyền mua thêm.</p>
                                   )}
                                   {r.kich_hoat_gan_nhat && (
                                     <p className="mt-1 text-[10px] text-slate-400">

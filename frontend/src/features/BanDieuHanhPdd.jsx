@@ -1,12 +1,14 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle, Bell, Building2, CheckCircle2, ChevronDown, ChevronRight,
-  Copy, Database, ExternalLink, Layers3, RefreshCw, Search, Trash2, XCircle,
+  Copy, Database, ExternalLink, FileSignature, Layers3, RefreshCw, Search,
+  Trash2, XCircle,
 } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import { GOI_ID_MAP } from "../lib/cotChuan";
 import { gomTheoMaQuanLy, tinhTinhHinhKhoa, tinhTongQuan } from "../lib/tongHopDeXuat";
+import HoSoTrucTuyen from "./HoSoTrucTuyen";
 
 /*
  * BanDieuHanhPdd — màn hình làm việc chính của Phòng Điều dưỡng
@@ -128,7 +130,8 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
         .select("don_vi, loai_tai_lieu, ma_ho_so")
         .eq("dot_id", dot.id).eq("loai_tai_lieu", "word").range(f, t), { order: "id" }),
       fetchAllRows((f, t) => supabase.from("v_ket_qua_thau_theo_khoa").select("*")
-        .eq("loai_mua_sam", dot.loai_mua_sam).eq("ket_qua", "khong_trung").range(f, t), { order: "ket_qua_id" }),
+        .eq("loai_mua_sam", dot.loai_mua_sam).eq("dot_id", dot.id)
+        .eq("ket_qua", "khong_trung").range(f, t), { order: "ket_qua_id" }),
     ]);
 
     if (rDeXuat.error) {
@@ -136,7 +139,9 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
       setDangTai(false);
       return;
     }
-    setRows(rDeXuat.data || []);
+    // Mã rớt đã chuyển hết SL sang mã tương đương chỉ còn lưu ở Tiến độ gói
+    // thầu. Loại khỏi danh mục điều hành để khoa/PĐD cùng nhìn một danh mục.
+    setRows((rDeXuat.data || []).filter((r) => Number(r.so_luong) > 0));
     setDsKhoa((rKhoa.data || []).map((x) => x.don_vi));
     setKhoaCoWord(new Set((rHoSo.data || []).map((x) => x.don_vi)));
     setKetQuaRot(rKetQua.error ? [] : (rKetQua.data || []));
@@ -343,7 +348,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   const moDanhMucKhoa = (khoa) => {
     const ds = goiConCuaKhoa(khoa);
     if (ds.length === 1) {
-      window.location.hash = `#danh-muc-de-xuat/${ds[0]}/${encodeURIComponent(khoa)}`;
+      window.location.hash = `#danh-muc-de-xuat/${ds[0]}/${encodeURIComponent(khoa)}/${dot.id}`;
       return;
     }
     setLoi(ds.length === 0
@@ -356,6 +361,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
     { ma: "khoa", ten: "Theo dõi khoa", Icon: Building2 },
     { ma: "tong_hop", ten: "Danh mục tổng hợp", Icon: Layers3 },
     { ma: "ket_qua", ten: "Kết quả thầu & giỏ rớt", Icon: XCircle },
+    { ma: "ho_so", ten: "Phiếu đề nghị mua thầu", Icon: FileSignature },
   ];
 
   return (
@@ -455,7 +461,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
       </div>
 
       {/* Tab */}
-      <div role="tablist" className="grid grid-cols-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <div role="tablist" className="grid grid-cols-2 overflow-hidden rounded-xl border border-slate-200 bg-white lg:grid-cols-4">
         {TAB.map(({ ma, ten, Icon }) => (
           <button key={ma} type="button" role="tab" aria-selected={tab === ma}
             onClick={() => { setTab(ma); setTuKhoa(""); }}
@@ -488,11 +494,53 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
               setLoi("Chọn một gói con ở trên rồi mới mở được bản Excel tổng hợp — mỗi gói con đi thầu riêng nên có một bản riêng.");
               return;
             }
-            window.location.hash = `#tong-hop-pdd/${goiIdHienTai}`;
+            window.location.hash = `#tong-hop-pdd/${goiIdHienTai}/${dot.id}`;
           }}
         />
-      ) : (
+      ) : tab === "ket_qua" ? (
         <TabKetQua ketQuaRot={ketQuaRot} dot={dot} boRot={boRot} />
+      ) : (
+        // "Phiếu đề nghị mua thầu" (Word `de_nghi_mua`) — 1 trong 5 biểu mẫu
+        // chính thức. Trước 09/08/2026 nó chỉ tạo được ở màn "Tổng hợp & xuất
+        // hồ sơ", tức là phải chốt một snapshot `phien_tong_hop` trước. Màn đó
+        // thuộc workflow cũ và đã gỡ, nên biểu mẫu dời về đây.
+        //
+        // `DE_NGHI_MUA` trong coCauBieuMau.js là văn bản thuần, KHÔNG chứa
+        // dòng dữ liệu nào (danh mục đi kèm là bản Excel tổng hợp riêng). Vẫn
+        // truyền `rowsLoc` vì HoSoTrucTuyen dùng số dòng để biết đợt đã có đề
+        // xuất hay chưa — không có dòng nào thì tạo phiếu trình ký là vô nghĩa.
+        // Neo vào (đợt, gói con) chứ không vào một snapshot số lượng, nên phiếu
+        // luôn khớp bản tổng hợp live đang xem.
+        <div className="space-y-3">
+          {!goiIdHienTai ? (
+            <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
+              <FileSignature size={26} className="mx-auto text-slate-300" />
+              <p className="mt-2 text-sm font-medium text-slate-600">Chọn một gói con ở trên</p>
+              <p className="mt-1 text-xs text-slate-400">
+                Mỗi gói con đi thầu riêng nên có phiếu đề nghị riêng.
+              </p>
+            </div>
+          ) : (
+            <HoSoTrucTuyen
+              key={`pdd-${dot.id}-${goiIdHienTai}`}
+              profile={profile}
+              goi={dot.loai_mua_sam}
+              dotId={dot.id}
+              donVi="Phòng Điều dưỡng"
+              nguonKey={`goi-con:${goiIdHienTai}`}
+              rows={rowsLoc}
+              usage={{}}
+              taiLieu={[{ ma: "de_nghi_mua", ten: "Phiếu đề nghị mua thầu" }]}
+              meta={{
+                don_vi: "Phòng Điều dưỡng",
+                nguoi_lap: profile.ho_ten || profile.email,
+                goi_con: GOI_ID_MAP[goiIdHienTai]?.goi || goiIdHienTai,
+              }}
+              tieuDe="Phiếu đề nghị mua thầu — Phòng Điều dưỡng"
+              moTa="Danh mục đi kèm là bản Excel ở tab Danh mục tổng hợp; phiếu này chỉ là phần văn bản trình ký."
+            />
+          )}
+        </div>
       )}
 
       {formDon && (

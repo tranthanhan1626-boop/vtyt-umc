@@ -62,6 +62,22 @@ backend/.venv/bin/pytest -q backend/tests
 | `xuatExcelDong.test.mjs` | cột đã ẩn không lọt vào Excel; khoa không đề xuất để **trống** chứ không phải 0 |
 | `cotDong.test.mjs` | cột năm sinh động; giữ "Theo 18T"; đọc tên cột từ biểu mẫu (kể cả ô richText) |
 
+`backend/tests` phải chạy **từ trong thư mục `backend/`** (`cd backend && \
+.venv/bin/pytest -q tests`) — chạy từ gốc repo thì Python không thấy gói `app`.
+
+Smoke pipeline hiện tại (ghi dữ liệu thật rồi tự dọn, ~30 bước, cả hai vai trò):
+
+```bash
+cd "/Users/tranhien/Downloads/9.vtyt/backend"
+set -a && . ./.env.local && . ../frontend/.env && set +a
+.venv/bin/python scripts/smoke_pipeline_hien_tai.py --xac-nhan-staging
+```
+
+Nó đối chiếu lại số dòng của 8 bảng dữ liệu nền và 18 bảng workflow sau khi
+dọn, nên "chạy xong sạch" là điều kiện nghiệm thu chứ không phải niềm tin.
+`smoke_full_workflow_staging.py` là bản CŨ, kiểm workflow đã bị đảo — giữ để
+tra cứu, không dùng làm cổng nghiệm thu.
+
 Ngoài test tự động, phải smoke test hai vai trò ĐVSD/PĐD trên staging và kiểm
 Word/Excel thật — **mở file .xlsx tải về bằng openpyxl để đối chiếu**, đừng chỉ
 tin màn hình:

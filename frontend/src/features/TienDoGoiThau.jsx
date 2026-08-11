@@ -24,6 +24,11 @@ const GIAI_DOAN = [
   { ma: "mo_thau", ten: "Mở thầu" },
   { ma: "danh_gia", ten: "Đánh giá" },
 ];
+const MOC_THEO_DOI = [
+  ...GIAI_DOAN,
+  { ma: "ky_hop_dong", ten: "Ký hợp đồng" },
+  { ma: "hang_ve_dot_dau", ten: "Hàng về đợt đầu" },
+];
 const NHAN_GIAI_DOAN = Object.fromEntries(GIAI_DOAN.map((x) => [x.ma, x.ten]));
 const NHAN_LOAI_GOI = {
   dau_thau_rong_rai: "Gói 18 tháng",
@@ -44,6 +49,7 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
   const [ketQua, setKetQua] = useState([]);
   const [deXuat, setDeXuat] = useState([]);
   const [dot, setDot] = useState([]);
+  const [mocTienDo, setMocTienDo] = useState([]);
   const [dangTai, setDangTai] = useState(true);
   const [loi, setLoi] = useState("");
   const [thongBao, setThongBao] = useState("");
@@ -74,17 +80,25 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
         .select("*").eq("ket_qua", "khong_trung").order("ma_hang").range(f, t), { order: "ket_qua_id" }),
       supabase.from("dot_de_xuat").select("*")
         .order("nam", { ascending: false }).order("thang_moc", { ascending: false }),
+      fetchAllRows((f, t) => supabase.from("goi_thau_moc").select("*")
+        .order("goi_id").order("so_thu_tu").range(f, t), { order: ["goi_id", "so_thu_tu"] }),
     ];
     if (laPdd) {
+      // (Sửa 09/08/2026) Trước đây lọc `trang_thai = 'hoan_thanh'` — tức là
+      // chỉ nhận đề xuất đã qua bước "PĐD duyệt giỏ". Bước đó đã bỏ từ
+      // 05/08/2026, khoa submit là chính thức, nên lọc như cũ làm màn Tiến độ
+      // gói thầu KHÔNG thấy đề xuất nào của workflow hiện tại. Bỏ lọc: view
+      // đã loại đề xuất bị rút và chỉ trả bản `is_current`.
       tacVu.push(fetchAllRows((f, t) => supabase.from("v_de_xuat_tong_hop")
-        .select("*").eq("trang_thai", "hoan_thanh")
+        .select("*").neq("trang_thai", "tu_choi")
         .order("ma_hang").range(f, t), { order: "id" }));
     }
-    const [g, k, d, p] = await Promise.all(tacVu);
+    const [g, k, d, m, p] = await Promise.all(tacVu);
     if (g.error) setLoi(`Không đọc được danh sách gói thầu: ${g.error.message}`);
     setGoi(g.data || []);
     setKetQua(k.error ? [] : k.data || []);
     setDot(d.data || []);
+    setMocTienDo(m.error ? [] : m.data || []);
     setDeXuat(laPdd && !p?.error ? p.data || [] : []);
     setDangTai(false);
   }, [laPdd]);
@@ -108,6 +122,26 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
     });
     return m;
   }, [ketQua]);
+
+  const mocTheoGoi = useMemo(() => {
+    const m = new Map();
+    mocTienDo.forEach((x) => {
+      if (!m.has(x.goi_id)) m.set(x.goi_id, []);
+      m.get(x.goi_id).push(x);
+    });
+    return m;
+  }, [mocTienDo]);
+
+  const capNhatMoc = async (g, maMoc) => {
+    const moc = (mocTheoGoi.get(g.id) || []).find((x) => x.ma_moc === maMoc);
+    if (!moc) { setLoi("Gói này chưa có các mốc tiến độ. Cần chốt lại gói sau khi chạy patch ZZZ."); return; }
+    const daXong = moc.trang_thai === "hoan_thanh";
+    const { error, count } = await supabase.from("goi_thau_moc")
+      .update({ trang_thai: daXong ? "chua_bat_dau" : "hoan_thanh", ngay: daXong ? null : new Date().toISOString().slice(0, 10) }, { count: "exact" })
+      .eq("id", moc.id);
+    if (error || !count) { setLoi(error?.message || "Không cập nhật được mốc tiến độ."); return; }
+    await tai();
+  };
 
   // Account ĐVSD chỉ thấy gói có mã rớt của chính khoa (RLS đã lọc dòng).
   const goiHienThi = useMemo(
@@ -465,6 +499,7 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
         const rows = kqTheoGoi.get(g.id) || [];
         const nhomRot = gomMaRot(rows);
         const dangMo = goiMo === g.id;
+        const dsMoc = mocTheoGoi.get(g.id) || [];
         const demTheoMoc = Object.fromEntries(GIAI_DOAN.map((m) => [
           m.ma,
           new Set(rows.filter((r) => r.ma_moc_rot === m.ma).map((r) => r.ma_hang)).size,
@@ -500,14 +535,27 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
               )}
             </div>
 
-            <div className="grid grid-cols-3 gap-px border-y border-slate-100 bg-slate-100">
-              {GIAI_DOAN.map((m) => (
+            <div className="grid grid-cols-2 gap-px border-y border-slate-100 bg-slate-100 sm:grid-cols-5">
+              {MOC_THEO_DOI.map((m) => {
+                const moc = dsMoc.find((x) => x.ma_moc === m.ma);
+                const daXong = moc?.trang_thai === "hoan_thanh";
+                const laHangVe = m.ma === "hang_ve_dot_dau";
+                return (
                 <div key={m.ma} className="bg-white px-3 py-2 text-center">
-                  <div className={`mx-auto mb-1 h-1.5 max-w-24 rounded-full ${demTheoMoc[m.ma] ? "bg-red-500" : "bg-slate-200"}`} />
+                  <div className={`mx-auto mb-1 h-1.5 max-w-24 rounded-full ${daXong ? "bg-umc-600" : demTheoMoc[m.ma] ? "bg-red-500" : "bg-slate-200"}`} />
                   <div className="text-xs font-medium text-slate-700">{m.ten}</div>
-                  <div className="text-[11px] text-slate-400">{demTheoMoc[m.ma]} mã rớt</div>
+                  <div className="text-[11px] text-slate-400">
+                    {laHangVe ? (daXong ? `Đã về ${new Date(moc.ngay).toLocaleDateString("vi-VN")}` : "Chưa về")
+                      : (daXong ? "Hoàn thành" : `${demTheoMoc[m.ma] || 0} mã rớt`)}
+                  </div>
+                  {laPdd && moc && (laHangVe || m.ma === "ky_hop_dong") && (
+                    <button type="button" onClick={() => capNhatMoc(g, m.ma)}
+                      className={`mt-1 rounded px-2 py-1 text-[10px] font-medium ${daXong ? "bg-slate-100 text-slate-600" : "bg-umc-50 text-umc-800 hover:bg-umc-100"}`}>
+                      {daXong ? "Mở lại" : laHangVe ? "Đánh dấu hàng về" : "Hoàn thành"}
+                    </button>
+                  )}
                 </div>
-              ))}
+              );})}
             </div>
 
             {dangMo && (

@@ -1,7 +1,3 @@
-fastapi
-uvicorn[standard]
 supabase
 pandas
 openpyxl
-pydantic[email]
-python-multipart

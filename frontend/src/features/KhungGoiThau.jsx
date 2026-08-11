@@ -17,7 +17,6 @@ import {
   PackagePlus,
   Sheet,
   ShieldAlert,
-  Files,
   UploadCloud,
   X,
 } from "lucide-react";
@@ -50,13 +49,6 @@ export const GOI_CON = {
   ],
 };
 
-export const MAN_HINH_GOI = [
-  { ma: "de_xuat",  ten: "Đề xuất số lượng", icon: ClipboardList },
-  { ma: "cua_toi",  ten: "Đề xuất của tôi", icon: LayoutList },
-  { ma: "danh_muc_khoa", ten: "Danh mục đề xuất của khoa", icon: Sheet },
-  { ma: "bieu_mau", ten: "Cam kết của khoa", icon: FileSearch },
-];
-
 export function manHinhTheoVaiTro(goi, laPdd) {
   const ds = [
     { ma: "de_xuat", ten: "Đề xuất số lượng", icon: ClipboardList },
@@ -65,16 +57,15 @@ export function manHinhTheoVaiTro(goi, laPdd) {
   if (!laPdd && goi !== "chi_dinh_thau") {
     ds.push({ ma: "danh_muc_khoa", ten: "Danh mục đề xuất của khoa", icon: Sheet });
   }
-  if (laPdd && goi !== "chi_dinh_thau") {
-    ds.push({ ma: "tong_hop", ten: "Tổng hợp & xuất hồ sơ", icon: Files });
-    ds.push({ ma: "bieu_mau", ten: "Cam kết của khoa", icon: FileSearch });
-  } else {
-    ds.push({
-      ma: "bieu_mau",
-      ten: goi === "chi_dinh_thau" ? "Hồ sơ chỉ định thầu" : "Cam kết của khoa",
-      icon: FileSearch,
-    });
-  }
+  // (Bỏ 09/08/2026) PĐD từng có thêm tab "Tổng hợp & xuất hồ sơ" ở đây, dựng
+  // trên snapshot `phien_tong_hop`. Đó là workflow CŨ đã bị đảo — bản tổng hợp
+  // hiện tại là Danh mục tổng hợp live sync (#tong-hop-pdd/<goiId>), mở từ Bàn
+  // điều hành. Hai đường tổng hợp song song chỉ tạo cơ hội lệch số.
+  ds.push({
+    ma: "bieu_mau",
+    ten: goi === "chi_dinh_thau" ? "Hồ sơ chỉ định thầu" : "Cam kết của khoa",
+    icon: FileSearch,
+  });
   return ds;
 }
 
@@ -82,6 +73,10 @@ export const MUC_CHUNG = [
   { ma: "thieuhang", ten: "Sổ thiếu hàng", mo_ta: "Báo thiếu, theo dõi xử lý và xác nhận cuối tháng", icon: Archive },
   { ma: "sukien",    ten: "Sự kiện nhu cầu", mo_ta: "Ghi nhận thay đổi làm tăng hoặc giảm nhu cầu sử dụng", icon: CalendarClock },
   { ma: "makythuat", ten: "Mã kỹ thuật khoa tự thêm", mo_ta: "Khai mã tương đương hoặc mã mới hoàn toàn", icon: FileSearch },
+  // Đầu kia của "makythuat": khoa gửi đề nghị thì phải có chỗ PĐD gán mã và
+  // duyệt, nếu không đề nghị nằm im mãi ở trạng thái cho_duyet (đúng hiện
+  // trạng trước 09/08/2026 — màn duyệt có sẵn nhưng không được gắn vào menu).
+  { ma: "duyetmakythuat", ten: "Duyệt mã kỹ thuật", mo_ta: "Gán mã hàng/mã quản lý rồi duyệt đề nghị của khoa", icon: ClipboardCheck, chiPdd: true },
   // chiPdd: chỉ Phòng Điều dưỡng/admin thấy — nạp dữ liệu ảnh hưởng toàn viện,
   // khoa không cần và không nên thấy mục này.
   { ma: "napdulieu", ten: "Nạp dữ liệu sử dụng", mo_ta: "Nạp file HIS mới mỗi tháng, thay cho chạy script tay", icon: UploadCloud, chiPdd: true },
@@ -177,13 +172,10 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
         ten: laPdd ? "Đề xuất các khoa" : "Đề xuất của tôi",
         icon: LayoutList,
       },
-      // Chỉ ĐVSD — PĐD đã có "Tổng hợp & xuất hồ sơ" xem hết mọi khoa; chỉ
-      // định thầu không có Danh mục đề xuất dạng 34 cột này.
+      // Chỉ ĐVSD — PĐD xem hết mọi khoa ở Danh mục tổng hợp (Bàn điều hành);
+      // chỉ định thầu không có Danh mục đề xuất dạng 34 cột này.
       ...(!laPdd && g.ma !== "chi_dinh_thau"
         ? [{ ma: "danh_muc_khoa", ten: "Danh mục đề xuất của khoa", icon: Sheet }]
-        : []),
-      ...(laPdd && g.ma !== "chi_dinh_thau"
-        ? [{ ma: "tong_hop", ten: "Tổng hợp & xuất hồ sơ", icon: Files }]
         : []),
       {
         ma: "bieu_mau",

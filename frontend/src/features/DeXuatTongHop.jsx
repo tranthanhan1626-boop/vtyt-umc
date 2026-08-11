@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, ChevronDown, Download, Check, X, PlayCircle, FileText, ExternalLink, Trash2, Package, Sheet, Combine } from "lucide-react";
+import { Search, ChevronDown, Download, FileText, ExternalLink, Trash2, Package, Sheet } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import { NHAN_GOI_THAU } from "./Function1";
-import { taoBanThaoHoSo } from "../lib/xuatHoSo";
 import { GOI_ID_MAP } from "../lib/cotChuan";
-import { taiLichSuTheoNam } from "../lib/lichSuSuDung";
 import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
 
 // Tra ngược nhãn gói con (r.goi, vd "GMHS") -> khoá goiId dùng cho route
@@ -22,16 +20,21 @@ const NHAN_LY_DO = {
 };
 
 
+// Từ 05/08/2026 KHÔNG còn bước "PĐD duyệt giỏ" — khoa submit là chính thức
+// (phụ lục `01_NGHIEP_VU_VA_QUYET_DINH.md`). Cột trạng thái vì vậy chỉ còn để
+// ĐỌC: `de_xuat` = đang hiệu lực, `tu_choi`/rút = đã loại. Các trạng thái
+// `xet_duyet`/`hoan_thanh` chỉ còn xuất hiện ở dữ liệu cũ tạo trước ngày đó —
+// giữ nhãn để bản ghi cũ không hiện mã máy, KHÔNG có đường tạo mới.
 export const NHAN_TRANG_THAI = {
-  de_xuat: "Đề xuất",
-  xet_duyet: "Đang xét duyệt",
-  hoan_thanh: "Hoàn thành",
+  de_xuat: "Đang hiệu lực",
+  xet_duyet: "Đang xét duyệt (dữ liệu cũ)",
+  hoan_thanh: "Hoàn thành (dữ liệu cũ)",
   tu_choi: "Từ chối",
 };
 const MAU_TRANG_THAI = {
-  de_xuat: "bg-slate-100 text-slate-600",
+  de_xuat: "bg-umc-100 text-umc-800",
   xet_duyet: "bg-amber-100 text-amber-800",
-  hoan_thanh: "bg-umc-100 text-umc-800",
+  hoan_thanh: "bg-slate-100 text-slate-600",
   tu_choi: "bg-red-100 text-red-700",
   hon_hop: "bg-slate-100 text-slate-500",
 };
@@ -63,8 +66,6 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
   const [phieuTheoNhom, setPhieuTheoNhom] = useState({}); // {khoaNhom: phieu}
   const [xacNhanXoa, setXacNhanXoa] = useState(null);   // key nhóm chờ xác nhận xoá
   const [lyDoXoa, setLyDoXoa] = useState("");
-  const [gioGop, setGioGop] = useState([]);
-  const [dangGop, setDangGop] = useState(false);
 
   const taiDuLieu = async () => {
     setLoading(true);
@@ -191,134 +192,16 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
     setDangCapNhat(null);
   };
 
-  // Đổi trạng thái cả nhóm — cập nhật mọi mã hàng trong nhóm cùng lúc. Trigger
-  // DB chặn nhảy cóc + sai role trên từng dòng; nhóm vốn cùng trạng thái nên
-  // các dòng chuyển đồng loạt.
-  const doiTrangThai = async (g, trangThaiMoi) => {
-    setDangCapNhat(g.key);
-    setLoiCapNhat((p) => ({ ...p, [g.key]: "" }));
-    const ids = g.items.map((i) => i.id);
-    const { error } = await supabase.from("proposals").update({ trang_thai: trangThaiMoi }).in("id", ids);
-    if (error) {
-      setLoiCapNhat((p) => ({ ...p, [g.key]: error.message }));
-    } else {
-      const idSet = new Set(ids);
-      setRows((prev) => prev.map((r) => (idSet.has(r.id) ? { ...r, trang_thai: trangThaiMoi } : r)));
-    }
-    setDangCapNhat(null);
-  };
-
-  const chonGioDeGop = (g) => {
-    if (g.trangThai !== "hoan_thanh" || g.daDiThau) return;
-    setLoiCapNhat((p) => ({ ...p, gop: "" }));
-    setGioGop((cu) => {
-      if (cu.includes(g.key)) return cu.filter((x) => x !== g.key);
-      const daChon = nhomLoc.filter((x) => cu.includes(x.key));
-      if (daChon.length && (
-        daChon[0].don_vi !== g.don_vi
-        || String(daChon[0].dot_id) !== String(g.dot_id)
-      )) {
-        setLoiCapNhat((p) => ({
-          ...p,
-          gop: "Chỉ gộp các giỏ của cùng khoa và cùng đợt đề xuất.",
-        }));
-        return cu;
-      }
-      return [...cu, g.key];
-    });
-  };
-
-  const gopExcelDaChon = async () => {
-    const dsGio = nhomLoc.filter((g) => gioGop.includes(g.key));
-    if (!dsGio.length || dangGop) return;
-    setDangGop(true);
-    setLoiCapNhat((p) => ({ ...p, gop: "" }));
-
-    const rowsGop = dsGio.flatMap((g) => g.items);
-    const codes = [...new Set(rowsGop.map((r) => r.ma_hang).filter(Boolean))];
-    const nguonKeys = dsGio.map((g) =>
-      g.nhom_de_xuat ? `gio:${g.nhom_de_xuat}` : `gio:le-${g.items[0]?.id}`
-    );
-    const [vt, us, hs] = await Promise.all([
-      fetchAllRows((f, t) => supabase.from("vat_tu")
-        .select("ma_hang,ten_thuong_mai,ky_ma_hieu,hang,nuoc_san_xuat,tieu_chi_ky_thuat")
-        .in("ma_hang", codes).range(f, t), { order: "ma_hang" }),
-      taiLichSuTheoNam(codes),
-      fetchAllRows((f, t) => supabase.from("ho_so_cong_tac")
-        .select("nguon_key,noi_dung").eq("ma_ho_so", "danh_muc_dvsd")
-        .in("nguon_key", nguonKeys).range(f, t), { order: "id" }),
-    ]);
-    if (vt.error || us.error || hs.error) {
-      setLoiCapNhat((p) => ({
-        ...p,
-        gop: vt.error?.message || us.error?.message || hs.error?.message,
-      }));
-      setDangGop(false);
-      return;
-    }
-
-    const thongTin = Object.fromEntries((vt.data || []).map((x) => [x.ma_hang, x]));
-    const rowsDayDu = rowsGop.map((r) => ({ ...r, ...(thongTin[r.ma_hang] || {}) }));
-    const usage = us.data;
-    const hoSoTheoNguon = Object.fromEntries((hs.data || []).map((x) => [x.nguon_key, x]));
-    const meta = {
-      don_vi: dsGio[0].don_vi,
-      nguoi_lap: dsGio[0].created_by_ho_ten || dsGio[0].created_by || dsGio[0].don_vi,
-    };
-    const banNen = taoBanThaoHoSo("danh_muc_dvsd", rowsDayDu, meta, usage);
-    const dongDaSua = [];
-    dsGio.forEach((g, i) => {
-      const nguon = nguonKeys[i];
-      const cu = hoSoTheoNguon[nguon]?.noi_dung?.ban_thao;
-      const rowsCuaGio = rowsDayDu.filter((r) => g.items.some((x) => x.id === r.id));
-      const cungCauTruc = cu?.bang_tinh?.headers
-        && JSON.stringify(cu.bang_tinh.headers) === JSON.stringify(banNen.bang_tinh.headers);
-      const ban = cungCauTruc
-        ? cu
-        : taoBanThaoHoSo("danh_muc_dvsd", rowsCuaGio, meta, usage);
-      dongDaSua.push(...(ban.bang_tinh?.rows || []));
-    });
-    // Cột 7 = mã quản lý, cột 3 = mã hàng trong biểu mẫu danh mục hiện tại.
-    dongDaSua.sort((a, b) =>
-      String(a[6] || "~~~~").localeCompare(String(b[6] || "~~~~"), "vi")
-      || String(a[2] || "").localeCompare(String(b[2] || ""), "vi")
-    );
-    const banGop = {
-      ...banNen,
-      bang_tinh: { ...banNen.bang_tinh, rows: dongDaSua },
-    };
-    const { data, error } = await supabase.rpc("gop_excel_danh_muc_de_xuat", {
-      p_proposal_ids: rowsDayDu.map((r) => r.id),
-      p_noi_dung: {
-        ban_thao: banGop,
-        rows: rowsDayDu,
-        meta,
-        usage,
-        source_ids: rowsDayDu.map((r) => r.id),
-        source_nguon_keys: nguonKeys,
-      },
-    });
-    if (error) {
-      const canPatch = error.code === "PGRST202" || /gop_excel_danh_muc_de_xuat/i.test(error.message || "");
-      setLoiCapNhat((p) => ({
-        ...p,
-        gop: canPatch
-          ? "Staging chưa có chức năng gộp Excel. Cần chạy lại patch_x_quyen_khoa_va_ho_so_theo_gio.sql."
-          : error.message,
-      }));
-      setDangGop(false);
-      return;
-    }
-    setGioGop([]);
-    setDangGop(false);
-    onMoHoSo?.({
-      dotId: dsGio[0].dot_id,
-      donVi: dsGio[0].don_vi,
-      nguonKey: data.nguon_key,
-      maHoSo: "danh_muc_dvsd",
-    });
-  };
-
+  // (Gỡ 09/08/2026) Ở đây từng có 3 việc của workflow CŨ, đều nằm trong
+  // danh sách quyết định đã bị ĐẢO ở phụ lục `01_NGHIEP_VU_VA_QUYET_DINH.md`:
+  //   · `doiTrangThai` — nút "Bắt đầu xét duyệt / Hoàn thành / Từ chối" trên
+  //     `proposals.trang_thai`, tức bước "PĐD duyệt giỏ" đã bỏ từ 05/08/2026.
+  //   · `chonGioDeGop` + `gopExcelDaChon` — gộp nhiều giỏ cùng khoa thành một
+  //     Excel (`gop_excel_danh_muc_de_xuat`). Đã bỏ: Danh mục đề xuất của khoa
+  //     tự gộp mọi giỏ cùng gói con, không cần bước gộp tay. Hàm này còn đọc
+  //     hồ sơ `danh_muc_dvsd` — loại hồ sơ FE đã ngừng tạo từ 07/08/2026, nên
+  //     trên thực tế nó đã hỏng sẵn trước khi bị gỡ.
+  // RPC tương ứng vẫn còn trong DB để đọc dữ liệu cũ, chỉ không còn lối gọi.
   const taiCSV = () => {
     const header = ["Nhóm đề xuất", "Mã hàng", "Tên vật tư", "ĐVT", "Mã nhóm kỹ thuật", "Tên nhóm", "Gói thầu", "Số lượng", "Kỳ dự kiến sử dụng", "Số tháng dự kiến", "Lý do", "Kỹ thuật mới", "Ghi chú", "Khoa đề xuất", "Năm", "Ngày giờ đề xuất", "Phương thức mua sắm", "Nhân viên đề xuất", "Trạng thái"];
     const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -427,13 +310,6 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
             {nhomLoc.length} đề xuất{" "}
             <span className="text-slate-400">({rowsLoc.length} mã hàng{rowsLoc.length !== rows.length && `, lọc từ ${rows.length}`})</span>
           </span>
-          {goi !== "chi_dinh_thau" && (
-            <button type="button" onClick={gopExcelDaChon} disabled={!gioGop.length || dangGop}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-35">
-              <Combine size={14} />
-              {dangGop ? "Đang gộp…" : `Gộp Excel danh mục (${gioGop.length} giỏ)`}
-            </button>
-          )}
         </div>
         {loiCapNhat.gop && <p className="mt-2 text-xs text-red-600">{loiCapNhat.gop}</p>}
       </div>
@@ -450,16 +326,6 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
               <div key={g.key} className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                 {/* Đầu nhóm: thông tin chung của cả bản đề xuất */}
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5 bg-slate-50/70 border-b border-slate-100 text-xs">
-                  {goi !== "chi_dinh_thau" && (
-                    <input type="checkbox"
-                      checked={gioGop.includes(g.key)}
-                      disabled={g.trangThai !== "hoan_thanh" || g.daDiThau}
-                      onChange={() => chonGioDeGop(g)}
-                      title={g.daDiThau
-                        ? "Giỏ đã đi thầu và đã khóa"
-                        : g.trangThai !== "hoan_thanh" ? "PĐD cần hoàn thành duyệt giỏ trước" : "Chọn giỏ để gộp Excel"}
-                      className="rounded border-slate-300 text-emerald-700 focus:ring-emerald-500 disabled:opacity-35" />
-                  )}
                   <span className="inline-flex items-center gap-1.5 font-medium text-slate-700">
                     <Package size={13} className="text-umc-700" />
                     {g.don_vi}
@@ -555,37 +421,12 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
                   </table>
                 </div>
 
-                {/* Chân nhóm: trạng thái + biểu mẫu + xoá — TÁC ĐỘNG CẢ NHÓM */}
+                {/* Chân nhóm: biểu mẫu + rút — TÁC ĐỘNG CẢ NHÓM.
+                    (Gỡ 09/08/2026) Ô "Trạng thái xét duyệt" với 3 nút Bắt đầu
+                    xét duyệt / Hoàn thành / Từ chối từng nằm ở đây — chính là
+                    bước "PĐD duyệt giỏ" đã bỏ. Trạng thái vẫn hiện ở ĐẦU nhóm
+                    dưới dạng nhãn đọc, đủ để đọc dữ liệu cũ. */}
                 <div className="flex flex-wrap items-start gap-x-6 gap-y-3 px-4 py-3 border-t border-slate-100 bg-white">
-                  <div>
-                    <p className="text-xs text-slate-400 mb-1.5">Trạng thái xét duyệt</p>
-                    <div className="flex flex-wrap gap-1">
-                      {g.trangThai === "de_xuat" && (
-                        <button onClick={() => doiTrangThai(g, "xet_duyet")} disabled={dangCapNhat === g.key}
-                          className="flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-40">
-                          <PlayCircle size={12} /> Bắt đầu xét duyệt
-                        </button>
-                      )}
-                      {g.trangThai === "xet_duyet" && (
-                        <>
-                          <button onClick={() => doiTrangThai(g, "hoan_thanh")} disabled={dangCapNhat === g.key}
-                            className="flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-umc-300 text-umc-700 hover:bg-umc-50 disabled:opacity-40">
-                            <Check size={12} /> Hoàn thành
-                          </button>
-                          <button onClick={() => doiTrangThai(g, "tu_choi")} disabled={dangCapNhat === g.key}
-                            className="flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-40">
-                            <X size={12} /> Từ chối
-                          </button>
-                        </>
-                      )}
-                      {(g.trangThai === "hoan_thanh" || g.trangThai === "tu_choi") && (
-                        <span className="text-xs text-slate-400">đã {NHAN_TRANG_THAI[g.trangThai].toLowerCase()}</span>
-                      )}
-                      {g.trangThai === "hon_hop" && (
-                        <span className="text-xs text-amber-700">các mã hàng đang khác trạng thái nhau</span>
-                      )}
-                    </div>
-                  </div>
 
                   <div className="min-w-[240px]">
                     <p className="text-xs text-slate-400 mb-1.5">Biểu mẫu đề nghị mua (chung cả nhóm)</p>

@@ -1,6 +1,63 @@
 # Tiến độ và việc tiếp theo
 
-Cập nhật **07/08/2026**. Nhánh chính hiện tại: `phase-a-luong-de-xuat`.
+Cập nhật **09/08/2026**. Nhánh chính hiện tại: `phase-a-luong-de-xuat`.
+
+## 09/08/2026 — DỌN WORKFLOW CŨ + 2 PATCH BẮT BUỘC CHẠY
+
+**Ba patch của đợt này — ✅ ĐÃ CHẠY TRÊN STAGING 09/08/2026:**
+
+| Patch | Sửa việc gì | Nếu thiếu |
+|---|---|---|
+| `patch_zx_chan_tu_dang_ky_thanh_pdd.sql` | tự đăng ký không tự lên quyền `dieu_duong`; chặn tên miền + danh mục khoa ở SERVER | bất kỳ email nào cũng chiếm được quyền toàn viện |
+| `patch_zv_chot_tra_ma_ve_khoa.sql` | chốt số đi thầu bật `da_di_thau`; gỡ cổng "phải duyệt xong" khỏi tùy chọn 30% | mã quản lý khoa đã đề xuất **không bao giờ** hiện lại ở kỳ sau (mục 2.10); quyền mua thêm 30% khoá vĩnh viễn |
+| `patch_zw_khoa_sua_cot_chan_o_server.sql` | "Khoá sửa cột" của Danh mục đề xuất khoa chặn ở DB | khoá cột chỉ là hiển thị — ai cũng ghi đè được, im lặng (vi phạm mục 9) |
+
+**Kiểm sau khi chạy (09/08/2026):**
+
+- `kiem_truoc_deploy.py` → **✅ Sạch — deploy được** (cả 2 phép kiểm mới đều qua).
+- `smoke_pipeline_hien_tai.py` → **35/35 PASS**, dữ liệu nền và workflow về đúng
+  số dòng ban đầu. Ba bước trước đó bị chặn nay chạy: khoá sửa cột chặn ở server ·
+  tùy chọn 30% kích hoạt được và chặn đúng trần floor · chốt số đi thầu trả mã về
+  khoa, mở chốt thì ẩn lại.
+- Kiểm riêng `patch_zx` bằng anon key, 4 trường hợp: Gmail ngoài → chặn ·
+  `@umc.edu.vn` + khai "Phòng Điều dưỡng" → vào với `dvsd` (KHÔNG lên quyền) ·
+  khoa bịa → chặn · khoa có thật → vào với `dvsd`. Tài khoản `pdd@`/`admin@` cũ
+  giữ nguyên vai trò (trigger chỉ chạy lúc INSERT).
+- Đối chiếu dropdown đăng ký ↔ danh mục HIS: **62/62 khớp**, không có đơn vị nào
+  chọn được rồi bị từ chối.
+
+⚠️ **Hệ quả vận hành của `patch_zx`:** người của Phòng Điều dưỡng tự đăng ký nay
+vào với vai trò `dvsd`. Admin phải nâng `role` thủ công (hiện chỉ làm được trong
+Supabase Table Editor). Màn quản trị người dùng là việc còn nợ — xem C2.
+
+**Đã gỡ khỏi code (workflow cũ, đều nằm trong danh sách quyết định bị đảo ở
+phụ lục `01_NGHIEP_VU_VA_QUYET_DINH.md`):**
+
+- `backend/app/` FastAPI (main/routers/repositories/schemas/core.auth+deps) —
+  frontend nói thẳng với Supabase từ lâu, tầng API này không ai gọi. Giữ lại
+  `app/ingest/validator.py` + `app/core/config.py` vì script nạp HIS còn dùng.
+- `TongHopPhongDieuDuong.jsx` + màn "Tổng hợp & xuất hồ sơ" của PĐD (snapshot
+  `phien_tong_hop`). Word "Phiếu đề nghị mua thầu" dời sang **Bàn điều hành →
+  tab thứ 4**; Excel tổng hợp vốn đã có ở `TongHopPdd.jsx`.
+- `QuaTrinhDeXuat.jsx` (100% mock) + route `#qua-trinh-de-xuat` + `mockup/`.
+  Route này còn mở được **không cần đăng nhập** — nay không còn.
+- `DeXuatTongHop.jsx`: nút "Bắt đầu xét duyệt / Hoàn thành / Từ chối"
+  (= bước PĐD duyệt giỏ đã bỏ) và "Gộp Excel danh mục" (đã bỏ; hàm này còn đọc
+  hồ sơ `danh_muc_dvsd` mà FE ngừng tạo từ 07/08 nên thực tế đã hỏng sẵn).
+
+**Đã NỐI LẠI (không phải thêm mới):** tab **Duyệt mã kỹ thuật** cho PĐD.
+`DuyetNhomKyThuat.jsx` + RPC `duyet_nhom_ky_thuat` có sẵn từ lâu nhưng file
+không được gắn vào `App.jsx` — khoa gửi đề nghị mã mới thì không ai duyệt được,
+trong khi tab "Chờ duyệt" vẫn chỉ người dùng sang một tab không tồn tại.
+
+**Hai màn hình sửa theo:** `TienDoGoiThau.jsx` và `GoiTuyChonMuaThem.jsx` trước
+đây lọc `trang_thai = 'hoan_thanh'` — trạng thái chỉ đạt được qua bước duyệt
+giỏ đã bỏ, nên với dữ liệu của workflow hiện tại hai màn này **luôn rỗng**.
+
+**Smoke test mới:** `backend/scripts/smoke_pipeline_hien_tai.py` — 30 bước đi
+trọn pipeline hiện tại bằng JWT thật của cả hai vai trò, tự dọn và đối chiếu
+lại số dòng dữ liệu nền. `smoke_full_workflow_staging.py` vẫn còn nhưng kiểm
+workflow CŨ, không thay thế được.
 
 ## TRẠNG THÁI HIỆN TẠI — đọc mục này trước tiên
 
