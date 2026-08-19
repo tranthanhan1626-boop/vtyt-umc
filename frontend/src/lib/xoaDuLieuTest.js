@@ -20,9 +20,21 @@ export async function xoaDuLieuKiemThu(loai, id) {
   // ngay ở `delete from proposals` vì `phan_bo_khoa.proposal_id` là NO ACTION.
   // Hàm mới dọn v3 trước rồi mới gọi lại đúng hàm cũ. Các loại còn lại
   // (đề xuất, hồ sơ, phiên tổng hợp) không đụng bảng v3 nên giữ nguyên đường cũ.
+  // Hai loại phải đi qua hàm bọc v3 vì nhánh tương ứng trong
+  // `xoa_du_lieu_kiem_thu` viết từ trước v3 và vỡ khoá ngoại
+  // `phan_bo_khoa_proposal_id_fkey`:
+  //   - 'dot_de_xuat'  -> xoa_dot_kiem_thu_v3   (vá 19/08, Lỗi 5)
+  //   - 'nhom_de_xuat' -> xoa_de_xuat_kiem_thu_v3 (vá 19/08, cùng lỗi — lần vá
+  //     trước chỉ rà nhánh đợt nên bỏ sót nhánh này)
+  // Các loại còn lại không đụng bảng v3 nên giữ nguyên đường cũ.
   const { data, error } = loai === "dot_de_xuat"
     ? await supabase.rpc("xoa_dot_kiem_thu_v3", {
       p_id: Number(id),
+      p_xac_nhan: "XOA-DU-LIEU-TEST",
+    })
+    : loai === "nhom_de_xuat"
+    ? await supabase.rpc("xoa_de_xuat_kiem_thu_v3", {
+      p_id: String(id),
       p_xac_nhan: "XOA-DU-LIEU-TEST",
     })
     : await supabase.rpc("xoa_du_lieu_kiem_thu", {
@@ -32,7 +44,7 @@ export async function xoaDuLieuKiemThu(loai, id) {
     });
   if (error) {
     const chuaPatch = error.code === "PGRST202"
-      || /xoa_du_lieu_kiem_thu|xoa_dot_kiem_thu_v3/i.test(error.message || "");
+      || /xoa_du_lieu_kiem_thu|xoa_dot_kiem_thu_v3|xoa_de_xuat_kiem_thu_v3/i.test(error.message || "");
     throw new Error(chuaPatch
       ? "Staging chưa có chức năng xóa test. Cần chạy backend/sql/patch_za_xoa_du_lieu_kiem_thu.sql."
       : error.message);

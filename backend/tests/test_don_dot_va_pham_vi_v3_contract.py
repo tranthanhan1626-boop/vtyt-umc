@@ -124,3 +124,34 @@ def test_mo_lai_giai_doan_chi_vo_hieu_cac_giai_doan_phia_sau():
 
 def test_mo_lai_giai_doan_van_bat_ly_do():
     assert "p_ly_do" in MO_LAI_GD
+
+
+XOA_DE_XUAT = (ROOT / "sql" / "patch_zzzzq_v3_xoa_de_xuat_kiem_thu.sql").read_text(encoding="utf-8")
+
+
+def test_xoa_de_xuat_don_phan_bo_khoa_truoc():
+    """Lỗi 5 lặp lại ở nhánh `nhom_de_xuat`.
+
+    `patch_zzzzk` chỉ vá nhánh `dot_de_xuat` nên nhánh này vẫn vỡ
+    `phan_bo_khoa_proposal_id_fkey` — dù ở vai trò nào cũng không xoá được.
+    """
+    assert "delete from phan_bo_khoa where proposal_id = any(v_ids)" in XOA_DE_XUAT
+    assert XOA_DE_XUAT.index("delete from phan_bo_khoa") < XOA_DE_XUAT.index(
+        "xoa_du_lieu_kiem_thu('nhom_de_xuat'")
+
+
+def test_xoa_de_xuat_kiem_quyen_truoc_khi_don():
+    # Dọn trước rồi mới để hàm gốc chặn thì khoa A đã kịp xoá số của khoa B.
+    assert XOA_DE_XUAT.index("ĐVSD chỉ được xóa đề xuất của khoa mình") < XOA_DE_XUAT.index(
+        "delete from phan_bo_khoa")
+
+
+def test_xoa_de_xuat_chan_khi_da_vao_snapshot_q():
+    assert "join chot_q_phien f on f.id = d.phien_id and f.hieu_luc" in XOA_DE_XUAT
+    assert "đã nằm trong snapshot Q đang hiệu lực" in XOA_DE_XUAT
+
+
+def test_xoa_de_xuat_giu_nguyen_quy_uoc_ma():
+    # `le:<id số>` = xoá lẻ một dòng; `<uuid>` = xoá cả nhóm.
+    assert "if left(p_id, 3) = 'le:' then" in XOA_DE_XUAT
+    assert "nhom_de_xuat = p_id::uuid" in XOA_DE_XUAT
