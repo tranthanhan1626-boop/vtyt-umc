@@ -7,7 +7,7 @@ import { tinhTuyChonMuaThem30 } from "../lib/tuyChonMuaThem";
 import {
   COT_PDD, NHOM_COT_PDD, GOI_ID_MAP, sapXepFreezeTruoc, tinhLeftFreeze,
   tinhSegmentsGroup, taoCotLichSu, thayCotLichSu, suyRaNamCoDuLieu,
-  taoCotLichSuNhom, chenCotLichSuNhom,
+  taoCotLichSuNhom, chenCotLichSuNhom, cotKhoaSangPdd,
 } from "../lib/cotChuan";
 import { docTenCotTuMau, ganTenMau } from "../lib/tenCotBieuMau";
 import { taiLichSuTheoThang, gomTheoThang } from "../lib/lichSuSuDung";
@@ -230,13 +230,22 @@ async function taiDuLieuGoc(goiId, dotId = null) {
 
 /** Tải ô đã PĐD sửa (ghi đè) + trạng thái khoá cột/dòng cho đúng gói+năm. */
 async function taiOverrideVaKhoa(goiId, namDeXuat) {
-  const [{ data: oRows, error: loiO }, { data: khoaRows, error: loiKhoa }] = await Promise.all([
+  // `goi_id` của bản khoa KHÔNG mang hậu tố ':dot:N' như bản tổng hợp.
+  const goiIdKhoa = String(goiId).split(":dot:")[0];
+  const [{ data: oRows, error: loiO }, { data: khoaRows, error: loiKhoa },
+    { data: oKhoaRows, error: loiOKhoa }] = await Promise.all([
     fetchAllRows((f, t) => supabase.from("danh_muc_tong_hop_o")
       .select("ma_hang, cot, gia_tri")
       .eq("goi_id", goiId).eq("nam_de_xuat", namDeXuat).range(f, t), { order: "id" }),
     fetchAllRows((f, t) => supabase.from("danh_muc_tong_hop_khoa")
       .select("loai, khoa_key")
       .eq("goi_id", goiId).eq("nam_de_xuat", namDeXuat).range(f, t), { order: "id" }),
+    // Ô do KHOA tự sửa. Trước 19/08/2026 màn này không hề đọc bảng đó, nên
+    // PĐD mở Tổng hợp ra chỉ thấy giá trị gốc từ `vat_tu` — khoa gõ TSKT cả
+    // buổi mà PĐD không thấy, rồi PĐD sửa đè, công của khoa mất im lặng.
+    fetchAllRows((f, t) => supabase.from("danh_muc_khoa_o")
+      .select("khoa, ma_hang, gia_tri")
+      .eq("goi_id", goiIdKhoa).eq("nam_de_xuat", namDeXuat).range(f, t), { order: "id" }),
   ]);
   if (loiO) throw loiO;
   if (loiKhoa) throw loiKhoa;
@@ -251,7 +260,25 @@ async function taiOverrideVaKhoa(goiId, namDeXuat) {
   // loai='an_cot' (patch_zk) — ẩn cột, dùng chung cho mọi người và ảnh hưởng
   // cả file Excel xuất ra, nên phải lưu server chứ không để state cục bộ.
   const cotAn = new Set((khoaRows || []).filter((k) => k.loai === "an_cot").map((k) => k.khoa_key));
-  return { overrideTheoMa, cotLocked, dongLocked, cotAn };
+
+  // Gom ô khoa đã sửa theo (mã hàng -> cột PĐD -> [{khoa, giaTri}]).
+  // Khoá cột hai bên đặt tên khác nhau, nên quy về tên bên PĐD ngay tại đây
+  // bằng `cotKhoaSangPdd` — cùng bảng tra mà trigger `cot_pdd_sang_khoa` dùng
+  // ở chiều ngược lại.
+  const oKhoaTheoMa = new Map();
+  (oKhoaRows || []).forEach((r) => {
+    const giaTri = r.gia_tri || {};
+    Object.entries(giaTri).forEach(([cotKhoa, v]) => {
+      if (v === null || v === undefined || String(v).trim() === "") return;
+      const cotPdd = cotKhoaSangPdd(cotKhoa);
+      if (!oKhoaTheoMa.has(r.ma_hang)) oKhoaTheoMa.set(r.ma_hang, new Map());
+      const cua = oKhoaTheoMa.get(r.ma_hang);
+      if (!cua.has(cotPdd)) cua.set(cotPdd, []);
+      cua.get(cotPdd).push({ khoa: r.khoa, giaTri: String(v) });
+    });
+  });
+
+  return { overrideTheoMa, cotLocked, dongLocked, cotAn, oKhoaTheoMa };
 }
 
 // `danhSachCot` phải là bộ cột ĐANG DÙNG (đã thay khối năm động), không phải
@@ -296,7 +323,8 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
         taiDuLieuGoc(goiId, dotId),
         taiOverrideVaKhoa(goiScope, NAM_DE_XUAT),
       ]);
-      const { overrideTheoMa: ov, cotLocked: cl, dongLocked: dl, cotAn: ca } = khoaVaOverride;
+      const { overrideTheoMa: ov, cotLocked: cl, dongLocked: dl, cotAn: ca,
+        oKhoaTheoMa: okm } = khoaVaOverride;
       const [chotRes, trinhKyRes] = await Promise.all([
         dgId
           ? supabase.from("chot_q_phien")
@@ -322,6 +350,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       setCotLocked(cl);
       setDongLocked(dl);
       setCotAn(ca);
+      setOKhoaTheoMa(okm || new Map());
     } catch (e) {
       setLoi(e.message || "Không tải được dữ liệu.");
     } finally {
@@ -355,6 +384,9 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   const [dsNamCoDuLieu, setDsNamCoDuLieu] = useState([]);
   const [phanBoDangSua, setPhanBoDangSua] = useState(null);
   const [revTrinhKy, setRevTrinhKy] = useState(null);
+  // Ô do KHOA sửa, gom theo (mã hàng -> cột PĐD -> [{khoa, giaTri}]).
+  const [oKhoaTheoMa, setOKhoaTheoMa] = useState(new Map());
+  const [khoaGhiDangXem, setKhoaGhiDangXem] = useState(null);
 
   // COT_PDD nhưng khối cột năm được thay bằng đúng năm đang có dữ liệu, rồi
   // chèn thêm khối "lịch sử cả nhóm mã quản lý" ngay cạnh để so sánh bằng mắt.
@@ -954,6 +986,12 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                     const canSua = oCoTheSua(c, r.ma_hang);
                     const value = r[c.key];
                     const daSuaDe = oBiSuaDe(r.ma_hang, c.key);
+                    // Các khoa đã ghi gì vào ô này? Ô nào nhiều khoa ghi khác
+                    // nhau thì PĐD phải biết ngay để duyệt, không phải mở từng
+                    // bảng khoa đi tìm.
+                    const dsKhoaGhi = oKhoaTheoMa.get(r.ma_hang)?.get(c.key) || [];
+                    const soGiaTriKhac = new Set(dsKhoaGhi.map((x) => x.giaTri)).size;
+                    const khoaLech = soGiaTriKhac > 1;
                     const cn = [
                       "qtdx-cell",
                       // Mọi cột đều sửa được (chốt 07/08/2026) nên KHÔNG còn
@@ -973,9 +1011,14 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                           minWidth: c.width, maxWidth: c.width * 1.3,
                           ...(c.freeze ? { left: leftFreezeCell(c.key) } : {}),
                         }}
-                        title={daSuaDe
-                          ? `Đã sửa đè — số gốc: ${formatCell(giaTriGoc(r.ma_hang, c.key), c.kieu) || "(trống)"}`
-                          : undefined}
+                        title={[
+                          daSuaDe
+                            ? `Đã sửa đè — số gốc: ${formatCell(giaTriGoc(r.ma_hang, c.key), c.kieu) || "(trống)"}`
+                            : null,
+                          dsKhoaGhi.length
+                            ? dsKhoaGhi.map((x) => `${x.khoa}: ${x.giaTri}`).join("\n")
+                            : null,
+                        ].filter(Boolean).join("\n") || undefined}
                         onClick={() => canSua && !isEditing && batDauSua(r.ma_hang, c.key, value)}
                       >
                         {isEditing ? (
@@ -1013,6 +1056,20 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                               </button>
                             )}
                             {isLocked && <Lock size={9} className="inline-block ml-1 text-indigo-600" />}
+                            {/* Cờ khoa đã ghi. Lệch nhau thì báo số giá trị
+                                khác nhau — PĐD nhìn một cái là biết ô nào cần
+                                duyệt. Bấm để sổ danh sách từng khoa. */}
+                            {dsKhoaGhi.length > 0 && !daSuaDe && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setKhoaGhiDangXem({ maHang: r.ma_hang, cot: c.key, nhan: c.nhan, ds: dsKhoaGhi }); }}
+                                className={`ml-1 rounded px-1 text-[9px] font-semibold ${
+                                  khoaLech ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600"}`}
+                                title={khoaLech
+                                  ? `${dsKhoaGhi.length} khoa ghi ${soGiaTriKhac} giá trị khác nhau — bấm để xem`
+                                  : `${dsKhoaGhi.length} khoa đã ghi (cùng một giá trị) — bấm để xem`}>
+                                {khoaLech ? `${soGiaTriKhac} giá trị` : `${dsKhoaGhi.length} khoa`}
+                              </button>
+                            )}
                             {(
                               <button
                                 onClick={(e) => { e.stopPropagation(); xemAudit(r.ma_hang, c.key); }}
@@ -1132,6 +1189,43 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       </div>
 
       <StyleToolbar />
+
+      {/* Panel "các khoa đã ghi gì vào ô này".
+          PĐD duyệt bằng cách GÕ TAY vào ô (quyết định 19/08/2026), panel này
+          chỉ để nhìn — nhưng phải nhìn được thì mới gõ đúng. */}
+      <AnimatePresence>
+        {khoaGhiDangXem && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+            className="fixed right-4 top-20 w-96 max-h-[70vh] bg-white border border-slate-200 rounded-lg shadow-xl z-50 flex flex-col"
+          >
+            <div className="flex items-start justify-between gap-2 px-3 py-2 border-b border-slate-100">
+              <div className="text-xs min-w-0">
+                <div className="font-semibold text-slate-800">Các khoa đã ghi</div>
+                <div className="text-slate-500 truncate">
+                  Mã {khoaGhiDangXem.maHang} · {khoaGhiDangXem.nhan}
+                </div>
+              </div>
+              <button type="button" onClick={() => setKhoaGhiDangXem(null)}
+                className="shrink-0 text-[11px] rounded border border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-50">
+                Đóng
+              </button>
+            </div>
+            <div className="overflow-y-auto p-3 space-y-2">
+              {khoaGhiDangXem.ds.map((x, i) => (
+                <div key={`${x.khoa}-${i}`} className="rounded border border-slate-200 px-2 py-1.5">
+                  <p className="text-[11px] font-medium text-slate-700">{x.khoa}</p>
+                  <p className="mt-0.5 text-[11px] text-slate-900 whitespace-pre-wrap">{x.giaTri}</p>
+                </div>
+              ))}
+              <p className="text-[10px] text-slate-500">
+                Gõ giá trị duyệt thẳng vào ô trên bảng. Sau khi duyệt, mọi khoa
+                nhận giá trị đó và ô bên khoa thành chỉ đọc.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Panel lịch sử sửa 1 ô */}
       <AnimatePresence>

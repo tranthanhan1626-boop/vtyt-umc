@@ -34,17 +34,22 @@ import { taiDotIdCuaGoi, locTheoDot } from "../lib/dotBoSung";
  *   - sl_de_xuat_18t để READONLY ở đây — sửa số lượng TRƯỚC đấu thầu vẫn làm
  *     ở Function1.jsx (đã thật). Sau đấu thầu, đường sửa số DUY NHẤT là đẩy
  *     SL (RPC, có chặn tổng mã quản lý), không mở lại ô số tự do ở đây.
- *   - Các cột chữ còn lại (tskt_2627, quy_cach, giai_trinh_2627, thương mại
- *     2026-2027...) vẫn sửa được nhưng CHỈ lưu state cục bộ trong phiên —
- *     y hệt hành vi bản mock cũ, CHƯA có bảng lưu thật (khác Tổng hợp PĐD đã
- *     có danh_muc_tong_hop_o). Không phải regression, chỉ chưa nối tiếp.
- *   - "Live sync" giá trị PĐD sửa trên Tổng hợp xuống đúng ô này (mục 4.1)
- *     chưa nối — cần ánh xạ khoá COT_KHOA<->COT_PDD + mở RLS đọc có kiểm
- *     soát cho danh_muc_tong_hop_o, để bàn riêng.
+ *   - (LỖI THỜI, sửa 19/08/2026) Hai gạch đầu dòng cũ ở đây viết rằng cột chữ
+ *     của khoa "chỉ lưu state cục bộ, CHƯA có bảng lưu thật" và "live sync giá
+ *     trị PĐD chưa nối". Cả hai đều đã xong: `danh_muc_khoa_o` lưu thật từ
+ *     patch_zm, và từ 19/08/2026 giá trị PĐD duyệt trên bản Tổng hợp trở
+ *     thành GIÁ TRỊ CHÍNH của ô bên khoa (patch_zzzzp), ô đó thành chỉ đọc.
+ *     Ngoại lệ: `giai_trinh_2627` không nhận giá trị duyệt — giải trình là
+ *     tiếng nói của từng khoa.
  *   - Cột KHÔNG CÓ NGUỒN DỮ LIỆU THẬT (mã HIS cũ, Thông tư 04, mã kỹ thuật,
  *     lý do rớt DC2025, thương mại tham khảo 2025-2026...) — để trống thay
  *     vì bịa, xem NGUON_KHONG_CO_KHOA.
  */
+
+// Cột KHÔNG nhận giá trị duyệt của PĐD — khoa giữ bản của mình.
+// Khớp với `cot_khong_link_xuong_khoa()` bên SQL (patch_zzzzp); sửa một bên
+// thì phải sửa cả bên kia.
+const COT_KHONG_NHAN_DUYET = new Set(["giai_trinh_2627", "sl_de_xuat_18t"]);
 
 const NGUON_KHONG_CO_KHOA = new Set([
   "his_1599", "his_957", "ma_tt04", "ten_tt04", "ma_his_2023",
@@ -1077,14 +1082,22 @@ function RowKhoa({
         {cotHienThi.map((c) => {
           const isEditing = oDangChon?.maHang === r.ma_hang && oDangChon?.colKey === c.key;
           const canSua = oCoTheSua(c);
-          const value = r[c.key];
           const pdd = oPddSuaDe(r.ma_hang, c.key);
+          // QĐ 19/08/2026 — "khi PĐD làm trên file tổng hợp thì TẤT CẢ các khoa
+          // phải theo thông tin PĐD duyệt". Ô có giá trị duyệt thì giá trị đó
+          // là giá trị CHÍNH của khoa, không còn là nhãn phụ đứng cạnh giá trị
+          // cũ nữa; và ô thành chỉ đọc.
+          //
+          // Ngoại lệ `giai_trinh_2627`: giải trình là tiếng nói của từng khoa,
+          // PĐD giữ bản riêng cho hồ sơ thầu nhưng KHÔNG đè xuống khoa.
+          const pddDuyet = pdd && !COT_KHONG_NHAN_DUYET.has(c.key) ? pdd : null;
+          const value = pddDuyet ? pddDuyet.gia_tri : r[c.key];
           const cn = [
             "qtdx-cell",
-            c.readonly || !canSua ? "readonly" : "",
+            c.readonly || !canSua || pddDuyet ? "readonly" : "",
             daKhoaSua(c.key) ? "col-locked" : "",
             oDaSua.has(`${r.ma_hang}|${c.key}`) ? "sua-de" : "",
-            pdd ? "pdd-sua" : "",
+            pddDuyet ? "pdd-sua" : "",
             isEditing ? "editing" : "",
             c.kieu === "num" ? "num" : "",
             c.freeze ? "freeze" : "",
@@ -1098,7 +1111,7 @@ function RowKhoa({
                 minWidth: c.width, maxWidth: c.width * 1.3,
                 ...(c.freeze ? { left: tinhLeftFreeze(cotHienThi, c.key) } : {}),
               }}
-              onClick={() => canSua && setODangChon({ maHang: r.ma_hang, colKey: c.key })}
+              onClick={() => canSua && !pddDuyet && setODangChon({ maHang: r.ma_hang, colKey: c.key })}
             >
               {isEditing ? (
                 c.kieu === "wide" ? (
@@ -1126,12 +1139,15 @@ function RowKhoa({
                   {/* PĐD sửa gì khoa thấy hết (QĐ 08/08/2026). Số của PĐD là
                       số ĐI THẦU nên phải hiện ngay cạnh số khoa nộp, không
                       giấu trong tooltip. Khoa KHÔNG sửa được ô của PĐD. */}
-                  {pdd && (
+                  {pddDuyet && (
                     <span
                       className="ml-1.5 inline-flex items-center rounded bg-violet-100 px-1 py-0.5 align-middle text-[10px] font-semibold text-violet-800"
-                      title={`Phòng Điều dưỡng đã sửa thành "${pdd.gia_tri ?? "(trống)"}" `
-                        + `· ${pdd.updated_by} · ${new Date(pdd.updated_at).toLocaleString("vi-VN")}`}>
-                      PĐD: {pdd.gia_tri === null || pdd.gia_tri === "" ? "(trống)" : pdd.gia_tri}
+                      title={"Giá trị này do Phòng Điều dưỡng duyệt trên bản Tổng hợp — "
+                        + "toàn viện dùng chung, khoa không sửa được nữa. "
+                        + `Duyệt bởi ${pddDuyet.updated_by} lúc `
+                        + `${new Date(pddDuyet.updated_at).toLocaleString("vi-VN")}. `
+                        + "Bấm biểu tượng lịch sử để xem giá trị khoa đã ghi trước đó."}>
+                      PĐD duyệt
                     </span>
                   )}
                   <button
