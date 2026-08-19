@@ -1,3 +1,10 @@
+> ⛔ **BẢN NÀY ĐÃ LỖI THỜI MỘT PHẦN — đọc `THIET_KE_V2_BO_KHOA_O.md` trước.**
+>
+> Chiều 19/08/2026 chủ dự án đảo luật khoá ô: *"PĐD chỉnh sửa rồi khoa chỉnh
+> sửa nữa, đừng có PĐD xong là khoá ô"*. **Quyết định 1, 2, 3 và 6 ở mục 3 bên
+> dưới KHÔNG còn hiệu lực.** Phần còn giá trị: ánh xạ tên cột (mục 2), ngoại lệ
+> `giai_trinh_2627`, và nhật ký thi công + 2 lỗi đã vá ở mục 6.
+
 # PĐD duyệt trên Tổng hợp → link thẳng xuống Danh mục khoa
 
 Chốt với chủ dự án 19/08/2026. **ĐÃ THI CÔNG XONG** cùng ngày —

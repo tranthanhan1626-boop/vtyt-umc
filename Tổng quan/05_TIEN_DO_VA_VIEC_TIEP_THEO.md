@@ -4,7 +4,36 @@ Cập nhật **19/08/2026**. Nhánh chính hiện tại: `phase-a-luong-de-xuat`
 
 ---
 
-# 19/08/2026 — VÒNG TEST FULL 2 VAI TRÒ, ĐỌC MỤC NÀY TRƯỚC
+# 19/08/2026 (chiều) — QUY TẮC MỚI: "AI SỬA SAU ĐÈ"
+
+**Chốt quy tắc rồi, chưa thi công dòng nào.** Thiết kế + 12 đầu việc:
+`.scratch/link-tong-hop-xuong-khoa/THIET_KE_V2_BO_KHOA_O.md`.
+
+Chủ dự án đảo luật khoá ô đã dựng sáng cùng ngày. Nguyên văn: *"PĐD chỉnh sửa
+rồi khoa chỉnh sửa nữa, đừng có PĐD xong là khoá ô"*.
+
+> **Ai sửa sau đè. Không ai bị khoá cho tới khi PĐD chốt trình ký toàn bộ.**
+
+- PĐD sửa trên Tổng hợp → đè xuống mọi khoa. Khoa sửa lại → chỉ đè ô của khoa
+  mình; Tổng hợp bật cờ lệch + đếm ở đầu trang.
+- Không có nút "duyệt" riêng. Chốt Q khoá cột SỐ + chặn gửi thêm đề xuất; chốt
+  trình ký khoá cột CHỮ. Mở chốt là mở cả bảng.
+- **Bỏ hẳn bước "khoa chốt danh mục"** (nút, cờ, số đếm khoa chưa chốt) — khoa
+  báo xong việc qua Teams. PĐD chốt khi còn khoa chưa gửi: cảnh báo, vẫn cho chốt.
+- Khoa không sửa được sau chốt; PĐD vẫn mở lại được (giữ 2 RPC `mo_chot_*`).
+
+Hai thứ phải biết trước khi gõ: (1) bắt buộc thêm cột `danh_muc_khoa_o.sua_luc
+jsonb` vì bảng chỉ có `updated_at` cho cả dòng JSONB, không biết từng ô sửa lúc
+nào; (2) bỏ bước "khoa chốt danh mục" làm **`Full workflow vtyt web.docx` không
+còn khớp mã nguồn** — phải sửa docx hoặc ghi phụ lục.
+
+Cũng vá trong phiên: **Lỗi 24** — bản Tổng hợp ghi `goi_id` kèm hậu tố ':dot:N',
+bản khoa đọc không kèm, nên PĐD sửa TSKT mà khoa không thấy gì. Đã push
+(`fd2a90d`).
+
+---
+
+# 19/08/2026 (sáng) — VÒNG TEST FULL 2 VAI TRÒ
 
 Chạy trọn 11 bước workflow v3 trên staging bằng JWT thật của cả hai vai trò,
 18–19/08/2026. Nhật ký từng bước: `.scratch/test-full-2roles/00_ke_hoach.md`.
@@ -69,6 +98,8 @@ Cần `SUPABASE_STAGING_DB_URL` trong `backend/.env.local`. Bẫy: host
 
 ## E. Việc tiếp theo, theo thứ tự đề nghị
 
+0. **Thi công V2 "ai sửa sau đè"** — xem mục đầu file. Chen lên trước mọi việc
+   dưới đây vì nó đổi luật, làm sau thì phần làm trước phải sửa lại.
 1. **Bổ sung smoke đường thành công** cho các RPC hiện chỉ có `phai_loi` — lỗ
    hổng đã chứng minh được, không phải phòng xa.
 2. **Rà cờ `da_di_thau`** — v3 không bật nó nữa; chỗ nào còn đọc đang đọc sai.
