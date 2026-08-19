@@ -29,7 +29,6 @@ BANG_XOA = [
     "khoa_nhom_ky_thuat",
     "su_kien_thieu_hang",
     "xac_nhan_thang",
-    "su_kien_nhu_cau",
     "ky_thau",                      # CASCADE so_luong_ky/hop_dong
     "goi_thau_assignment",
     "goi_thau_assignment_log",

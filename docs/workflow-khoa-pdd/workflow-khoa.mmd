@@ -1,0 +1,20 @@
+flowchart LR
+  classDef khoa fill:#E6FFFB,stroke:#0F766E,color:#134E4A,stroke-width:2px
+  classDef sys fill:#F5F3FF,stroke:#7C3AED,color:#4C1D95,stroke-width:2px
+  classDef fail fill:#FEF2F2,stroke:#DC2626,color:#7F1D1D,stroke-width:2px
+  classDef ok fill:#ECFDF5,stroke:#16A34A,color:#14532D,stroke-width:2px
+  classDef gap fill:#FFFBEB,stroke:#D97706,color:#78350F,stroke-width:2px,stroke-dasharray: 6 4
+
+  A["Chọn đợt + gói con<br/>khóa logic = dot_id × goi_id"]:::khoa --> B["Chọn mã quản lý<br/>ĐVT chuẩn + hệ số"]:::khoa
+  B --> C["TSB 24 tháng<br/>P50/P75/P90/P95"]:::sys --> D{"Số > P75?"}
+  D -->|Có| E["Lý do + ghi chú"]:::gap --> F["Chốt tổng mã quản lý"]:::khoa
+  D -->|Không| F
+  F --> G["Phân bổ mã hàng"]:::khoa --> H{"Tổng quy đổi khớp?"}
+  H -->|Không| G
+  H -->|Có| I["Thêm cả mã quản lý vào giỏ server"]:::khoa --> J{"Đợt mở?"}
+  J -->|Không| I
+  J -->|Có| K["Gửi giỏ = chính thức"]:::ok --> L["Word cam kết + Danh mục Khoa"]:::khoa
+  L --> M["Sửa / audit / chốt danh mục"]:::khoa --> N["Nhận kết quả"]:::sys --> O{"Kết quả?"}
+  O -->|Rớt 1 phần| P["Đẩy SL cùng mã quản lý<br/>tổng không đổi"]:::fail --> R["Theo dõi hợp đồng / sử dụng"]:::ok
+  O -->|Rớt hoàn toàn| Q["Giỏ rớt → đợt bổ sung"]:::fail -.-> I
+  O -->|Trúng| R

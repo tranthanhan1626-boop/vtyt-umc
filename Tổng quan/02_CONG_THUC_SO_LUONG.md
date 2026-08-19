@@ -87,10 +87,20 @@ z(P95) = 1,6449
 - `H`: số tháng của kỳ khoa chọn.
 - `σ_12`: độ lệch chuẩn mẫu của 12 tháng sạch gần nhất.
 - Dải thông thường: **P50–P75**.
-- Mặc định: **P75**.
+- **Mức chọn sẵn trên giao diện: P50** (QĐ 17/08/2026 — trước đó là P75).
+- **Chỉ số lớn hơn P75 mới bắt buộc lý do và ghi chú** (QĐ 17/08/2026). Số
+  thấp hơn P50 được chấp nhận, không hỏi gì. Bản trước bắt lý do khi ra ngoài
+  dải P50–P75 theo **cả hai** chiều — quyết định đó đã bị đảo.
 - P90: mức cao, phải giải trình.
 - P95: ngoại lệ, phải giải trình.
 - Chênh 12 tháng gần so cửa sổ trước chỉ là cảnh báo, không tự nhân vào P50.
+- Số gợi ý **không tự điền vào ô**: khoa phải bấm thì số mới vào, không có nút
+  "đồng ý" một chạm (xem đầu `GoiYSoLuong.jsx`).
+
+> ⚠️ Backtest ở mục 4 nghiêng về mức nền cao hơn, và bệnh viện đang thiếu hàng
+> phải mở gói bổ sung liên tục. P50 là mức **chọn sẵn**, không phải khuyến nghị
+> chuyên môn — khoa nâng lên tới P75 vẫn không phải giải trình gì. Nếu kỳ đầu
+> cho thấy đề xuất thấp hơn nhu cầu thật, đây là con số cần xem lại trước tiên.
 
 Nếu dưới 6 tháng thực sự phát sinh trong hai năm, giao diện phải cảnh báo dữ
 liệu thưa; mọi phân vị chỉ để tham khảo và phải đối chiếu kế hoạch chuyên môn.

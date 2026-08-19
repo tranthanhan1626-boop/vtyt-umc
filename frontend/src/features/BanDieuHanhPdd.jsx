@@ -9,6 +9,7 @@ import { fmt } from "../components/ChartDongBo";
 import { GOI_ID_MAP } from "../lib/cotChuan";
 import { gomTheoMaQuanLy, tinhTinhHinhKhoa, tinhTongQuan } from "../lib/tongHopDeXuat";
 import HoSoTrucTuyen from "./HoSoTrucTuyen";
+import GioRotToanVien from "./GioRotToanVien";
 
 /*
  * BanDieuHanhPdd — màn hình làm việc chính của Phòng Điều dưỡng
@@ -65,6 +66,14 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   const [khoaCoWord, setKhoaCoWord] = useState(new Set());
   const [khoaDaChot, setKhoaDaChot] = useState(new Set());
   const [ketQuaRot, setKetQuaRot] = useState([]);
+  const [dsDotGoi, setDsDotGoi] = useState([]);
+  const [giaiDoanThau, setGiaiDoanThau] = useState([]);
+  const [gioRotV3, setGioRotV3] = useState([]);
+  const [phanBoTrungV3, setPhanBoTrungV3] = useState([]);
+  const [khoaThamGiaV3, setKhoaThamGiaV3] = useState([]);
+  const [chotDanhMucV3, setChotDanhMucV3] = useState([]);
+  const [chotTrinhKyKhoaV3, setChotTrinhKyKhoaV3] = useState([]);
+  const [phienTrinhKyV3, setPhienTrinhKyV3] = useState([]);
   const [dangTai, setDangTai] = useState(true);
   const [loi, setLoi] = useState("");
   const [canhBaoChot, setCanhBaoChot] = useState("");
@@ -88,6 +97,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   const [formRot, setFormRot] = useState(null);
   const [mocRot, setMocRot] = useState("chao_gia");
   const [lyDoRot, setLyDoRot] = useState("");
+  const [soLuongRot, setSoLuongRot] = useState("");
   const [dangLuuRot, setDangLuuRot] = useState(false);
   const [loiRot, setLoiRot] = useState("");
 
@@ -114,6 +124,10 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   // goiId dùng cho danh_muc_khoa_chot / link Danh mục đề xuất. Gói bổ sung chỉ
   // có một khoá "bo-sung" (xem bẫy 16, Tổng quan/04_VAN_HANH_KY_THUAT.md).
   const goiIdHienTai = goiConId || (dot?.loai_mua_sam === "mua_sam_bo_sung" ? "bo-sung" : "");
+  const dotGoiHienTai = useMemo(
+    () => (goiConId ? dsDotGoi.find((dg) => dg.goi_id === goiConId) || null : null),
+    [dsDotGoi, goiConId]
+  );
 
   // ---- Dữ liệu chính ------------------------------------------------------
   const tai = useCallback(async () => {
@@ -122,16 +136,64 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
     setLoi("");
     setCanhBaoChot("");
 
-    const [rDeXuat, rKhoa, rHoSo, rKetQua] = await Promise.all([
+    const { data: dotGoiData, error: loiDotGoi } = await supabase.from("dot_goi")
+      .select("id, goi_id").eq("dot_id", dot.id).order("id");
+    if (loiDotGoi) {
+      setLoi(`Không đọc được DOT_GOI: ${loiDotGoi.message}`);
+      setDangTai(false);
+      return;
+    }
+    const dotGoiDangXem = (dotGoiData || []).filter((dg) => !goiConId || dg.goi_id === goiConId);
+    const dotGoiIds = dotGoiDangXem.map((dg) => dg.id);
+    setDsDotGoi(dotGoiData || []);
+
+    const [rDeXuat, rKhoa, rHoSo, rKetQua, rGiaiDoan, rGioRot, rPhanBoTrung,
+      rKhoaThamGia, rSoHienHanh, rChotTrinhKyKhoa, rPhienTrinhKy] = await Promise.all([
       fetchAllRows((f, t) => supabase.from("v_de_xuat_tong_hop").select("*")
         .eq("loai_mua_sam", dot.loai_mua_sam).eq("dot_id", dot.id).range(f, t), { order: "id" }),
       supabase.from("v_don_vi").select("don_vi"),
       fetchAllRows((f, t) => supabase.from("ho_so_cong_tac")
         .select("don_vi, loai_tai_lieu, ma_ho_so")
         .eq("dot_id", dot.id).eq("loai_tai_lieu", "word").range(f, t), { order: "id" }),
-      fetchAllRows((f, t) => supabase.from("v_ket_qua_thau_theo_khoa").select("*")
-        .eq("loai_mua_sam", dot.loai_mua_sam).eq("dot_id", dot.id)
-        .eq("ket_qua", "khong_trung").range(f, t), { order: "ket_qua_id" }),
+      dotGoiIds.length
+        ? fetchAllRows((f, t) => supabase.from("v_ket_qua_thau_v3").select("*")
+          .in("dot_goi_id", dotGoiIds).range(f, t), { order: "ma_hang" })
+        : Promise.resolve({ data: [] }),
+      dotGoiIds.length
+        ? fetchAllRows((f, t) => supabase.from("giai_doan_thau_v3").select("*")
+          .in("dot_goi_id", dotGoiIds).range(f, t), { order: ["dot_goi_id", "thu_tu"] })
+        : Promise.resolve({ data: [] }),
+      dotGoiIds.length
+        ? fetchAllRows((f, t) => supabase.from("v_gio_rot_v3").select("*")
+          .in("dot_goi_id", dotGoiIds).range(f, t), { order: ["khoa", "ma_quan_ly"] })
+        : Promise.resolve({ data: [] }),
+      dotGoiIds.length
+        ? fetchAllRows((f, t) => supabase.from("phan_bo_trung_v3").select("*")
+          .in("dot_goi_id", dotGoiIds).range(f, t), { order: ["ma_hang", "khoa"] })
+        : Promise.resolve({ data: [] }),
+      dotGoiIds.length
+        ? fetchAllRows((f, t) => supabase.from("dot_goi_khoa")
+          .select("dot_goi_id,khoa,tham_gia").in("dot_goi_id", dotGoiIds)
+          .eq("tham_gia", true).range(f, t), { order: ["dot_goi_id", "khoa"] })
+        : Promise.resolve({ data: [] }),
+      // Số HIỆN HÀNH theo (mã hàng × khoa). `v_de_xuat_tong_hop` đọc
+      // `proposals.so_luong` — đó là dấu vết GỐC, bất biến, KHÔNG phải số đang
+      // dùng. Mục III: `phan_bo_khoa` là nguồn duy nhất của số hiện hành.
+      // Thiếu lớp phủ này thì Bàn điều hành và Danh mục tổng hợp cho hai con
+      // số khác nhau cho cùng một mã (đo được: 286 so với 246).
+      dotGoiIds.length
+        ? fetchAllRows((f, t) => supabase.from("phan_bo_khoa")
+          .select("ma_hang,khoa,so_luong_hien_hanh").in("dot_goi_id", dotGoiIds)
+          .range(f, t), { order: ["ma_hang", "khoa"] })
+        : Promise.resolve({ data: [] }),
+      dotGoiIds.length
+        ? fetchAllRows((f, t) => supabase.from("chot_trinh_ky_khoa_v3").select("*")
+          .in("dot_goi_id", dotGoiIds).range(f, t), { order: ["dot_goi_id", "khoa"] })
+        : Promise.resolve({ data: [] }),
+      dotGoiIds.length
+        ? fetchAllRows((f, t) => supabase.from("chot_trinh_ky_phien_v3").select("*")
+          .in("dot_goi_id", dotGoiIds).eq("hieu_luc", true).range(f, t), { order: "id" })
+        : Promise.resolve({ data: [] }),
     ]);
 
     if (rDeXuat.error) {
@@ -141,10 +203,26 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
     }
     // Mã rớt đã chuyển hết SL sang mã tương đương chỉ còn lưu ở Tiến độ gói
     // thầu. Loại khỏi danh mục điều hành để khoa/PĐD cùng nhìn một danh mục.
-    setRows((rDeXuat.data || []).filter((r) => Number(r.so_luong) > 0));
+    // Phủ số hiện hành lên dấu vết gốc trước khi mọi thứ khác tính trên `rows`.
+    const soHienHanh = new Map(
+      (rSoHienHanh.error ? [] : (rSoHienHanh.data || []))
+        .map((x) => [`${x.ma_hang}|${x.khoa}`, Number(x.so_luong_hien_hanh)]),
+    );
+    setRows((rDeXuat.data || [])
+      .map((r) => {
+        const hh = soHienHanh.get(`${r.ma_hang}|${r.don_vi}`);
+        return hh === undefined ? r : { ...r, so_luong: hh };
+      })
+      .filter((r) => Number(r.so_luong) > 0));
     setDsKhoa((rKhoa.data || []).map((x) => x.don_vi));
     setKhoaCoWord(new Set((rHoSo.data || []).map((x) => x.don_vi)));
     setKetQuaRot(rKetQua.error ? [] : (rKetQua.data || []));
+    setGiaiDoanThau(rGiaiDoan.error ? [] : (rGiaiDoan.data || []));
+    setGioRotV3(rGioRot.error ? [] : (rGioRot.data || []));
+    setPhanBoTrungV3(rPhanBoTrung.error ? [] : (rPhanBoTrung.data || []));
+    setKhoaThamGiaV3(rKhoaThamGia.error ? [] : (rKhoaThamGia.data || []));
+    setChotTrinhKyKhoaV3(rChotTrinhKyKhoa.error ? [] : (rChotTrinhKyKhoa.data || []));
+    setPhienTrinhKyV3(rPhienTrinhKy.error ? [] : (rPhienTrinhKy.data || []));
 
     // Mốc dữ liệu HIS mới nhất — PĐD nạp file 2 lần/tuần nên cần biết ngay
     // "số đang dùng để tính là tới tháng mấy", không phải tự nhớ.
@@ -160,11 +238,12 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
 
     // Bảng chốt danh mục là patch mới — thiếu thì chỉ mất một cột, không được
     // làm hỏng cả màn hình.
-    let qChot = supabase.from("danh_muc_khoa_chot").select("khoa, goi_id")
-      .eq("nam_de_xuat", NAM_DE_XUAT);
+    let qChot = supabase.from("danh_muc_khoa_chot").select("khoa, dot_goi_id");
+    if (dotGoiIds.length) qChot = qChot.in("dot_goi_id", dotGoiIds);
     const { data: chotData, error: loiChot } = await qChot;
     if (loiChot) {
       setKhoaDaChot(new Set());
+      setChotDanhMucV3([]);
       setCanhBaoChot(
         loiChot.code === "42P01" || /danh_muc_khoa_chot/i.test(loiChot.message || "")
           ? "Chưa chạy backend/sql/patch_zj_ban_dieu_hanh_pdd.sql — cột \"Đã chốt danh mục\" tạm để trống."
@@ -172,9 +251,10 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
       );
     } else {
       setKhoaDaChot(new Set((chotData || []).map((x) => x.khoa)));
+      setChotDanhMucV3(chotData || []);
     }
     setDangTai(false);
-  }, [dot]);
+  }, [dot, goiConId]);
 
   useEffect(() => { tai(); }, [tai]);
 
@@ -186,15 +266,31 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   }, [rows, goiConId]);
 
   const cay = useMemo(() => gomTheoMaQuanLy(rowsLoc), [rowsLoc]);
+
+  // Khi đang đứng ở một gói con cụ thể, bảng theo dõi chỉ được đếm những khoa
+  // THAM GIA gói con đó (dot_goi_khoa). Trước 18/08/2026 màn này luôn đếm 62
+  // khoa toàn viện, nên "Chưa đề xuất: 61" gồm cả những khoa vốn không thuộc
+  // gói — và chính con số đó là thứ PĐD nhìn để quyết định thời điểm bấm
+  // "Chốt số tham gia đấu thầu" ở Giai đoạn 6.
+  const dsKhoaTheoGoi = useMemo(() => {
+    if (!goiConId || !dotGoiHienTai) return dsKhoa;
+    const thamGia = new Set(
+      khoaThamGiaV3.filter((x) => x.dot_goi_id === dotGoiHienTai.id).map((x) => x.khoa)
+    );
+    // Chưa đọc được bảng tham gia thì giữ nguyên danh sách toàn viện — thà
+    // đếm rộng còn hơn giấu mất khoa đang nợ đề xuất.
+    return thamGia.size ? dsKhoa.filter((k) => thamGia.has(k)) : dsKhoa;
+  }, [dsKhoa, khoaThamGiaV3, goiConId, dotGoiHienTai]);
+
   const tinhHinhKhoa = useMemo(
-    () => tinhTinhHinhKhoa(dsKhoa, rowsLoc, khoaCoWord, khoaDaChot),
-    [dsKhoa, rowsLoc, khoaCoWord, khoaDaChot]
+    () => tinhTinhHinhKhoa(dsKhoaTheoGoi, rowsLoc, khoaCoWord, khoaDaChot),
+    [dsKhoaTheoGoi, rowsLoc, khoaCoWord, khoaDaChot]
   );
   const tongQuan = useMemo(() => tinhTongQuan(tinhHinhKhoa, cay), [tinhHinhKhoa, cay]);
 
   const maDangRot = useMemo(() => {
     const m = new Map();
-    ketQuaRot.forEach((r) => { if (!m.has(r.ma_hang)) m.set(r.ma_hang, r); });
+    ketQuaRot.filter((r) => r.co_rot).forEach((r) => { if (!m.has(r.ma_hang)) m.set(r.ma_hang, r); });
     return m;
   }, [ketQuaRot]);
 
@@ -232,9 +328,14 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   });
 
   // ---- Tích rớt -----------------------------------------------------------
-  const moFormRot = (maHang, nhan, laCaNhom) => {
-    setFormRot({ maHang, nhan, laCaNhom });
+  const moFormRot = (maHang, nhan, laCaNhom, maQuanLy = null) => {
+    if (!dotGoiHienTai) {
+      setLoi("Chọn đúng một gói con trước khi nhập kết quả đấu thầu.");
+      return;
+    }
+    setFormRot({ maHang, nhan, laCaNhom, maQuanLy, rotToanBo: laCaNhom });
     setMocRot("chao_gia");
+    setSoLuongRot("");
     setLyDoRot("");
     setLoiRot("");
   };
@@ -243,40 +344,89 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
     if (!lyDoRot.trim()) { setLoiRot("Phải nhập lý do rớt thầu."); return; }
     setDangLuuRot(true);
     setLoiRot("");
-    const { data, error } = await supabase.rpc("danh_dau_rot_theo_dot", {
-      p_dot_id: Number(dotId),
-      p_ma_hang: formRot.maHang,
-      p_moc: mocRot,
-      p_ly_do: lyDoRot.trim(),
-    });
+    if (!dotGoiHienTai) { setLoiRot("Chưa chọn gói con."); return; }
+    if (!formRot.rotToanBo && (!soLuongRot || Number(soLuongRot) <= 0)) {
+      setLoiRot("Nhập số lượng rớt một phần, hoặc chọn Rớt toàn bộ.");
+      return;
+    }
+    const { data, error } = formRot.laCaNhom
+      ? await supabase.rpc("rot_toan_bo_ma_quan_ly_v3", {
+        p_dot_goi_id: dotGoiHienTai.id, p_ma_quan_ly: formRot.maQuanLy,
+        p_giai_doan: mocRot, p_ly_do: lyDoRot.trim(),
+      })
+      : await supabase.rpc("ghi_ngoai_le_rot_v3", {
+        p_dot_goi_id: dotGoiHienTai.id, p_ma_hang: formRot.maHang[0],
+        p_giai_doan: mocRot,
+        p_so_luong_rot: formRot.rotToanBo ? null : Number(soLuongRot),
+        p_rot_toan_bo: !!formRot.rotToanBo, p_ly_do: lyDoRot.trim(),
+      });
     setDangLuuRot(false);
     if (error) {
-      const chuaPatch = error.code === "PGRST202" || /danh_dau_rot_theo_dot/i.test(error.message || "");
+      const chuaPatch = error.code === "PGRST202" || /ngoai_le_rot_v3|rot_toan_bo_ma_quan_ly_v3/i.test(error.message || "");
       setLoiRot(chuaPatch
-        ? "Staging chưa có chức năng tích rớt trên Bàn điều hành. Cần chạy backend/sql/patch_zj_ban_dieu_hanh_pdd.sql."
+        ? "Staging chưa có pipeline kết quả v3. Cần chạy patch_zzzzc_v3_ket_qua_thau.sql."
         : error.message);
       return;
     }
-    setThongBao(`Đã đánh dấu rớt ${formRot.maHang.length} mã hàng — ${Number(data) || 0} dòng đề xuất của các khoa được cập nhật.`);
+    setThongBao(formRot.laCaNhom
+      ? `Đã ghi rớt toàn bộ ${Number(data) || 0} mã hàng trong mã quản lý.`
+      : `Đã ghi ngoại lệ rớt cho mã ${formRot.maHang[0]}.`);
     setFormRot(null);
     await tai();
   };
 
-  const boRot = async (maHang) => {
+  const boRot = async (maHang, giaiDoan) => {
     setThongBao("");
-    const { data, error } = await supabase.rpc("bo_danh_dau_rot_theo_dot", {
-      p_dot_id: Number(dotId),
+    if (!dotGoiHienTai) { setLoi("Chọn một gói con trước."); return; }
+    const lyDo = window.prompt("Lý do bỏ ngoại lệ rớt:", "") || "";
+    if (!lyDo.trim()) return;
+    const { data, error } = await supabase.rpc("bo_ngoai_le_rot_v3", {
+      p_dot_goi_id: dotGoiHienTai.id,
       p_ma_hang: maHang,
+      p_giai_doan: giaiDoan,
+      p_ly_do: lyDo,
     });
     if (error) {
-      const chuaPatch = error.code === "PGRST202" || /bo_danh_dau_rot_theo_dot/i.test(error.message || "");
+      const chuaPatch = error.code === "PGRST202" || /bo_ngoai_le_rot_v3/i.test(error.message || "");
       setLoi(chuaPatch
-        ? "Staging chưa có chức năng bỏ tích rớt. Cần chạy backend/sql/patch_zj_ban_dieu_hanh_pdd.sql."
+        ? "Staging chưa có pipeline kết quả v3. Cần chạy patch_zzzzc_v3_ket_qua_thau.sql."
         : error.message);
       return;
     }
-    setThongBao(`Đã bỏ tích rớt, ${Number(data) || 0} dòng trở lại mặc định TRÚNG.`);
+    setThongBao(data ? "Đã bỏ ngoại lệ; số trúng và phân bổ đã tự tính lại." : "Không tìm thấy ngoại lệ hiệu lực.");
     await tai();
+  };
+
+  const doiGiaiDoan = async (giaiDoan, trangThai, dangMoLai = false) => {
+    if (!dotGoiHienTai) { setLoi("Chọn một gói con trước."); return; }
+    let lyDo = null;
+    if (dangMoLai) {
+      lyDo = window.prompt("Lý do mở lại giai đoạn (kết quả giai đoạn này và phía sau sẽ hết hiệu lực):", "") || "";
+      if (!lyDo.trim()) return;
+    }
+    const { error } = await supabase.rpc("cap_nhat_giai_doan_thau_v3", {
+      p_dot_goi_id: dotGoiHienTai.id, p_giai_doan: giaiDoan,
+      p_trang_thai: trangThai, p_ly_do: lyDo,
+    });
+    if (error) { setLoi(error.message); return; }
+    setThongBao(dangMoLai
+      ? "Đã mở lại giai đoạn; kết quả từ checkpoint này trở đi đã hết hiệu lực."
+      : `Đã chuyển giai đoạn sang ${trangThai === "hoan_thanh" ? "hoàn thành" : "đang thực hiện"}.`);
+    await tai();
+  };
+
+  const luuPhanBoTrung = async (maHang, giaTri, lyDo) => {
+    if (!dotGoiHienTai) return { error: new Error("Chưa chọn gói con.") };
+    const { error } = await supabase.rpc("cap_nhat_phan_bo_trung_v3", {
+      p_dot_goi_id: dotGoiHienTai.id, p_ma_hang: maHang,
+      p_phan_bo: Object.fromEntries(Object.entries(giaTri).map(([k, v]) => [k, Number(v)])),
+      p_ly_do: lyDo || null,
+    });
+    if (!error) {
+      setThongBao("Đã lưu phân bổ số trúng; tổng đã được kiểm ở server.");
+      await tai();
+    }
+    return { error };
   };
 
   // ---- Dọn dữ liệu làm việc cuối đợt (patch_zm) ---------------------------
@@ -415,7 +565,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
             mau={tongQuan.soKhoaChuaDeXuat > 0 ? "text-red-600" : "text-slate-800"}
             vach={tongQuan.soKhoaChuaDeXuat > 0 ? "bg-red-500" : "bg-emerald-500"} />
           <ONhanh nhan="Đủ Word cam kết" so={`${tongQuan.soKhoaCoWord}/${tongQuan.soKhoaDaDeXuat}`} vach="bg-cyan-400" />
-          <ONhanh nhan="Đã chốt danh mục" so={`${tongQuan.soKhoaDaChot}/${tongQuan.soKhoaDaDeXuat}`} vach="bg-cyan-400" />
+          <ONhanh nhan="Đã chốt danh mục" so={`${tongQuan.soKhoaDaChot}/${tongQuan.soKhoaCanChot}`} vach="bg-cyan-400" />
           <ONhanh nhan="Tổng SL toàn viện" so={fmt(tongQuan.tongSoLuong)} mau="text-umc-600" vach="bg-umc-600" />
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
@@ -498,7 +648,14 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
           }}
         />
       ) : tab === "ket_qua" ? (
-        <TabKetQua ketQuaRot={ketQuaRot} dot={dot} boRot={boRot} />
+        <TabKetQua ketQuaRot={ketQuaRot} dot={dot} boRot={boRot}
+          giaiDoanThau={giaiDoanThau} gioRot={gioRotV3}
+          dotGoiIds={dsDotGoi.filter((dg) => !goiConId || dg.goi_id === goiConId).map((dg) => dg.id)}
+          phanBoTrung={phanBoTrungV3} onLuuPhanBoTrung={luuPhanBoTrung}
+          dotGoiHienTai={dotGoiHienTai} doiGiaiDoan={doiGiaiDoan}
+          khoaThamGia={khoaThamGiaV3} chotDanhMuc={chotDanhMucV3}
+          chotTrinhKyKhoa={chotTrinhKyKhoaV3} phienTrinhKy={phienTrinhKyV3}
+          onTaiLai={tai} />
       ) : (
         // "Phiếu đề nghị mua thầu" (Word `de_nghi_mua`) — 1 trong 5 biểu mẫu
         // chính thức. Trước 09/08/2026 nó chỉ tạo được ở màn "Tổng hợp & xuất
@@ -581,6 +738,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
       {formRot && (
         <HopThoaiRot
           formRot={formRot} mocRot={mocRot} setMocRot={setMocRot}
+          setFormRot={setFormRot} soLuongRot={soLuongRot} setSoLuongRot={setSoLuongRot}
           lyDoRot={lyDoRot} setLyDoRot={setLyDoRot} loiRot={loiRot}
           dangLuuRot={dangLuuRot} onHuy={() => setFormRot(null)} onLuu={luuRot}
         />
@@ -782,7 +940,7 @@ function FragmentNhom({
             </span>
           ) : (
             <button type="button"
-              onClick={() => moFormRot(mq.maHang.map((mh) => mh.ma_hang), `cả nhóm ${mq.ma_quan_ly}`, true)}
+              onClick={() => moFormRot(mq.maHang.map((mh) => mh.ma_hang), `cả nhóm ${mq.ma_quan_ly}`, true, mq.ma_quan_ly)}
               className="rounded border border-red-200 bg-white px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-50">
               Cả nhóm rớt
             </button>
@@ -816,8 +974,11 @@ function FragmentNhom({
               <td className="px-3 py-2 text-right">
                 {rot ? (
                   <div className="inline-flex items-center gap-1">
-                    <span className="rounded bg-red-100 px-2 py-1 text-[11px] font-semibold text-red-700">Rớt</span>
-                    <button type="button" onClick={() => boRot([mh.ma_hang])}
+                    <span className="rounded bg-red-100 px-2 py-1 text-[11px] font-semibold text-red-700">
+                      Rớt {fmt(Number(rot.r1 || 0) + Number(rot.r2 || 0) + Number(rot.r3 || 0))} · Trúng {fmt(rot.so_luong_trung)}
+                    </span>
+                    <button type="button" onClick={() => boRot(mh.ma_hang,
+                      Number(rot.r3) > 0 ? "danh_gia" : Number(rot.r2) > 0 ? "mo_thau" : "chao_gia")}
                       className="rounded border border-slate-200 px-2 py-1 text-[11px] text-slate-500 hover:bg-slate-50">
                       Bỏ tích
                     </button>
@@ -854,79 +1015,241 @@ function FragmentNhom({
 }
 
 // ---------------------------------------------------------------- TAB 3
-function TabKetQua({ ketQuaRot, dot, boRot }) {
-  const theoKhoa = useMemo(() => {
-    const m = new Map();
-    ketQuaRot.forEach((r) => {
-      if (!m.has(r.don_vi)) m.set(r.don_vi, { don_vi: r.don_vi, ma: [], chuaXuLy: 0, cuNhat: null });
-      const k = m.get(r.don_vi);
-      k.ma.push(r);
-      if (!r.da_xu_ly) k.chuaXuLy += 1;
-      if (!k.cuNhat || (r.cap_nhat_luc && r.cap_nhat_luc < k.cuNhat)) k.cuNhat = r.cap_nhat_luc;
+function TabKetQua({ ketQuaRot, dot, boRot, giaiDoanThau, gioRot, phanBoTrung, dotGoiIds = [],
+  onLuuPhanBoTrung, dotGoiHienTai, doiGiaiDoan, khoaThamGia, chotDanhMuc,
+  chotTrinhKyKhoa, phienTrinhKy, onTaiLai }) {
+  const [suaPhanBo, setSuaPhanBo] = useState(null);
+  const [loiPhanBo, setLoiPhanBo] = useState("");
+  const [dangLuuPhanBo, setDangLuuPhanBo] = useState(false);
+  const [dangTrinhKy, setDangTrinhKy] = useState("");
+  const [loiTrinhKy, setLoiTrinhKy] = useState("");
+  const moSuaPhanBo = (r) => {
+    const ds = phanBoTrung.filter((p) => p.ma_hang === r.ma_hang);
+    setLoiPhanBo("");
+    setSuaPhanBo({ maHang: r.ma_hang, tong: Number(r.so_luong_trung), lyDo: "",
+      giaTri: Object.fromEntries(ds.map((p) => [p.khoa, Number(p.so_luong_trung)])),
+      qTheoKhoa: Object.fromEntries(ds.map((p) => [p.khoa, Number(p.q_khoa)])),
     });
-    return [...m.values()].sort((a, b) => b.chuaXuLy - a.chuaXuLy);
-  }, [ketQuaRot]);
-
-  if (!ketQuaRot.length) {
-    return (
-      <section className="rounded-xl border border-slate-200 bg-white p-8 text-center">
-        <CheckCircle2 size={28} className="mx-auto text-emerald-600" />
-        <p className="mt-2 text-sm text-slate-600">
-          Chưa có mã nào bị tích rớt ở đợt "{dot?.ten}".
-        </p>
-        <p className="mt-1 text-xs text-slate-400">
-          Mã không tích mặc định là TRÚNG — không cần tích trúng cho hàng nghìn mã.
-        </p>
-      </section>
-    );
+  };
+  const luuPhanBo = async () => {
+    const tong = Object.values(suaPhanBo.giaTri).reduce((s, n) => s + (Number(n) || 0), 0);
+    if (tong !== suaPhanBo.tong) { setLoiPhanBo(`Tổng ${fmt(tong)} chưa khớp số trúng ${fmt(suaPhanBo.tong)}.`); return; }
+    setDangLuuPhanBo(true);
+    const { error } = await onLuuPhanBoTrung(suaPhanBo.maHang, suaPhanBo.giaTri, suaPhanBo.lyDo);
+    setDangLuuPhanBo(false);
+    if (error) { setLoiPhanBo(error.message); return; }
+    setSuaPhanBo(null);
+  };
+  if (!dotGoiHienTai) {
+    return <section className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
+      Chọn một gói con để làm việc với ba giai đoạn và kết quả riêng của gói đó.
+    </section>;
   }
+  const coRot = ketQuaRot.filter((r) => r.co_rot);
+  const dsKhoa = khoaThamGia
+    .filter((x) => x.dot_goi_id === dotGoiHienTai.id)
+    .sort((a, b) => a.khoa.localeCompare(b.khoa, "vi"));
+  const chotDau = new Set(chotDanhMuc
+    .filter((x) => x.dot_goi_id === dotGoiHienTai.id).map((x) => x.khoa));
+  const chotCuoi = new Map(chotTrinhKyKhoa
+    .filter((x) => x.dot_goi_id === dotGoiHienTai.id).map((x) => [x.khoa, x]));
+  const phienChinhThuc = phienTrinhKy.find((x) => x.dot_goi_id === dotGoiHienTai.id) || null;
+  const duBaGiaiDoan = GIAI_DOAN.every((g) => giaiDoanThau
+    .find((x) => x.dot_goi_id === dotGoiHienTai.id && x.giai_doan === g.ma)?.trang_thai === "hoan_thanh");
+  const soDuChot = dsKhoa.filter((x) => chotDau.has(x.khoa) && chotCuoi.has(x.khoa)).length;
 
+  const chotKhoa = async (khoa) => {
+    setDangTrinhKy(`chot:${khoa}`); setLoiTrinhKy("");
+    const { error } = await supabase.rpc("chot_trinh_ky_khoa_v3", {
+      p_dot_goi_id: dotGoiHienTai.id, p_khoa: khoa,
+    });
+    setDangTrinhKy("");
+    if (error) { setLoiTrinhKy(error.message); return; }
+    await onTaiLai();
+  };
+  const moChotKhoa = async (khoa) => {
+    const lyDo = window.prompt("Lý do mở lại bảng trình ký khoa (revision chính thức hiện tại sẽ hết hiệu lực):", "") || "";
+    if (!lyDo.trim()) return;
+    setDangTrinhKy(`mo:${khoa}`); setLoiTrinhKy("");
+    const { error } = await supabase.rpc("mo_chot_trinh_ky_khoa_v3", {
+      p_dot_goi_id: dotGoiHienTai.id, p_khoa: khoa, p_ly_do: lyDo.trim(),
+    });
+    setDangTrinhKy("");
+    if (error) { setLoiTrinhKy(error.message); return; }
+    await onTaiLai();
+  };
+  const chotToanBo = async () => {
+    setDangTrinhKy("toan_bo"); setLoiTrinhKy("");
+    const { error } = await supabase.rpc("chot_trinh_ky_toan_bo_v3", {
+      p_dot_goi_id: dotGoiHienTai.id,
+    });
+    setDangTrinhKy("");
+    if (error) { setLoiTrinhKy(error.message); return; }
+    await onTaiLai();
+  };
   return (
-    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <p className="text-sm font-semibold text-slate-800">
-          {ketQuaRot.length} dòng mã rớt · {theoKhoa.length} khoa liên quan
-        </p>
-        <p className="mt-0.5 text-xs text-slate-500">
-          Khoa xử lý mã rớt bằng cách đẩy số lượng sang mã tương đương, hoặc chuyển sang gói bổ sung.
-        </p>
-      </div>
-      <div className="divide-y divide-slate-100">
-        {theoKhoa.map((k) => (
-          <div key={k.don_vi} className="px-4 py-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-medium text-slate-800">{k.don_vi}</span>
-              <span className="text-xs text-slate-500">{k.ma.length} mã rớt</span>
-              {k.chuaXuLy > 0 ? (
-                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
-                  {k.chuaXuLy} chưa xử lý
-                  {soNgayTu(k.cuNhat) != null && ` · ${soNgayTu(k.cuNhat)} ngày`}
+    <div className="space-y-3">
+      <section className="rounded-xl border border-slate-200 bg-white p-4">
+        <h3 className="text-sm font-semibold text-slate-800">Ba giai đoạn đấu thầu</h3>
+        <div className="mt-3 grid gap-2 md:grid-cols-3">
+          {GIAI_DOAN.map((g, i) => {
+            const gd = giaiDoanThau.find((x) => x.giai_doan === g.ma);
+            const tt = gd?.trang_thai || "chua_bat_dau";
+            return <div key={g.ma} className="rounded-lg border border-slate-200 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium">{i + 1}. {g.ten}</span>
+                <span className={`rounded px-2 py-0.5 text-[10px] font-semibold ${
+                  tt === "hoan_thanh" ? "bg-emerald-100 text-emerald-700" :
+                  tt === "dang_thuc_hien" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"}`}>
+                  {tt === "hoan_thanh" ? "HOÀN THÀNH" : tt === "dang_thuc_hien" ? "ĐANG THỰC HIỆN" : "CHƯA BẮT ĐẦU"}
                 </span>
-              ) : (
-                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800">Đã xử lý hết</span>
-              )}
+              </div>
+              <div className="mt-3 flex gap-1.5">
+                {tt === "chua_bat_dau" && <button onClick={() => doiGiaiDoan(g.ma, "dang_thuc_hien")}
+                  className="rounded bg-umc-700 px-2 py-1 text-xs text-white">Bắt đầu</button>}
+                {tt === "dang_thuc_hien" && <button onClick={() => doiGiaiDoan(g.ma, "hoan_thanh")}
+                  className="rounded bg-emerald-600 px-2 py-1 text-xs text-white">Hoàn thành</button>}
+                {tt === "hoan_thanh" && <button onClick={() => doiGiaiDoan(g.ma, "dang_thuc_hien", true)}
+                  className="rounded border border-amber-300 px-2 py-1 text-xs text-amber-700">Mở lại</button>}
+              </div>
+            </div>;
+          })}
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <FileSignature size={17} className="text-umc-700" />
+              <h3 className="text-sm font-semibold text-slate-800">Chốt bảng trình ký cuối</h3>
             </div>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {k.ma.map((r) => (
-                <span key={`${r.ma_hang}-${r.don_vi}`}
-                  className={`inline-flex items-center gap-1 rounded border px-2 py-1 text-[11px] ${
-                    r.da_xu_ly ? "border-slate-200 bg-slate-50 text-slate-500" : "border-red-200 bg-red-50 text-red-700"}`}>
-                  <span className="font-mono">{r.ma_hang}</span>
-                  <span className="max-w-40 truncate">{r.ten_vat_tu}</span>
-                  {r.cap_nhat_luc && <span className="text-slate-400">{fmtNgay(r.cap_nhat_luc)}</span>}
-                </span>
-              ))}
-            </div>
+            <p className="mt-1 text-xs text-slate-500">
+              PĐD chốt từng khoa sau ba giai đoạn, rồi chốt toàn bộ để tạo snapshot chính thức bất biến.
+            </p>
           </div>
-        ))}
-      </div>
-    </section>
+          {phienChinhThuc ? (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-right">
+              <p className="text-xs font-bold text-emerald-800">BẢN CHÍNH THỨC · REVISION {phienChinhThuc.revision}</p>
+              <p className="text-[11px] text-emerald-700">Chốt {new Date(phienChinhThuc.chot_luc).toLocaleString("vi-VN")}</p>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+              BẢN NHÁP · chưa có revision chính thức
+            </div>
+          )}
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+          <span className={`rounded-full px-2.5 py-1 font-medium ${duBaGiaiDoan ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+            {duBaGiaiDoan ? "Đã hoàn thành 3/3 giai đoạn" : "Chưa hoàn thành đủ 3 giai đoạn"}
+          </span>
+          <span className="rounded-full bg-blue-50 px-2.5 py-1 font-medium text-blue-700">
+            Đủ chốt {soDuChot}/{dsKhoa.length} khoa
+          </span>
+          <button type="button" onClick={chotToanBo}
+            disabled={!duBaGiaiDoan || soDuChot !== dsKhoa.length || dsKhoa.length === 0 || !!phienChinhThuc || !!dangTrinhKy}
+            className="ml-auto rounded-lg bg-umc-700 px-3 py-1.5 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-35">
+            {dangTrinhKy === "toan_bo" ? "Đang tạo snapshot…" : "Chốt trình ký toàn bộ"}
+          </button>
+        </div>
+
+        {loiTrinhKy && <p className="mt-2 rounded bg-red-50 px-3 py-2 text-xs text-red-700">{loiTrinhKy}</p>}
+        <div className="mt-3 max-h-72 overflow-auto rounded-lg border border-slate-200">
+          {dsKhoa.length === 0 ? <p className="p-4 text-center text-xs text-slate-500">Chưa có danh sách khoa tham gia.</p> : (
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-slate-100 text-slate-500"><tr>
+                <th className="px-3 py-2 text-left">Khoa</th>
+                <th className="px-3 py-2 text-center">Danh mục đầu</th>
+                <th className="px-3 py-2 text-center">Trình ký cuối</th>
+                <th className="px-3 py-2 text-right">Thao tác PĐD</th>
+              </tr></thead>
+              <tbody>{dsKhoa.map(({ khoa }) => {
+                const daDau = chotDau.has(khoa); const daCuoi = chotCuoi.get(khoa);
+                return <tr key={khoa} className="border-t border-slate-100">
+                  <td className="px-3 py-2 font-medium text-slate-700">{khoa}</td>
+                  <td className="px-3 py-2 text-center">{daDau ? <CheckCircle2 size={14} className="mx-auto text-emerald-600" /> : <span className="text-amber-600">Chưa chốt</span>}</td>
+                  <td className="px-3 py-2 text-center">{daCuoi ? <span className="font-semibold text-emerald-700">Rev khoa {daCuoi.revision}</span> : "—"}</td>
+                  <td className="px-3 py-2 text-right">{daCuoi ? (
+                    <button onClick={() => moChotKhoa(khoa)} disabled={!!dangTrinhKy}
+                      className="rounded border border-amber-300 px-2 py-1 text-amber-700 disabled:opacity-40">Mở lại</button>
+                  ) : (
+                    <button onClick={() => chotKhoa(khoa)} disabled={!duBaGiaiDoan || !daDau || !!dangTrinhKy}
+                      className="rounded bg-umc-700 px-2 py-1 text-white disabled:opacity-35">Chốt bảng khoa</button>
+                  )}</td>
+                </tr>;
+              })}</tbody>
+            </table>
+          )}
+        </div>
+      </section>
+
+      {/* Mục VII.3 — "PĐD có tab Giỏ rớt toàn viện: theo dõi khoa nào chưa xử
+          lý, bao nhiêu ngày. Nút Nhắc nhở sinh template tin nhắn để copy sang
+          Teams." Trước 19/08/2026 chỗ này chỉ ĐẾM `{n} mục giỏ rớt`, không cho
+          nhìn ai đang nợ và không thao tác thay khoa được. */}
+      {gioRot.length > 0 && (
+        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+            <p className="text-sm font-semibold text-slate-800">Giỏ rớt toàn viện</p>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Chỉ tính là đã xử lý khi khoa đã submit đề xuất bổ sung, hoặc khoa/PĐD
+              chọn “Không còn nhu cầu”. Vào giỏ nháp chưa được coi là xong.
+            </p>
+          </div>
+          <div className="p-3">
+            <GioRotToanVien dotGoiIds={dotGoiIds} />
+          </div>
+        </section>
+      )}
+
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-sm font-semibold text-slate-800">
+            {ketQuaRot.length} mã trong Q · {coRot.length} mã có ngoại lệ rớt · {gioRot.length} mục giỏ rớt
+          </p>
+          <p className="mt-0.5 text-xs text-slate-500">Mã không có ngoại lệ mặc định trúng toàn bộ. Số trúng = Q − R1 − R2 − R3.</p>
+        </div>
+        {ketQuaRot.length === 0 ? <p className="p-6 text-center text-sm text-slate-500">
+          Chưa có snapshot Q hiệu lực cho gói “{dot?.ten}”.
+        </p> : <div className="overflow-x-auto"><table className="w-full text-sm">
+          <thead className="bg-slate-100 text-xs text-slate-500"><tr>
+            <th className="px-3 py-2 text-left">Mã hàng</th><th className="px-3 py-2 text-right">Q</th>
+            <th className="px-3 py-2 text-right">R1</th><th className="px-3 py-2 text-right">R2</th>
+            <th className="px-3 py-2 text-right">R3</th><th className="px-3 py-2 text-right">Số trúng</th><th></th>
+          </tr></thead><tbody>{ketQuaRot.map((r) => <tr key={`${r.dot_goi_id}-${r.ma_hang}`} className="border-t border-slate-100">
+            <td className="px-3 py-2 font-mono text-xs">{r.ma_hang}</td><td className="px-3 py-2 text-right font-mono">{fmt(r.q)}</td>
+            <td className="px-3 py-2 text-right font-mono">{fmt(r.r1)}</td><td className="px-3 py-2 text-right font-mono">{fmt(r.r2)}</td>
+            <td className="px-3 py-2 text-right font-mono">{fmt(r.r3)}</td><td className="px-3 py-2 text-right font-mono font-semibold">{fmt(r.so_luong_trung)}</td>
+            <td className="px-3 py-2 text-right"><button onClick={() => moSuaPhanBo(r)}
+              className="mr-2 text-xs text-umc-700 hover:underline">Phân bổ về khoa</button>{r.co_rot && <button onClick={() => boRot(r.ma_hang, Number(r.r3)>0?"danh_gia":Number(r.r2)>0?"mo_thau":"chao_gia")}
+              className="text-xs text-amber-700 hover:underline">Bỏ ngoại lệ cuối</button>}</td>
+          </tr>)}</tbody>
+        </table></div>}
+        {suaPhanBo && <div className="border-t border-slate-200 bg-slate-50 p-4">
+          <div className="flex items-center justify-between"><p className="text-sm font-semibold">Phân bổ số trúng mã {suaPhanBo.maHang} · tổng {fmt(suaPhanBo.tong)}</p>
+            <button onClick={() => setSuaPhanBo(null)} className="text-xs text-slate-500">Đóng</button></div>
+          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">{Object.entries(suaPhanBo.giaTri).map(([khoa, so]) => <label key={khoa} className="rounded border border-slate-200 bg-white p-2 text-xs">
+            <span className="block truncate text-slate-600" title={khoa}>{khoa} · Q {fmt(suaPhanBo.qTheoKhoa[khoa])}</span>
+            <input type="number" min="0" step="1" value={so} onChange={(e) => setSuaPhanBo((p) => ({ ...p, giaTri: { ...p.giaTri, [khoa]: e.target.value } }))}
+              className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-right font-mono" />
+          </label>)}</div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <input value={suaPhanBo.lyDo} onChange={(e) => setSuaPhanBo((p) => ({ ...p, lyDo: e.target.value }))}
+              placeholder="Lý do nếu phân bổ khoa vượt Q" className="min-w-80 rounded border border-slate-300 px-2 py-1.5 text-xs" />
+            <button disabled={dangLuuPhanBo} onClick={luuPhanBo} className="rounded bg-umc-700 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">{dangLuuPhanBo ? "Đang lưu…" : "Lưu phân bổ"}</button>
+            {loiPhanBo && <span className="text-xs text-red-600">{loiPhanBo}</span>}
+          </div>
+        </div>}
+      </section>
+    </div>
   );
 }
 
 // ---------------------------------------------------------------- Hộp thoại
 function HopThoaiRot({
-  formRot, mocRot, setMocRot, lyDoRot, setLyDoRot, loiRot, dangLuuRot, onHuy, onLuu,
+  formRot, setFormRot, mocRot, setMocRot, soLuongRot, setSoLuongRot,
+  lyDoRot, setLyDoRot, loiRot, dangLuuRot, onHuy, onLuu,
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
@@ -953,6 +1276,23 @@ function HopThoaiRot({
             </button>
           ))}
         </div>
+
+        {!formRot.laCaNhom && (
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <label className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-700">
+              <input type="checkbox" checked={!!formRot.rotToanBo}
+                onChange={(e) => setFormRot((p) => ({ ...p, rotToanBo: e.target.checked }))} />
+              Rớt toàn bộ số còn lại
+            </label>
+            <label className="text-xs font-medium text-slate-600">
+              Số lượng rớt một phần
+              <input type="number" min="1" step="1" value={soLuongRot}
+                disabled={!!formRot.rotToanBo}
+                onChange={(e) => setSoLuongRot(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-100" />
+            </label>
+          </div>
+        )}
 
         <label className="mt-4 block text-xs font-medium text-slate-600">
           Lý do rớt <span className="text-red-500">*</span>

@@ -1,6 +1,189 @@
 # Tiến độ và việc tiếp theo
 
-Cập nhật **09/08/2026**. Nhánh chính hiện tại: `phase-a-luong-de-xuat`.
+Cập nhật **19/08/2026**. Nhánh chính hiện tại: `phase-a-luong-de-xuat`.
+
+---
+
+# 19/08/2026 — VÒNG TEST FULL 2 VAI TRÒ, ĐỌC MỤC NÀY TRƯỚC
+
+Chạy trọn 11 bước workflow v3 trên staging bằng JWT thật của cả hai vai trò,
+18–19/08/2026. Nhật ký từng bước: `.scratch/test-full-2roles/00_ke_hoach.md`.
+Đánh giá đối chiếu docx: `.scratch/test-full-2roles/DANH_GIA_PHAN_TRAM.md`.
+Bàn giao để chạy tiếp: `.scratch/test-full-2roles/BAN_GIAO.md`.
+
+## Kết quả
+
+| | |
+|---|---|
+| Điều khoản workflow đạt | **43/43** |
+| Invariant đúng | **17/18** (còn invariant 2 — cần quyết định nghiệp vụ) |
+| **Lỗi thật đã fix** | **21** |
+| Xuất phát | ~60% |
+
+## A. Mục A của bản 17/08 đã LỖI THỜI — bảng dưới là hiện trạng đo được
+
+Bản 17/08 viết: *"Phần TRƯỚC đấu thầu gần như đã xong. Phần SAU đấu thầu gần
+như chưa có gì."* **Đo thật cho kết quả ngược lại:**
+
+| | Lỗi tìm được |
+|---|---|
+| Bước 1–5 (trước đấu thầu, "đã xong") | **16 lỗi** |
+| Bước 6–10 (sau đấu thầu, "chưa có gì") | **3 lỗi** |
+
+Bước 6, 7, 9, 10 đi qua **không lỗi nào**. Phần sau đấu thầu được viết một lần
+theo v3; phần trước đấu thầu là các lớp cũ chồng lên nhau qua nhiều lần đảo
+quyết định — mỗi lần đảo để lại một mảnh không ai gỡ.
+
+**Chặng 4 của lộ trình ("Sau đấu thầu — phần lớn nhất, gần như từ đầu") thực tế
+đã xong phần lớn.** Việc còn lại nặng hơn nằm ở chỗ được coi là an toàn.
+
+## B. Ba bài học kỹ thuật, đừng lặp lại
+
+1. **Smoke xanh KHÔNG chứng minh hàm chạy.** `cap_nhat_tong_phan_bo_khoa` hỏng
+   hoàn toàn (`FOR UPDATE is not allowed with aggregate functions`) mà smoke vẫn
+   12/12, vì phép thử duy nhất gọi nó là `phai_loi(...)` — nó ném lỗi thật nhưng
+   vì lý do sai. Chức năng trung tâm của v3 (QĐ 2) chưa từng chạy được lần nào.
+   → **Mọi RPC cần một phép thử đường THÀNH CÔNG, không chỉ đường thất bại.**
+2. **Trigger `before insert` không đủ** khi RPC chèn trước rồi mới UPDATE khoá
+   ngoại. `submit_proposal_group_v2` làm đúng thế. Postgres gọi trigger cùng
+   thời điểm theo THỨ TỰ TÊN — dùng tiền tố `trg_z_` để chạy sau.
+3. **Mẫu lặp lại: tầng DB đủ và đúng, tầng giao diện chưa nối.**
+   `cap_nhat_xu_ly_gio_rot_v3` có đủ 4 trạng thái + audit nhưng không ai gọi;
+   `dot_goi_khoa` có RLS cho PĐD nhưng không có màn ghi.
+
+## C. 11 patch SQL mới (đã chạy staging, chạy lại được)
+
+`patch_zzzzj` quyền quản trị + phân gói con + đóng/mở DOT_GOI độc lập ·
+`patch_zzzzk` dọn đợt kiểm thử có v3 · `patch_zzzzl` gác phạm vi DOT_GOI ·
+`patch_zzzzm` khoá phần khoa sau chốt · `patch_zzzzn` sửa tổng/chia lại về khoa ·
+`patch_zzzzo` mở lại giai đoạn theo đúng docx.
+
+**Chạy patch nay bằng `backend/scripts/chay_patch.py`**, không dán tay nữa.
+Cần `SUPABASE_STAGING_DB_URL` trong `backend/.env.local`. Bẫy: host
+`db.<ref>.supabase.co` chỉ có bản ghi IPv6 — phải đi session pooler.
+
+## D. 5 màn hình mới
+
+`PhanGoiConMaQuanLy` · `DotGoiCuaDot` · `GioRotCuaKhoa` · `GioRotToanVien` ·
+`CanhBaoMaTrungDot`.
+
+## E. Việc tiếp theo, theo thứ tự đề nghị
+
+1. **Bổ sung smoke đường thành công** cho các RPC hiện chỉ có `phai_loi` — lỗ
+   hổng đã chứng minh được, không phải phòng xa.
+2. **Rà cờ `da_di_thau`** — v3 không bật nó nữa; chỗ nào còn đọc đang đọc sai.
+3. **Chuẩn hoá khoá 3 bảng ô sửa tay** (`danh_muc_khoa_o`, `danh_muc_tong_hop_o`,
+   `danh_muc_khoa_chot_audit`) — không neo theo `dot_goi_id` bằng khoá ngoại nên
+   sống sót qua xoá đợt; với production là mầm mống dữ liệu kỳ trước lẫn kỳ sau.
+4. **Quyết định 3 mã quản lý vắt ngang gói con** (`N03.03.050.07`,
+   `N05.02.030.14`, `N07.03.020.01`).
+5. Test lại ở **quy mô thật** (hàng trăm mã, 62 khoa) — vòng này chỉ chạy 1 mã
+   quản lý, 11 mã hàng, 3 khoa.
+6. Test các chức năng **ngoài pipeline** (mục XII) — chưa đụng vòng này.
+
+## F. Năm việc bắt buộc trước go-live — giữ nguyên
+
+Xem mục E của bản 17/08 bên dưới.
+
+---
+
+# 17/08/2026 — KẾ HOẠCH V3 (giữ để tra cứu; mục A đã lỗi thời)
+
+Phiên 17/08/2026 dò lại toàn bộ project (27 màn frontend / 15.705 dòng · 55
+patch SQL · 5 tài liệu Tổng quan) và đối chiếu với `Full workflow vtyt web.docx`.
+Kết quả: **16 quyết định mới**, đã ghi hết vào `01_NGHIEP_VU_VA_QUYET_DINH.md`.
+Mục 3 và mục 6 phía dưới file này là **kế hoạch cũ, đã lỗi thời** — thay bằng
+5 chặng ở đây.
+
+## A. Kết luận của phiên dò
+
+**Phần TRƯỚC đấu thầu gần như đã xong. Phần SAU đấu thầu gần như chưa có gì.**
+
+| Mục workflow | Trạng thái thật |
+|---|---|
+| DOT_GOI là đơn vị | ⚠️ Chưa tồn tại — ba kiểu đánh khóa lẫn lộn (bẫy 27) |
+| Tạo đợt / gói con / danh sách khoa | ✅ `QuanLyDot` + `patch_a5` |
+| Khoa lập đề xuất, quy đổi ĐVT, P50–P95 | ✅ `Function1` + `GoiYSoLuong` |
+| Khoa chốt danh mục | ⚠️ Có `danh_muc_khoa_chot`, thiếu nhánh "không phát sinh nhu cầu" |
+| PĐD hiệu chỉnh | ✅ `TongHopPdd` sửa ô + audit |
+| Số theo từng khoa | ❌ `patch_zs` cố ý **không** chia về khoa — quyết định này bị đảo 17/08 |
+| Chốt số Q | ⚠️ Chỉ có cờ `da_di_thau`, không phải snapshot |
+| Ba giai đoạn, R1/R2/R3 | ❌ `goi_thau_ket_qua_ma` chỉ nhị phân, không có cột giai đoạn, không có số lượng rớt |
+| Phân bổ số trúng về khoa | ❌ Không có bảng nào |
+| Giỏ rớt | ✅ `TienDoGoiThau` + `patch_ze/zf/zg/w` |
+| Chốt trình ký 2 tầng | ⚠️ Có bảng chốt, chưa có revision và cơ chế vô hiệu hóa |
+| Word/Excel | ✅ Đầy đủ |
+| 30% | ⚠️ Có trước thầu, chưa tính lại trên số trúng |
+
+## B. 16 quyết định của phiên
+
+| # | Vấn đề | Quyết định |
+|---|---|---|
+| 1 | Triết lý | Web = sổ ghi + máy tính + dấu vết; Teams = nơi thương lượng. Chỉ 3 khóa cứng toán học, không có cổng chặn quy trình |
+| 2 | PĐD sửa tổng, nhiều khoa cùng mã | Hệ thống chia sẵn theo tỉ lệ đề xuất, PĐD sửa tay được → **đảo `patch_zs`** |
+| 3 | Danh mục tổng hợp | Cột **số** = VIEW SUM từ `phan_bo_khoa`; cột **chữ** vẫn sửa đè |
+| 4 | Rớt một phần | **Chỉ PĐD phân bổ**. Gỡ đường ĐVSD đẩy SL |
+| 5 | Cấp ghi rớt | Mã hàng + nút "rớt toàn bộ mã quản lý" tự rải xuống |
+| 6 | Cổng chốt số đi thầu | **Mềm** — chỉ hiển thị ai chưa nộp, PĐD tự quyết, ghi "chốt khi còn N khoa chưa nộp" |
+| 7 | 55 patch rối | Gộp `schema.sql` v2 + đổi khóa DOT_GOI **trước**, rồi mới xây tính năng |
+| 8 | Word / bộ hồ sơ | Bỏ vòng đời duyệt, bấm là ra file. `ChoDuyet` chỉ còn đếm mã kỹ thuật |
+| 9 | TSKT | `DieuChinhTieuChi` giữ nguyên, ngoài pipeline |
+| 10 | Sổ sự kiện nhu cầu | **Bỏ hẳn** |
+| 11 | Sổ thiếu hàng | **Giữ**, ngoài pipeline — nguồn duy nhất đo nhu cầu thật |
+| 12 | Tùy chọn 30% | Chỉ kích hoạt **sau khi chốt trình ký**, trên số trúng |
+| 13 | Đợt bổ sung | Mỗi đợt là một gói phẳng, không chia gói con |
+| 14 | Mức chọn sẵn | **P50**; chỉ **> P75** mới bắt lý do |
+| 15 | Vai trò | PĐD = admin, cùng quyền, không có vai trò thứ ba |
+| 16 | Cột giá | **Bỏ hẳn** |
+
+Cộng thêm: **không xây hạn nộp / nhắc tự động / thông báo tự động**; **giữ tính
+năng thêm mã kỹ thuật mới** (mã kỹ thuật = mã quản lý); **build đầy đủ mọi
+function trước go-live**, không phần nào được trượt sang sau 01/01/2027.
+
+## C. Việc phải làm
+
+| Xây mới | Sửa | Gỡ |
+|---|---|---|
+| Bảng `dot_goi` + migrate khóa | Tổng hợp: cột số → view | `SoSuKienNhuCau` + bảng + RPC |
+| `phan_bo_khoa` + màn chia tỉ lệ | Ngưỡng lý do → chỉ > P75 | `day_so_luong_rot` (ze/zf/zg) khỏi luồng |
+| Snapshot Q bất biến | Mức chọn sẵn → P50 | Vòng đời duyệt `ho_so_cong_tac` |
+| `ket_qua_rot` 3 giai đoạn + view số trúng | Bỏ cột giá khỏi biểu mẫu | RPC xóa dữ liệu test khỏi production |
+| Phân bổ số trúng + màn phân bổ | Giỏ rớt: bỏ đẩy SL | 55 patch → `backend/sql/lich_su/` |
+| Revision + vô hiệu hóa revision | `GoiTuyChonMuaThem`: khóa tới khi chốt trình ký | |
+| Nhánh "không phát sinh nhu cầu" | `ChoDuyet`: chỉ đếm mã kỹ thuật | |
+| 30% tính lại sau thầu | `HoSoTrucTuyen`: gỡ trạng thái duyệt | |
+| Màn quản trị người dùng (nợ C2) | | |
+
+## D. Năm chặng thi công
+
+| Chặng | Nội dung | Mốc |
+|---|---|---|
+| **1. Nền** | Dump `schema.sql` v2 + `rls_policies.sql` v2 từ DB thật · tạo `dot_goi` · migrate khóa · gỡ 3 thứ đã bỏ. **Không thêm tính năng nào** | T9/2026 |
+| **2. Số theo khoa** | `phan_bo_khoa` · tổng hợp thành view · màn chia theo tỉ lệ. **Rủi ro cao nhất** — đảo quyết định 08/08, backup trước khi chạy | T9/2026 |
+| **3. Chốt Q** | Snapshot bất biến · cổng mềm · nhánh "không phát sinh nhu cầu" | T10/2026 |
+| **4. Sau đấu thầu** | Ngoại lệ rớt 3 GĐ → số trúng → phân bổ → giỏ rớt → 30%. **Phần lớn nhất, gần như từ đầu** | T10–11/2026 |
+| **5. Chốt & xuất** | Revision 2 tầng · Excel chính thức · bỏ cột giá · viết lại smoke E2E | T11/2026 |
+| Pilot 3–5 khoa | | T12/2026 |
+| Chuyển production | Theo thứ tự bắt buộc ở `04_VAN_HANH_KY_THUAT.md` mục 4b | 12/2026 |
+| **Go-live** | | **01/01/2027** |
+
+Nhánh: tiếp tục trên `phase-a-luong-de-xuat`. Chặng 1 và 2 phải có bản sao lưu
+đầy đủ trước khi chạy vì đụng vào dữ liệu đã có.
+
+## E. Năm việc bắt buộc trước go-live
+
+1. **Gỡ RPC `xoa_du_lieu_kiem_thu`** khỏi project sẽ thành production và đổi
+   ref nhận diện — xem `04_VAN_HANH_KY_THUAT.md` mục 4b, bẫy 28.
+2. Dọn sạch dữ liệu thử, nạp lại dữ liệu nền thật, đối chiếu số dòng.
+3. **Diễn tập phục hồi trên bảng LỚN** (`proposals`, `usage_history_current`) —
+   mới diễn tập được bảng nhỏ.
+4. **Kế hoạch dung lượng phải tính cả `usage_history_changelog`**: 291.622 dòng
+   / 48,2 MB, chiếm 40% dung lượng và tăng nhanh gấp đôi bảng lịch sử, nhưng
+   `patch_zn` KHÔNG đụng tới. Đang 142/500 MB gói free.
+5. **Màn quản trị người dùng** — sau `patch_zx`, người PĐD tự đăng ký vào với
+   vai trò `dvsd` và phải nâng quyền tay trong Supabase Table Editor.
+
+---
 
 ## 09/08/2026 — DỌN WORKFLOW CŨ + 2 PATCH BẮT BUỘC CHẠY
 
@@ -106,16 +289,14 @@ workflow CŨ, không thay thế được.
   1.149.630 + 148.672 = 1.298.302 = đúng số cột "Nhóm 2025" hiện trên cả 2
   dòng.
 
-**Việc tiếp theo gần nhất:**
-1. **Diễn tập phục hồi trên bảng LỚN** (`proposals`, và nhóm nặng
-   `usage_history_current`) — mới diễn tập được bảng nhỏ.
-2. **Kế hoạch dung lượng phải tính cả `usage_history_changelog`** — xem mục 6b
-   `04_VAN_HANH_KY_THUAT.md`: bảng này 291.622 dòng / 48,2 MB, chiếm 40% dung
-   lượng và tăng nhanh gấp đôi bảng lịch sử, nhưng `patch_zn` KHÔNG đụng tới.
-3. Live sync số PĐD sửa trên Tổng hợp → xuống Danh mục đề xuất từng khoa
-   (mục 4.1 nghiệp vụ) — **chưa thiết kế thuật toán chia lại** khi nhiều khoa
-   cùng đề xuất một mã. Phải bàn trước khi code.
-3. Chốt sau đấu thầu / khóa "Danh mục chính thức" (mục 4.4 nghiệp vụ).
+**Việc tiếp theo gần nhất:** đã thay bằng **kế hoạch v3 mục D** ở đầu file.
+
+Riêng câu hỏi treo lâu nhất — *"chia lại thế nào khi nhiều khoa cùng đề xuất
+một mã"* — đã có lời giải ngày 17/08/2026: hệ thống **chia sẵn theo đúng tỉ lệ
+khoa đã đề xuất** (làm tròn xuống, dư dồn khoa lớn nhất) rồi để PĐD sửa tay,
+và chặn lưu nếu tổng chưa khớp. Không còn phải "suy ngược một tổng về từng
+khoa" như `patch_zs` từng kết luận là bất khả — vì số theo khoa trở thành
+nguồn gốc, còn tổng là view cộng lên.
 
 **Dung lượng Supabase free:** đang 142/500MB. Xem mục **6b**
 `04_VAN_HANH_KY_THUAT.md` — có số liệu, tốc độ tăng và 2 quyết định giữ dự án
@@ -733,6 +914,11 @@ file. Toàn bộ backlog phía dưới đã được viết lại quanh flow m�
 
 ## 1. Đã có trong code (và số phận trong flow mới)
 
+> ⚠️ Bảng này viết ngày 05/08/2026. Ba dòng đã lỗi thời: "thay bằng Excel cộng
+> tác" / "thay bằng Quá trình đề xuất" (bỏ 09/08) và "Bỏ đề nghị riêng" cho
+> Điều chỉnh tiêu chí kỹ thuật (giữ nguyên, QĐ 17/08). Bảng đối chiếu đang
+> hiệu lực là **mục A và C ở đầu file**.
+
 | Nhóm | Trạng thái | Ảnh hưởng của flow mới |
 |---|---|---|
 | App theo gói/đợt, vai trò ĐVSD/PĐD | Đã có | Giữ |
@@ -777,7 +963,11 @@ file. Toàn bộ backlog phía dưới đã được viết lại quanh flow m�
 - Backtest 18 tháng: TSB α=0,30 vẫn thắng (WAPE 30,7%), bình quân 18 tháng
   thua (WAPE 38,1%). Giữ TSB làm công thức nền.
 
-## 3. Backlog mới theo flow "cộng tác trên Excel"
+## 3. Backlog cũ theo flow "cộng tác trên Excel" — ⛔ ĐÃ LỖI THỜI
+
+> ⛔ **Giữ làm lịch sử, KHÔNG làm theo.** Toàn bộ mục này viết cho flow có
+> "Quá trình đề xuất 50–70 cột" và cơ chế ĐVSD đẩy SL — cả hai đã bị đảo
+> (09/08 và 17/08/2026). Kế hoạch đang hiệu lực là **5 chặng ở mục D đầu file**.
 
 ### 3.1 Chuẩn bị nghiệp vụ và schema
 
@@ -946,7 +1136,7 @@ Các mục sau tài liệu cũ đề, giờ **không còn hiệu lực** vì flo
 - file số lượng đã chốt kỳ 1/2027;
 - 3–5 khoa pilot.
 
-## 6. Thứ tự làm tiếp
+## 6. Thứ tự làm tiếp (bản cũ) — ⛔ ĐÃ THAY BẰNG 5 CHẶNG Ở MỤC D
 
 1. **Xong tài liệu nghiệp vụ** (đã làm 05/08/2026).
 2. **Mockup HTML tĩnh** — Excel cộng tác + màn PĐD mới. Duyệt với người dùng.
@@ -969,7 +1159,7 @@ tạo sau khi mockup được duyệt). Site production `vtyt-umc` vẫn đứng
 
 ## 7. Sau go-live
 
-- nhắc và xử lý thiếu hàng/sự kiện nhu cầu theo nhịp tháng;
+- nhắc và xử lý **thiếu hàng** theo nhịp tháng (sổ sự kiện nhu cầu đã bỏ);
 - cảnh báo chậm cam kết và sắp hết sớm;
 - báo cáo hội đồng giữa kỳ;
 - Q4/2027 chạy lại rolling-origin backtest bằng dữ liệu có ghi thiếu hàng

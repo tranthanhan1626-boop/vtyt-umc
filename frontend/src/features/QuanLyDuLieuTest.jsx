@@ -119,15 +119,6 @@ export default function QuanLyDuLieuTest({ profile }) {
         phu: (r) => fmtNgay(r.created_at),
       },
       {
-        key: "su_kien_nhu_cau",
-        ten: "Sự kiện nhu cầu",
-        query: () => fetchAllRows((f, t) => supabase.from("su_kien_nhu_cau")
-          .select("id,don_vi,ma_hang,ma_quan_ly,ma_ly_do,trang_thai,created_at")
-          .order("created_at", { ascending: false }).range(f, t), { order: "id" }),
-        nhan: (r) => `${r.don_vi} · ${r.ma_hang || r.ma_quan_ly || r.ma_ly_do}`,
-        phu: (r) => `${r.trang_thai} · ${fmtNgay(r.created_at)}`,
-      },
-      {
         key: "de_nghi_sua_tieu_chi",
         ten: "Đề nghị sửa tiêu chí",
         query: () => fetchAllRows((f, t) => supabase.from("de_nghi_sua_tieu_chi")

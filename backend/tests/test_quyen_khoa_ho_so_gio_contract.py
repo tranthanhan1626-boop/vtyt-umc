@@ -56,9 +56,9 @@ def test_bo_ho_so_neo_dung_gio_va_tao_nguyen_tu_hai_file():
     assert "rowsDangMo" in XUAT_HO_SO
 
 
-def test_pdd_duoc_sua_truc_tiep_va_van_ghi_revision():
-    assert "pddCoTheSua" in HO_SO
-    assert 'luu("pdd_sua")' in HO_SO
+def test_pdd_va_khoa_cung_luu_noi_dung_hien_hanh():
+    assert 'luu(laPdd ? "pdd_sua" : "luu")' in HO_SO
+    assert "Lưu nội dung hiện hành" in HO_SO
     assert "ho_so_cong_tac_lich_su" in PATCH_X
 
 
@@ -70,10 +70,10 @@ def test_ma_da_gui_an_den_khi_pdd_chot_da_di_thau():
     assert "chot_danh_muc_da_di_thau" in PATCH_X
 
 
-def test_gop_excel_nhieu_gio_va_khoa_bat_bien():
+def test_gop_excel_nhieu_gio_giu_duoc_lich_su_legacy():
     assert "gop_excel_danh_muc_de_xuat" in PATCH_X
     assert "'gop:' || gen_random_uuid()" in PATCH_X
     assert "fn_khoa_danh_muc_da_di_thau" in PATCH_X
     assert "'di_thau'" in PATCH_X
     assert "danh_muc_di_thau_id" in PATCH_X
-    assert "Chọn đã đi thầu" in HO_SO
+    assert "Tạo file hiện hành" in HO_SO

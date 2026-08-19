@@ -154,7 +154,13 @@ export function tinhTongQuan(tinhHinhKhoa = [], cayMaQuanLy = []) {
     soKhoaDaDeXuat: daDeXuat.length,
     soKhoaChuaDeXuat: tinhHinhKhoa.length - daDeXuat.length,
     soKhoaCoWord: daDeXuat.filter((k) => k.coWord).length,
-    soKhoaDaChot: daDeXuat.filter((k) => k.daChot).length,
+    // Mẫu số là MỌI khoa tham gia gói con, không phải chỉ khoa đã đề xuất.
+    // Khoa chọn "Không phát sinh nhu cầu" vẫn phải CHỐT danh mục, mà khoa đó
+    // không có đề xuất nào — đếm theo `daDeXuat` thì nó biến mất khỏi mẫu số
+    // và PĐD thấy "2/2 đã chốt" trong khi thực tế còn khoa chưa chốt. Chính
+    // con số này là thứ PĐD nhìn để quyết thời điểm bấm cổng mềm Giai đoạn 6.
+    soKhoaDaChot: tinhHinhKhoa.filter((k) => k.daChot).length,
+    soKhoaCanChot: tinhHinhKhoa.length,
     soMaQuanLy: cayMaQuanLy.length,
     soMaHang: cayMaQuanLy.reduce((t, mq) => t + mq.soMaHang, 0),
     tongSoLuong: cayMaQuanLy.reduce((t, mq) => t + mq.tongSoLuong, 0),

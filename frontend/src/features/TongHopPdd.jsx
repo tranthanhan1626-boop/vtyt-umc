@@ -24,7 +24,7 @@ import { xuatExcelDong, tenFileAnToan } from "../lib/xuatExcelDong";
  * xuất mã đó với số lượng chi tiết, cùng tổng.
  *
  * DỮ LIỆU 06/08/2026:
- *   1. Phần ĐỌC gốc (số lịch sử, SL đề xuất thật) — nối proposals + vat_tu +
+ *   1. Phần ĐỌC gốc (số lịch sử, SL hiện hành) — nối phan_bo_khoa + vat_tu +
  *      nhom_ky_thuat + usage_history_current.
  *   2. Phần SỬA/KHOÁ — nối THẬT tiếp, dùng patch_zd_danh_muc_tong_hop_o.sql:
  *      bảng `danh_muc_tong_hop_o` (giá trị đã PĐD ghi đè), audit append-only
@@ -32,10 +32,8 @@ import { xuatExcelDong, tenFileAnToan } from "../lib/xuatExcelDong";
  *      (`danh_muc_tong_hop_khoa`). Sửa 1 ô = upsert; server tự chặn nếu cột
  *      hoặc dòng đang khoá (trigger fn_chan_o_da_lock, báo lỗi rõ ràng).
  *
- *   ⚠️ CHƯA LÀM: sửa `sl_de_xuat_2627` ở đây CHỈ ghi đè giá trị hiển thị trên
- *   Tổng hợp, KHÔNG tự "sync ngược" chia lại cho từng khoa trong `proposals`
- *   như tài liệu nghiệp vụ mô tả (mục 4.1) — thuật toán chia lại khi nhiều
- *   khoa cùng đề xuất 1 mã chưa được thiết kế, cần bàn trước khi làm tiếp.
+ *   Cột `sl_de_xuat_2627` là SUM từ `phan_bo_khoa`. Khi PĐD sửa tổng, RPC chia
+ *   theo tỷ lệ số gốc; bảng con cho phép chỉnh tay và giữ tổng khớp tuyệt đối.
  *
  * Một số cột KHÔNG CÓ NGUỒN DỮ LIỆU THẬT trong schema hiện tại (mã HIS cũ,
  * Thông tư 04, mã kỹ thuật...) — để trống thay vì bịa, xem NGUON_KHONG_CO.
@@ -79,17 +77,33 @@ function epGiaTri(giaTriText, kieu) {
  * nhom_ky_thuat + usage_history_current, ráp thành đúng shape COT_PDD. */
 async function taiDuLieuGoc(goiId, dotId = null) {
   const bo = GOI_ID_MAP[goiId] || GOI_ID_MAP["18t-dung-chung"];
+  let dotGoiId = null;
+  if (dotId) {
+    const { data: dg, error: loiDotGoi } = await supabase.from("dot_goi")
+      .select("id").eq("dot_id", Number(dotId)).eq("goi_id", goiId).maybeSingle();
+    if (loiDotGoi) throw loiDotGoi;
+    dotGoiId = dg?.id || null;
+  }
 
   // Gói bổ sung: 3 đợt T1/T5/T9 chỉ khác nhau ở dot_de_xuat.thang_moc, không
   // khác ở cột `goi` — không lọc thêm thì cả 3 đợt ra cùng một rổ (patch_zt).
   const dsDotId = await taiDotIdCuaGoi(bo);
-  let qProposals = supabase.from("proposals")
-    .select("ma_hang, don_vi, so_luong")
-    .eq("nam_de_xuat", NAM_DE_XUAT)
-    .eq("is_current", true)
-    .eq("loai_mua_sam", bo.loai_mua_sam);
-  if (bo.goi) qProposals = qProposals.eq("goi", bo.goi);
-  qProposals = dotId ? qProposals.eq("dot_id", Number(dotId)) : locTheoDot(qProposals, dsDotId);
+  let qProposals;
+  let laPhanBoV3 = false;
+  if (dotGoiId) {
+    laPhanBoV3 = true;
+    qProposals = supabase.from("phan_bo_khoa")
+      .select("ma_hang, khoa, so_luong_hien_hanh, so_luong_goc")
+      .eq("dot_goi_id", dotGoiId);
+  } else {
+    qProposals = supabase.from("proposals")
+      .select("ma_hang, don_vi, so_luong")
+      .eq("nam_de_xuat", NAM_DE_XUAT)
+      .eq("is_current", true)
+      .eq("loai_mua_sam", bo.loai_mua_sam);
+    if (bo.goi) qProposals = qProposals.eq("goi", bo.goi);
+    qProposals = dotId ? qProposals.eq("dot_id", Number(dotId)) : locTheoDot(qProposals, dsDotId);
+  }
   const { data: propRows, error: loiProposals } = await fetchAllRows((f, t) =>
     qProposals.range(f, t), { order: "id" });
   if (loiProposals) throw loiProposals;
@@ -98,9 +112,13 @@ async function taiDuLieuGoc(goiId, dotId = null) {
   // Dòng nguồn đã được khoa xử lý sau rớt 1 phần được RPC giảm về 0. Nó chỉ
   // còn là audit ở Tiến độ gói thầu, không được tiếp tục xuất hiện trong danh
   // mục tổng hợp PĐD hay làm tổng số giả.
-  (propRows || []).filter((r) => Number(r.so_luong) > 0).forEach((r) => {
+  (propRows || []).filter((r) => Number(laPhanBoV3 ? r.so_luong_hien_hanh : r.so_luong) > 0).forEach((r) => {
     if (!theoMa.has(r.ma_hang)) theoMa.set(r.ma_hang, []);
-    theoMa.get(r.ma_hang).push({ don_vi: r.don_vi, so_luong: Number(r.so_luong) || 0 });
+    theoMa.get(r.ma_hang).push({
+      don_vi: laPhanBoV3 ? r.khoa : r.don_vi,
+      so_luong: Number(laPhanBoV3 ? r.so_luong_hien_hanh : r.so_luong) || 0,
+      so_luong_goc: Number(laPhanBoV3 ? r.so_luong_goc : r.so_luong) || 0,
+    });
   });
   const dsMaHang = [...theoMa.keys()];
   if (dsMaHang.length === 0) return { bo, rows: [] };
@@ -192,7 +210,10 @@ async function taiDuLieuGoc(goiId, dotId = null) {
       hang_sx: vt.hang || null,
       nuoc_sx: vt.nuoc_san_xuat || null,
       ma_hang: maHang,
-      khoaDeXuat: khoaDeXuat.map((k) => ({ khoaMa: k.don_vi, khoaTen: k.don_vi, soLuong: k.so_luong })),
+      khoaDeXuat: khoaDeXuat.map((k) => ({
+        khoaMa: k.don_vi, khoaTen: k.don_vi, soLuong: k.so_luong,
+        soLuongGoc: k.so_luong_goc,
+      })),
       tongToanVien: slDeXuat,
     };
     NGUON_KHONG_CO.forEach((k) => { row[k] = null; });
@@ -204,7 +225,7 @@ async function taiDuLieuGoc(goiId, dotId = null) {
     || a.ten_vt_2627.localeCompare(b.ten_vt_2627, "vi"));
   rows.forEach((r, i) => { r.stt = i + 1; });
 
-  return { bo, rows, dsNamCoDuLieu };
+  return { bo, rows, dsNamCoDuLieu, dotGoiId };
 }
 
 /** Tải ô đã PĐD sửa (ghi đè) + trạng thái khoá cột/dòng cho đúng gói+năm. */
@@ -265,24 +286,36 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   // dùng khi số đã xong và sắp mang đi thầu. Server chặn độc lập bằng trigger.
   const [chot, setChot] = useState(null);   // { chot_boi, chot_luc } | null
   const [dangChot, setDangChot] = useState(false);
+  const [dotGoiId, setDotGoiId] = useState(null);
 
   const taiLai = useCallback(async () => {
     setDangTai(true);
     setLoi("");
     try {
-      const [{ bo, rows, dsNamCoDuLieu: dsNam }, khoaVaOverride, chotRes] = await Promise.all([
+      const [{ bo, rows, dsNamCoDuLieu: dsNam, dotGoiId: dgId }, khoaVaOverride] = await Promise.all([
         taiDuLieuGoc(goiId, dotId),
         taiOverrideVaKhoa(goiScope, NAM_DE_XUAT),
-        dotId
-          ? supabase.from("danh_muc_dot_chot").select("chot_boi, chot_luc")
-            .eq("dot_id", Number(dotId)).maybeSingle()
-          : supabase.from("danh_muc_tong_hop_chot").select("chot_boi, chot_luc")
-            .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT).maybeSingle(),
       ]);
       const { overrideTheoMa: ov, cotLocked: cl, dongLocked: dl, cotAn: ca } = khoaVaOverride;
-      // Chưa chạy patch_zs -> bảng chưa có; coi như chưa chốt, không làm vỡ màn.
+      const [chotRes, trinhKyRes] = await Promise.all([
+        dgId
+          ? supabase.from("chot_q_phien")
+            .select("id, revision, so_khoa_chua_chot, chot_boi, chot_luc")
+            .eq("dot_goi_id", dgId).eq("hieu_luc", true).maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+        // Cần biết TRƯỚC khi bấm là sẽ ra bản nháp hay bản chính thức. Trước
+        // 19/08/2026 chỉ có một nhãn "Xuất Excel đi thầu" cho cả hai trạng
+        // thái, phải mở file ra mới biết mình vừa xuất bản nào — với hồ sơ đi
+        // trình ký thì đó là chỗ dễ nhầm.
+        dgId
+          ? supabase.from("chot_trinh_ky_phien_v3")
+            .select("revision").eq("dot_goi_id", dgId).eq("hieu_luc", true).maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+      ]);
       setChot(chotRes.error ? null : (chotRes.data || null));
+      setRevTrinhKy(trinhKyRes.error ? null : (trinhKyRes.data?.revision ?? null));
       setBoThau(bo);
+      setDotGoiId(dgId || null);
       setRowsGoc(rows);
       setDsNamCoDuLieu(dsNam || []);
       setOverrideTheoMa(ov);
@@ -320,6 +353,8 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   const [dangXuat, setDangXuat] = useState(false);
   const [audit, setAudit] = useState(null); // { maHang, cot, dsAudit, dangTai }
   const [dsNamCoDuLieu, setDsNamCoDuLieu] = useState([]);
+  const [phanBoDangSua, setPhanBoDangSua] = useState(null);
+  const [revTrinhKy, setRevTrinhKy] = useState(null);
 
   // COT_PDD nhưng khối cột năm được thay bằng đúng năm đang có dữ liệu, rồi
   // chèn thêm khối "lịch sử cả nhóm mã quản lý" ngay cạnh để so sánh bằng mắt.
@@ -420,13 +455,41 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
     setDangXuat(true);
     setLoiO("");
     try {
+      let phienChinhThuc = null;
+      let soTrungTheoMa = new Map();
+      if (dotGoiId) {
+        const { data: phien, error: loiPhien } = await supabase
+          .from("chot_trinh_ky_phien_v3")
+          .select("id,revision,chot_luc").eq("dot_goi_id", dotGoiId)
+          .eq("hieu_luc", true).maybeSingle();
+        if (loiPhien) throw loiPhien;
+        phienChinhThuc = phien || null;
+        if (phienChinhThuc) {
+          const { data: dong, error: loiDong } = await fetchAllRows((f, t) => supabase
+            .from("chot_trinh_ky_dong_v3")
+            .select("ma_hang,khoa,so_luong_trung")
+            .eq("phien_id", phienChinhThuc.id).range(f, t), { order: ["ma_hang", "khoa"] });
+          if (loiDong) throw loiDong;
+          (dong || []).forEach((d) => {
+            if (!soTrungTheoMa.has(d.ma_hang)) soTrungTheoMa.set(d.ma_hang, []);
+            soTrungTheoMa.get(d.ma_hang).push({ khoaMa: d.khoa, khoaTen: d.khoa,
+              soLuong: Number(d.so_luong_trung) || 0, soLuongGoc: Number(d.so_luong_trung) || 0 });
+          });
+        }
+      }
+      const rowsXuat = phienChinhThuc ? rows.map((r) => {
+        const khoaDeXuat = soTrungTheoMa.get(r.ma_hang) || [];
+        const tong = khoaDeXuat.reduce((s, k) => s + k.soLuong, 0);
+        return { ...r, khoaDeXuat, tongToanVien: tong, sl_de_xuat_2627: tong,
+          mua_them_30: Math.floor(tong * 0.30) };
+      }) : rows;
       const tenKhoa = hienChiTietKhoa
-        ? [...new Set(rows.flatMap((r) => r.khoaDeXuat.map((k) => k.khoaTen)))]
+        ? [...new Set(rowsXuat.flatMap((r) => r.khoaDeXuat.map((k) => k.khoaTen)))]
             .sort((a, b) => a.localeCompare(b, "vi"))
         : [];
       const cotKhoa = tenKhoa.map((ten) => ({ key: `khoa::${ten}`, nhan: ten, width: 90 }));
 
-      const duLieu = rows.map((r) => {
+      const duLieu = rowsXuat.map((r) => {
         const dong = { ...r };
         if (hienChiTietKhoa) {
           r.khoaDeXuat.forEach((k) => { dong[`khoa::${k.khoaTen}`] = k.soLuong; });
@@ -451,13 +514,17 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
           "BỆNH VIỆN ĐẠI HỌC Y DƯỢC THÀNH PHỐ HỒ CHÍ MINH",
           "PHÒNG ĐIỀU DƯỠNG",
           `DANH MỤC, SỐ LƯỢNG, YÊU CẦU KỸ THUẬT VẬT TƯ Y TẾ NĂM ${NAM_DE_XUAT}-${NAM_DE_XUAT + 1} (${boThau.nhan})`,
+          phienChinhThuc
+            ? `BẢN CHÍNH THỨC · REVISION ${phienChinhThuc.revision} · ${new Date(phienChinhThuc.chot_luc).toLocaleString("vi-VN")}`
+            : "BẢN NHÁP · CHƯA CHỐT TRÌNH KÝ TOÀN BỘ",
         ],
         // Tên cột lấy từ file biểu mẫu (cotGoc = COT_PDD vì thứ tự của nó
         // khớp vị trí với mẫu; cột năm động rơi xuống nhanMau tự sinh).
         cot: ganTenMau(cotXuat, COT_PDD, tenMau),
         cotKhoa,
         rows: duLieu,
-        tenFile: `tong-hop-di-thau-${tenFileAnToan(boThau.nhan)}-${NAM_DE_XUAT}.xlsx`,
+        tenFile: `tong-hop-di-thau-${tenFileAnToan(boThau.nhan)}-${NAM_DE_XUAT}-${
+          phienChinhThuc ? `chinh-thuc-rev-${phienChinhThuc.revision}` : "ban-nhap"}.xlsx`,
         tenSheet: "Tổng hợp",
       });
     } catch (e) {
@@ -467,37 +534,36 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
     }
   };
 
-  // Chốt / mở chốt cả bản tổng hợp (patch_zs). Xoá dòng = mở chốt; trigger tự
-  // ghi audit nên không mất dấu vết ai chốt, ai mở, lúc nào.
+  // Snapshot Q theo DOT_GOI. Chốt là cổng mềm: server luôn cho chốt và ghi lại
+  // còn bao nhiêu khoa chưa nộp. Mở lại bắt lý do và không sửa snapshot cũ.
   const doiChot = async () => {
     setDangChot(true);
     setLoiO("");
     const dangChot = !!chot;
-    const bangChot = dotId ? "danh_muc_dot_chot" : "danh_muc_tong_hop_chot";
-    const { data, error } = dangChot
-      ? (dotId
-        ? await supabase.from(bangChot).delete().eq("dot_id", Number(dotId)).select()
-        : await supabase.from(bangChot).delete().eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT).select())
-      : (dotId
-        ? await supabase.from(bangChot).insert({ dot_id: Number(dotId), chot_boi: profile.email }).select()
-        : await supabase.from(bangChot).insert({ goi_id: goiId, nam_de_xuat: NAM_DE_XUAT, chot_boi: profile.email }).select());
+    if (!dotGoiId) {
+      setDangChot(false);
+      setLoiO("Chưa xác định được DOT_GOI để tạo snapshot Q.");
+      return;
+    }
+    let data;
+    let error;
+    if (dangChot) {
+      const lyDo = window.prompt("Nhập lý do mở snapshot Q:", "") || "";
+      if (!lyDo.trim()) { setDangChot(false); return; }
+      ({ data, error } = await supabase.rpc("mo_chot_so_tham_gia_thau_v3", {
+        p_dot_goi_id: dotGoiId, p_ly_do: lyDo,
+      }));
+    } else {
+      ({ data, error } = await supabase.rpc("chot_so_tham_gia_thau_v3", {
+        p_dot_goi_id: dotGoiId,
+      }));
+    }
     setDangChot(false);
     if (error) {
-      const chuaCoBang = error.code === "42P01"
-        || /danh_muc_tong_hop_chot/i.test(error.message || "");
-      setLoiO(chuaCoBang
-        ? "Staging chưa có chức năng chốt bản tổng hợp. Cần chạy backend/sql/patch_zs_so_chot_va_khoa_sau_chot.sql."
-        : error.message);
+      setLoiO(error.message);
       return;
     }
-    // Bẫy 18: xoá trả 200 kèm mảng rỗng khi RLS chặn — phải đếm dòng thật.
-    if (!data?.length) {
-      setLoiO(dangChot
-        ? "Không mở được chốt — tài khoản không có quyền, hoặc chưa chạy patch_zs."
-        : "Không chốt được — tài khoản không có quyền, hoặc chưa chạy patch_zs.");
-      return;
-    }
-    setChot(dangChot ? null : data[0]);
+    await taiLai();
   };
 
   const batDauSua = (maHang, colKey, giaTriHienTai) => {
@@ -513,6 +579,43 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
     const { maHang, colKey } = oDangChon;
     setDangLuu(true);
     setLoiO("");
+    // Cột số không còn là override: đặt tổng mới sẽ chia xuống phan_bo_khoa
+    // trong một transaction. Các cột chữ vẫn dùng cơ chế override/audit cũ.
+    if (colKey === "sl_de_xuat_2627" && dotGoiId) {
+      // Mục III của workflow: sửa tổng KHÔNG ghi thẳng. "Hệ thống mở màn phân
+      // bổ và chia sẵn phần chênh lệch theo đúng tỉ lệ khoa đã đề xuất (làm
+      // tròn xuống, phần dư dồn vào khoa có số lớn nhất)", PĐD sửa tay dòng
+      // nào muốn, và không lưu được nếu tổng chưa khớp.
+      //
+      // Bản cũ gọi thẳng RPC với `p_ly_do: null`. Giai đoạn 4 luôn đứng SAU
+      // Giai đoạn 3 nên luôn có khoa đã chốt danh mục, mà DB thì bắt buộc lý
+      // do trong trường hợp đó — hậu quả là mọi lần sửa tổng đều chết với
+      // "Phải nhập lý do vì có khoa đã chốt danh mục." và PĐD không còn đường
+      // nào sửa được tổng.
+      const tongMoi = Number(giaTriDangGo);
+      setDangLuu(false);
+      if (!Number.isInteger(tongMoi) || tongMoi < 0) {
+        setLoiO("Tổng mới phải là số nguyên không âm.");
+        return;
+      }
+      const row = rows.find((r) => r.ma_hang === maHang);
+      if (!row || !row.khoaDeXuat?.length) {
+        setLoiO("Mã hàng chưa có khoa nào đề xuất trong đợt này.");
+        return;
+      }
+      setODangChon(null);
+      setPhanBoDangSua({
+        maHang,
+        tongMoi,
+        lyDo: "",
+        giaTri: chiaTheoTiLe(row.khoaDeXuat, tongMoi),
+      });
+      // Màn phân bổ nằm trong hàng sổ xuống, nên phải bung hàng đó ra —
+      // nếu không thì bảng chia sẵn hiện ở chỗ không ai nhìn thấy.
+      setRowMoRong((p) => new Set(p).add(maHang));
+      return;
+    }
+
     const { error } = await supabase.from("danh_muc_tong_hop_o").upsert({
       goi_id: goiScope, nam_de_xuat: NAM_DE_XUAT, ma_hang: maHang, cot: colKey,
       gia_tri: giaTriDangGo === "" ? null : String(giaTriDangGo),
@@ -533,6 +636,67 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       return next;
     });
     setODangChon(null);
+  };
+
+  // Chia sẵn tổng mới về các khoa theo đúng tỉ lệ đang có: làm tròn XUỐNG,
+  // phần dư dồn vào khoa có số lớn nhất. Cùng quy tắc với
+  // `cap_nhat_tong_phan_bo_khoa` để con số gợi ý trên màn khớp với số DB sẽ
+  // tính nếu PĐD không sửa tay. Đây chỉ là gợi ý — PĐD luôn sửa được.
+  const chiaTheoTiLe = (khoaDeXuat, tongMoi) => {
+    // RPC chia theo `so_luong_goc` (số khoa gửi ban đầu), không theo số hiện
+    // hành — dùng đúng cột đó thì gợi ý trên màn khớp số DB sẽ tính.
+    const goc = (k) => Number(k.soLuongGoc ?? k.soLuong) || 0;
+    const tongCu = khoaDeXuat.reduce((s, k) => s + goc(k), 0);
+    const ra = {};
+    if (tongCu <= 0) {
+      khoaDeXuat.forEach((k) => { ra[k.khoaMa] = 0; });
+      return ra;
+    }
+    khoaDeXuat.forEach((k) => {
+      ra[k.khoaMa] = Math.floor(tongMoi * goc(k) / tongCu);
+    });
+    const conLai = tongMoi - Object.values(ra).reduce((s, n) => s + n, 0);
+    if (conLai > 0) {
+      const lonNhat = [...khoaDeXuat].sort(
+        (a, b) => goc(b) - goc(a) || String(a.khoaMa).localeCompare(String(b.khoaMa)),
+      )[0];
+      ra[lonNhat.khoaMa] += conLai;
+    }
+    return ra;
+  };
+
+  const batDauSuaPhanBo = (row) => {
+    setLoiO("");
+    setPhanBoDangSua({
+      maHang: row.ma_hang,
+      tongMoi: row.tongToanVien,
+      lyDo: "",
+      giaTri: Object.fromEntries(row.khoaDeXuat.map((k) => [k.khoaMa, k.soLuong])),
+    });
+  };
+
+  const luuPhanBoTay = async () => {
+    if (!phanBoDangSua || !dotGoiId) return;
+    const tongPhanBo = Object.values(phanBoDangSua.giaTri)
+      .reduce((s, n) => s + (Number(n) || 0), 0);
+    if (tongPhanBo !== Number(phanBoDangSua.tongMoi)) {
+      setLoiO(`Tổng các khoa ${fmt(tongPhanBo)} chưa khớp tổng cần phân bổ ${fmt(phanBoDangSua.tongMoi)}.`);
+      return;
+    }
+    setDangLuu(true);
+    setLoiO("");
+    const { error } = await supabase.rpc("cap_nhat_tong_phan_bo_khoa", {
+      p_dot_goi_id: dotGoiId,
+      p_ma_hang: phanBoDangSua.maHang,
+      p_tong_moi: Number(phanBoDangSua.tongMoi),
+      p_phan_bo: Object.fromEntries(Object.entries(phanBoDangSua.giaTri)
+        .map(([k, v]) => [k, Number(v)])),
+      p_ly_do: phanBoDangSua.lyDo || null,
+    });
+    setDangLuu(false);
+    if (error) { setLoiO(error.message); return; }
+    setPhanBoDangSua(null);
+    await taiLai();
   };
 
   // Bỏ sửa đè: xoá dòng override -> ô trở lại đúng giá trị hệ thống tính.
@@ -664,8 +828,14 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
               {chot ? <Unlock size={13} /> : <Lock size={13} />}
               {dangChot ? "Đang lưu…" : chot ? "Mở chốt để sửa" : "Chốt số đi thầu"}
             </button>
-            <button className="qtdx-tb" onClick={xuatExcel} disabled={dangXuat || !rows.length}>
-              <Download size={13} /> {dangXuat ? "Đang xuất…" : "Xuất Excel đi thầu"}
+            <button className="qtdx-tb" onClick={xuatExcel} disabled={dangXuat || !rows.length}
+              title={revTrinhKy
+                ? `Số lượng trong file là SỐ TRÚNG đã phân bổ sau thầu, theo revision ${revTrinhKy}.`
+                : "Chưa chốt dữ liệu trình ký — file xuất ra là bản nháp, số lượng là số đi thầu."}>
+              <Download size={13} />
+              {dangXuat ? "Đang xuất…"
+                : revTrinhKy ? `Xuất Excel CHÍNH THỨC (rev ${revTrinhKy})`
+                : "Xuất Excel bản nháp"}
             </button>
           </div>
         </div>
@@ -676,6 +846,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
             <span className="qtdx-badge amber">
               ĐÃ CHỐT SỐ ĐI THẦU — mọi ô đang khoá · {chot.chot_boi}
               {" · "}{new Date(chot.chot_luc).toLocaleString("vi-VN")}
+              {` · revision Q${chot.revision} · chốt khi còn ${chot.so_khoa_chua_chot} khoa chưa nộp`}
             </span>
           )}
           {cotLocked.size > 0 && <span className="qtdx-badge amber">{cotLocked.size} cột đang khoá</span>}
@@ -877,12 +1048,19 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                         <div className="pl-4 py-1">
                           <div className="text-[11px] text-slate-500 mb-1.5">
                             Số lượng đề xuất chi tiết từ {r.khoaDeXuat.length} khoa cho mã <b>{r.ma_hang}</b> · <em>{r.ten_vt_2627?.slice(0, 60)}...</em>
+                            {dotGoiId && !chot && (
+                              <button type="button" onClick={() => batDauSuaPhanBo(r)}
+                                className="ml-3 rounded border border-umc-300 bg-white px-2 py-0.5 font-semibold text-umc-700 hover:bg-umc-50">
+                                Sửa phân bổ theo khoa
+                              </button>
+                            )}
                           </div>
                           <table className="w-auto">
                             <thead>
                               <tr>
                                 <th className="text-left text-[10.5px] font-normal text-slate-500 px-3 py-1.5" style={{ background: "transparent", color: "#64748b", position: "static" }}>Khoa</th>
-                                <th className="text-right text-[10.5px] font-normal text-slate-500 px-3 py-1.5" style={{ background: "transparent", color: "#64748b", position: "static" }}>SL đề xuất</th>
+                                <th className="text-right text-[10.5px] font-normal text-slate-500 px-3 py-1.5" style={{ background: "transparent", color: "#64748b", position: "static" }}>SL gốc</th>
+                                <th className="text-right text-[10.5px] font-normal text-slate-500 px-3 py-1.5" style={{ background: "transparent", color: "#64748b", position: "static" }}>SL hiện hành</th>
                                 <th className="text-right text-[10.5px] font-normal text-slate-500 px-3 py-1.5" style={{ background: "transparent", color: "#64748b", position: "static" }}>Tỉ trọng</th>
                                 <th className="text-left text-[10.5px] font-normal text-slate-500 px-3 py-1.5" style={{ background: "transparent", color: "#64748b", position: "static" }}>Trạng thái</th>
                               </tr>
@@ -891,7 +1069,17 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                               {r.khoaDeXuat.map((k) => (
                                 <tr key={k.khoaMa}>
                                   <td className="px-3 py-1 text-xs">{k.khoaTen}</td>
-                                  <td className="px-3 py-1 text-xs text-right font-mono">{fmt(k.soLuong)}</td>
+                                  <td className="px-3 py-1 text-xs text-right font-mono text-slate-500">{fmt(k.soLuongGoc)}</td>
+                                  <td className="px-3 py-1 text-xs text-right font-mono">
+                                    {phanBoDangSua?.maHang === r.ma_hang ? (
+                                      <input type="number" min="0" step="1"
+                                        className="w-24 rounded border border-slate-300 px-1.5 py-1 text-right font-mono"
+                                        value={phanBoDangSua.giaTri[k.khoaMa] ?? 0}
+                                        onChange={(e) => setPhanBoDangSua((p) => ({
+                                          ...p, giaTri: { ...p.giaTri, [k.khoaMa]: e.target.value },
+                                        }))} />
+                                    ) : fmt(k.soLuong)}
+                                  </td>
                                   <td className="px-3 py-1 text-xs text-right font-mono text-slate-500">
                                     {r.tongToanVien > 0 ? Math.round((k.soLuong / r.tongToanVien) * 100) : 0}%
                                   </td>
@@ -902,12 +1090,30 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                               ))}
                               <tr>
                                 <td className="px-3 py-1 text-xs font-semibold text-slate-700 border-t border-slate-200">Tổng</td>
+                                <td className="px-3 py-1 text-xs text-right font-mono border-t border-slate-200">
+                                  {fmt(r.khoaDeXuat.reduce((s, k) => s + k.soLuongGoc, 0))}
+                                </td>
                                 <td className="px-3 py-1 text-xs text-right font-mono font-semibold border-t border-slate-200">{fmt(r.tongToanVien)}</td>
                                 <td className="px-3 py-1 border-t border-slate-200"></td>
                                 <td className="px-3 py-1 border-t border-slate-200"></td>
                               </tr>
                             </tbody>
                           </table>
+                          {phanBoDangSua?.maHang === r.ma_hang && (
+                            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                              <span>Tổng phải giữ: <b>{fmt(phanBoDangSua.tongMoi)}</b></span>
+                              <input value={phanBoDangSua.lyDo}
+                                onChange={(e) => setPhanBoDangSua((p) => ({ ...p, lyDo: e.target.value }))}
+                                placeholder="Lý do (bắt buộc nếu khoa đã chốt)"
+                                className="min-w-72 rounded border border-slate-300 px-2 py-1" />
+                              <button type="button" disabled={dangLuu} onClick={luuPhanBoTay}
+                                className="rounded bg-umc-700 px-2.5 py-1 font-semibold text-white disabled:opacity-50">
+                                {dangLuu ? "Đang lưu…" : "Lưu phân bổ"}
+                              </button>
+                              <button type="button" onClick={() => setPhanBoDangSua(null)}
+                                className="px-2 py-1 text-slate-500">Huỷ</button>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </motion.tr>

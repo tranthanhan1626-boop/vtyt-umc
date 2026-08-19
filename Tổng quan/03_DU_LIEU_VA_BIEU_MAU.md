@@ -21,9 +21,8 @@ nằm trong `backend/du_lieu_staging/`.
 | Nhóm | Cột quan trọng |
 |---|---|
 | Tồn/hàng về | ngày chốt, mã hàng, tồn dùng được, hàng chắc chắn về, ngày về |
-| Giá/hợp đồng | đơn giá, hợp đồng, hiệu lực, nhà cung cấp, lịch giao |
+| Hợp đồng | hợp đồng, hiệu lực, nhà cung cấp, lịch giao — **không lấy đơn giá** |
 | Thiếu hàng | số yêu cầu, số được cấp, ca hoãn, mã thay thế, phản hồi |
-| Sự kiện nhu cầu | tăng/giảm/ngưng, thời gian, định lượng, bằng chứng |
 | Gợi ý quy đổi danh mục | `nhom_ky_thuat.dvt_chuan`, `vat_tu.he_so_quy_doi` |
 | Snapshot quy đổi và phân bổ đề xuất | `proposals.so_luong_ma_quan_ly`, `dvt_ma_quan_ly`, `he_so_quy_doi`, `bang_quy_doi` |
 | Chuẩn hóa mã | mã cũ–mới và ngày hiệu lực, quy đổi ĐVT, mã tương đương |
@@ -33,6 +32,13 @@ nằm trong `backend/du_lieu_staging/`.
 
 Thiếu tồn/hàng về thì công thức chỉ ra nhu cầu gộp. Thiếu số yêu cầu/được cấp
 thì lịch sử xuất kho có thể thấp hơn nhu cầu thật.
+
+**Cập nhật 17/08/2026:**
+
+- **Bỏ hẳn mọi cột giá** khỏi hệ thống — đơn giá, giá hợp đồng cũ, tổng giá trị
+  ước tính. Giá không thuộc phạm vi. Hợp đồng vẫn cần cho timeline khả dụng,
+  nhưng chỉ lấy hiệu lực/nhà cung cấp/lịch giao.
+- **Bỏ nhóm "Sự kiện nhu cầu"** — chức năng đã gỡ khỏi hệ thống.
 
 ## 3. Năm biểu mẫu chính thức
 
@@ -71,7 +77,16 @@ duy nhất hiện nay là Danh mục tổng hợp live sync, mở từ Bàn đi�
 - lịch sử sử dụng theo năm;
 - số lượng đề xuất và giải trình;
 - tên thương mại, ký mã hiệu, hãng, nước sản xuất;
-- tùy chọn 30% tính từ số gốc.
+- tùy chọn 30%: trước thầu là số tạm tính trên số hiện hành, sau khi chốt trình
+  ký là trần chính thức `floor(số trúng đã phân bổ × 30%)`.
+
+### Cột phải thêm cho workflow v3
+
+- số tham gia đấu thầu (baseline Q) theo khoa;
+- số rớt theo từng giai đoạn (Chào giá / Mở thầu / Đánh giá) và lý do;
+- số trúng = Q − tổng rớt;
+- số trúng đã phân bổ cho từng khoa;
+- số revision và thời điểm sinh file.
 
 ### Cột còn thiếu hoặc chưa chắc
 
@@ -82,6 +97,10 @@ duy nhất hiện nay là Danh mục tổng hợp live sync, mở từ Bàn đi�
 - tên/đặc tính kỳ trước;
 - lý do rớt thầu cũ;
 - số thứ tự cố định để đối chiếu.
+
+### Cột đã bỏ khỏi biểu mẫu
+
+Giá dự kiến · giá hợp đồng cũ · tổng giá trị ước tính (QĐ 17/08/2026).
 
 Không tự đoán hoặc chọn một dòng khi nguồn xung đột. Ghi vấn đề, giữ nguyên
 nguồn và chờ người phụ trách xác nhận.
@@ -103,5 +122,5 @@ nguồn và chờ người phụ trách xác nhận.
 2. Lịch sử xuất kho ít nhất 24–36 tháng.
 3. Đề xuất, gói, timeline và kết quả thầu.
 4. Hồ sơ Word/Excel cũ kèm manifest.
-5. Tồn, hàng về, giá, hợp đồng và lead time.
-6. Thiếu hàng, sự kiện nhu cầu, VEN, quy đổi ĐVT và mã thay thế.
+5. Tồn, hàng về, hợp đồng và lead time (không cần giá).
+6. Thiếu hàng, VEN, quy đổi ĐVT và mã thay thế.

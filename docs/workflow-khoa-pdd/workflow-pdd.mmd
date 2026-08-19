@@ -1,0 +1,19 @@
+flowchart LR
+  classDef pdd fill:#EFF6FF,stroke:#2563EB,color:#1E3A8A,stroke-width:2px
+  classDef sys fill:#F5F3FF,stroke:#7C3AED,color:#4C1D95,stroke-width:2px
+  classDef fail fill:#FEF2F2,stroke:#DC2626,color:#7F1D1D,stroke-width:2px
+  classDef ok fill:#ECFDF5,stroke:#16A34A,color:#14532D,stroke-width:2px
+  classDef gap fill:#FFFBEB,stroke:#D97706,color:#78350F,stroke-width:2px,stroke-dasharray: 6 4
+
+  A["Tạo / mở đợt"]:::pdd --> B["Bàn điều hành<br/>theo dõi 62 Khoa"]:::pdd --> C["Lọc & nhắc Khoa thiếu việc"]:::pdd
+  C --> D["Danh mục tổng hợp theo Đợt × Gói con"]:::pdd --> E["Sửa đè / khóa / audit"]:::pdd
+  E --> F["Excel tổng hợp + Word đề nghị mua"]:::pdd --> G["Chào giá → Mở thầu → Đánh giá"]:::pdd
+  G --> H{"Có mã rớt?"}
+  H -->|Có| I["Tích mã / cả nhóm rớt<br/>sync về mọi Khoa"]:::fail --> J["Giỏ rớt toàn viện<br/>theo dõi & nhắc xử lý"]:::pdd
+  J --> K["Chờ Khoa chuyển SL / sang bổ sung"]:::sys --> L["Một cờ chốt / hai thời điểm<br/>hiện khóa theo dot_id"]:::gap
+  H -->|Không| L
+  L --> M["Mặc định trúng + tạo 5 mốc"]:::ok --> N["Ký hợp đồng"]:::pdd --> O["Hàng về đợt đầu"]:::pdd
+  O --> P["Nạp HIS + giám sát cam kết<br/>chậm / sắp hết sớm"]:::pdd
+  P -. "mở đợt bổ sung" .-> A
+  E -.-> Q["CHƯA NỐI ĐỦ: chưa chia ngược tổng PĐD sửa<br/>vào proposal từng Khoa"]:::gap
+  L -.-> R["P0 SCOPE: chốt dot_id có thể chốt cả 5 gói con<br/>override/view/Khoa không dùng cùng khóa"]:::fail

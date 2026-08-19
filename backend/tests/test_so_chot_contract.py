@@ -9,6 +9,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PATCH_ZS = (ROOT / "backend/sql/patch_zs_so_chot_va_khoa_sau_chot.sql").read_text()
+# `goi_con` được seed ở NHIỀU patch, không chỉ patch_zs: bản v3 thêm dòng
+# `chi-dinh-thau`. Đọc thiếu patch v3 thì test này và `kiem_truoc_deploy.py`
+# (vốn đọc DB THẬT) nói ngược nhau — sửa bên nào cũng làm đỏ bên kia.
+SEED_GOI_CON = PATCH_ZS + (ROOT / "backend/sql/patch_zzzz_v3_dot_goi.sql").read_text()
 COT_CHUAN = (ROOT / "frontend/src/lib/cotChuan.js").read_text()
 DANH_MUC_KHOA = (ROOT / "frontend/src/features/DanhMucDeXuatKhoa.jsx").read_text()
 TONG_HOP_PDD = (ROOT / "frontend/src/features/TongHopPdd.jsx").read_text()
@@ -23,7 +27,7 @@ def test_bang_goi_con_khop_GOI_ID_MAP_ben_frontend():
     js = dict(re.findall(
         r'"([\w-]+)":\s*\{\s*loai_mua_sam:\s*"(\w+)"', COT_CHUAN))
     sql = dict(re.findall(
-        r"\('([\w-]+)',\s*'(\w+)',", PATCH_ZS))
+        r"\('([\w-]+)',\s*'(\w+)',", SEED_GOI_CON))
     assert js, "không đọc được GOI_ID_MAP"
     assert sql, "không đọc được seed goi_con"
     assert js == sql, (

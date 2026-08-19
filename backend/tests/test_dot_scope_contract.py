@@ -31,7 +31,8 @@ def test_danh_muc_va_tong_hop_nhan_dot_id():
     assert 'q = q.eq("dot_id", Number(dotId))' in DANH_MUC
     assert "dotId = null" in TONG_HOP
     assert "goiScope" in TONG_HOP
-    assert "danh_muc_dot_chot" in TONG_HOP
+    assert 'supabase.from("chot_q_phien")' in TONG_HOP
+    assert 'p_dot_goi_id: dotGoiId' in TONG_HOP
 
 
 def test_tab_khoa_co_lich_su_va_badge_rot_theo_dot():

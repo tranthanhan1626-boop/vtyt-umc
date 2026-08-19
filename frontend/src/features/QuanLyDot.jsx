@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Lock, Unlock } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { GOI, useDotDangMo } from "./KhungGoiThau";
 import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
+import DotGoiCuaDot from "./DotGoiCuaDot";
 
 // H.6 — Phòng Điều dưỡng mở/đóng đợt đề xuất (QĐ-20).
 // Đợt ĐÓNG thì khoa không gửi được nữa — chặn ở DB, không chỉ ẩn nút.
@@ -13,12 +14,21 @@ const THANG_MOC = [
 
 export default function QuanLyDot() {
   const { dot, dangTai, taiLai } = useDotDangMo();
+  const [dsKhoa, setDsKhoa] = useState([]);
   const [loi, setLoi] = useState("");
   const [moForm, setMoForm] = useState(false);
   const [f, setF] = useState({
     loai_mua_sam: "dau_thau_rong_rai", ten: "", nam: new Date().getFullYear() + 1, thang_moc: "",
   });
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
+
+  // Danh sách đơn vị dùng cho bảng "khoa tham gia" của từng gói con. Đọc một
+  // lần ở đây thay vì trong mỗi đợt — 62 dòng, mọi đợt dùng chung.
+  useEffect(() => {
+    supabase.from("v_don_vi").select("don_vi").order("don_vi").then(({ data }) => {
+      setDsKhoa((data || []).map((x) => x.don_vi));
+    });
+  }, []);
   const laBoSung = f.loai_mua_sam === "mua_sam_bo_sung";
 
   const tao = async () => {
@@ -51,7 +61,8 @@ export default function QuanLyDot() {
       <div>
         <h2 className="text-base font-semibold text-slate-900">Quản lý đợt đề xuất</h2>
         <p className="text-sm text-slate-500 mt-0.5">
-          Khoa chỉ gửi được khi đợt đang <b>mở</b>. Đóng đợt là chốt sổ — khoa không gửi thêm được.
+          Khoa chỉ gửi được khi đợt đang <b>mở</b>. Đóng đợt là chốt sổ và đóng luôn mọi gói con.
+          Mở lại đợt thì <b>không</b> tự mở hết — mỗi gói con có tiến độ thầu riêng nên phải mở từng gói.
         </p>
       </div>
 
@@ -124,6 +135,7 @@ export default function QuanLyDot() {
                   moTa={`đợt ${d.ten}, toàn bộ giỏ, đề xuất, Word/Excel, phiên tổng hợp và gói thầu liên quan`}
                   onDaXoa={taiLai}
                 />
+                <DotGoiCuaDot dot={d} dsKhoa={dsKhoa} />
               </div>
             );
           })}

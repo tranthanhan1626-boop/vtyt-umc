@@ -15,6 +15,9 @@ import TienDoGoiThau from "./features/TienDoGoiThau";
 import XuatHoSo from "./features/XuatHoSo";
 import KhungGoiThau, { useDotDangMo } from "./features/KhungGoiThau";
 import QuanLyDot from "./features/QuanLyDot";
+import QuanLyNguoiDung from "./features/QuanLyNguoiDung";
+import PhanGoiConMaQuanLy from "./features/PhanGoiConMaQuanLy";
+import GioRotCuaKhoa from "./features/GioRotCuaKhoa";
 import LichSuXuatHoSo from "./features/LichSuXuatHoSo";
 import ThongBaoRotThau from "./features/ThongBaoRotThau";
 import TongHopKetQuaThau from "./features/TongHopKetQuaThau";
@@ -22,7 +25,6 @@ import DieuChinhTieuChi from "./features/DieuChinhTieuChi";
 import TienDoSuDung from "./features/TienDoSuDung";
 import ThongBaoChamTienDo from "./features/ThongBaoChamTienDo";
 import SoThieuHang from "./features/SoThieuHang";
-import SoSuKienNhuCau from "./features/SoSuKienNhuCau";
 import PhieuDeNghi from "./features/PhieuDeNghi";
 import TrangDungChung, { QuayLaiDungChung } from "./features/TrangDungChung";
 import NhomKyThuatCuaKhoa from "./features/NhomKyThuatCuaKhoa";
@@ -225,11 +227,13 @@ export default function App() {
 
   const TEN_TRANG_CHUNG = {
     thieuhang: "Sổ thiếu hàng",
-    sukien: "Sự kiện nhu cầu",
     tiendo: "Tiến độ gói thầu",
     lichsu: "Lịch sử hồ sơ đề xuất",
     makythuat: "Mã kỹ thuật khoa tự thêm",
     quanlydot: "Quản lý đợt đề xuất",
+    nguoidung: "Quản trị người dùng",
+    phangoicon: "Phân gói con cho mã quản lý",
+    giorot: "Giỏ rớt của khoa",
     choduyet: "Công việc chờ duyệt",
     ketquathau: "Tổng hợp kết quả thầu",
     tieuchi: "Điều chỉnh tiêu chí kỹ thuật",
@@ -248,7 +252,6 @@ export default function App() {
     : chon.man === "tongquan"
     ? <TrangDungChung doiChon={setChon} laPdd={xemDuocTongHop} soChoDuyet={soChoDuyet} dotTheoGoi={dotTheoGoi} />
     : chon.man === "thieuhang" ? <SoThieuHang profile={profile} />
-    : chon.man === "sukien" ? <SoSuKienNhuCau profile={profile} />
     : chon.man === "tiendo" ? (
       <TienDoGoiThau
         profile={profile}
@@ -269,6 +272,20 @@ export default function App() {
         onNapDuLieu={() => setChon({ nhom: "chung", man: "napdulieu" })} />
     : chon.man === "napdulieu" && xemDuocTongHop ? <NapDuLieuSuDung profile={profile} />
     : chon.man === "quanlydot" && xemDuocTongHop ? <QuanLyDot />
+    // QĐ 15 — PĐD = admin, cùng quyền. Gác theo xemDuocTongHop chứ không
+    // theo role === "admin", nếu không người PĐD không quản trị được tài khoản.
+    : chon.man === "nguoidung" && xemDuocTongHop ? <QuanLyNguoiDung profile={profile} />
+    : chon.man === "phangoicon" && xemDuocTongHop ? <PhanGoiConMaQuanLy />
+    : chon.man === "giorot" ? (
+      <GioRotCuaKhoa
+        profile={profile}
+        // Mục VIII.1 — gợi ý xong phải DẪN ĐƯỢC khoa sang đợt bổ sung,
+        // nếu không khoa vẫn phải tự đi tìm.
+        moDotBoSung={(dotId) => setChon({
+          nhom: "goi", goi: "mua_sam_bo_sung", man: "de_xuat", dotId,
+        })}
+      />
+    )
     : chon.man === "choduyet" && xemDuocTongHop ? (
       <ChoDuyet
         onDoiSoLuong={capNhatDem}

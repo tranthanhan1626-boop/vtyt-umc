@@ -9,8 +9,8 @@ HUONG_DAN = (ROOT / "Tổng quan/02_CONG_THUC_SO_LUONG.md").read_text()
 QUYET_DINH = (ROOT / "Tổng quan/01_NGHIEP_VU_VA_QUYET_DINH.md").read_text()
 
 
-def test_dai_thong_thuong_la_p50_p75_va_mac_dinh_p75():
-    assert 'export const MUC_MAC_DINH = "P75"' in CONG_THUC
+def test_dai_thong_thuong_la_p50_p75_va_mac_dinh_p50():
+    assert 'export const MUC_MAC_DINH = "P50"' in CONG_THUC
     assert "den: kq.muc.P75" in CONG_THUC
     assert "so > kq.muc.P75" in CONG_THUC
     assert "den: kq.muc.P95" not in CONG_THUC
@@ -19,7 +19,7 @@ def test_dai_thong_thuong_la_p50_p75_va_mac_dinh_p75():
 def test_p90_p95_la_muc_cao_can_giai_trinh():
     assert 'nhan: "P90 mức cao"' in CONG_THUC
     assert 'nhan: "P95 ngoại lệ"' in CONG_THUC
-    assert "Dải thông thường P50–P75" in GOI_Y
+    assert "vượt P75" in GOI_Y
     assert "bắt buộc ghi rõ căn cứ" in GOI_Y
 
 
@@ -45,6 +45,6 @@ def test_huong_dan_khop_cong_thuc_production_qd34():
     assert "TSB dùng `α = 0,30`" in HUONG_DAN
     assert "24 tháng liên tục gần nhất" in HUONG_DAN
     assert "Dải thông thường: **P50–P75**" in HUONG_DAN
-    assert "Mặc định: **P75**" in HUONG_DAN
+    assert "Mức chọn sẵn trên giao diện: P50" in HUONG_DAN
     assert "Phần 30% không tự mua" in HUONG_DAN
-    assert "## 8. Tùy chọn mua thêm 30%" in QUYET_DINH
+    assert "## 9. Tùy chọn mua thêm 30%" in QUYET_DINH

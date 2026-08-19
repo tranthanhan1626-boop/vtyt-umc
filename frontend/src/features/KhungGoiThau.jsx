@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   Archive,
-  CalendarClock,
   ChevronDown,
   ClipboardCheck,
   ClipboardList,
@@ -18,7 +17,10 @@ import {
   Sheet,
   ShieldAlert,
   UploadCloud,
+  UserCog,
   X,
+  Layers,
+  PackageX,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
 
@@ -71,7 +73,6 @@ export function manHinhTheoVaiTro(goi, laPdd) {
 
 export const MUC_CHUNG = [
   { ma: "thieuhang", ten: "Sổ thiếu hàng", mo_ta: "Báo thiếu, theo dõi xử lý và xác nhận cuối tháng", icon: Archive },
-  { ma: "sukien",    ten: "Sự kiện nhu cầu", mo_ta: "Ghi nhận thay đổi làm tăng hoặc giảm nhu cầu sử dụng", icon: CalendarClock },
   { ma: "makythuat", ten: "Mã kỹ thuật khoa tự thêm", mo_ta: "Khai mã tương đương hoặc mã mới hoàn toàn", icon: FileSearch },
   // Đầu kia của "makythuat": khoa gửi đề nghị thì phải có chỗ PĐD gán mã và
   // duyệt, nếu không đề nghị nằm im mãi ở trạng thái cho_duyet (đúng hiện
@@ -80,6 +81,18 @@ export const MUC_CHUNG = [
   // chiPdd: chỉ Phòng Điều dưỡng/admin thấy — nạp dữ liệu ảnh hưởng toàn viện,
   // khoa không cần và không nên thấy mục này.
   { ma: "napdulieu", ten: "Nạp dữ liệu sử dụng", mo_ta: "Nạp file HIS mới mỗi tháng, thay cho chạy script tay", icon: UploadCloud, chiPdd: true },
+  // QĐ 15 (17/08/2026): PĐD = admin, cùng quyền, không có vai trò nghiệp vụ
+  // thứ ba. Trước 18/08 mục này gắn chiAdmin nên người PĐD (role dieu_duong)
+  // không quản trị được tài khoản và phải nhờ admin nâng quyền tay trong
+  // Supabase Table Editor — đúng món nợ C2 ở 05_TIEN_DO.
+  { ma: "nguoidung", ten: "Quản trị người dùng", mo_ta: "Gán vai trò và khoa cho tài khoản đã tồn tại", icon: UserCog, chiPdd: true },
+  // Giai đoạn 1 bước 3 của workflow v3: "PĐD phân mã quản lý vào từng gói
+  // con". Trước 18/08/2026 không có màn nào làm việc này, nên 1.115 mã hàng
+  // nằm ở goi = NULL và 154 mã quản lý vắt ngang hai gói — vỡ invariant 2.
+  { ma: "phangoicon", ten: "Phân gói con cho mã quản lý", mo_ta: "Xếp mã quản lý vào đúng một gói con của đợt 18 tháng", icon: Layers, chiPdd: true },
+  // Mục VII — phần Q chưa được đáp ứng sau đấu thầu. Khoa tự quyết đề xuất
+  // lại hay thôi; hệ thống không tự tạo đề xuất.
+  { ma: "giorot", ten: "Giỏ rớt của khoa", mo_ta: "Phần chưa được đáp ứng sau đấu thầu — đề xuất lại hoặc xác nhận thôi", icon: PackageX },
 ];
 
 /** Đợt đang MỞ của từng gói — khoa chỉ gửi được khi có đợt mở (QĐ-20). */

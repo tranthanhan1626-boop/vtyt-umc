@@ -348,7 +348,9 @@ export default function HoSoTrucTuyen({
   // ngay từ lần mở đầu tiên — PĐD không có cách nào lưu để doc tồn tại.
   const pddCoTheSua = laPdd && (!doc || !["da_duyet", "da_di_thau", "tu_choi"].includes(doc.trang_thai));
   const biKhoaPdd = laPdd && !pddCoTheSua;
-  const biKhoaTrinhSua = biKhoa || biKhoaPdd;
+  // Word/Excel chỉ là hình chiếu của dữ liệu hiện hành, không còn là một
+  // checkpoint duyệt riêng. Checkpoint thật nằm ở chốt trình ký V3.
+  const biKhoaTrinhSua = false;
   const coDuLieu = rows.length > 0;
 
   const doiBanThao = (tiep) => {
@@ -459,12 +461,12 @@ export default function HoSoTrucTuyen({
   };
 
   const taiBanDaDuyet = async () => {
-    if (!doc || !["da_duyet", "da_di_thau"].includes(doc.trang_thai) || daSua[maDangMo]) return;
+    if (!maDangMo || !banThao[maDangMo]) return;
     setDangLuu("tai");
     setLoi("");
     setThongBao("");
     try {
-      const nd = doc.noi_dung || noiDungLuu(maDangMo);
+      const nd = daSua[maDangMo] || !doc ? noiDungLuu(maDangMo) : (doc.noi_dung || noiDungLuu(maDangMo));
       await xuatBanThaoHoSo(maDangMo, nd.ban_thao || banThao[maDangMo]);
       const { error } = await supabase.from("lan_xuat_ho_so").insert({
         ma_ho_so: maDangMo,
@@ -474,18 +476,16 @@ export default function HoSoTrucTuyen({
         don_vi: HO_SO[maDangMo].ai === "pdd" ? null : donVi,
         so_dong: rows.length,
         phien_tong_hop_id: nd.meta?.phien_tong_hop_id || null,
-        ho_so_cong_tac_id: doc.id,
+        ho_so_cong_tac_id: doc?.id || null,
         noi_dung: {
           ...nd,
-          trang_thai_cong_tac: doc.trang_thai,
-          revision_cong_tac: doc.revision,
-          pdd_duyet_boi: doc.pdd_duyet_boi,
-          pdd_duyet_luc: doc.pdd_duyet_luc,
+          trang_thai_cong_tac: doc?.trang_thai || "du_lieu_hien_hanh",
+          revision_cong_tac: doc?.revision || null,
         },
       });
       if (error) throw error;
       setThongBao(
-        `Đã tải ${HO_SO[maDangMo].ten}. Bản Word/Excel đã duyệt này đã được lưu trong Lịch sử hồ sơ đề xuất.`
+        `Đã tạo ${HO_SO[maDangMo].ten} từ dữ liệu hiện hành và lưu vào lịch sử xuất.`
       );
     } catch (e) {
       setLoi(e.message);
@@ -694,67 +694,17 @@ export default function HoSoTrucTuyen({
           {coDuLieu && (
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 px-4 py-4 sm:px-5">
               <p className="max-w-xl text-[11px] leading-relaxed text-slate-500">
-                {laPdd
-                  ? "Lưu chỉnh sửa sẽ hiện ngay cho khoa. Duyệt & chốt khóa bản của khoa và mở nút tải bản chính thức."
-                  : "Lưu nháp để tiếp tục sau; gửi PĐD khi đã kiểm tra xong. Sau khi PĐD duyệt, khoa chỉ xem và tải bản chính thức."}
+                Word/Excel không có vòng gửi–duyệt riêng. Lưu để đồng bộ nội dung; nút tải luôn tạo file từ dữ liệu đang hiện. Bản chính thức được xác định bởi revision chốt trình ký V3.
               </p>
               <div className="flex flex-wrap justify-end gap-2">
-                {!chiKhoaDiThau && !laPdd && !biKhoa && (
-                  <>
-                    <button type="button" onClick={() => luu("luu")} disabled={!!dangLuu}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40">
-                      <Save size={14} /> {dangLuu === "luu" ? "Đang lưu…" : "Lưu bản nháp"}
-                    </button>
-                    <button type="button" onClick={() => chuyenCaBo("gui_pdd")} disabled={!!dangLuu}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-blue-700 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-800 disabled:opacity-40">
-                      <Send size={14} /> {dangLuu === "gui_pdd" ? "Đang gửi…" : `Gửi cả ${taiLieu.length} file cho PĐD`}
-                    </button>
-                  </>
-                )}
-                {!chiKhoaDiThau && laPdd && dangChoPdd && (
-                  <button type="button" onClick={() => chuyenCaBo("bat_dau_xet_duyet")} disabled={!!dangLuu}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-700 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-800 disabled:opacity-40">
-                    <PlayCircle size={14} /> {dangLuu === "bat_dau_xet_duyet" ? "Đang chuyển…" : "Bắt đầu xét duyệt"}
-                  </button>
-                )}
-                {pddCoTheSua && (!dangXetDuyet || chiKhoaDiThau) && (
-                  <button type="button" onClick={() => luu("pdd_sua")} disabled={!!dangLuu}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs font-semibold text-blue-800 hover:bg-blue-50 disabled:opacity-40">
-                    <Save size={14} /> {dangLuu === "pdd_sua" ? "Đang lưu…" : "Lưu chỉnh sửa PĐD"}
-                  </button>
-                )}
-                {!chiKhoaDiThau && laPdd && dangXetDuyet && (
-                  <>
-                    <button type="button" onClick={() => luu("pdd_sua")} disabled={!!dangLuu}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs font-semibold text-blue-800 hover:bg-blue-50 disabled:opacity-40">
-                      <Save size={14} /> {dangLuu === "pdd_sua" ? "Đang lưu…" : "Lưu chỉnh sửa PĐD"}
-                    </button>
-                    <button type="button" onClick={() => chuyenCaBo("tu_choi")} disabled={!!dangLuu || !ghiChu.trim()}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40">
-                      <XCircle size={14} /> {dangLuu === "tu_choi" ? "Đang trả…" : "Từ chối & trả khoa"}
-                    </button>
-                    <button type="button" onClick={() => chuyenCaBo("hoan_thanh")} disabled={!!dangLuu}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-40">
-                      <ShieldCheck size={14} /> {dangLuu === "hoan_thanh" ? "Đang chốt…" : "Hoàn thành cả bộ"}
-                    </button>
-                  </>
-                )}
-                {laPdd && maDangMo === "danh_muc_dvsd"
-                  && nguonKey.startsWith("gop:")
-                  && doc && doc.trang_thai !== "da_di_thau" && (
-                  <button type="button" onClick={chotDaDiThau} disabled={!!dangLuu}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-violet-700 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-800 disabled:opacity-40">
-                    <LockKeyhole size={14} />
-                    {dangLuu === "di_thau" ? "Đang khóa…" : "Chọn đã đi thầu"}
-                  </button>
-                )}
+                <button type="button" onClick={() => luu(laPdd ? "pdd_sua" : "luu")} disabled={!!dangLuu}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs font-semibold text-blue-800 hover:bg-blue-50 disabled:opacity-40">
+                  <Save size={14} /> {dangLuu ? "Đang lưu…" : "Lưu nội dung hiện hành"}
+                </button>
                 <button type="button" onClick={taiBanDaDuyet}
-                  disabled={!daDuyetBo || !doc
-                    || !["da_duyet", "da_di_thau"].includes(doc.trang_thai)
-                    || !!daSua[maDangMo] || !!dangLuu}
-                  title={daSua[maDangMo] ? "Cần lưu và duyệt lại thay đổi trước khi tải" : ""}
+                  disabled={!!dangLuu}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--umc-navy)] px-3 py-2 text-xs font-semibold text-white hover:bg-blue-950 disabled:opacity-35">
-                  <Download size={14} /> {dangLuu === "tai" ? "Đang tạo file…" : "Tải bản đã duyệt"}
+                  <Download size={14} /> {dangLuu === "tai" ? "Đang tạo file…" : "Tạo file hiện hành"}
                 </button>
               </div>
             </div>

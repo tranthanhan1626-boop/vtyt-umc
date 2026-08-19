@@ -77,11 +77,13 @@ def test_de_xuat_cap_ma_quan_ly_quy_doi_phan_bo_va_gio_phan_tang():
     assert "Tổng phân bổ sau quy đổi không bằng tổng của mã quản lý." in PATCH_Q
 
 
-def test_ho_so_chuyen_theo_ca_bo_va_excel_sort_dung_ma():
-    assert 'chuyenCaBo("gui_pdd")' in HO_SO
-    assert 'chuyenCaBo("bat_dau_xet_duyet")' in HO_SO
-    assert 'chuyenCaBo("tu_choi")' in HO_SO
-    assert 'chuyenCaBo("hoan_thanh")' in HO_SO
+def test_ho_so_khong_con_vong_gui_duyet_va_excel_sort_dung_ma():
+    assert 'chuyenCaBo("gui_pdd")' not in HO_SO
+    assert 'chuyenCaBo("bat_dau_xet_duyet")' not in HO_SO
+    assert 'chuyenCaBo("tu_choi")' not in HO_SO
+    assert 'chuyenCaBo("hoan_thanh")' not in HO_SO
+    assert "Word/Excel không có vòng gửi–duyệt riêng" in HO_SO
+    assert "Tạo file hiện hành" in HO_SO
     assert "Lịch sử & xuất file" not in HO_SO
     assert 'const SO_DONG_PREVIEW = 10' in LICH_SU
     assert "1. Loại tài liệu" in LICH_SU

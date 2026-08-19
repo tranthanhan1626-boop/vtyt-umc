@@ -108,6 +108,14 @@ Biến local:
 4. tắt Confirm email nếu workflow đăng ký cần session ngay;
 5. nạp dữ liệu qua script, không copy thủ công.
 
+> **Đang gộp lại (QĐ 17/08/2026).** Sau 55 patch, `schema.sql` (gộp lần cuối
+> 20/07/2026) không còn phản ánh DB thật: `fn_chan_sua_noi_dung_de_xuat` được
+> định nghĩa lại **7 lần**, `tao_goi_thau` **6 lần**, và không đọc file nào biết
+> được bản nào đang sống. Chặng 1 của kế hoạch v3 là dump schema thật từ DB
+> thành `schema.sql` v2 + `rls_policies.sql` v2, chuyển 55 patch cũ vào
+> `backend/sql/lich_su/`. Từ đó bước 3 ở trên biến mất — dựng project mới chỉ
+> còn chạy 2 file.
+
 Chép production sang staging:
 
 ```bash
@@ -151,19 +159,49 @@ Có hai site Netlify khác nhau, đừng nhầm:
 
 | Site | Nhánh Git theo dõi | DB Supabase | Ai dùng |
 |---|---|---|---|
-| `vtyt-umc` (production hiện có) | `main` | production (`jttucjnkqxckphmmilaa`), đang ở schema nền, chưa có các bảng/RPC A2→Z | nhân viên bệnh viện thật |
-| Site test mới (tự tạo trên Netlify) | `phase-a-luong-de-xuat` | staging (`ihgfafubwyxnbubmppbj`) | người được mời test |
+| `vtyt-umc` (production hiện có) | `main` | `jttucjnkqxckphmmilaa`, đang ở schema nền, chưa có các bảng/RPC A2→Z | chưa ai dùng thật |
+| Site test | `phase-a-luong-de-xuat` | `ihgfafubwyxnbubmppbj` | người được mời test |
 
-`main` và site `vtyt-umc` **không đụng tới** trong luồng làm việc hiện tại.
-File `backend/sql/patch_production_a2_z_20260804.sql` vẫn còn trong repo làm
-mốc lịch sử (bundle A2→Z gộp một lần cho production cũ) nhưng không còn là
-bước bắt buộc của quy trình sửa hằng ngày; chỉ cần tới nếu sau này quyết định
-đưa production thật lên ngang bằng nhánh chính.
+File `backend/sql/patch_production_a2_z_20260804.sql` giữ làm mốc lịch sử
+(bundle A2→Z gộp một lần), không còn là bước của quy trình hằng ngày.
 
-Khi nào thật sự muốn đưa code từ `phase-a-luong-de-xuat` lên site production
-`vtyt-umc` (đổi nhánh Netlify theo dõi, hoặc merge vào `main`), đó là một
-quyết định riêng, rủi ro cao (ảnh hưởng người dùng thật) — phải bàn và xác
-nhận rõ trước khi làm, không suy ra từ việc nhánh phụ đã ổn trên staging.
+### 4b. ĐƯỜNG LÊN PRODUCTION (QĐ 17/08/2026)
+
+**Dự án chỉ có 2 project Supabase và sẽ giữ đúng 2 — không tạo project thứ 3.**
+
+Kiểm bản sao lưu `backend/sao_luu/production/2026-08-04/`: project production
+hiện tại chỉ có **3 users · 9 proposals · 5 phiếu đề nghị · 0 gói thầu**, toàn
+dữ liệu thử từ tháng 7. **Không có dữ liệu bệnh viện thật nào trên đó**, nên
+không có gì phải bảo toàn.
+
+Quyết định: **lấy project staging làm production go-live**, vì mọi thứ đã build
+và kiểm suốt từ tháng 7 tới nay đều nằm trên đó.
+
+| Project | Vai trò cũ | Vai trò mới |
+|---|---|---|
+| `ihgfafubwyxnbubmppbj` | staging | **PRODUCTION** từ go-live |
+| `jttucjnkqxckphmmilaa` | production | **staging** — chạy schema v2 lên đó để thử |
+
+#### ⚠️ Việc BẮT BUỘC trước khi đổi vai
+
+`patch_za_xoa_du_lieu_kiem_thu.sql` gắn RPC xóa dữ liệu vào **đúng project ref
+`ihgfafubwyxnbubmppbj`**, và frontend tự hiện dấu thùng rác khi
+`VITE_SUPABASE_URL` chứa ref đó (mục 4 ở trên). Đổi vai mà quên bước này thì
+**nút xóa dữ liệu sẽ nằm ngay trên hệ thống thật**.
+
+Thứ tự bắt buộc:
+
+1. `drop function xoa_du_lieu_kiem_thu` và các hàm dọn kèm theo trên project sẽ
+   thành production.
+2. Đổi ref nhận diện chế độ test ở frontend sang `jttucjnkqxckphmmilaa`.
+3. Chạy `xoa_du_lieu_kiem_thu` **lần cuối** để dọn sạch dữ liệu thử — làm
+   TRƯỚC bước 1, không phải sau.
+4. Nạp lại dữ liệu nền thật bằng script, đối chiếu số dòng.
+5. Chạy `kiem_truoc_deploy.py` và `smoke_pipeline_hien_tai.py`.
+6. Đổi site `vtyt-umc` sang theo dõi nhánh phát triển (hoặc merge vào `main`).
+
+Đây là quyết định rủi ro cao, phải làm theo đúng thứ tự và có xác nhận của chủ
+dự án ở từng bước, không tự suy ra từ việc staging đã ổn.
 
 ## 5. Sao lưu và phục hồi
 
@@ -339,6 +377,25 @@ dữ liệu, chạy lâu hơn. Hai thứ bổ sung nhau, không thay thế nhau.
     cũng bị chặn theo — `patch_zs` chặn sửa sau khi chốt và suýt làm nút "Kết
     thúc đợt & dọn" không chạy được nữa (chỉ cần MỘT khoa đã chốt). Hàm dọn
     phải gỡ điều kiện khoá TRƯỚC, và phải có test canh đúng thứ tự đó.
+26. **Repo SQL không còn là nguồn chuẩn của schema.** Rà 17/08/2026: 55 patch
+    chồng lên nhau, cùng một hàm được `create or replace` nhiều lần ở nhiều
+    file (`fn_chan_sua_noi_dung_de_xuat` 7 lần, `tao_goi_thau` 6 lần,
+    `fn_kiem_tra_chuyen_trang_thai` và `fn_gac_ket_qua_ma` 5 lần). Đọc repo
+    **không** biết được bản nào đang sống trong DB — chỉ query DB mới biết.
+    Hệ quả thật: mọi kết luận kiểu "code đã có xử lý này" đều phải kiểm lại
+    trên DB trước khi tin. Đang xử lý bằng cách gộp lại schema v2 (mục 4).
+27. **Ba kiểu đánh khóa cùng tồn tại cho một khái niệm.** `danh_muc_khoa_chot`
+    và `danh_muc_tong_hop_chot` khóa theo `(goi_id text, nam_de_xuat)`,
+    `danh_muc_dot_chot` khóa theo `dot_id`, `proposals` mang cả `goi` text lẫn
+    `dot_id`. Không bảng nào khóa theo đúng đơn vị nghiệp vụ `DOT_GOI = đợt ×
+    gói con`. Đây là gốc của bẫy 16 và của việc chốt gói con này có thể chạm
+    gói con khác. Chặng 1 kế hoạch v3 tạo thực thể `dot_goi` và migrate hết
+    sang khóa đó.
+28. **Chế độ xóa dữ liệu test gắn cứng vào project ref staging.** `patch_za`
+    và frontend đều nhận diện chế độ test bằng ref `ihgfafubwyxnbubmppbj`.
+    Quyết định 17/08/2026 lấy chính project đó làm production, nên nếu đổi vai
+    mà quên gỡ thì **nút xóa dữ liệu nằm ngay trên hệ thống thật**. Xem thứ tự
+    bắt buộc ở mục 4b.
 
 ## 6b. Dung lượng Supabase — dự án chỉ dùng gói FREE (500MB)
 

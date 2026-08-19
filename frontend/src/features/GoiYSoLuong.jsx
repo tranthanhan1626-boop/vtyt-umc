@@ -47,7 +47,7 @@ export default function GoiYSoLuong({ lichSu, thieu, H, abc, giaTri, onChon, tha
   if (!kq) return null;
 
   const chon = kq.muc[muc];
-  const ngoaiDai = so > 0 && (so < kq.p50 || so > kq.muc.P75);
+  const vuotNguongGiaiTrinh = so > kq.muc.P75;
   const tranTuyChon = tinhTuyChonMuaThem30(so);
   const tongNeuDungHetTuyChon = so > 0 ? Math.round(so) + tranTuyChon : 0;
 
@@ -140,10 +140,11 @@ export default function GoiYSoLuong({ lichSu, thieu, H, abc, giaTri, onChon, tha
         </p>
       )}
 
-      {ngoaiDai && (
+      {vuotNguongGiaiTrinh && (
         <p className="mt-1.5 text-[11px] leading-snug text-amber-800">
-          Số đang nhập nằm <b>ngoài dải thông thường P50–P75</b>. P90/P95 chỉ dùng
-          cho mã thiết yếu hoặc không có hàng thay thế và bắt buộc ghi rõ căn cứ.
+          Số đang nhập <b>vượt P75</b>. P90/P95 chỉ dùng khi có căn cứ và
+          <b> bắt buộc ghi rõ căn cứ</b>. Số dưới P50 vẫn được phép và không bắt
+          giải trình.
         </p>
       )}
 

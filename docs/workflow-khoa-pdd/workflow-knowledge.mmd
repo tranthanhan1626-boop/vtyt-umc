@@ -1,0 +1,21 @@
+flowchart LR
+  classDef khoa fill:#E6FFFB,stroke:#0F766E,color:#134E4A,stroke-width:2px
+  classDef pdd fill:#EFF6FF,stroke:#2563EB,color:#1E3A8A,stroke-width:2px
+  classDef sys fill:#F5F3FF,stroke:#7C3AED,color:#4C1D95,stroke-width:2px
+  classDef fail fill:#FEF2F2,stroke:#DC2626,color:#7F1D1D,stroke-width:3px
+  classDef ok fill:#ECFDF5,stroke:#16A34A,color:#14532D,stroke-width:2px
+  classDef gap fill:#FFFBEB,stroke:#D97706,color:#78350F,stroke-width:2px,stroke-dasharray: 6 4
+
+  DOT["DOT_DE_XUAT<br/>mo ↔ dong"]:::sys --> SCOPE["DOT_GOI = dot_id × goi_id<br/>THỰC THỂ ĐANG THIẾU"]:::fail
+  SCOPE --> SUB["Nhóm đề xuất / Proposal<br/>submit chính thức"]:::khoa --> CAT["Danh mục Khoa<br/>ô + audit + Word"]:::khoa
+  CAT --> READY["1 · KHOA_READY"]:::ok --> AGG["PDD_AGGREGATE"]:::pdd
+  SCOPE --> AGG --> OV["Override / lock / audit<br/>chưa chia ngược về từng Khoa"]:::pdd
+  OV -.-> FREEZE["2 · TENDER_INPUT_FROZEN<br/>chưa là checkpoint độc lập"]:::gap
+  FREEZE -.-> TRACK["Tracker + 5 mốc<br/>mặc định trúng"]:::sys --> TENDER["3 giai đoạn<br/>PĐD chỉ tích mã rớt"]:::pdd
+  TENDER --> RESULT["RESULT = SKU × Khoa"]:::sys
+  RESULT -->|rớt một phần| PART["Chuyển SL cùng mã quản lý<br/>tổng bất biến"]:::fail -. "refresh" .-> AGG
+  RESULT -->|rớt cả nhóm| FULL["Giỏ bổ sung<br/>phải submit vòng mới"]:::fail -.-> SUB
+  RESULT -.-> FINAL["3 · TENDER_RESULT_FINALIZED<br/>ĐANG THIẾU"]:::gap
+  FINAL -.-> CONTRACT["Hợp đồng → hàng về"]:::pdd --> USE["HIS / giám sát sử dụng"]:::sys
+  USE --> FEEDBACK["Thiếu hàng / nhu cầu / mã kỹ thuật"]:::khoa -.-> DOT
+  SCOPE -.-> P0["P0 split-brain: chốt dot_id; override goi:dot:id;<br/>Khoa/view goi tĩnh; proposal version không có dot"]:::fail

@@ -28,18 +28,19 @@
 // CÒN THIẾU so với pipeline mục tiêu của Đề án (phải nói rõ trên UI):
 //   · chưa trừ tồn dùng được và hàng chắc chắn về  → đây là nhu cầu GỘP
 //   · chưa có Q_bridge (nhu cầu cầu nối trước lô đầu)
-//   · chưa có VEN → mức mặc định P75; P90/P95 bắt buộc giải trình thủ công
+//   · chưa có VEN → mức chọn sẵn P50; chỉ số vượt P75 bắt buộc giải trình
 //   · chưa mô hình censored NegBin; mới phục hồi phần thiếu CÓ BẰNG CHỨNG
 //   · chưa có đơn giá → chưa chọn được phân vị theo newsvendor q* =
 //     C_under/(C_under+C_over)
 
 /** z của phân phối chuẩn. VEN quyết chọn mức nào (Đề án Bảng 7). */
 export const MUC_PHUC_VU = [
-  { ma: "P75", z: 0.6745, nhan: "P75", mo: "Cận trên thông thường — mặc định" },
+  { ma: "P50", z: 0,      nhan: "P50", mo: "Mức cân bằng — chọn sẵn" },
+  { ma: "P75", z: 0.6745, nhan: "P75", mo: "Cận trên thông thường" },
   { ma: "P90", z: 1.2816, nhan: "P90 mức cao", mo: "Chỉ dùng cho mã quan trọng/khó thay thế; phải giải trình" },
   { ma: "P95", z: 1.6449, nhan: "P95 ngoại lệ", mo: "Chỉ dùng cho mã cứu mạng, không có thay thế; phải giải trình" },
 ];
-export const MUC_MAC_DINH = "P75";
+export const MUC_MAC_DINH = "P50";
 
 /** Số tháng sạch tối thiểu để σ có nghĩa. Dưới mức này chỉ hiện P50. */
 const TOI_THIEU_THANG = 6;

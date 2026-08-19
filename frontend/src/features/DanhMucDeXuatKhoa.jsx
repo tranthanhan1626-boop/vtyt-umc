@@ -70,21 +70,37 @@ const NAM_DE_XUAT = new Date().getFullYear() + 1;
 async function taiDuLieuKhoa(goiId, khoa, dotId = null) {
   const bo = GOI_ID_MAP[goiId] || GOI_ID_MAP["18t-dung-chung"];
   if (!khoa) return { bo, rows: [] };
+  let dotGoiId = null;
+  if (dotId) {
+    const { data: dg, error: loiDotGoi } = await supabase.from("dot_goi")
+      .select("id").eq("dot_id", Number(dotId)).eq("goi_id", goiId).maybeSingle();
+    if (loiDotGoi) throw loiDotGoi;
+    dotGoiId = dg?.id || null;
+  }
 
   // Xem chú thích cùng chỗ ở TongHopPdd.jsx — lọc đúng đợt bổ sung (patch_zt).
   const dsDotId = await taiDotIdCuaGoi(bo);
-  let qProposals = supabase.from("proposals")
-    .select("id, ma_hang, so_luong, dot_id")
-    .eq("nam_de_xuat", NAM_DE_XUAT).eq("is_current", true)
-    .eq("loai_mua_sam", bo.loai_mua_sam).eq("don_vi", khoa);
-  if (bo.goi) qProposals = qProposals.eq("goi", bo.goi);
+  let qProposals;
+  let laPhanBoV3 = false;
+  if (dotGoiId) {
+    laPhanBoV3 = true;
+    qProposals = supabase.from("phan_bo_khoa")
+      .select("proposal_id, ma_hang, so_luong_hien_hanh, so_luong_goc")
+      .eq("dot_goi_id", dotGoiId).eq("khoa", khoa);
+  } else {
+    qProposals = supabase.from("proposals")
+      .select("id, ma_hang, so_luong, dot_id")
+      .eq("nam_de_xuat", NAM_DE_XUAT).eq("is_current", true)
+      .eq("loai_mua_sam", bo.loai_mua_sam).eq("don_vi", khoa);
+    if (bo.goi) qProposals = qProposals.eq("goi", bo.goi);
+  }
   // `dot_id` là ranh giới nghiệp vụ cuối cùng. Một gói 18 tháng có thể có
   // nhiều kỳ kế tiếp nhau và ba đợt bổ sung cùng loại cũng phải tuyệt đối tách
   // nhau; không được chỉ lọc theo `loai_mua_sam` rồi để kết quả rớt lẫn kỳ.
-  qProposals = dotId ? qProposals.eq("dot_id", Number(dotId)) : locTheoDot(qProposals, dsDotId);
+  if (!laPhanBoV3) qProposals = dotId ? qProposals.eq("dot_id", Number(dotId)) : locTheoDot(qProposals, dsDotId);
   const { data: propRows, error: loiProposals } = await fetchAllRows((f, t) => qProposals.range(f, t), { order: "id" });
   if (loiProposals) throw loiProposals;
-  if (!propRows?.length) return { bo, rows: [] };
+  if (!propRows?.length) return { bo, rows: [], dotGoiId };
 
   const propTheoMa = new Map(propRows.map((r) => [r.ma_hang, r]));
   const dsMaHang = [...propTheoMa.keys()];
@@ -141,7 +157,11 @@ async function taiDuLieuKhoa(goiId, khoa, dotId = null) {
     const prop = propTheoMa.get(maHang);
     const theoThang = usageTheoMa.get(maHang) || new Map();
     const tongNam = (nam) => tongKhoang(theoThang, monthId(nam, 1), monthId(nam, 12));
-    const slDeXuat = Number(prop.so_luong) || 0;
+    const slDeXuat = Number(laPhanBoV3 ? prop.so_luong_hien_hanh : prop.so_luong) || 0;
+    // Giai đoạn 4 của workflow: "Khoa thấy số cũ, số mới, người sửa và lý do
+    // ngay trên bảng của mình." `so_luong_goc` là số khoa đã gửi, không bao
+    // giờ bị ghi đè; lệch với số hiện hành nghĩa là PĐD đã điều chỉnh.
+    const slGoc = laPhanBoV3 ? Number(prop.so_luong_goc) || 0 : slDeXuat;
     const row = {
       stt: 0, stt_co_dinh: 0,
       ma_nhom: vt.ma_quan_ly || null,
@@ -161,6 +181,8 @@ async function taiDuLieuKhoa(goiId, khoa, dotId = null) {
         (vt.ma_quan_ly ? nhomNamTheoMa.get(vt.ma_quan_ly)?.get(nam) : null) || null,
       ])),
       sl_de_xuat_18t: slDeXuat,
+      _sl_goc: slGoc,
+      _pdd_da_sua: laPhanBoV3 && slGoc !== slDeXuat,
       mua_them_30: tinhTuyChonMuaThem30(slDeXuat),
       giai_trinh_2627: "",
       ten_tm_2627: vt.ten_thuong_mai || null,
@@ -168,8 +190,8 @@ async function taiDuLieuKhoa(goiId, khoa, dotId = null) {
       hang_sx_2627: vt.hang || null,
       nuoc_sx_2627: vt.nuoc_san_xuat || null,
       ma_hang: maHang,
-      proposalId: prop.id,
-      dotId: prop.dot_id,
+      proposalId: laPhanBoV3 ? prop.proposal_id : prop.id,
+      dotId: dotId ? Number(dotId) : prop.dot_id,
       rot: null,
     };
     NGUON_KHONG_CO_KHOA.forEach((k) => { row[k] = null; });
@@ -181,7 +203,7 @@ async function taiDuLieuKhoa(goiId, khoa, dotId = null) {
     || a.ten_vt_2627.localeCompare(b.ten_vt_2627, "vi"));
   rows.forEach((r, i) => { r.stt = i + 1; r.stt_co_dinh = i + 1; });
 
-  return { bo, rows, dsMaHang, dsNamCoDuLieu };
+  return { bo, rows, dsMaHang, dsNamCoDuLieu, dotGoiId };
 }
 
 /** Tải kết quả thầu (mục 6) — chỉ dòng của đúng khoa (RLS tự giới hạn). */
@@ -207,6 +229,10 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
 
   const [boThau, setBoThau] = useState(GOI_ID_MAP[goiId] || GOI_ID_MAP["18t-dung-chung"]);
   const [rows, setRows] = useState([]);
+  // Giai đoạn 4 — minh bạch PĐD ↔ khoa. `phan_bo_khoa_audit` giữ số cũ, số
+  // mới, người sửa và lý do; khoa phải đọc được ngay trên bảng của mình chứ
+  // không phải hỏi qua Teams.
+  const [dieuChinhPdd, setDieuChinhPdd] = useState([]);
   const [dangTai, setDangTai] = useState(true);
   const [loi, setLoi] = useState("");
   const [dangChonMaDay, setDangChonMaDay] = useState(null); // ma_hang đang mở form đẩy SL
@@ -222,6 +248,7 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
   const [trangThaiChot, setTrangThaiChot] = useState(null); // {chot_boi, chot_luc} | null
   const [dangChot, setDangChot] = useState(false);
   const [loiChot, setLoiChot] = useState("");
+  const [dotGoiId, setDotGoiId] = useState(null);
 
   const [oDangChon, setODangChon] = useState(null);
   const [openMenuCot, setOpenMenuCot] = useState(false);
@@ -325,38 +352,55 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
   // khoa đã làm xong, nên khoa phải CHỦ ĐỘNG bấm chốt (chốt 07/08/2026).
   const taiTrangThaiChot = useCallback(async () => {
     if (!goiId || !khoaHienTai) return;
-    const { data, error } = await supabase.from("danh_muc_khoa_chot")
-      .select("chot_boi, chot_luc")
-      .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT).eq("khoa", khoaHienTai)
-      .maybeSingle();
+    let q = supabase.from("danh_muc_khoa_chot")
+      .select("chot_boi, chot_luc, khong_phat_sinh").eq("khoa", khoaHienTai);
+    q = dotGoiId
+      ? q.eq("dot_goi_id", dotGoiId)
+      : q.eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT);
+    const { data, error } = await q.maybeSingle();
     if (error) {
       const chuaCoBang = error.code === "42P01" || /danh_muc_khoa_chot/i.test(error.message || "");
       setLoiChot(chuaCoBang
-        ? "Staging chưa có chức năng chốt danh mục. Cần chạy backend/sql/patch_zj_ban_dieu_hanh_pdd.sql."
+        ? "Staging chưa có chức năng chốt danh mục v3. Cần chạy patch_zzzzb_v3_chot_q.sql."
         : error.message);
       return;
     }
     setLoiChot("");
     setTrangThaiChot(data || null);
-  }, [goiId, khoaHienTai]);
+  }, [goiId, khoaHienTai, dotGoiId]);
 
   useEffect(() => { taiTrangThaiChot(); }, [taiTrangThaiChot]);
 
-  const doiChot = async () => {
+  const doiChot = async (khongPhatSinh = false) => {
     setDangChot(true);
     setLoiChot("");
     const dangChot = !!trangThaiChot;
-    const { error } = dangChot
-      ? await supabase.from("danh_muc_khoa_chot").delete()
-          .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT).eq("khoa", khoaHienTai)
-      : await supabase.from("danh_muc_khoa_chot").insert({
-          goi_id: goiId, nam_de_xuat: NAM_DE_XUAT, khoa: khoaHienTai,
-          chot_boi: profile?.email || khoaHienTai,
-        });
+    if (!dotGoiId) {
+      setLoiChot("Chưa xác định được DOT_GOI của danh mục này.");
+      setDangChot(false);
+      return;
+    }
+    let error;
+    if (dangChot) {
+      if (!laPdd) {
+        setLoiChot("Khoa không tự mở lại sau khi chốt. Vui lòng trao đổi với PĐD qua Teams.");
+        setDangChot(false);
+        return;
+      }
+      const lyDo = window.prompt("Nhập lý do mở lại danh mục của khoa:", "") || "";
+      if (!lyDo.trim()) { setDangChot(false); return; }
+      ({ error } = await supabase.rpc("mo_chot_danh_muc_khoa_v3", {
+        p_dot_goi_id: dotGoiId, p_khoa: khoaHienTai, p_ly_do: lyDo,
+      }));
+    } else {
+      ({ error } = await supabase.rpc("chot_danh_muc_khoa_v3", {
+        p_dot_goi_id: dotGoiId, p_khong_phat_sinh: khongPhatSinh,
+      }));
+    }
     if (error) {
       const chuaCoBang = error.code === "42P01" || /danh_muc_khoa_chot/i.test(error.message || "");
       setLoiChot(chuaCoBang
-        ? "Staging chưa có chức năng chốt danh mục. Cần chạy backend/sql/patch_zj_ban_dieu_hanh_pdd.sql."
+        ? "Staging chưa có chức năng chốt danh mục v3. Cần chạy patch_zzzzb_v3_chot_q.sql."
         : error.message);
     } else {
       await taiTrangThaiChot();
@@ -432,7 +476,7 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
     setDangTai(true);
     setLoi("");
     try {
-      const { bo, rows: rowsGoc, dsMaHang, dsNamCoDuLieu: dsNam } =
+      const { bo, rows: rowsGoc, dsMaHang, dsNamCoDuLieu: dsNam, dotGoiId: dgId } =
         await taiDuLieuKhoa(goiId, khoaHienTai, dotId);
       const ketQuaTheoMa = dsMaHang?.length
         ? await taiKetQuaThau(bo.loai_mua_sam, khoaHienTai, dsMaHang, dotId)
@@ -440,6 +484,7 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
       const [oDaLuu, suaDePdd] = await Promise.all([taiODaLuu(), taiSuaDeCuaPdd()]);
       setSuaDeCuaPdd(suaDePdd);
       setBoThau(bo);
+      setDotGoiId(dgId || null);
       setDsNamCoDuLieu(dsNam || []);
       // Áp giá trị đã lưu ĐÈ lên số gốc hệ thống dựng ra.
       const daSua = new Map();
@@ -467,6 +512,16 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
         r.stt_co_dinh = i + 1;
       });
       setRows(rowsDangHien);
+      if (dotGoiId) {
+        const { data: dsAudit } = await supabase
+          .from("phan_bo_khoa_audit")
+          .select("ma_hang, truoc, sau, tong_truoc, tong_sau, ly_do, nguoi_sua, thoi_gian")
+          .eq("dot_goi_id", dotGoiId)
+          .order("thoi_gian", { ascending: false });
+        // Audit ghi theo MÃ HÀNG cho cả đợt; lọc lại còn đúng lần sửa có động
+        // tới khoa đang xem.
+        setDieuChinhPdd((dsAudit || []).filter((a) => (a.sau || {})[khoa] !== undefined));
+      }
       setODaSua(daSua);
     } catch (e) {
       setLoi(e.message || "Không tải được dữ liệu.");
@@ -621,11 +676,36 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
     setDangXuatExcel(true);
     setLoiXuatExcel("");
     try {
+      let phienChinhThuc = null;
+      let rowsXuat = rows;
+      if (dotGoiId) {
+        const { data: phien, error: loiPhien } = await supabase
+          .from("chot_trinh_ky_phien_v3")
+          .select("id,revision,chot_luc").eq("dot_goi_id", dotGoiId)
+          .eq("hieu_luc", true).maybeSingle();
+        if (loiPhien) throw loiPhien;
+        phienChinhThuc = phien || null;
+        if (phienChinhThuc) {
+          const { data: dong, error: loiDong } = await fetchAllRows((f, t) => supabase
+            .from("chot_trinh_ky_dong_v3").select("ma_hang,so_luong_trung")
+            .eq("phien_id", phienChinhThuc.id).eq("khoa", khoaHienTai)
+            .range(f, t), { order: "ma_hang" });
+          if (loiDong) throw loiDong;
+          const soTheoMa = new Map((dong || []).map((d) => [d.ma_hang, Number(d.so_luong_trung) || 0]));
+          rowsXuat = rows.map((r) => {
+            const so = soTheoMa.get(r.ma_hang) || 0;
+            return { ...r, sl_de_xuat_18t: so, mua_them_30: Math.floor(so * 0.30) };
+          });
+        }
+      }
       await xuatExcelDong({
         tieuDe: [
           "BỆNH VIỆN ĐẠI HỌC Y DƯỢC TP HỒ CHÍ MINH",
           (khoaHienTai || "").toUpperCase(),
           `ĐỀ XUẤT DANH MỤC, SỐ LƯỢNG, YÊU CẦU KỸ THUẬT GÓI THẦU CUNG CẤP VẬT TƯ Y TẾ NĂM ${NAM_DE_XUAT}-${NAM_DE_XUAT + 1} (${boThau.nhan})`,
+          phienChinhThuc
+            ? `BẢN CHÍNH THỨC · REVISION ${phienChinhThuc.revision} · ${new Date(phienChinhThuc.chot_luc).toLocaleString("vi-VN")}`
+            : "BẢN NHÁP · CHƯA CHỐT TRÌNH KÝ TOÀN BỘ",
         ],
         // Tên cột lấy từ chính file biểu mẫu bệnh viện (chủ dự án sửa được
         // trong file .xlsx, không cần đụng code). Cột năm sinh động không có
@@ -639,8 +719,9 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
           await docTenCotTuMau(`${import.meta.env.BASE_URL}form-bieu-mau/danh-muc-de-xuat-khoa.xlsx`)
             .catch(() => []),
         ),
-        rows,
-        tenFile: `danh-muc-de-xuat-${tenFileAnToan(khoaHienTai)}-${tenFileAnToan(boThau.nhan)}-${NAM_DE_XUAT}.xlsx`,
+        rows: rowsXuat,
+        tenFile: `danh-muc-de-xuat-${tenFileAnToan(khoaHienTai)}-${tenFileAnToan(boThau.nhan)}-${NAM_DE_XUAT}-${
+          phienChinhThuc ? `chinh-thuc-rev-${phienChinhThuc.revision}` : "ban-nhap"}.xlsx`,
         tenSheet: "Danh mục đề xuất",
       });
     } catch (e) {
@@ -758,10 +839,18 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
               <Download size={13} /> {dangXuatExcel ? "Đang xuất…" : "Xuất Excel in trình ký"}
             </button>
             <button className={`qtdx-tb ${trangThaiChot ? "" : "primary"}`}
-              onClick={doiChot} disabled={dangChot || !rows.length}>
+              onClick={() => doiChot(false)}
+              disabled={dangChot || (!trangThaiChot && !rows.length) || (trangThaiChot && !laPdd)}>
               {trangThaiChot ? <Unlock size={13} /> : <CheckCircle2 size={13} />}
-              {dangChot ? "Đang lưu…" : trangThaiChot ? "Mở lại để sửa" : "Chốt danh mục"}
+              {dangChot ? "Đang lưu…" : trangThaiChot
+                ? (laPdd ? "Mở lại để sửa" : "Đã chốt — liên hệ PĐD để mở")
+                : "Chốt danh mục"}
             </button>
+            {!trangThaiChot && !rows.length && !laPdd && (
+              <button className="qtdx-tb primary" onClick={() => doiChot(true)} disabled={dangChot}>
+                <CheckCircle2 size={13} /> Không phát sinh nhu cầu
+              </button>
+            )}
             <a href="#tien-do-goi-thau" onClick={(e) => { e.preventDefault(); window.location.hash = ""; }}
               className="qtdx-tb primary">
               <ExternalLink size={13} /> Xử lý mã rớt ở Tiến độ gói thầu
@@ -780,7 +869,14 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
             <span className="qtdx-badge amber">
               <Lock size={11} className="mr-1" />
               ĐÃ CHỐT — mọi ô đang khoá · {trangThaiChot.chot_boi} · {new Date(trangThaiChot.chot_luc).toLocaleString("vi-VN")}
-              {" · bấm \"Mở lại để sửa\" nếu cần chỉnh"}
+              {trangThaiChot.khong_phat_sinh ? " · Không phát sinh nhu cầu" : ""}
+              {laPdd ? " · PĐD có thể mở lại với lý do" : " · liên hệ PĐD qua Teams nếu cần mở"}
+            </span>
+          )}
+          {dieuChinhPdd.length > 0 && (
+            <span className="qtdx-badge violet">
+              Phòng Điều dưỡng đã điều chỉnh số lượng {dieuChinhPdd.length} lần
+              {" "}— xem chi tiết bên dưới
             </span>
           )}
           {soOPddSuaDe > 0 && (
@@ -793,6 +889,47 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
           {soMaRot > 0 && <span className="qtdx-badge red">{soMaRot} mã rớt — bấm "Đẩy SL" ở dòng mã để chuyển sang mã tương đương còn trúng</span>}
           {laPdd && <span className="qtdx-badge blue">Đang xem với quyền PĐD</span>}
         </div>
+
+        {/* Giai đoạn 4 — "Khoa thấy số cũ, số mới, người sửa và lý do ngay
+            trên bảng của mình. Khoa không cần xác nhận lại." Bảng này chỉ
+            hiển thị, không có nút nào; trao đổi chi tiết vẫn qua Teams. */}
+        {dieuChinhPdd.length > 0 && (
+          <div className="mt-2 rounded-md border border-violet-200 bg-violet-50/60 px-3 py-2">
+            <p className="text-[11px] font-semibold text-violet-900">
+              Phòng Điều dưỡng đã điều chỉnh số lượng của khoa
+            </p>
+            <table className="mt-1.5 w-auto text-[11px]">
+              <thead>
+                <tr className="text-violet-700">
+                  <th className="px-2 py-0.5 text-left font-medium">Mã hàng</th>
+                  <th className="px-2 py-0.5 text-right font-medium">Số cũ</th>
+                  <th className="px-2 py-0.5 text-right font-medium">Số mới</th>
+                  <th className="px-2 py-0.5 text-left font-medium">Người sửa</th>
+                  <th className="px-2 py-0.5 text-left font-medium">Thời điểm</th>
+                  <th className="px-2 py-0.5 text-left font-medium">Lý do</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dieuChinhPdd.map((a, i) => (
+                  <tr key={`${a.ma_hang}-${a.thoi_gian}-${i}`} className="border-t border-violet-100">
+                    <td className="px-2 py-0.5 font-mono">{a.ma_hang}</td>
+                    <td className="px-2 py-0.5 text-right font-mono text-slate-500 line-through">
+                      {(a.truoc || {})[khoa] ?? "—"}
+                    </td>
+                    <td className="px-2 py-0.5 text-right font-mono font-semibold text-violet-900">
+                      {(a.sau || {})[khoa] ?? "—"}
+                    </td>
+                    <td className="px-2 py-0.5">{a.nguoi_sua || "—"}</td>
+                    <td className="px-2 py-0.5">
+                      {a.thoi_gian ? new Date(a.thoi_gian).toLocaleString("vi-VN") : "—"}
+                    </td>
+                    <td className="px-2 py-0.5 max-w-[26rem]">{a.ly_do || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Table */}

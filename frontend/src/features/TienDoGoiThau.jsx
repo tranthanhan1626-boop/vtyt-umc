@@ -406,15 +406,12 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
             }`}>
             Theo gói thầu
           </button>
-          <button onClick={() => setTab("gio_rot_toan_vien")}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-b-2 -mb-px ${
-              tab === "gio_rot_toan_vien" ? "border-umc-700 text-umc-800" : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}>
-            <Users size={13} /> Giỏ rớt toàn viện
-            {gioRotToanVien.length > 0 && (
-              <span className="rounded-full bg-red-600 px-1.5 text-[10px] font-semibold text-white">{gioRotToanVien.length}</span>
-            )}
-          </button>
+          {/* (Gỡ 19/08/2026) Tab "Giỏ rớt toàn viện" CŨ từng nằm ở đây. Nó chạy
+              trên cơ chế `day_so_luong_rot` / `goi_thau_tien_do` — workflow
+              trước v3 — trong khi giỏ rớt đang chạy thật là `v_gio_rot_v3` /
+              `xu_ly_gio_rot_v3`. Hai nguồn song song, và cái hiển thị KHÔNG
+              phải cái đang chạy: PĐD nhìn vào đây sẽ thấy sai.
+              Bản v3 nằm ở Bàn điều hành → tab "Kết quả thầu & giỏ rớt". */}
         </div>
       )}
 

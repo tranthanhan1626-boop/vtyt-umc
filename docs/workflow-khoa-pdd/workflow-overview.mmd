@@ -1,0 +1,33 @@
+flowchart LR
+  classDef khoa fill:#E6FFFB,stroke:#0F766E,color:#134E4A,stroke-width:2px
+  classDef pdd fill:#EFF6FF,stroke:#2563EB,color:#1E3A8A,stroke-width:2px
+  classDef sys fill:#F5F3FF,stroke:#7C3AED,color:#4C1D95,stroke-width:2px
+  classDef fail fill:#FEF2F2,stroke:#DC2626,color:#7F1D1D,stroke-width:2px
+  classDef ok fill:#ECFDF5,stroke:#16A34A,color:#14532D,stroke-width:2px
+  classDef gap fill:#FFFBEB,stroke:#D97706,color:#78350F,stroke-width:2px,stroke-dasharray: 6 4
+
+  P0["PĐD tạo / mở đợt<br/>chọn loại mua sắm + gói con"]:::pdd -->|đợt mở| K0["Khoa chọn đợt + gói con<br/>khóa logic = dot_id × goi_id"]:::khoa
+  K0 --> K1["ĐVT chuẩn + hệ số quy đổi<br/>TSB 24 tháng → P50/P75/P90/P95"]:::khoa
+  K1 --> K2["Chốt tổng mã quản lý<br/>phân bổ xuống mã hàng, tổng quy đổi phải khớp"]:::khoa
+  K2 --> K3["Giỏ lưu server<br/>Thêm cả mã quản lý"]:::khoa
+  K3 --> K4["Gửi giỏ = chính thức<br/>1 transaction · 1 giỏ = 1 gói con<br/>không PĐD duyệt giỏ"]:::ok
+  K4 --> K5["Word cam kết ngay<br/>Danh mục Khoa: sửa + audit + chốt"]:::khoa
+  K4 --> P1["Bàn điều hành<br/>theo dõi 62 Khoa"]:::pdd
+  K5 --> P1
+  P1 --> P2["Danh mục tổng hợp<br/>Đợt × Gói con, drill-down từng Khoa"]:::pdd
+  P2 --> P3["PĐD sửa/khóa + audit<br/>Excel tổng hợp + Word đề nghị mua"]:::pdd
+  P3 --> P4["3 giai đoạn thầu<br/>chỉ tích mã RỚT"]:::pdd
+  P4 --> D{"Kết quả?"}
+  D -->|rớt 1 phần| K6["Khoa đẩy SL sang mã tương đương còn trúng<br/>giữ nguyên tổng mã quản lý"]:::fail
+  K6 --> P2
+  D -->|rớt hoàn toàn| K7["Giỏ rớt → chọn đợt bổ sung<br/>chuyển vào giỏ server"]:::fail
+  K7 -. "gửi vòng bổ sung" .-> K3
+  D -->|trúng / xử lý xong| P5["CỜ CHỐT ĐANG GÁNH 2 MỐC<br/>UI: số đi thầu · docs: sau thầu<br/>DB chưa có RESULT_FINALIZED"]:::gap
+  K6 --> P5
+  P5 --> P6["Ký hợp đồng → hàng về đợt đầu"]:::pdd
+  P5 --> K8["Khoa xem kết quả<br/>mua thêm ≤ floor(30%) sau chốt"]:::ok
+  P6 --> P7["PĐD nạp HIS / chỉnh ngưỡng<br/>giám sát chậm cam kết & sắp hết sớm"]:::pdd
+  K8 --> K9["Sử dụng · báo thiếu hàng<br/>khai sự kiện nhu cầu"]:::khoa --> P7
+  P7 -. "sắp hết sớm" .-> P0
+  P3 -.-> G1["CHƯA NỐI ĐỦ: số PĐD sửa ở cấp toàn viện<br/>chưa chia ngược vào proposal từng Khoa"]:::gap
+  P2 -.-> G2["P0 SCOPE: nghiệp vụ cần dot_id × goi_id<br/>DB đang trộn dot_id, goi_id và goi:dot:id"]:::fail

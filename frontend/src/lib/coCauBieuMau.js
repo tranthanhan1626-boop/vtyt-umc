@@ -98,6 +98,29 @@ export const TONG_HOP_PDD = [
   { ten: "Nước sản xuất",                          lay: (d) => d.nuoc_san_xuat },
 ];
 
+/**
+ * Dấu vết sinh file — in xuống CUỐI mọi biểu mẫu Word.
+ *
+ * Mục IX.3 và X của workflow v3: "Hệ thống không cưỡng chế được bản giấy đã in.
+ * Vì vậy MỌI FILE XUẤT đều in số revision và thời điểm sinh lên file để đối
+ * chiếu; revision cũ bị đánh dấu hết hiệu lực trong hệ thống."
+ *
+ * Excel đã in dòng này từ lâu ("BẢN CHÍNH THỨC · REVISION 2 · 08:59:11 …"),
+ * Word thì chưa — nên một bản cam kết in ra giấy không cho biết nó sinh lúc nào
+ * và từ dữ liệu revision nào. Đó đúng là tình huống mục IX.3 muốn phòng.
+ */
+export function dauVetSinhFile(m = {}) {
+  const luc = new Date().toLocaleString("vi-VN");
+  const rev = m.revision_trinh_ky
+    ? `BẢN CHÍNH THỨC · REVISION ${m.revision_trinh_ky}`
+    : "BẢN NHÁP · chưa chốt dữ liệu trình ký";
+  return [
+    { chu: "" },
+    { co: 16, chu: `${rev} · sinh lúc ${luc}${m.don_vi ? ` · ${m.don_vi}` : ""}` },
+    { co: 16, chu: "File chỉ là bản in. Nguồn dữ liệu đúng là dữ liệu có cấu trúc cùng revision và audit trên hệ thống." },
+  ];
+}
+
 /** File 2 — Word "Bản cam kết": văn bản có chỗ trống. */
 export const CAM_KET = (m) => [
   { canh: "giua", dam: true, co: 30, chu: "BẢN CAM KẾT" },
@@ -116,6 +139,7 @@ export const CAM_KET = (m) => [
   { chu: "Trân trọng./." },
   { canh: "phai", chu: "Thành phố Hồ Chí Minh, ngày        tháng        năm" },
   { canh: "phai", dam: true, chu: "TRƯỞNG KHOA" },
+  ...dauVetSinhFile(m),
 ];
 
 /** File 4 — Word "Phiếu đề nghị" của Phòng Điều dưỡng. */

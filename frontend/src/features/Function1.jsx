@@ -2,6 +2,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { motion, AnimatePresence } from "motion/react";
 import { Search, ChevronDown, ChevronLeft, Check, Package, ChevronRight, AlertTriangle, ShoppingCart, X, ExternalLink } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
+import CanhBaoMaTrungDot from "./CanhBaoMaTrungDot";
 import ChartDongBo, { BarChartNam, LegendItem, fmt, kyHieuNam, mauNam } from "../components/ChartDongBo";
 import GoiYSoLuong from "./GoiYSoLuong";
 import { danhGiaSoLuong } from "../lib/congThucSoLuong";
@@ -136,7 +137,17 @@ const CAN_GIAI_TRINH = (goiThau) => goiThau === "chi_dinh_thau";
 // Gói có gợi ý P75: ≤ P75 tự dùng lý do lịch sử, không cần giải trình; > P75
 // bắt buộc chọn lý do và nhập ghi chú cụ thể. Không so năm hiện tại vì làm
 // thầu giữa năm dữ liệu chưa đủ.
-const CO_GOI_Y_SO_LUONG = (goi) => goi !== "chi_dinh_thau";
+// Gói nào ĐƯỢC dùng dải phân vị P50–P95 làm gợi ý, và do đó mới bắt lý do khi
+// vượt P75.
+//
+// Mục VIII.2 — đề xuất BỔ SUNG: "Số lượng cũ chỉ để tham khảo. KHÔNG áp dụng:
+// P50/P75/P90/P95 · Giới hạn theo số đã rớt · Lý do vượt ngưỡng · Trần theo số
+// đề xuất cũ." Bổ sung sinh ra từ phần đã rớt, khoa tự quyết theo kế hoạch
+// chuyên môn; đo lại bằng phân vị của kỳ trước là đo nhầm gốc.
+//
+// Trước 19/08/2026 hàm này chỉ loại `chi_dinh_thau`, nên đợt bổ sung vẫn bị
+// áp ngưỡng P75 và vẫn bắt lý do — trái mục VIII.2.
+const CO_GOI_Y_SO_LUONG = (goi) => goi !== "chi_dinh_thau" && goi !== "mua_sam_bo_sung";
 
 // --- Giỏ đề xuất lưu ở localStorage, TÁCH RIÊNG THEO KHOA ------------------
 // Trước đây giỏ chỉ nằm trong state React nên mất sạch mỗi khi F5, đóng/mở tab,
@@ -1667,6 +1678,14 @@ export default function Function1({
                 Nhóm <span className="font-mono">{nhomChon}</span> · {maHangTrongNhom.length} mã hàng tương đương ·
                 Khoa đề xuất: {toanVien ? "Toàn viện (chỉ xem)" : khoaHienTai} · Năm đề xuất: {NAM_DE_XUAT}
               </p>
+              {/* Mục I.3 — cảnh báo mã đang nằm ở đợt khác. Cảnh báo, KHÔNG chặn. */}
+              {!toanVien && (
+                <CanhBaoMaTrungDot
+                  maQuanLy={nhomChon}
+                  khoa={khoaHienTai}
+                  dotIdHienTai={dotDung?.id}
+                />
+              )}
             </div>
 
             <div className="bg-white border border-slate-200 rounded-lg overflow-x-auto">
@@ -1724,7 +1743,7 @@ export default function Function1({
                 {!tinhTrangQuyDoi.hopLe && (
                   <p className="mt-2 text-xs font-medium text-amber-800">
                     Nhập hệ số lớn hơn 0 cho mọi ĐVT còn lại để hệ thống cộng lịch sử
-                    và tính khoảng P50–P75.
+                    {CO_GOI_Y_SO_LUONG(goi) ? " và tính khoảng P50–P75." : " theo đúng ĐVT chuẩn."}
                   </p>
                 )}
               </div>

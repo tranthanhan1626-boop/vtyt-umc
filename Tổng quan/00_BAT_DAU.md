@@ -1,10 +1,10 @@
 # Tổng quan hệ thống VTYT
 
-Cập nhật: **07/08/2026**.
+Cập nhật: **17/08/2026**.
 
-> **Đang vội?** Mở thẳng phần "TRẠNG THÁI HIỆN TẠI" ở đầu
-> `05_TIEN_DO_VA_VIEC_TIEP_THEO.md` — ở đó có bảng hai vai trò làm được gì,
-> patch SQL nào đã chạy / còn thiếu, và việc tiếp theo.
+> **Đang vội?** Mở thẳng mục **"17/08/2026 — KẾ HOẠCH V3"** ở đầu
+> `05_TIEN_DO_VA_VIEC_TIEP_THEO.md` — ở đó có 16 quyết định hiện hành, việc
+> phải làm và 5 chặng thi công tới go-live.
 
 Đây là bộ tài liệu duy nhất của dự án. Tài liệu lịch sử, bản thiết kế trước
 migration và demo RHM đã được loại bỏ để tránh lấy nhầm quyết định cũ.
@@ -18,20 +18,30 @@ migration và demo RHM đã được loại bỏ để tránh lấy nhầm quy�
 5. `04_VAN_HANH_KY_THUAT.md` — chạy local, staging, backup, test và các bẫy.
 6. `05_TIEN_DO_VA_VIEC_TIEP_THEO.md` — phần đã xong, còn phải kiểm và lộ trình.
 
+**Nguồn gốc của workflow** là file Word `Full workflow vtyt web.docx` ở gốc
+repo — bản chốt nghiệp vụ do chủ dự án viết. `01_NGHIEP_VU_VA_QUYET_DINH.md`
+là **bản thi hành**: cùng nội dung nhưng nói tới mức code và schema. Hai file
+phải luôn khớp; sửa một bên thì sửa cả bên kia.
+
 ## Mục tiêu
 
-Web là không gian làm việc chung giữa:
+**Web là sổ ghi, máy tính và dấu vết. Teams là nơi thương lượng.** Các đơn vị
+vẫn liên lạc với nhau qua Teams, nên web không dựng cổng chặn quy trình — không
+hạn nộp, không nhắc tự động, không bước phê duyệt trung gian. Web chỉ hiển thị
+trạng thái và giữ đúng ba khóa cứng toán học (xem `01`, mục 0).
 
-- **Đơn vị sử dụng (ĐVSD):** lập đề xuất, làm hồ sơ, theo dõi kết quả và mức sử
-  dụng của khoa.
-- **Phòng Điều dưỡng (PĐD):** quản lý đợt/gói, tổng hợp danh mục toàn viện,
-  theo dõi khoa nào chưa nộp, tích kết quả rớt thầu và trả kết quả về khoa.
-  Từ 07/08/2026 PĐD có màn hình riêng — **Bàn điều hành** — không dùng chung
-  khung màn hình của khoa nữa. **Không còn bước "PĐD duyệt giỏ"** (bỏ từ
-  05/08/2026): khoa submit là chính thức, hai bên cộng tác trực tiếp trên
-  danh mục.
-- **Admin:** quản trị dữ liệu và tài khoản; không phải một vai trò nghiệp vụ thứ
-  ba.
+Hai vai trò nghiệp vụ:
+
+- **Đơn vị sử dụng (ĐVSD):** lập đề xuất, chốt danh mục của khoa, xử lý mã rớt,
+  theo dõi kết quả và mức sử dụng của khoa.
+- **Phòng Điều dưỡng (PĐD) — cũng chính là admin:** quản lý đợt/gói, hiệu chỉnh
+  và phân bổ số về các khoa, chốt số tham gia đấu thầu, nhập ngoại lệ rớt theo
+  ba giai đoạn, phân bổ số trúng, chốt dữ liệu trình ký, quản trị dữ liệu và
+  tài khoản. PĐD có màn hình riêng — **Bàn điều hành**. `admin` và `dieu_duong`
+  có cùng quyền, **không có vai trò nghiệp vụ thứ ba** (QĐ 17/08/2026).
+
+**Không còn bước "PĐD duyệt giỏ"** (bỏ 05/08/2026): khoa gửi giỏ là chính thức,
+hai bên cộng tác trực tiếp trên danh mục.
 
 Hệ thống chính là React + Supabase trong `frontend/` và `backend/`. Không dựng
 thêm một web song song.
@@ -40,15 +50,18 @@ thêm một web song song.
 
 1. Số gợi ý không tự điền, không tự vào giỏ và không chặn khoa nhập số khác.
 2. Quyền xử lý của ĐVSD theo **cùng khoa**, không khóa theo email người tạo.
-3. Hồ sơ đã gửi không xóa cứng; mọi rút, sửa, từ chối, duyệt và xuất file phải
-   có dấu vết người/thời gian/revision.
-4. Excel là đầu ra hoặc hồ sơ cộng tác, không dùng làm kênh nạp ngược quyết
-   định đã duyệt.
+3. Hồ sơ đã gửi không xóa cứng; mọi rút, sửa, chốt, mở lại và xuất file phải có
+   dấu vết người/thời gian/revision.
+4. Excel là đầu ra, không dùng làm kênh nạp ngược quyết định. Nguồn dữ liệu
+   đúng là dữ liệu có cấu trúc cùng revision và audit.
 5. Tồn và khả dụng là số toàn viện; không tự trừ lặp vào đề xuất của từng khoa.
 6. LLM chỉ hỗ trợ chữ/phân loại. Số lượng phải do công thức tái lập được.
 7. Test trên staging trước; không chạy patch hay dọn dữ liệu trên production khi
    chưa xem trước phạm vi.
 8. Không đưa service-role key, dữ liệu bệnh viện hoặc file backup lên Git.
+9. **`proposals` là dấu vết gốc, không bao giờ bị sửa đè.** Số hiện hành sống ở
+   `phan_bo_khoa`; Danh mục tổng hợp là view cộng lên, không lưu số riêng
+   (QĐ 17/08/2026).
 
 ## Ba môi trường
 
@@ -58,10 +71,18 @@ thêm một web song song.
 | Supabase staging | test workflow và patch | được phép tạo dữ liệu test |
 | Production | dữ liệu bệnh viện | chỉ thay đổi sau khi staging đạt |
 
+⚠️ **Hai project Supabase sẽ đổi vai trước go-live**: project staging hiện tại
+(`ihgfafubwyxnbubmppbj`) trở thành production, project production hiện tại
+(`jttucjnkqxckphmmilaa`) xuống làm staging. Không tạo project thứ ba. Có thứ tự
+bắt buộc phải theo — xem `04_VAN_HANH_KY_THUAT.md` mục 4b.
+
 ## Mốc nghiệp vụ
 
-- Mốc go-live dự kiến: **01/01/2027**.
-- Trước go-live: hoàn tất staging, test trọn vòng, nhận dữ liệu còn thiếu và
-  chạy pilot 3–5 khoa.
-- Sau go-live: thu dữ liệu thiếu hàng/sự kiện nhu cầu, theo dõi cam kết và
-  hiệu chuẩn lại công thức bằng dữ liệu mới.
+- Mốc go-live: **01/01/2027** — mốc cứng.
+- Trước go-live: **build đầy đủ mọi chức năng** (không phần nào được trượt sang
+  sau), hoàn tất staging, test trọn vòng, nhận dữ liệu còn thiếu và chạy pilot
+  3–5 khoa trong T12/2026.
+- Sau go-live: thu dữ liệu thiếu hàng, theo dõi cam kết sử dụng và hiệu chuẩn
+  lại công thức bằng dữ liệu mới.
+
+Lộ trình 5 chặng: xem `05_TIEN_DO_VA_VIEC_TIEP_THEO.md` mục D.

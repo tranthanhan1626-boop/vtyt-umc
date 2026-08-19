@@ -143,10 +143,6 @@ export const COT_QUA_TRINH_MO_RONG = [
   { key: "muc_chon",      nhan: "Mức chọn",                width: 100,               group: "cong_thuc" },
   { key: "ly_do_ngoai",   nhan: "Lý do ngoài P50-P75",     width: 240,               group: "cong_thuc" },
 
-  { key: "gia_du_kien",   nhan: "Giá dự kiến",             width: 110, kieu: "num", group: "thuong_mai_them" },
-  { key: "gia_hd_cu",     nhan: "Giá HĐ cũ",               width: 110, kieu: "num", readonly: true, group: "thuong_mai_them" },
-  { key: "tong_gia",      nhan: "Tổng giá trị dự kiến",    width: 140, kieu: "num", readonly: true, group: "thuong_mai_them" },
-
   { key: "gd1",           nhan: "GĐ1 Chào giá",            width: 110, group: "ket_qua_thau" },
   { key: "gd2",           nhan: "GĐ2 Mở thầu",             width: 110, group: "ket_qua_thau" },
   { key: "gd3",           nhan: "GĐ3 Đánh giá",            width: 110, group: "ket_qua_thau" },
@@ -161,7 +157,6 @@ export const NHOM_COT_QUA_TRINH = [
   ...NHOM_COT_KHOA,
   { key: "tskt_cong_tac",    nhan: "TSKT cộng tác (khoa ↔ PĐD)",    mau: "bg-indigo-800" },
   { key: "cong_thuc",        nhan: "Công thức TSB & mức chọn",      mau: "bg-slate-600" },
-  { key: "thuong_mai_them",  nhan: "Thương mại dự kiến",            mau: "bg-sky-700" },
   { key: "ket_qua_thau",     nhan: "Kết quả thầu 3 giai đoạn",      mau: "bg-rose-800" },
   { key: "ghi_chu",          nhan: "Ghi chú & cờ",                  mau: "bg-slate-500" },
 ];
@@ -195,6 +190,16 @@ export const GOI_ID_MAP = {
   "bs-t1":           { loai_mua_sam: "mua_sam_bo_sung", goi: null, thang_moc: 1, nhan: "Bổ sung · đợt tháng 1" },
   "bs-t5":           { loai_mua_sam: "mua_sam_bo_sung", goi: null, thang_moc: 5, nhan: "Bổ sung · đợt tháng 5" },
   "bs-t9":           { loai_mua_sam: "mua_sam_bo_sung", goi: null, thang_moc: 9, nhan: "Bổ sung · đợt tháng 9" },
+  // BẪY 16 LẶP LẠI (vá 19/08/2026) — lần này với chỉ định thầu.
+  // `patch_zzzz_v3_dot_goi.sql` thêm dòng `chi-dinh-thau` vào bảng `goi_con`,
+  // và `fn_dong_bo_dot_goi_tu_dot_v3` sinh DOT_GOI cho mọi đợt chỉ định thầu —
+  // nhưng khoá đó KHÔNG có ở đây, nên `#tong-hop-pdd/chi-dinh-thau` lại rơi
+  // lặng lẽ về 18T Dùng chung, đúng y hệt bẫy đã vá cho bs-t1/t5/t9.
+  //
+  // Chưa ai gặp vì chỉ định thầu chưa có pipeline (mục XV), nhưng bảng và
+  // trigger thì đã sẵn sàng sinh dữ liệu. `kiem_truoc_deploy.py` bắt được lệch
+  // này và chặn deploy — đúng việc của nó.
+  "chi-dinh-thau":   { loai_mua_sam: "chi_dinh_thau", goi: null, nhan: "Chỉ định thầu" },
 };
 
 // -------- Ánh xạ cột: Danh mục KHOA <-> Tổng hợp PĐD ----------------------

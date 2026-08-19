@@ -1,0 +1,432 @@
+
+Bản chốt workflow chuẩn Khoa ↔ PĐD
+Phiên bản v3 — cập nhật 17/08/2026
+Đây là workflow mục tiêu đã thống nhất về nghiệp vụ, và là nguồn chuẩn để thiết kế dữ liệu, migration, API, UI và test.
+Bản thi hành ở mức code và schema nằm ở Tổng quan/01_NGHIEP_VU_VA_QUYET_DINH.md. Hai file phải luôn khớp nhau; sửa một bên thì sửa cả bên kia.
+———
+0. Nguyên tắc nền — đọc trước tiên
+Web là sổ ghi, máy tính và dấu vết. Teams là nơi thương lượng.
+Mọi đơn vị đều liên lạc với nhau qua Teams, nên web không dựng cổng chặn quy trình: không hạn nộp, không nhắc tự động, không thông báo tự động, không workflow xin mở lại, không bước phê duyệt trung gian. Trạng thái được hiển thị để hai bên biết đang ở đâu, còn quyết định là của con người.
+Chỉ có ba khóa cứng, đều là bất biến toán học — sai là ra số sai trên giấy trình ký:
+#
+Khóa cứng
+Áp ở đâu
+1
+Tổng mã hàng sau quy đổi = tổng mã quản lý
+Lúc khoa phân bổ xuống mã hàng
+2
+Tổng phân bổ về các khoa = số trúng của mã
+Lúc PĐD phân bổ kết quả thầu
+3
+Tổng số rớt ba giai đoạn ≤ số tham gia đấu thầu
+Lúc PĐD nhập ngoại lệ rớt
+
+Ngoài ba khóa đó, hệ thống cảnh báo chứ không chặn.
+———
+I. Phạm vi nghiệp vụ
+1. Đơn vị workflow: DOT_GOI
+DOT_GOI = Đợt × Gói con
+Mua sắm rộng rãi — gói 18 tháng: mỗi đợt sinh 5 DOT_GOI — Dùng chung, GMHS, RHM, Tim mạch, CTCH-NTK.
+Mua sắm bổ sung: 3 đợt/năm (T1, T5, T9). Mỗi đợt là một gói phẳng, KHÔNG chia gói con (QĐ 17/08/2026), nên mỗi đợt bổ sung = 1 DOT_GOI.
+Chỉ định thầu: tự nhập số lượng và căn cứ riêng, không dùng công thức.
+Mỗi DOT_GOI có riêng: danh sách khoa tham gia · trạng thái mở/đóng · danh mục đề xuất · số chốt tham gia đấu thầu · ba giai đoạn đấu thầu · kết quả trúng/rớt · phân bổ số trúng · chốt dữ liệu trình ký · revision và audit.
+Chốt, mở lại hoặc sửa một gói con không được tác động bốn gói con còn lại.
+2. Quy tắc phân gói 18 tháng
+Một mã quản lý chỉ thuộc một gói con.
+Tất cả mã hàng thuộc mã quản lý phải nằm cùng gói con.
+Một mã hàng không được xuất hiện ở hai gói con.
+Mã hàng mới thêm vào mã quản lý kế thừa gói con của mã quản lý.
+Sau khi chốt số tham gia đấu thầu: không thêm mã, không chuyển mã quản lý, không đổi phạm vi.
+3. Gói bổ sung
+Trong cùng một gói cha bổ sung, một mã quản lý hoặc mã hàng được phép nằm ở nhiều đợt.
+Hệ thống cảnh báo mã đang có ở đợt nào, số lượng và tiến độ ra sao.
+Cảnh báo không chặn thao tác; người dùng xác nhận đã xem rồi tiếp tục.
+———
+II. Vai trò
+Hệ thống có hai vai trò nghiệp vụ. PĐD chính là admin — hai quyền như nhau, không có vai trò nghiệp vụ thứ ba (QĐ 17/08/2026).
+Khoa / ĐVSD
+Được phép:
+Nhập và sửa đề xuất trước khi chốt danh mục.
+Xác nhận không phát sinh nhu cầu.
+Xem mọi điều chỉnh của PĐD, kèm số cũ, số mới, người sửa và lý do.
+Xử lý phần nhu cầu rớt: đề xuất bổ sung hoặc chọn không còn nhu cầu.
+Đề nghị mã kỹ thuật mới (mã kỹ thuật = mã quản lý).
+Nhấn nút sinh Word cam kết bất kỳ lúc nào.
+Liên hệ PĐD qua Teams nếu cần mở lại.
+Không được:
+Tự mở lại sau khi đã chốt danh mục.
+Sửa dữ liệu sau khi đã chốt danh mục.
+Tự ghi kết quả trúng/rớt.
+Tự phân bổ số trúng.
+Thêm mã mới sau khi số tham gia đấu thầu đã chốt.
+PĐD (đồng thời là admin)
+Được phép:
+Tạo đợt, gói con và danh sách khoa tham gia.
+Phân mã quản lý vào các gói con.
+Xem và sửa trực tiếp bảng dữ liệu của mọi khoa.
+Mở lại danh mục khoa đã chốt.
+Phân bổ lại số về các khoa.
+Chốt số tham gia đấu thầu.
+Nhập ngoại lệ rớt theo ba giai đoạn.
+Phân bổ số trúng.
+Thao tác thay khoa trong giỏ rớt / bổ sung, có audit.
+Duyệt mã kỹ thuật mới.
+Chốt / mở dữ liệu trình ký, xuất Excel chính thức.
+Quản trị dữ liệu và tài khoản.
+Phải nhập lý do khi:
+Mở lại dữ liệu đã chốt.
+Sửa số lượng sau khi khoa đã chốt danh mục.
+Phân bổ cho một khoa vượt số lượng ban đầu.
+Mở lại một giai đoạn đấu thầu đã hoàn thành.
+Hệ thống
+Kiểm tra phạm vi DOT_GOI.
+Khóa dữ liệu ở SERVER, không chỉ ở giao diện.
+Tính P50 / P75 / P90 / P95.
+Kiểm tra quy đổi và tổng phân bổ.
+Mặc định mọi mã không có ngoại lệ rớt là trúng toàn bộ.
+Tính số trúng từ các ngoại lệ rớt.
+Lưu revision và audit.
+Sinh Word/Excel tạm rồi xóa; không lưu file nhị phân.
+———
+III. Chuỗi số lượng — một chiều, một nguồn
+Đây là quyết định kiến trúc quan trọng nhất của bản v3 (QĐ 17/08/2026), thay cho cách cũ có ba nơi ghi số mà không nơi nào chuẩn.
+proposals          Khoa gửi giỏ. BẤT BIẾN — dấu vết gốc, không ai sửa.    ↓ khởi tạophan_bo_khoa       Số HIỆN HÀNH theo (DOT_GOI × mã hàng × khoa).                   Khoa và PĐD cùng sửa ở đây. Nguồn duy nhất.    ↓ SUMDanh mục tổng hợp  VIEW cộng lên, KHÔNG lưu số riêng.
+Hệ quả bắt buộc:
+Cột SỐ LƯỢNG trên Danh mục tổng hợp là view, không sửa trực tiếp được.
+Cột CHỮ (tiêu chí kỹ thuật, tên, ghi chú) vẫn cho PĐD sửa đè như cũ.
+Bất biến “tổng PĐD = tổng phân bổ về các khoa” đúng theo cấu trúc, không cần code canh và không thể lệch.
+Khi PĐD sửa tổng của một mã mà nhiều khoa cùng đề xuất
+1. Hệ thống mở màn phân bổ và chia sẵn phần chênh lệch theo đúng tỉ lệ khoa đã đề xuất (làm tròn xuống, phần dư dồn vào khoa có số lớn nhất).
+2. PĐD sửa tay dòng nào muốn.
+3. Không lưu được nếu tổng các dòng chưa khớp tổng mới.
+4. Chỉ khoa đã đề xuất mã đó mới được nhận phân bổ.
+Con số gợi ý là để đỡ gõ tay, không phải kết luận — PĐD luôn sửa được.
+———
+IV. Full pipeline
+Giai đoạn 1 — PĐD chuẩn bị đợt
+1. PĐD tạo đợt.
+2. Hệ thống sinh các DOT_GOI độc lập (5 cho 18T, 1 cho mỗi đợt bổ sung).
+3. PĐD phân mã quản lý vào từng gói con.
+4. PĐD chỉ định danh sách khoa tham gia từng DOT_GOI.
+5. PĐD mở đợt nhận đề xuất.
+Danh sách khoa đổi được cho tới khi chốt số tham gia đấu thầu.
+Giai đoạn 2 — Khoa lập đề xuất
+1. Khoa chọn mã quản lý, chọn một ĐVT chuẩn trong các ĐVT đang có của mã, nhập hệ số cho từng ĐVT còn lại. Hệ thống quy đổi lịch sử của mọi mã hàng tương đương về ĐVT chuẩn và cộng ở cấp mã quản lý.
+2. Hệ thống hiển thị: lịch sử 24 tháng, P50, P75, P90, P95, TSB và dữ liệu tham khảo liên quan.
+3. Khoa chốt tổng ở cấp mã quản lý — chọn một mức hoặc tự nhập.
+4. Khoa phân bổ tổng đó xuống từng mã hàng tương đương. KHÓA CỨNG 1: tổng sau quy đổi phải đúng bằng số đã chốt.
+5. Nút “Thêm cả mã quản lý vào giỏ” lưu toàn bộ phân bổ trong một transaction.
+6. Giỏ lưu trên server, sống qua đăng xuất, F5 và máy khác. Mọi tài khoản cùng khoa thấy chung một giỏ; audit ghi đúng người thao tác.
+Gửi giỏ là đề xuất chính thức. Không có bước PĐD duyệt giỏ.
+Quy tắc số lượng:
+Mức chọn sẵn trên giao diện: P50.
+CHỈ số lớn hơn P75 mới bắt buộc lý do và ghi chú. Số thấp hơn P50 được chấp nhận, không hỏi gì.
+P90/P95 là mức cao/ngoại lệ, không phải dải bình thường.
+Số lượng phải là số nguyên dương.
+Số gợi ý không tự điền vào ô — khoa phải bấm thì số mới vào.
+Quy đổi ĐVT:
+Nhóm chỉ có một ĐVT tự nhận ĐVT đó làm chuẩn, hệ số 1.
+Nhóm trộn nhiều ĐVT bị chặn tới khi nhập đủ hệ số.
+Bộ quy đổi lưu snapshot cùng đề xuất, không sửa danh mục toàn viện, không ảnh hưởng khoa khác.
+Tuyệt đối không cộng thô các ĐVT khác nhau.
+Một giỏ = một gói con: khi duyệt mã để thêm vào giỏ, hệ thống không lọc theo tab gói con đang đứng — khoa vẫn thấy mọi mã. Nhưng lúc gửi, mọi mã trong giỏ được ghi nhận đúng gói con của tab đang đứng.
+Khi thêm vào giỏ hoặc gửi, cả mã quản lý bị ẩn khỏi danh sách của khoa. Mã chỉ hiện lại cho kỳ sau khi PĐD đã chốt dữ liệu trình ký.
+Giai đoạn 3 — Khoa chốt danh mục
+Mỗi khoa trong danh sách chọn một trong hai đường:
+Có nhu cầu        → nhập đủ đề xuất → CHỐT DANH MỤCKhông có nhu cầu  → xác nhận “Không phát sinh nhu cầu trong gói này”                                        → CHỐT DANH MỤC
+Khi đã chốt: toàn bộ phần khoa được sửa bị khóa ở server.
+Khoa không tự mở lại; liên hệ PĐD qua Teams.
+PĐD là người mở lại, có lý do và audit.
+Không xây workflow yêu cầu mở lại trên web.
+Giai đoạn 4 — PĐD hiệu chỉnh
+PĐD truy cập trực tiếp bảng dữ liệu của từng khoa: sửa số lượng, sửa trường nghiệp vụ, phân bổ lại số, xem audit.
+Khi PĐD sửa số lượng sau khi khoa đã chốt:
+Lý do bắt buộc; áp một lý do cho nhiều dòng được.
+Khoa thấy số cũ, số mới, người sửa và lý do ngay trên bảng của mình.
+Khoa không cần xác nhận lại. Không có thông báo tự động — trao đổi chi tiết qua Teams.
+Giai đoạn 5 — Danh mục tổng hợp PĐD
+Aggregate mọi danh mục đề xuất của các khoa trong CÙNG một DOT_GOI.
+Cùng mã hàng từ nhiều khoa: cộng thành tổng, sổ xuống xem từng khoa đề xuất bao nhiêu.
+Bảng tổng hợp dùng nguyên form template hiện tại, không thêm cột nghiệp vụ.
+Cột số vận hành theo mục III. Cột chữ PĐD sửa đè trực tiếp.
+Đây là văn bản chính dùng cho đấu thầu.
+Giai đoạn 6 — Chốt số tham gia đấu thầu
+PĐD bấm “Chốt số tham gia đấu thầu”. Nút này LUÔN bấm được (QĐ 17/08/2026 — cổng mềm). Bảng theo dõi hiển thị khoa nào chưa chốt danh mục và chưa bao lâu; PĐD nhắc qua Teams và tự quyết thời điểm chốt. Hệ thống ghi kèm “chốt khi còn N khoa chưa nộp” vào audit.
+Checkpoint này:
+Không sinh tài liệu trình ký.
+Tạo snapshot Q bất biến theo (DOT_GOI × mã hàng × khoa).
+Khóa phạm vi danh mục mang đi thầu — không thêm mã, không bổ sung mã còn thiếu.
+Mã thiếu phát hiện sau đó xử lý ngoài hệ thống qua Teams.
+Muốn sửa dữ liệu hiện có: PĐD mở lại và nhập lý do.
+Q = Số lượng PĐD đã chốt tham gia đấu thầu
+———
+V. Đấu thầu và kết quả
+1. Ba giai đoạn
+Chào giá → Mở thầu → Đánh giá
+PĐD phải hoàn thành từng giai đoạn trước khi sang giai đoạn tiếp theo.
+Mở lại giai đoạn trước:
+Bắt buộc có lý do.
+Làm kết quả các giai đoạn phía sau hết hiệu lực.
+Hệ thống yêu cầu kiểm tra lại trước khi chốt tiếp.
+2. Nguyên tắc mặc định trúng
+PĐD không nhập số trúng cho từng mã.
+Số trúng mặc định = QSố rớt mặc định  = 0
+Mã không có ngoại lệ rớt được mặc định trúng toàn bộ. Không bắt PĐD tích trúng cho hàng nghìn mã.
+3. Ngoại lệ rớt
+Số rớt luôn ghi ở CẤP MÃ HÀNG (QĐ 17/08/2026) — đó là cấp nhà thầu chào và là cấp duy nhất tính được số trúng về từng khoa.
+PĐD chỉ nhập:
+Mã hàng bị rớt.
+Giai đoạn rớt.
+Rớt toàn bộ hay rớt một phần.
+Số lượng rớt nếu rớt một phần.
+Lý do.
+Nút “Rớt toàn bộ mã quản lý” là tiện ích: hệ thống tự rải xuống mọi mã hàng bên trong, PĐD không phải tích từng dòng.
+Một mã được phép rớt một phần ở nhiều giai đoạn:
+R1 = số rớt tại Chào giáR2 = số rớt tại Mở thầuR3 = số rớt tại Đánh giáTổng rớt = R1 + R2 + R3Số trúng = Q − Tổng rớtKHÓA CỨNG 3:  0 ≤ R1 + R2 + R3 ≤ Q
+Nếu PĐD chọn rớt toàn bộ, hệ thống lấy toàn bộ số còn lại làm số rớt.
+———
+VI. Phân bổ số trúng về Khoa
+Trường hợp
+Xử lý
+Mã trúng toàn bộ
+Hệ thống giữ nguyên phân bổ đã chốt trước đấu thầu. PĐD không phải nhập lại.
+Mã rớt toàn bộ
+Số phân bổ trúng cho tất cả khoa bằng 0.
+Mã trúng một phần
+Hệ thống chia sẵn theo tỉ lệ Q của từng khoa; PĐD sửa tay dòng nào muốn.
+
+KHÓA CỨNG 2 — điều kiện tuyệt đối:
+Tổng số trúng phân bổ cho các Khoa = Số trúng của mã hàng
+Không có kho dự phòng và không có số chưa phân bổ.
+Khoa hợp lệ nhận phân bổ:
+Chỉ khoa có đề xuất mã hàng trong baseline Q mới được nhận số trúng.
+Khoa không đề xuất mã thì tuyệt đối không được phân bổ.
+PĐD được phân bổ cho một khoa vượt số ban đầu nếu: khoa đó đã đề xuất mã, tổng toàn bộ vẫn khớp số trúng, và PĐD nhập lý do.
+Chỉ PĐD phân bổ (QĐ 17/08/2026). ĐVSD không còn tự đẩy số lượng từ mã rớt sang mã tương đương — cơ chế cũ đã bỏ.
+———
+VII. Xử lý phần rớt
+1. Toàn bộ mã quản lý rớt
+Khi tổng số trúng của toàn bộ mã hàng trong mã quản lý bằng 0:
+Hệ thống tạo mục giỏ rớt cho từng khoa có đề xuất liên quan.
+Gợi ý đợt bổ sung gần nhất.
+Không tự tạo đề xuất. Không tự điền số lượng mới.
+2. Rớt một phần
+Hệ thống hiển thị phần chưa được đáp ứng trong giỏ rớt.
+Không tự đưa thành đề xuất bổ sung.
+Khoa tự chọn có đề xuất lại không.
+3. Trạng thái xử lý
+CHỜ KHOA XỬ LÝ├── ĐỀ XUẤT LẠI│   └── ĐÃ VÀO GIỎ NHÁP│       └── ĐÃ SUBMIT BỔ SUNG└── KHÔNG CÒN NHU CẦU
+Chỉ coi là đã xử lý khi đề xuất bổ sung đã submit chính thức, hoặc khoa/PĐD chọn Không còn nhu cầu. Thêm vào giỏ nháp chưa được coi là hoàn tất.
+PĐD được thao tác thay khoa nhưng phải có audit.
+PĐD có tab “Giỏ rớt toàn viện”: theo dõi khoa nào chưa xử lý, bao nhiêu ngày. Nút “Nhắc nhở” sinh template tin nhắn để copy sang Teams.
+———
+VIII. Pipeline bổ sung
+1. Chọn đợt gần nhất
+1. Hệ thống tìm đợt bổ sung gần nhất đang mở.
+2. Nếu chưa có, để trạng thái Chờ mở đợt bổ sung.
+3. Khi có đợt mới, gợi ý lại.
+4. Hiển thị các đợt bổ sung khác đang chứa cùng mã.
+2. Khoa tự quyết số lượng
+Số lượng cũ chỉ để tham khảo. KHÔNG áp dụng:
+P50 / P75 / P90 / P95.
+Giới hạn theo số đã rớt.
+Lý do vượt ngưỡng.
+Trần theo số đề xuất cũ.
+Vẫn kiểm tra kỹ thuật:
+Số nguyên dương.
+ĐVT và hệ số hợp lệ.
+Tổng phân bổ mã hàng khớp tổng mã quản lý.
+Một giỏ chỉ thuộc một DOT_GOI.
+Khoa được đề xuất ít hơn, bằng hoặc nhiều hơn số rớt.
+Sau khi submit, đề xuất bổ sung đi lại pipeline đầy đủ:
+Submit → Chốt danh mục → PĐD hiệu chỉnh → Chốt số tham gia đấu thầu       → Ba giai đoạn → Mặc định trúng, chỉ nhập mã rớt       → Phân bổ kết quả → Chốt dữ liệu trình ký
+Việc xử lý đề xuất bổ sung là pipeline độc lập, không chặn chốt kết quả của gói gốc.
+———
+IX. Chốt dữ liệu trình ký sau thầu
+Bệnh viện không cần bộ trình ký trước đấu thầu. Chỉ chốt và xuất bộ dữ liệu chính thức sau khi:
+Ba giai đoạn đã hoàn thành.
+Ngoại lệ rớt đã đầy đủ.
+Số trúng đã được tính.
+Mã trúng một phần đã được phân bổ hết.
+Không còn sai lệch giữa bảng khoa và bảng PĐD.
+1. Chốt từng bảng Khoa
+Chỉ PĐD được bấm “Chốt dữ liệu Khoa để trình ký”. Khi chốt: bảng khoa chuyển sang chỉ đọc · ghi revision, người chốt và thời gian · không ai được sửa nếu chưa mở lại.
+2. Chốt bảng tổng hợp
+Chỉ chốt được khi tất cả bảng khoa trong DOT_GOI đã được chốt. PĐD bấm “Chốt toàn bộ dữ liệu trình ký”.
+Khi chốt:
+Khóa toàn bộ DOT_GOI.
+Tạo revision chính thức.
+Cho phép xuất Excel chính thức.
+Excel khoa và Excel tổng hợp dùng cùng revision.
+Số lượng trên Excel cuối là số trúng đã phân bổ sau thầu.
+Template PĐD hiện tại được giữ nguyên.
+Mã hàng trở lại danh sách của khoa cho kỳ đề xuất sau.
+3. Mở lại
+Nếu mở một bảng khoa sau khi tổng hợp đã chốt:
+Bảng tổng hợp tự hết hiệu lực; revision cũ hết hiệu lực.
+Chỉ bảng khoa liên quan được mở; các bảng khoa khác vẫn khóa.
+Sau khi sửa, PĐD chốt bảng khoa lại rồi chốt tổng hợp lại.
+Hệ thống tạo revision mới.
+Mọi lần mở lại bắt buộc nhập lý do.
+Hệ thống không cưỡng chế được bản giấy đã in. Vì vậy mọi file xuất đều in số revision và thời điểm sinh lên file để đối chiếu; revision cũ bị đánh dấu hết hiệu lực trong hệ thống.
+———
+X. Word và Excel
+Word cam kết
+Word không phải checkpoint.
+Bấm nút là hệ thống sinh Word từ dữ liệu hiện tại.
+Không cần điều kiện chốt.
+Không thay đổi trạng thái workflow.
+Không lưu file trên web.
+Sinh lại bất cứ lúc nào.
+In thời điểm sinh và revision hiện tại lên file để đối chiếu.
+Không còn vòng đời “khoa gửi bộ hồ sơ → chờ PĐD → duyệt/từ chối” (QĐ 17/08/2026). Màn soạn hồ sơ trực tuyến vẫn dùng để sửa và lưu phiên bản, nhưng không có trạng thái chờ duyệt.
+Excel
+Trước khi chốt tổng hợp: chỉ được xuất bản nháp.
+Sau khi chốt tổng hợp: được xuất bản chính thức.
+File được sinh tạm rồi xóa. Web không lưu file nhị phân.
+Web bắt buộc lưu dữ liệu có cấu trúc:
+Giá trị gốc của khoa.
+Giá trị PĐD đã sửa.
+Baseline Q tham gia đấu thầu.
+Kết quả rớt theo từng giai đoạn.
+Số trúng.
+Phân bổ về khoa.
+Revision, audit chốt/mở/sửa, lịch sử xuất file.
+File Word/Excel không phải nguồn dữ liệu đúng. Nguồn đúng là dữ liệu có cấu trúc cùng revision và audit.
+Không có cột giá
+Bỏ hẳn mọi cột giá khỏi biểu mẫu và bảng dữ liệu (QĐ 17/08/2026): giá dự kiến, giá hợp đồng cũ, tổng giá trị ước tính. Giá không thuộc phạm vi hệ thống này.
+———
+XI. Tùy chọn mua thêm 30%
+Là TRẦN có thể mua thêm, không phải cam kết phải mua.
+Trước khi có kết quả thầu — chỉ HIỂN THỊ, không kích hoạt được:    Tạm tính = floor(số hiện hành của khoa × 30%)Sau khi chốt dữ liệu trình ký — mới hiện nút kích hoạt:    Trần chính thức = floor(số trúng đã phân bổ cho khoa × 30%)
+Tính ở cấp khoa × mã quản lý.
+Làm tròn XUỐNG để tuyệt đối không vượt 30% (1.003 × 30% = 300,9 → 300).
+Chỉ kích hoạt được sau khi chốt dữ liệu trình ký (QĐ 17/08/2026) — mua thêm là việc của giai đoạn thực hiện hợp đồng.
+Tổng các lần kích hoạt không được vượt trần.
+Không tự cộng vào số gốc hoặc các phân vị.
+Không dùng quyền 30% làm lý do nâng số gốc lên P90/P95.
+Timeline phải tách khả dụng cơ bản, phần mua thêm và hàng đã mua chưa lãnh.
+———
+XII. Chức năng ngoài pipeline
+Những chức năng sau vẫn dùng, nhưng không nằm trong luồng đề xuất – đấu thầu và không chặn bất kỳ bước nào của nó.
+Chức năng
+Vai trò
+Ghi chú
+Sổ thiếu hàng
+Khoa ghi số yêu cầu / số được cấp, ca hoãn, mã thay thế
+Nguồn DUY NHẤT để đo nhu cầu thật — dữ liệu HIS chỉ có lượng đã cấp khi còn hàng. Cần cho hiệu chuẩn công thức 2027
+Điều chỉnh tiêu chí kỹ thuật
+Khoa đề nghị sửa TSKT, PĐD duyệt
+Chức năng riêng trong nhóm dùng chung, giữ nguyên như đang chạy
+Mã kỹ thuật mới
+Khoa đề nghị mã quản lý mới, PĐD duyệt
+“Mã kỹ thuật” = “mã quản lý”. Là việc duy nhất còn lại của tab Chờ duyệt
+Tiến độ sử dụng theo cam kết
+Theo dõi 20/50/80, cảnh báo chậm cam kết và sắp hết sớm
+Module SAU KHI HÀNG VỀ, tách khỏi pipeline này. PĐD sửa ngưỡng ngay trên web
+
+Cam kết sử dụng tính trên số trúng thầu, bắt đầu từ mốc hàng về đợt đầu. Hai cảnh báo phải tách bạch: chậm cam kết (dùng thấp hơn ngưỡng) và sắp hết sớm (nhịp dùng cho thấy hết trước kỳ).
+———
+XIII. Các trạng thái chuẩn
+Trạng thái Khoa trong một DOT_GOI
+CHƯA PHẢN HỒI → ĐANG NHẬP → ĐÃ CHỐT DANH MỤC → ĐÃ CHỐT TRÌNH KÝĐường không có nhu cầu:CHƯA PHẢN HỒI → KHÔNG PHÁT SINH NHU CẦU → ĐÃ CHỐT DANH MỤC                                        → ĐÃ CHỐT TRÌNH KÝ
+“PĐD đang hiệu chỉnh” không phải trạng thái của khoa — đó là trạng thái của DOT_GOI; hành vi của khoa không đổi.
+Trạng thái DOT_GOI
+ĐANG CHUẨN BỊ→ ĐANG MỞ NHẬN ĐỀ XUẤT→ PĐD ĐANG HIỆU CHỈNH→ ĐÃ CHỐT SỐ THAM GIA THẦU→ CHÀO GIÁ → MỞ THẦU → ĐÁNH GIÁ→ ĐÃ PHÂN BỔ KẾT QUẢ→ ĐÃ CHỐT DỮ LIỆU TRÌNH KÝ→ (mở lại bất kỳ bảng khoa nào) REVISION HẾT HIỆU LỰC
+Trạng thái giỏ rớt
+CHỜ XỬ LÝ → ĐANG LẬP ĐỀ XUẤT BỔ SUNG → ĐÃ SUBMIT BỔ SUNGCHỜ XỬ LÝ → KHÔNG CÒN NHU CẦU
+———
+XIV. Các invariant bắt buộc
+1. Một DOT_GOI độc lập hoàn toàn với gói con khác.
+2. Trong đợt 18 tháng, một mã quản lý chỉ thuộc một gói con.
+3. Tổng mã hàng sau quy đổi phải bằng tổng mã quản lý. (khóa cứng 1)
+4. Tổng số rớt ba giai đoạn không vượt số tham gia đấu thầu. (khóa cứng 3)
+5. Tổng số trúng phân bổ phải bằng số trúng của mã. (khóa cứng 2)
+6. Tổng trên Danh mục tổng hợp luôn bằng tổng phân bổ về các khoa — đúng theo cấu trúc vì tổng hợp là view.
+7. Mã không có ngoại lệ rớt mặc định trúng toàn bộ.
+8. Không có kho dự phòng hoặc số trúng chưa phân bổ.
+9. Chỉ khoa từng đề xuất mã mới được nhận phân bổ.
+10. Phân bổ vượt số ban đầu của khoa phải có lý do.
+11. Chốt danh mục khóa toàn bộ phần khoa được sửa, khóa ở server.
+12. Sau chốt số tham gia thầu không được thêm mã mới.
+13. Mọi lần mở lại sau chốt phải có lý do.
+14. Mở bảng khoa sau chốt tổng hợp làm revision tổng hợp hết hiệu lực.
+15. Đề xuất bổ sung không bị giới hạn bởi số đã rớt.
+16. proposals là dấu vết gốc, không bao giờ bị sửa đè.
+17. File Word/Excel không phải nguồn dữ liệu đúng.
+18. Tùy chọn 30% chỉ kích hoạt được sau khi chốt dữ liệu trình ký.
+———
+XV. Phạm vi ngoài workflow chính
+Không xây, hoặc đã gỡ:
+Tạo yêu cầu mở lại qua web.
+Ghi nhận hoặc lưu nội dung trao đổi Teams.
+Xử lý mã thiếu phát hiện sau khi số tham gia đấu thầu đã chốt.
+Lưu file Word/Excel trên web.
+Theo dõi bản giấy đã ký.
+Workflow chỉ định thầu (màn xuất hồ sơ vẫn có, nhưng không có pipeline).
+Sổ sự kiện nhu cầu — bỏ hẳn (QĐ 17/08/2026).
+Hạn nộp, nhắc tự động, thông báo tự động.
+Cột giá.
+Ký hợp đồng, hàng về và giám sát sử dụng là workflow vận hành tiếp theo, liên kết từ kết quả đã chốt nhưng tách khỏi pipeline đề xuất – đấu thầu này.
+———
+Phụ lục — quyết định đã bị đảo
+Không mang sang, không code lại.
+Quyết định cũ
+Thay bằng
+Ngày
+Bước “PĐD duyệt giỏ”
+Submit giỏ là chính thức
+05/08/2026
+Hai file Word/Excel neo theo từng giỏ
+Bảng danh mục cộng tác trực tiếp
+05/08/2026
+Gộp nhiều giỏ cùng khoa thành Excel gộp
+Danh mục đề xuất của khoa đã là bản chính thức
+05/08/2026
+Snapshot phien_tong_hop PĐD tạo tay
+Danh mục tổng hợp live
+05/08/2026
+Tùy chọn 30% nhân trực tiếp
+floor(× 30%)
+05/08/2026
+Excel “Quá trình đề xuất” 50–70 cột
+Bỏ hẳn — chỉ còn Danh mục đề xuất và Danh mục tổng hợp
+09/08/2026
+PĐD chọn 10–15 cột tạo Danh mục đề xuất
+Bỏ — danh mục khoa dùng template cố định
+09/08/2026
+Số chốt chỉ ở cấp toàn viện, không chia về khoa
+phan_bo_khoa — số hiện hành theo từng khoa, tổng hợp là view
+17/08/2026
+ĐVSD tự đẩy SL từ mã rớt sang mã tương đương
+Chỉ PĐD phân bổ số trúng
+17/08/2026
+Vòng đời duyệt bộ hồ sơ Word/Excel
+Bấm là sinh file, không trạng thái
+17/08/2026
+Sổ sự kiện nhu cầu
+Bỏ hẳn
+17/08/2026
+Bắt lý do khi ra ngoài dải P50–P75
+Chỉ khi > P75
+17/08/2026
+Kích hoạt 30% dựa trên số đề xuất
+Chỉ sau khi chốt trình ký, tính trên số trúng
+17/08/2026
+Gói bổ sung chia gói con
+Mỗi đợt bổ sung là một gói phẳng
+17/08/2026
+Vai trò admin tách khỏi dieu_duong
+PĐD = admin, cùng quyền
+17/08/2026
+Mọi cột giá
+Bỏ hẳn
+17/08/2026
+Mức chọn sẵn P75
+P50
+17/08/2026
+Cổng cứng 100% khoa mới chốt được
+Cổng mềm — PĐD tự quyết, hệ thống ghi còn N khoa chưa nộp
+17/08/2026
+
+
