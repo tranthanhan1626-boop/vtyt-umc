@@ -4,28 +4,34 @@ Cập nhật **19/08/2026**. Nhánh chính hiện tại: `phase-a-luong-de-xuat`
 
 ---
 
-# 19/08/2026 (chiều) — QUY TẮC MỚI: "AI SỬA SAU ĐÈ"
+# 19/08/2026 (chiều+tối) — QUY TẮC MỚI: MỘT GIÁ TRỊ CHUNG
 
-**Chốt quy tắc rồi, chưa thi công dòng nào.** Thiết kế + 12 đầu việc:
+**Chốt quy tắc rồi, chưa thi công dòng nào.** Thiết kế + 18 đầu việc:
 `.scratch/link-tong-hop-xuong-khoa/THIET_KE_V2_BO_KHOA_O.md`.
 
 Chủ dự án đảo luật khoá ô đã dựng sáng cùng ngày. Nguyên văn: *"PĐD chỉnh sửa
-rồi khoa chỉnh sửa nữa, đừng có PĐD xong là khoá ô"*.
+rồi khoa chỉnh sửa nữa, đừng có PĐD xong là khoá ô"* và *"cả 2 phải là 1 chứ
+sao khác nhau được?"*.
 
-> **Ai sửa sau đè. Không ai bị khoá cho tới khi PĐD chốt trình ký toàn bộ.**
+- **Cột CHỮ = MỘT giá trị chung toàn viện** cho mỗi (mã hàng, cột). Ai sửa sau
+  đè cho tất cả, PĐD hay khoa đều vậy. Bản Tổng hợp và bản khoa không thể lệch
+  → bỏ cờ lệch cho cột chữ, `danh_muc_khoa_o` phần cột chữ thành thừa.
+  `giai_trinh_2627` vẫn ngoại lệ riêng theo khoa.
+- **Cột SỐ: mỗi khoa một số, tổng = phép cộng.** Khoa sửa số thì tổng đổi theo;
+  `so_luong_goc` đóng băng làm dấu vết. PĐD gõ **tổng**, hệ chia theo tỉ lệ.
+  Khoa sửa số ngay trên màn Danh mục đề xuất của khoa.
+- **Cột range P50–P75 mới** cạnh cột số ở cả hai bảng; vượt P75 chỉ **tô nổi
+  bật**. Dải bên khoa theo lịch sử khoa, bên PĐD theo **toàn viện**. Dùng lại
+  `danhGiaSoLuong()` trong `congThucSoLuong.js` — đã có, đã backtest.
+- **Vòng xác nhận lần N** thay cho "khoa chốt danh mục": có sửa là xác nhận tự
+  huỷ, nút lên lần N+1. Huỷ chỉ với khoa có đề xuất mã bị sửa. Chốt đi thầu
+  **chặn cứng** khi còn khoa chưa xác nhận — khoa chưa gửi gì thì không tính.
+- Đóng băng: chốt Q khoá cột SỐ, chốt trình ký khoá cột CHỮ. PĐD vẫn mở chốt được.
 
-- PĐD sửa trên Tổng hợp → đè xuống mọi khoa. Khoa sửa lại → chỉ đè ô của khoa
-  mình; Tổng hợp bật cờ lệch + đếm ở đầu trang.
-- Không có nút "duyệt" riêng. Chốt Q khoá cột SỐ + chặn gửi thêm đề xuất; chốt
-  trình ký khoá cột CHỮ. Mở chốt là mở cả bảng.
-- **Bỏ hẳn bước "khoa chốt danh mục"** (nút, cờ, số đếm khoa chưa chốt) — khoa
-  báo xong việc qua Teams. PĐD chốt khi còn khoa chưa gửi: cảnh báo, vẫn cho chốt.
-- Khoa không sửa được sau chốt; PĐD vẫn mở lại được (giữ 2 RPC `mo_chot_*`).
-
-Hai thứ phải biết trước khi gõ: (1) bắt buộc thêm cột `danh_muc_khoa_o.sua_luc
-jsonb` vì bảng chỉ có `updated_at` cho cả dòng JSONB, không biết từng ô sửa lúc
-nào; (2) bỏ bước "khoa chốt danh mục" làm **`Full workflow vtyt web.docx` không
-còn khớp mã nguồn** — phải sửa docx hoặc ghi phụ lục.
+Việc nặng nhất là **D1 — dồn cột chữ về một bảng**: hiện nằm ở hai bảng với hai
+phạm vi khoá khác nhau, phải quyết lấy bản nào khi 2 khoa đang lệch. Và bỏ
+"khoa chốt danh mục" làm **`Full workflow vtyt web.docx` không còn khớp mã
+nguồn** — phải sửa docx hoặc ghi phụ lục.
 
 Cũng vá trong phiên: **Lỗi 24** — bản Tổng hợp ghi `goi_id` kèm hậu tố ':dot:N',
 bản khoa đọc không kèm, nên PĐD sửa TSKT mà khoa không thấy gì. Đã push
@@ -98,7 +104,7 @@ Cần `SUPABASE_STAGING_DB_URL` trong `backend/.env.local`. Bẫy: host
 
 ## E. Việc tiếp theo, theo thứ tự đề nghị
 
-0. **Thi công V2 "ai sửa sau đè"** — xem mục đầu file. Chen lên trước mọi việc
+0. **Thi công V2 "một giá trị chung"** — xem mục đầu file. Chen lên trước mọi việc
    dưới đây vì nó đổi luật, làm sau thì phần làm trước phải sửa lại.
 1. **Bổ sung smoke đường thành công** cho các RPC hiện chỉ có `phai_loi` — lỗ
    hổng đã chứng minh được, không phải phòng xa.

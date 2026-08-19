@@ -28,25 +28,26 @@ Nghiệm thu cuối: `pytest` **105 passed** · `test:formula` 5/5 · `build` �
 
 ## 2. VIỆC ĐANG DỞ — làm tiếp từ đây
 
-### 2A. V2 "ai sửa sau đè" — ĐÃ CHỐT QUY TẮC, CHƯA THI CÔNG DÒNG NÀO
+### 2A. V2 "một giá trị chung" — ĐÃ CHỐT QUY TẮC, CHƯA THI CÔNG DÒNG NÀO
 
 Chốt cuối ngày 19/08/2026 với chủ dự án. **Đảo ngược luật khoá ô vừa dựng cùng
 ngày.** Thiết kế đầy đủ + 12 đầu việc: `../link-tong-hop-xuong-khoa/THIET_KE_V2_BO_KHOA_O.md`.
 
-> **Ai sửa sau đè. Không ai bị khoá cho tới khi PĐD chốt trình ký toàn bộ.**
+> **Cột chữ là MỘT giá trị chung toàn viện. Ai sửa sau đè. Không ai bị khoá
+> cho tới khi PĐD chốt.** Thêm vòng xác nhận lần N và cột range P50–P75.
 
-Nguyên văn: *"PĐD chỉnh sửa rồi khoa chỉnh sửa nữa, đừng có PĐD xong là khoá ô"*.
+Nguyên văn: *"PĐD chỉnh sửa rồi khoa chỉnh sửa nữa, đừng có PĐD xong là khoá ô"*
+và *"cả 2 phải là 1 chứ sao khác nhau được?"*.
 
 Vào việc thì đọc THIET_KE_V2 trước, đừng đọc `THIET_KE.md` (bản sáng 19/08 —
 quyết định 1, 2, 3, 6 của nó ĐÃ BỊ THAY). Hai điểm phải biết trước khi gõ:
 
-1. **Bắt buộc thêm cột `danh_muc_khoa_o.sua_luc jsonb`.** Bảng lưu cả dòng
-   trong một JSONB, chỉ có `updated_at` cho CẢ DÒNG — không có cách nào biết
-   từng ô sửa lúc nào, mà luật "ai sửa sau đè" thì bắt buộc phải so được.
-2. **Còn một câu chưa hỏi chủ dự án** (ghi ở mục 4 của THIET_KE_V2): Excel khoa
-   in theo bản đi thầu, trong khi màn hình khoa hiện giá trị khoa vừa gõ — hai
-   cái lệch nhau. Đề nghị đang treo: giữ file theo bản đi thầu + cảnh báo lúc
-   xuất. Chưa có câu trả lời.
+1. **Việc D1 là chuyển nhà, không phải thêm cột.** Cột chữ đang nằm ở HAI bảng
+   với hai phạm vi khoá khác nhau. Gộp về `danh_muc_tong_hop_o` phải quyết
+   trước: khi 2 khoa đang giữ 2 giá trị khác nhau thì lấy bản nào.
+2. **Một điểm suy ra, chưa hỏi chủ dự án:** cột chữ là giá trị chung nên GMHS
+   sửa TSKT mã X cũng làm RHM mất xác nhận. Đúng logic "xác nhận = tôi đã xem
+   bản này", nhưng chưa được xác nhận.
 
 ### 2B. Rà nốt các nhánh còn lại của `xoa_du_lieu_kiem_thu`
 
@@ -153,30 +154,35 @@ Nút "Dọn dữ liệu kiểm thử" tự hiện khi URL chứa ref staging —
 | 19/08 | Ô lệch: báo "N giá trị khác nhau", sổ xuống xem từng khoa |
 | 19/08 | PĐD toàn quyền mọi chức năng — nới quyền thoải mái cho vai trò này |
 
-### 6b. Chốt chiều 19/08 — luật V2 "ai sửa sau đè" (ĐÈ LÊN luật khoá ô)
+### 6b. Chốt chiều+tối 19/08 — luật V2 (ĐÈ LÊN luật khoá ô của bản sáng)
+
+Thiết kế đầy đủ + 18 đầu việc: `../link-tong-hop-xuong-khoa/THIET_KE_V2_BO_KHOA_O.md`
 
 | # | Quy tắc | Ghi chú |
 |---|---|---|
-| 1 | **Ai sửa sau đè.** Không còn "ô đã duyệt thì khoá" | bỏ hẳn khái niệm duyệt-từng-ô |
-| 2 | PĐD sửa trên Tổng hợp → **đè xuống mọi khoa** | giữ đường link đã vá ở Lỗi 24 |
-| 3 | Khoa sửa lại → **chỉ đè ô của khoa mình** | không đụng khoa khác, không đụng bản Tổng hợp |
-| 4 | Khoa gõ khác bản đi thầu → **cờ lệch trên ô** + **đếm ở đầu trang Tổng hợp** | đó là cách PĐD biết, thay cho việc khoá tay khoa lại |
-| 5 | **Không có nút "duyệt" riêng.** Đóng băng bằng `chot_trinh_ky_toan_bo_v3` | chốt Q khoá cột SỐ + chặn gửi thêm đề xuất; chốt trình ký khoá cột CHỮ |
-| 6 | Mở chốt = **mở toàn bộ bảng**, không mở lẻ từng ô | audit từng ô đã có sẵn ở 2 bảng `_o_audit` |
-| 7 | **Bỏ hẳn bước "khoa chốt danh mục"** — nút, cờ, số đếm khoa chưa chốt | khoa báo xong việc qua Teams |
-| 8 | Khoa không sửa được sau chốt; **PĐD vẫn mở lại được** | giữ `mo_chot_so_tham_gia_thau_v3` và `mo_chot_trinh_ky_khoa_v3` |
-| 9 | PĐD chốt khi còn khoa chưa gửi đề xuất → **cảnh báo liệt kê tên, vẫn cho chốt** | "chốt là cổng mềm", giữ đúng tinh thần đang có |
-| 10 | Luật này áp cho **MỌI cột chữ** | `giai_trinh_2627` vẫn ngoại lệ riêng: không link xuống khoa |
-| 11 | Excel khoa lấy giá trị bản Tổng hợp | ⚠️ điểm còn treo, xem mục 2A.2 |
+| 1 | **Cột CHỮ = MỘT giá trị chung toàn viện** cho mỗi (mã hàng, cột) | TSKT là thuộc tính của MÃ HÀNG. Khoa sửa thì mọi khoa thấy. *"Cả 2 phải là 1 chứ sao khác nhau được?"* |
+| 2 | **Ai sửa sau đè** — PĐD hay khoa đều vậy. Không còn "duyệt là khoá" | bỏ hẳn khái niệm duyệt-từng-ô |
+| 3 | Bản Tổng hợp và bản khoa **không thể lệch** → bỏ cờ lệch cho cột chữ, Excel hai bên luôn khớp | `danh_muc_khoa_o` phần cột chữ thành thừa |
+| 4 | `giai_trinh_2627` NGOẠI LỆ — vẫn riêng theo khoa | giải trình là tiếng nói từng khoa |
+| 5 | **Cột SỐ: mỗi khoa một số, tổng = phép cộng.** Khoa sửa số thì tổng đổi theo | `so_luong_goc` đóng băng làm dấu vết |
+| 6 | PĐD không gõ số từng khoa mà gõ **tổng**, hệ chia theo tỉ lệ | `cap_nhat_tong_phan_bo_khoa`, đã có |
+| 7 | Khoa sửa số **ngay trên Danh mục đề xuất khoa** | gỡ dòng "chỉ sửa được ở màn Nhập đề xuất" |
+| 8 | **Cột range P50–P75 mới**, cạnh cột số, ở CẢ hai bảng. Vượt P75 → **chỉ tô nổi bật** | dải bên khoa theo lịch sử khoa; bên PĐD theo **toàn viện**. Dùng `danhGiaSoLuong()` đã có |
+| 9 | **Vòng xác nhận lần N** thay cho "khoa chốt danh mục" | có sửa là xác nhận tự huỷ, nút lên lần N+1, không giới hạn số lần |
+| 10 | Huỷ xác nhận **chỉ với khoa có đề xuất mã bị sửa** | khoa tự sửa cũng tự huỷ xác nhận của mình |
+| 11 | Chốt đi thầu: **CHẶN CỨNG** khi còn khoa chưa xác nhận lần mới nhất | khoa **chưa gửi đề xuất nào thì không tính** — chỉ cảnh báo, không làm kẹt |
+| 12 | Đóng băng: chốt Q khoá cột SỐ; chốt trình ký khoá cột CHỮ | khoa hết sửa; **PĐD vẫn mở chốt được** (giữ 2 RPC `mo_chot_*`) |
 
 **Vì sao đảo luật:** bản sáng gộp *gõ để soạn* và *chốt để đóng* vào một thao
-tác, nên PĐD gõ nửa chừng là khoa hết đường sửa. V2 tách hai việc đó ra.
+tác, nên PĐD gõ nửa chừng là khoa hết đường sửa. V2 xử nỗi lo "62 khoa 62 kiểu
+TSKT" triệt để hơn — **cột chữ chỉ có một giá trị**, không có gì để lệch ngay
+từ đầu; việc "mọi khoa đã ngó qua bản cuối" giao cho vòng xác nhận.
 
 ---
 
 ## 7. Việc tiếp theo, theo thứ tự đề nghị
 
-1. **Thi công V2 "ai sửa sau đè"** (mục 2A) — 12 đầu việc, 7 DB + 6 giao diện.
+1. **Thi công V2** (mục 2A) — 18 đầu việc, 10 DB + 8 giao diện.
    Kéo theo phải sửa 3 file test hợp đồng, 2 script smoke, và **`Full workflow
    vtyt web.docx`**: bỏ bước "khoa chốt danh mục" nghĩa là văn bản 43 điều
    khoản không còn khớp mã nguồn, không sửa thì vòng test sau lại báo thiếu.

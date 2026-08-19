@@ -1,41 +1,98 @@
-# V2 — bỏ khoá ô theo duyệt, khoá theo chốt trình ký
+# V2 — một giá trị chung, ai sửa sau đè, xác nhận theo vòng
 
-Chốt với chủ dự án 19/08/2026, sau khi vá Lỗi 24. **THAY THẾ** các quyết định
-1, 2, 3, 6 của `THIET_KE.md` (bản 19/08 sáng). Những phần khác của bản cũ
-(ánh xạ cột, ngoại lệ `giai_trinh_2627`, cột SỐ đi đường `phan_bo_khoa`) giữ
-nguyên.
+Chốt với chủ dự án 19/08/2026 (chiều + tối). **THAY THẾ** `THIET_KE.md` (bản
+sáng cùng ngày) ở mọi điểm mâu thuẫn. **Chưa thi công dòng nào.**
 
-Nguyên văn yêu cầu: *"PĐD chỉnh sửa rồi khoa chỉnh sửa nữa, đừng có PĐD xong là
-khoá ô"* và *"ai sửa sau sẽ đè được thông tin, nhưng nếu PĐD duyệt thì không ai
-sửa được nữa"* — với "duyệt" chốt lại là **chốt trình ký toàn bộ**, không phải
-một nút duyệt riêng cho từng ô.
+Tên file giữ nguyên từ lúc tạo, nhưng nội dung đã đi xa hơn "bỏ khoá ô" — đọc
+hết mục 1 trước khi làm bất cứ việc gì.
 
 ---
 
-## 1. Luật mới, gọn trong 5 dòng
+## 1. Mô hình cuối — bốn mảnh
 
-1. **Ai sửa sau đè.** Không còn khái niệm "ô đã duyệt thì khoá".
-2. **PĐD sửa trên Tổng hợp → đè xuống mọi khoa.** Giữ nguyên đường link đã có.
-3. **Khoa sửa lại → chỉ đè ô của khoa mình.** Không đụng khoa khác, không đụng
-   bản Tổng hợp. Tổng hợp bật **cờ lệch** + **đếm ở đầu trang**.
-4. **Chốt Q** → khoá cột SỐ, chặn khoa gửi thêm đề xuất.
-   **Chốt trình ký toàn bộ** → khoá cột CHỮ, cả bảng đóng băng.
-5. **Mở chốt trình ký = mở toàn bộ bảng** (RPC đã có). Ai sửa ô nào đã có
-   `danh_muc_khoa_o_audit` / `danh_muc_tong_hop_o_audit` ghi lại.
+### 1.1 Cột CHỮ: MỘT giá trị chung toàn viện
 
-Bỏ hẳn bước **"khoa chốt danh mục của mình"** — nút, cờ, và số đếm khoa chưa
-chốt. Khoa báo xong việc qua Teams.
+> TSKT là thuộc tính của **MÃ HÀNG**, không phải của khoa. Cả viện dùng chung
+> đúng một dòng cho mỗi (mã hàng, cột).
 
-## 2. Vì sao bỏ khoá-theo-duyệt
+- Ai sửa sau đè **cho tất cả** — PĐD sửa hay khoa sửa đều vậy.
+- GMHS sửa TSKT mã X → RHM mở màn ra thấy ngay giá trị mới.
+- Bản Tổng hợp và bản khoa **không thể lệch nhau**. Nguyên văn chủ dự án:
+  *"cả 2 phải là 1 chứ sao khác nhau được?"*
+- Hệ quả: **bỏ cờ lệch cho cột chữ** (không còn gì để lệch), và
+  `danh_muc_khoa_o` phần cột chữ trở thành **thừa** — xem D1.
+- **NGOẠI LỆ `giai_trinh_2627`**: giải trình là tiếng nói của từng khoa, giữ
+  riêng theo khoa như cũ, không dùng chung.
+- Khoá: **chốt trình ký toàn bộ**.
 
-Bản 19/08 sáng khoá ô ngay khi PĐD gõ, vì sợ 62 khoa mỗi khoa một TSKT thì hồ
-sơ mời thầu không dùng được. Nhưng nó gộp hai việc khác nhau vào một thao tác:
-*gõ để soạn* và *chốt để đóng*. Hệ quả là PĐD vừa gõ nửa chừng, chưa xác minh
-xong với nhà thầu, thì khoa đã hết đường sửa.
+### 1.2 Cột SỐ: mỗi khoa một số, tổng là phép cộng
 
-V2 tách hai việc đó: gõ là gõ, đóng băng là `chot_trinh_ky_toan_bo_v3`. Nỗi lo
-"62 khoa 62 kiểu TSKT" vẫn được xử — nhưng bằng **cờ lệch cho PĐD nhìn thấy**
-chứ không bằng khoá tay khoa lại.
+- `phan_bo_khoa.so_luong_goc` = số khoa gửi ban đầu, **đóng băng làm dấu vết**.
+  Mọi lần sửa sau vào `so_luong_hien_hanh`.
+- **Tổng đi thầu = cộng số hiện hành của các khoa.** Khoa sửa số của mình thì
+  tổng đổi theo ngay.
+- PĐD không gõ số từng khoa mà gõ **tổng**; hệ chia về các khoa theo tỉ lệ
+  (`cap_nhat_tong_phan_bo_khoa` — đã có, đã vá 19/08).
+- Khoa sửa số **ngay trên màn Danh mục đề xuất của khoa** (hiện cột số đang
+  chỉ đọc, có dòng chữ "chỉ sửa được ở màn Nhập đề xuất" — phải gỡ).
+- Chủ dự án sẽ dặn qua Teams: *đề xuất rồi thì hạn chế tự sửa số, để PĐD điều
+  chỉnh.* Đó là quy ước mềm, **không cài thành chặn**.
+- Khoá: **chốt Q**.
+
+### 1.3 Cột range P50–P75 — MỚI
+
+Thêm một cột đứng cạnh cột số, ở **cả hai bảng**:
+
+| Bảng | Dải tính trên |
+|---|---|
+| Danh mục đề xuất của khoa | lịch sử dùng của **chính khoa đó** |
+| Tổng hợp của PĐD | lịch sử **toàn viện** của mã đó |
+
+- Số vượt **P75** → **tô nổi bật**. Dưới P50 không sao.
+- **Chỉ tô nổi bật.** Không chặn lưu, không bắt nhập lý do, không đếm đầu trang.
+- Dùng lại `danhGiaSoLuong(lichSu, thieu, H, giaTri, thangCuoiHIS)` trong
+  `frontend/src/lib/congThucSoLuong.js` — trả đúng `{tu: p50, den: P75,
+  ngoaiKhoang: so > P75}`. `H` đã lấy theo kỳ của gói, **không đóng đinh 18**.
+- Cột `p50` `p75` `p90` `p95` đã khai sẵn trong `cotChuan.js`
+  (`COT_QUA_TRINH_MO_RONG`) nhưng chưa gắn vào hai bảng này.
+
+### 1.4 Vòng xác nhận — thay cho "khoa chốt danh mục"
+
+```
+khoa sửa → [Xác nhận thông tin đề xuất lần 1]
+         → ai đó sửa mã X → xác nhận của khoa có mã X tự huỷ
+         → nút thành [Xác nhận lần 2] → PĐD nhắn Teams → khoa check → bấm
+         → … → PĐD chốt danh sách đề xuất đi thầu
+```
+
+- **Số lần không giới hạn** — lần 3, lần 4 nếu còn sửa tiếp.
+- **Phạm vi huỷ**: chỉ các khoa **có đề xuất mã X**. Khoa không dùng mã đó giữ
+  nguyên xác nhận. (Với 62 khoa và hàng trăm mã, huỷ toàn đợt là không dùng được.)
+- **Khoa tự sửa cũng tự huỷ xác nhận của chính mình** — xác nhận luôn gắn với
+  bản dữ liệu tại thời điểm bấm.
+- **Chốt danh sách đi thầu: CHẶN CỨNG** nếu còn khoa chưa xác nhận lần mới nhất.
+- **Khoa chưa gửi đề xuất nào thì không tính** — không gửi thì không phải xác
+  nhận. Khoa đó chỉ hiện ở dòng cảnh báo, không làm kẹt nút chốt.
+- Khoa không sửa được sau chốt; **PĐD vẫn mở chốt được** (giữ
+  `mo_chot_so_tham_gia_thau_v3`, `mo_chot_trinh_ky_khoa_v3`).
+
+> **Suy ra, chưa hỏi chủ dự án:** cột chữ là giá trị chung, nên GMHS sửa TSKT
+> mã X cũng làm **RHM mất xác nhận** (bản RHM đã xem bị đổi). Đúng theo logic
+> "xác nhận = tôi đã xem bản này", nhưng chủ dự án chưa xác nhận điểm này.
+
+---
+
+## 2. Vì sao bỏ luật khoá ô của bản sáng
+
+Bản sáng khoá ô ngay khi PĐD gõ, vì sợ 62 khoa mỗi khoa một TSKT thì hồ sơ mời
+thầu không dùng được. Nó gộp *gõ để soạn* và *chốt để đóng* vào một thao tác:
+PĐD gõ nửa chừng là khoa hết đường sửa.
+
+V2 xử nỗi lo đó bằng cách khác và triệt để hơn: **cột chữ chỉ có một giá trị**,
+nên không có gì để lệch ngay từ đầu. Việc đóng băng dời sang chốt trình ký, và
+việc "mọi khoa đã ngó qua bản cuối" giao cho vòng xác nhận.
+
+---
 
 ## 3. Việc phải làm
 
@@ -43,41 +100,49 @@ chứ không bằng khoá tay khoa lại.
 
 | # | Việc | Ghi chú |
 |---|---|---|
-| D1 | Gỡ `trg_z_khoa_o_khoa_khi_pdd_da_duyet` + hàm của nó | patch_zzzzp mục 3 — hết lý do tồn tại |
-| D2 | Gỡ `trg_chan_o_khoa_da_chot` + `fn_chan_o_khoa_da_chot` | patch_zs mục 4b — bỏ bước khoa chốt |
-| D3 | Thêm `fn_khoa_o_khoa_sau_chot_trinh_ky` | đối xứng `fn_khoa_o_tong_hop_sau_chot_q`; nhớ `danh_muc_khoa_o` KHÔNG mang `dot_goi_id`, phải so qua `goi_id` như D5 |
-| D4 | Chuyển chặn gửi thêm đề xuất từ `danh_muc_khoa_chot` sang `chot_q_phien` | patch_zzzzm |
-| D5 | `so_khoa_chua_chot` → đổi cách tính thành **số khoa tham gia mà chưa có dòng đề xuất nào** | giữ tên cột, đổi nghĩa; đó chính là con số cảnh báo ở F4 |
-| D6 | Ngừng dùng `danh_muc_khoa_chot` (giữ bảng, chưa drop) | drop sau khi chạy thật ổn một kỳ |
-| D7 | Thêm `danh_muc_khoa_o.sua_luc jsonb` (cột → thời điểm sửa) | **bắt buộc** cho luật "ai sửa sau đè": bảng lưu cả dòng trong một JSONB, chỉ có `updated_at` cho CẢ DÒNG nên không biết được từng ô sửa lúc nào |
+| D1 | **Cột chữ về một chỗ**: mọi vai trò ghi vào `danh_muc_tong_hop_o`; `danh_muc_khoa_o` chỉ còn giữ `giai_trinh_2627` | mảnh nặng nhất. Phải **chuyển dữ liệu cột chữ đang nằm ở `danh_muc_khoa_o`** sang trước, quyết định lấy bản nào khi 2 khoa đang lệch |
+| D2 | Gỡ `trg_z_khoa_o_khoa_khi_pdd_da_duyet` + hàm | patch_zzzzp mục 3 — hết lý do tồn tại |
+| D3 | Gỡ `trg_chan_o_khoa_da_chot` + `fn_chan_o_khoa_da_chot` | patch_zs mục 4b |
+| D4 | Mở RLS cho `dvsd` **GHI** `danh_muc_tong_hop_o` (nay chỉ cho đọc) | hệ quả trực tiếp của D1 |
+| D5 | Khoá cột chữ theo `chot_trinh_ky_phien_v3`, cột số theo `chot_q_phien` | đã có mẫu ở `fn_khoa_o_tong_hop_sau_chot_q` |
+| D6 | Mở đường khoa sửa `phan_bo_khoa.so_luong_hien_hanh` của chính khoa mình | RLS hiện chỉ cho `dieu_duong/admin` |
+| D7 | Đổi `danh_muc_khoa_chot` thành bảng **xác nhận theo vòng**: thêm cột `lan int`, huỷ khi có sửa | dùng lại audit + RLS đã có, đừng dựng bảng mới |
+| D8 | Trigger huỷ xác nhận khi `danh_muc_tong_hop_o` hoặc `phan_bo_khoa` đổi | phạm vi: các khoa có đề xuất đúng mã đó |
+| D9 | `chot_so_tham_gia_thau_v3`: **chặn cứng** khi còn khoa đã gửi mà chưa xác nhận lần mới nhất | đổi từ "ghi số" sang "chặn" |
+| D10 | `so_khoa_chua_chot` → đổi nghĩa: số khoa **chưa gửi đề xuất nào** (dòng cảnh báo) | giữ tên cột |
 
 ### Tầng giao diện
 
 | # | Việc |
 |---|---|
-| F1 | `DanhMucDeXuatKhoa`: ô PĐD đã sửa **bỏ `readonly`**, giữ viền tím + nhãn đổi thành "PĐD đã sửa" (không phải "PĐD duyệt"). So `sua_luc` với `danh_muc_tong_hop_o.updated_at` để biết hiện giá trị nào |
-| F2 | Bỏ nút "Chốt danh mục" và "Mở lại để sửa" bên khoa |
-| F3 | `TongHopPdd`: cờ lệch trên ô + đếm "N ô có khoa gõ khác bản đi thầu" ở đầu trang |
-| F4 | Hộp xác nhận trước khi chốt: liệt kê tên khoa chưa gửi đề xuất, vẫn cho chốt |
-| F5 | `BanDieuHanhPdd`: bỏ cột "khoa chưa chốt", thay bằng "khoa chưa gửi đề xuất" |
-| F6 | Excel khoa lấy giá trị bản Tổng hợp khi ô đó PĐD có sửa |
+| F1 | `DanhMucDeXuatKhoa`: cột chữ bỏ `readonly`, ghi thẳng vào `danh_muc_tong_hop_o`; bỏ nhãn phụ "PĐD duyệt" (không còn hai giá trị) |
+| F2 | `DanhMucDeXuatKhoa`: **mở cột số cho khoa sửa**, gỡ dòng "chỉ sửa được ở màn Nhập đề xuất" |
+| F3 | Thêm cột **P50–P75** cạnh cột số ở CẢ hai bảng, tô nổi bật ô vượt P75 |
+| F4 | Nút **"Xác nhận thông tin đề xuất lần N"** bên khoa + trạng thái hiện trên Bàn điều hành PĐD |
+| F5 | `TongHopPdd`: nút chốt **mờ đi** khi chưa đủ xác nhận, hiện rõ còn thiếu khoa nào |
+| F6 | Bỏ nút "Chốt danh mục" / "Mở lại để sửa" bên khoa |
+| F7 | `BanDieuHanhPdd`: cột "khoa chưa chốt" → "khoa chưa xác nhận lần N" + "khoa chưa gửi đề xuất" |
+| F8 | Giữ cờ lệch **chỉ cho cột số**: "tổng đã đổi so với lúc PĐD chia" |
 
 ### Phải rà lại
 
-- `test_so_chot_contract.py`, `test_chot_q_v3_contract.py`,
-  `test_pdd_duyet_o_chu_contract.py` (10 test viết cho luật cũ — sẽ đỏ)
+- `test_pdd_duyet_o_chu_contract.py` (10 test viết cho luật khoá ô — sẽ đỏ toàn bộ),
+  `test_so_chot_contract.py`, `test_chot_q_v3_contract.py`
 - `smoke_workflow_v3_staging.py`, `kiem_truoc_deploy.py`
-- **`Full workflow vtyt web.docx`** — 43 điều khoản có nhắc "khoa chốt danh
-  mục". Bỏ bước này nghĩa là văn bản gốc không còn khớp mã nguồn. Phải sửa docx
-  hoặc ghi phụ lục, nếu không lần test sau lại báo "thiếu điều khoản".
+- **`Full workflow vtyt web.docx`** — bỏ "khoa chốt danh mục", thêm vòng xác
+  nhận. 43 điều khoản không còn khớp mã nguồn; phải sửa docx hoặc ghi phụ lục,
+  nếu không vòng test sau lại báo thiếu điều khoản.
 
-## 4. Điểm chưa nhất quán — cần biết trước khi làm
+---
 
-Chủ dự án chốt "Excel khoa **luôn lấy giá trị PĐD**" (F6) từ vòng hỏi khi mô
-hình còn là "PĐD là chân lý". Sang luật "ai sửa sau đè" thì sinh ra chuyện:
-khoa gõ sau PĐD → **màn hình khoa hiện giá trị khoa, file Excel khoa in ra giá
-trị PĐD**. Khoa sẽ hỏi vì sao hai cái khác nhau.
+## 4. Ba chỗ phải cẩn thận khi thi công
 
-Đề nghị xử: giữ đúng F6 (file phải khớp bản đi thầu — đó là mục IX.2), nhưng
-lúc bấm xuất Excel thì hiện cảnh báo *"N ô của khoa đang khác bản đi thầu; file
-này in theo bản đi thầu"*. Chưa hỏi lại chủ dự án điểm này.
+1. **D1 là chuyển nhà, không phải thêm cột.** Cột chữ đang nằm ở hai bảng với
+   hai phạm vi khoá khác nhau (`danh_muc_khoa_o` theo khoa; `danh_muc_tong_hop_o`
+   theo `goi_id` có hậu tố `:dot:N` — xem Lỗi 24). Gộp về một chỗ phải quyết
+   trước: khi 2 khoa đang giữ 2 giá trị khác nhau thì lấy bản nào.
+2. **Ô số của khoa và tổng phải nhất quán trong cùng một giao dịch.** Tổng là
+   phép cộng, nên khoa sửa số phải đi qua RPC có advisory lock như
+   `cap_nhat_tong_phan_bo_khoa`, đừng cho `update` thẳng vào bảng.
+3. **Lỗi 24 vẫn còn nguyên bài học**: hai màn dùng `goi_id` khác phạm vi là lỗi
+   im lặng, không có lỗi đỏ nào. Làm D1 thì rà lại mọi truy vấn chạm hai bảng ô.
