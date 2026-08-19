@@ -66,7 +66,11 @@ const NGUON_KHONG_CO_KHOA = new Set([
   "ten_tm_2526", "ma_sp_2526", "hang_sx_2526", "nuoc_sx_2526", "ma_kt",
 ]);
 
-const COT_CHI_DOC_THEM = new Set(["sl_de_xuat_18t"]);
+// V2 (19/08/2026) — cột số KHÔNG còn chỉ đọc ở màn này. Chủ dự án: khoa sửa
+// số ngay trên Danh mục đề xuất của khoa, tổng đi thầu là phép cộng của các
+// khoa. Vẫn phải có `dot_goi_id` mới sửa được: chỉ đường v3 (`phan_bo_khoa`)
+// mới có RPC ghi số; đợt cũ đọc từ `proposals` thì không có chỗ ghi.
+const COT_SO_KHOA = "sl_de_xuat_18t";
 
 const NHAN_GIAI_DOAN = { chao_gia: "Chào giá", mo_thau: "Mở thầu", danh_gia: "Đánh giá" };
 
@@ -593,6 +597,35 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
     const gt = giaTri == null ? "" : String(giaTri);
     const laGiaiTrinh = colKey === "giai_trinh_2627";
 
+    // Cột SỐ đi đường riêng: `phan_bo_khoa` chứ không phải bảng ô sửa tay.
+    // Qua RPC chứ không update thẳng — tổng là phép cộng nên hai khoa bấm cùng
+    // lúc phải tuần tự hoá, và audit phải ghi trong cùng giao dịch.
+    if (colKey === COT_SO_KHOA) {
+      const soMoi = Number(String(gt).replace(/[^\d-]/g, ""));
+      if (!Number.isInteger(soMoi) || soMoi < 0) {
+        setLoiLuuO("Số lượng đề xuất phải là số nguyên không âm.");
+        return;
+      }
+      const { error: loiSo } = await supabase.rpc("sua_so_luong_khoa_v3", {
+        p_dot_goi_id: dotGoiId, p_ma_hang: maHang, p_so_moi: soMoi,
+        ...(laPdd ? { p_khoa: khoaHienTai } : {}),
+      });
+      if (loiSo) {
+        setLoiLuuO(loiSo.code === "PGRST202"
+          ? "Staging chưa có chức năng khoa sửa số. Cần chạy backend/sql/patch_zzzzs_v2_khoa_sua_so.sql."
+          : `Không lưu được số: ${loiSo.message}`);
+        return;
+      }
+      setLoiLuuO("");
+      // `mua_them_30` là số dẫn xuất từ số đề xuất — không tính lại thì bảng
+      // hiện hai con số không khớp nhau cho tới lần tải sau.
+      setRows((prev) => prev.map((r) => (r.ma_hang === maHang
+        ? { ...r, [COT_SO_KHOA]: soMoi, mua_them_30: tinhTuyChonMuaThem30(soMoi) }
+        : r)));
+      setODaSua((prev) => new Map(prev).set(`${maHang}|${colKey}`, true));
+      return;
+    }
+
     const { error } = laGiaiTrinh
       ? await supabase.rpc("luu_o_danh_muc_khoa", {
         p_goi_id: goiId, p_nam_de_xuat: NAM_DE_XUAT, p_khoa: khoaHienTai,
@@ -636,7 +669,7 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
   };
 
   const capNhatO = (maHang, colKey, giaTri) => {
-    if (COT_CHI_DOC_THEM.has(colKey)) return; // sl_de_xuat_18t: chỉ đọc, xem comment đầu file
+    if (colKey === COT_SO_KHOA && !dotGoiId) return; // đợt cũ: không có đường ghi số
     if (daKhoaSua(colKey)) return;            // cột đang khóa sửa (patch_zi)
     if (trangThaiChot) return;                // đã chốt danh sách (patch_zs)
     setRows((prev) => prev.map((r) => (r.ma_hang === maHang ? { ...r, [colKey]: giaTri } : r)));
@@ -646,7 +679,8 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
   // mà bắn mỗi ký tự một request thì vừa nặng vừa đầy audit vô ích.
   const ketThucSuaO = async (maHang, colKey) => {
     setODangChon(null);
-    if (COT_CHI_DOC_THEM.has(colKey) || daKhoaSua(colKey) || trangThaiChot) return;
+    if (colKey === COT_SO_KHOA && !dotGoiId) return;
+    if (daKhoaSua(colKey) || trangThaiChot) return;
     const giaTri = rows.find((r) => r.ma_hang === maHang)?.[colKey];
     await luuOLenServer(maHang, colKey, giaTri);
   };
@@ -710,8 +744,8 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
   // độc lập bằng trigger (patch_zs) — đây chỉ là lớp cho người dùng thấy sớm,
   // không phải lớp bảo vệ.
   const oCoTheSua = (col) =>
-    !col.readonly && !COT_CHI_DOC_THEM.has(col.key) && !daKhoaSua(col.key)
-    && !trangThaiChot;
+    !col.readonly && !daKhoaSua(col.key) && !trangThaiChot
+    && (col.key !== COT_SO_KHOA || !!dotGoiId);
 
   // ---- Đẩy SL rớt 1 phần (mục 4.3) — mở form, tải ứng viên mã tương đương
   // cùng mã quản lý CÒN TRÚNG (kể cả mã khoa mình chưa từng đề xuất). ----
@@ -968,7 +1002,11 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
               {" "}— ô viền tím sửa được, nhưng sửa là mọi khoa đổi theo
             </span>
           )}
-          <span className="qtdx-badge green">Số lượng khoa đề xuất: chỉ sửa được ở màn Nhập đề xuất trước đấu thầu</span>
+          <span className="qtdx-badge green">
+            {dotGoiId
+              ? "Số lượng khoa đề xuất: sửa được tại đây — tổng đi thầu là tổng của các khoa, sửa là tổng đổi theo"
+              : "Số lượng khoa đề xuất: đợt này chưa đi đường v3, chỉ sửa được ở màn Nhập đề xuất"}
+          </span>
           {soMaRot > 0 && <span className="qtdx-badge red">{soMaRot} mã rớt — bấm "Đẩy SL" ở dòng mã để chuyển sang mã tương đương còn trúng</span>}
           {laPdd && <span className="qtdx-badge blue">Đang xem với quyền PĐD</span>}
         </div>

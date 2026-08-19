@@ -93,7 +93,7 @@ async function taiDuLieuGoc(goiId, dotId = null) {
   if (dotGoiId) {
     laPhanBoV3 = true;
     qProposals = supabase.from("phan_bo_khoa")
-      .select("ma_hang, khoa, so_luong_hien_hanh, so_luong_goc")
+      .select("ma_hang, khoa, so_luong_hien_hanh, so_luong_goc, sua_boi_khoa")
       .eq("dot_goi_id", dotGoiId);
   } else {
     qProposals = supabase.from("proposals")
@@ -118,6 +118,10 @@ async function taiDuLieuGoc(goiId, dotId = null) {
       don_vi: laPhanBoV3 ? r.khoa : r.don_vi,
       so_luong: Number(laPhanBoV3 ? r.so_luong_hien_hanh : r.so_luong) || 0,
       so_luong_goc: Number(laPhanBoV3 ? r.so_luong_goc : r.so_luong) || 0,
+      // V2: khoa sửa được số của mình, nên tổng ở đây có thể đã đổi sau lần
+      // PĐD chia gần nhất. Cờ do trigger `trg_phan_bo_danh_dau_ai_sua` đặt
+      // ngay tại nguồn — không đoán từ email người sửa.
+      suaBoiKhoa: laPhanBoV3 ? !!r.sua_boi_khoa : false,
     });
   });
   const dsMaHang = [...theoMa.keys()];
@@ -212,8 +216,9 @@ async function taiDuLieuGoc(goiId, dotId = null) {
       ma_hang: maHang,
       khoaDeXuat: khoaDeXuat.map((k) => ({
         khoaMa: k.don_vi, khoaTen: k.don_vi, soLuong: k.so_luong,
-        soLuongGoc: k.so_luong_goc,
+        soLuongGoc: k.so_luong_goc, suaBoiKhoa: k.suaBoiKhoa,
       })),
+      khoaTuSuaSo: khoaDeXuat.filter((k) => k.suaBoiKhoa).map((k) => k.don_vi),
       tongToanVien: slDeXuat,
     };
     NGUON_KHONG_CO.forEach((k) => { row[k] = null; });
@@ -1069,6 +1074,18 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                                   : `${dsKhoaGhi.length} khoa đã ghi (cùng một giá trị) — bấm để xem`}>
                                 {khoaLech ? `${soGiaTriKhac} giá trị` : `${dsKhoaGhi.length} khoa`}
                               </button>
+                            )}
+                            {/* V2 — tổng đi thầu là phép CỘNG số của các khoa,
+                                và khoa sửa được số của mình. Nên tổng PĐD vừa
+                                chia xong có thể đã đổi mà PĐD không hay. Cờ do
+                                trigger đặt tại nguồn, không đoán từ email. */}
+                            {c.key === "sl_de_xuat_2627" && r.khoaTuSuaSo?.length > 0 && (
+                              <span
+                                className="ml-1 rounded bg-amber-100 px-1 text-[9px] font-semibold text-amber-800"
+                                title={`Tổng này đã đổi vì khoa tự sửa số: ${r.khoaTuSuaSo.join(", ")}. `
+                                  + "Gõ lại tổng ở đây để chia lại theo tỉ lệ."}>
+                                {r.khoaTuSuaSo.length} khoa tự sửa
+                              </span>
                             )}
                             {(
                               <button
