@@ -14,7 +14,7 @@
 | Vòng test full 11 bước, 2 vai trò | ✅ xong 19/08/2026 |
 | Điều khoản workflow v3 đạt | **43/43** |
 | Invariant đúng | **17/18** |
-| **Lỗi thật đã fix** | **23** |
+| **Lỗi thật đã fix** | **24** |
 | Tính năng mới theo yêu cầu | PĐD duyệt cột chữ → link xuống khoa |
 | Commit đã push | `22e47e6` · `5979e1a` · `f5c5572` trên `phase-a-luong-de-xuat` |
 
@@ -151,6 +151,28 @@ Nút "Dọn dữ liệu kiểm thử" tự hiện khi URL chứa ref staging —
 
 ---
 
+## 7b. Lỗi 24 — PĐD duyệt trên Tổng hợp, khoa không thấy (vá 19/08/2026)
+
+Chủ dự án sửa TSKT 2026-2027 của "Áo phẫu thuật sử dụng 01 lần" (mã 67159) trên
+Tổng hợp, bên khoa vẫn hiện giá trị cũ.
+
+Nguyên nhân: bản Tổng hợp ghi `danh_muc_tong_hop_o.goi_id` có hậu tố
+`:dot:N` (`goiScope`, TongHopPdd.jsx:304), còn `DanhMucDeXuatKhoa.jsx` đọc bằng
+`.eq("goi_id", goiId)` KHÔNG hậu tố → luôn rỗng. Trigger
+`fn_khoa_o_khoa_khi_pdd_da_duyet` lại so bằng `split_part(goi_id, ':dot:', 1)`
+nên vẫn CHẶN: khoa thấy ô sửa được, gõ vào mới báo "đã được PĐD duyệt".
+
+Vá ở frontend (`taiSuaDeCuaPdd` + truy vấn audit): đọc `like(goi_id, '<goi>%')`
+rồi lọc `split(':dot:')[0] === goiId`, ưu tiên đợt đang mở, sau đó tới bản mới
+nhất — cùng phạm vi với trigger. Đo lại trên Chrome: GMHS và RHM đều hiện giá
+trị PĐD, ô có nhãn "PĐD duyệt" và thành chỉ đọc. `pytest` 105 · `test:formula`
+5/5 · `build` ✓.
+
+**Bài học:** khoá phạm vi (`goi_id`) đặt khác nhau giữa hai màn là lỗi im lặng —
+không có lỗi đỏ nào, chỉ là dữ liệu không bao giờ khớp.
+
+---
+
 ## 8. Bài học kỹ thuật (đừng lặp lại)
 
 1. **Smoke xanh không chứng minh hàm chạy.** Xem mục 7.2.
@@ -168,3 +190,5 @@ Nút "Dọn dữ liệu kiểm thử" tự hiện khi URL chứa ref staging —
    bắt đầu bằng "Chỉ...". Đã báo động nhầm 2 lần vì việc này.
 8. **Chrome chặn tải file thứ hai liên tiếp trong cùng tab** — mỗi lần xuất file
    phải mở tab mới.
+9. **Khoá phạm vi phải giống nhau ở mọi màn.** Lỗi 24: Tổng hợp ghi `goi_id`
+   kèm `:dot:N`, khoa đọc không kèm — im lặng, không lỗi đỏ.

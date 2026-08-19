@@ -51,6 +51,14 @@ import { taiDotIdCuaGoi, locTheoDot } from "../lib/dotBoSung";
 // thì phải sửa cả bên kia.
 const COT_KHONG_NHAN_DUYET = new Set(["giai_trinh_2627", "sl_de_xuat_18t"]);
 
+/** Ô PĐD nào được ưu tiên khi một mã có bản ghi ở nhiều đợt: đợt đang mở
+ *  thắng, sau đó tới bản mới nhất. */
+function thangTruoc(r, cu, goiScope) {
+  if (r.goi_id === goiScope) return true;
+  if (cu.goi_id === goiScope) return false;
+  return String(r.updated_at) > String(cu.updated_at);
+}
+
 const NGUON_KHONG_CO_KHOA = new Set([
   "his_1599", "his_957", "ma_tt04", "ten_tt04", "ma_his_2023",
   "ten_vt_2526", "tskt_2526", "ly_do_rot_2025", "ly_do_rot_ct",
@@ -461,21 +469,41 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
   // QĐ 08/08/2026 của chủ dự án. Trước patch_zs, dvsd không có policy nào trên
   // danh_muc_tong_hop_o nên đọc ra rỗng — khoa nộp số này, đi thầu số khác mà
   // không biết. Giờ mở ĐỌC (vẫn không cho ghi).
+  //
+  // LỖI 24 (19/08/2026): bản TỔNG HỢP ghi `goi_id` có hậu tố ':dot:N'
+  // (`goiScope` ở TongHopPdd.jsx:304), bản KHOA thì không. So `.eq(goi_id,
+  // goiId)` ở đây nên KHÔNG BAO GIỜ khớp — PĐD duyệt TSKT trên Tổng hợp mà
+  // bên khoa vẫn hiện giá trị cũ, không viền tím, không khoá ô. Trigger
+  // `fn_khoa_o_khoa_khi_pdd_da_duyet` thì so bằng `split_part(goi_id,
+  // ':dot:', 1)` nên vẫn CHẶN — khoa thấy ô sửa được, gõ vào lại bị báo lỗi
+  // "đã được Phòng Điều dưỡng duyệt". Đúng mẫu lỗi số 6 của dự án: tầng DB
+  // đúng, tầng giao diện chưa nối.
+  //
+  // Lấy theo đúng cách trigger lấy: mọi bản ghi cùng gói con, bất kể đợt.
+  // Ưu tiên đợt đang mở, sau đó tới bản mới nhất — khớp với ghi chú phạm vi
+  // trong patch_zzzzp (ô khoa chưa neo theo `dot_goi_id`, xem mục E3).
   const taiSuaDeCuaPdd = useCallback(async () => {
     if (!goiId) return new Map();
     const { data, error } = await supabase.from("danh_muc_tong_hop_o")
-      .select("ma_hang, cot, gia_tri, updated_by, updated_at")
-      .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT);
+      .select("goi_id, ma_hang, cot, gia_tri, updated_by, updated_at")
+      .like("goi_id", `${goiId}%`).eq("nam_de_xuat", NAM_DE_XUAT);
     // Chưa chạy patch_zs -> RLS trả rỗng chứ không lỗi. Không cản trở gì, chỉ
     // là chưa thấy được phần PĐD sửa.
     if (error) return new Map();
+    const goiScope = dotId ? `${goiId}:dot:${dotId}` : goiId;
     const m = new Map();
-    (data || []).forEach((r) => {
-      if (!m.has(r.ma_hang)) m.set(r.ma_hang, new Map());
-      m.get(r.ma_hang).set(r.cot, r);
-    });
+    (data || [])
+      // `like` bắt cả gói con khác có cùng tiền tố tên; lọc lại cho chắc.
+      .filter((r) => String(r.goi_id).split(":dot:")[0] === goiId)
+      .forEach((r) => {
+        if (!m.has(r.ma_hang)) m.set(r.ma_hang, new Map());
+        const cua = m.get(r.ma_hang);
+        const cu = cua.get(r.cot);
+        if (cu && !thangTruoc(r, cu, goiScope)) return;
+        cua.set(r.cot, r);
+      });
     return m;
-  }, [goiId]);
+  }, [goiId, dotId]);
 
   const taiLai = useCallback(async () => {
     setDangTai(true);
@@ -604,9 +632,11 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
         .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT).eq("khoa", khoaHienTai)
         .eq("ma_hang", maHang).eq("cot", colKey)
         .order("thoi_gian", { ascending: false }).limit(20),
+      // Cùng lỗi phạm vi ':dot:N' như `taiSuaDeCuaPdd` — `.eq` ở đây làm phần
+      // lịch sử bên PĐD luôn rỗng, khoa không tra được ai duyệt ô của mình.
       supabase.from("danh_muc_tong_hop_o_audit")
         .select("gia_tri_cu, gia_tri_moi, nguoi_sua, thoi_gian")
-        .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT)
+        .like("goi_id", `${goiId}%`).eq("nam_de_xuat", NAM_DE_XUAT)
         .eq("ma_hang", maHang).eq("cot", cotKhoaSangPdd(colKey))
         .order("thoi_gian", { ascending: false }).limit(20),
     ]);
