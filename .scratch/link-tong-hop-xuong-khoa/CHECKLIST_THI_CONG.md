@@ -9,7 +9,7 @@ chủ dự án, **chờ chấp thuận mới đi tiếp**.
 | 2. Cột số: khoa sửa được, tổng là phép cộng | D6 · F2 F8 | ✅ xong, đã đo trên staging |
 | 3. Cột range P50–P75 hai bảng | F3 | ✅ xong, đã đo trên staging |
 | 4. Vòng xác nhận lần N | D7 D8 D9 D10 · F4 F5 F6 F7 | ✅ xong, đã đo trên staging |
-| 5. Rà test + smoke + docx 43 điều khoản | — | 🔵 còn docx |
+| 5. Rà test + smoke + docx 43 điều khoản | — | 🟡 test/smoke xong · docx CHỜ QUYẾT ĐỊNH |
 
 ## Bước 1 — chi tiết
 
@@ -80,3 +80,21 @@ trong tooltip của ô.
    trả PGRST203 cho MỌI lần gọi. Phải `drop function ... (bigint, boolean)` trước.
 2. **`v_dg.nam` không tồn tại.** `nam` nằm ở `dot_de_xuat`, không phải `dot_goi`;
    viết lại hàm mà bỏ phép join của bản gốc là chết ngay ở dòng insert.
+
+## Bước 5 — trạng thái
+
+- [x] Test hợp đồng: 4 test của luật cũ thay bằng 6 test V2 · **107 passed**
+- [x] Smoke: thêm 1 bước đo chính cái chặn cứng · **13/13**
+- [x] `kiem_truoc_deploy` Sạch · `test:formula` 5/5 · `build` ✓
+- [ ] ⏸️ **`Full workflow vtyt web.docx` — CHƯA SỬA, chờ chủ dự án quyết**
+
+Đã quét toàn văn docx: 8 chỗ nhắc "chốt danh mục", **2 chỗ mâu thuẫn thẳng**
+với mã nguồn. Liệt kê đầy đủ kèm câu chữ đề nghị: `PHU_LUC_DOCX_V2.md`.
+
+Hai chỗ mâu thuẫn:
+1. Giai đoạn 6: docx ghi *"Nút này LUÔN bấm được (QĐ 17/08/2026 — cổng mềm)"*,
+   mã nguồn nay **chặn cứng**.
+2. Điều khoản 11: *"Chốt danh mục khóa toàn bộ phần khoa được sửa"* — nay xác
+   nhận **không khoá gì**.
+
+Và 3 điều khoản nên THÊM (44, 45, 46) cho ba luật V2 chưa có chỗ nào nói tới.
