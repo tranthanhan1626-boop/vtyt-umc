@@ -4,34 +4,50 @@ Cập nhật **19/08/2026**. Nhánh chính hiện tại: `phase-a-luong-de-xuat`
 
 ---
 
-# 19/08/2026 (chiều+tối) — QUY TẮC MỚI: MỘT GIÁ TRỊ CHUNG
+# 19/08/2026 (chiều+tối) — V2: MỘT GIÁ TRỊ CHUNG · ĐÃ THI CÔNG XONG
 
-**Chốt quy tắc rồi, chưa thi công dòng nào.** Thiết kế + 18 đầu việc:
-`.scratch/link-tong-hop-xuong-khoa/THIET_KE_V2_BO_KHOA_O.md`.
+**Chốt quy tắc và thi công trọn trong ngày.** Thiết kế:
+`.scratch/link-tong-hop-xuong-khoa/THIET_KE_V2_BO_KHOA_O.md`. Nhật ký từng bước
++ kết quả đo: `.scratch/link-tong-hop-xuong-khoa/CHECKLIST_THI_CONG.md`.
 
 Chủ dự án đảo luật khoá ô đã dựng sáng cùng ngày. Nguyên văn: *"PĐD chỉnh sửa
 rồi khoa chỉnh sửa nữa, đừng có PĐD xong là khoá ô"* và *"cả 2 phải là 1 chứ
 sao khác nhau được?"*.
 
-- **Cột CHỮ = MỘT giá trị chung toàn viện** cho mỗi (mã hàng, cột). Ai sửa sau
-  đè cho tất cả, PĐD hay khoa đều vậy. Bản Tổng hợp và bản khoa không thể lệch
-  → bỏ cờ lệch cho cột chữ, `danh_muc_khoa_o` phần cột chữ thành thừa.
-  `giai_trinh_2627` vẫn ngoại lệ riêng theo khoa.
-- **Cột SỐ: mỗi khoa một số, tổng = phép cộng.** Khoa sửa số thì tổng đổi theo;
-  `so_luong_goc` đóng băng làm dấu vết. PĐD gõ **tổng**, hệ chia theo tỉ lệ.
-  Khoa sửa số ngay trên màn Danh mục đề xuất của khoa.
-- **Cột range P50–P75 mới** cạnh cột số ở cả hai bảng; vượt P75 chỉ **tô nổi
-  bật**. Dải bên khoa theo lịch sử khoa, bên PĐD theo **toàn viện**. Dùng lại
-  `danhGiaSoLuong()` trong `congThucSoLuong.js` — đã có, đã backtest.
-- **Vòng xác nhận lần N** thay cho "khoa chốt danh mục": có sửa là xác nhận tự
-  huỷ, nút lên lần N+1. Huỷ chỉ với khoa có đề xuất mã bị sửa. Chốt đi thầu
-  **chặn cứng** khi còn khoa chưa xác nhận — khoa chưa gửi gì thì không tính.
-- Đóng băng: chốt Q khoá cột SỐ, chốt trình ký khoá cột CHỮ. PĐD vẫn mở chốt được.
+## Luật đang chạy
 
-Việc nặng nhất là **D1 — dồn cột chữ về một bảng**: hiện nằm ở hai bảng với hai
-phạm vi khoá khác nhau, phải quyết lấy bản nào khi 2 khoa đang lệch. Và bỏ
-"khoa chốt danh mục" làm **`Full workflow vtyt web.docx` không còn khớp mã
-nguồn** — phải sửa docx hoặc ghi phụ lục.
+- **Cột CHỮ = MỘT giá trị chung toàn viện** cho mỗi (mã hàng, cột). Ai sửa sau
+  đè cho tất cả. Bản Tổng hợp và bản khoa không thể lệch → bỏ cờ lệch cho cột
+  chữ. `giai_trinh_2627` vẫn ngoại lệ riêng theo khoa.
+- **Cột SỐ: mỗi khoa một số, tổng = phép cộng.** Khoa sửa ngay trên bảng khoa;
+  `so_luong_goc` đóng băng làm dấu vết; PĐD gõ **tổng**, hệ chia theo tỉ lệ.
+- **Cột dải P50–P75** cạnh cột số ở cả hai bảng; vượt P75 chỉ **tô nổi bật**.
+  Dải bên khoa theo lịch sử khoa, bên PĐD theo toàn viện.
+- **Vòng xác nhận lần N** thay "khoa chốt danh mục": có sửa là xác nhận tự huỷ.
+  Chốt số đi thầu **chặn cứng** khi còn khoa đã gửi mà chưa xác nhận.
+
+## Đã chạy staging
+
+`patch_zzzzr` (cột chữ về một bảng + RLS cho khoa ghi) · `patch_zzzzs` (RPC khoa
+sửa số) · `patch_zzzzt` (cờ khoa tự sửa số) · `patch_zzzzu` (vòng xác nhận).
+
+Đo bằng Chrome, JWT thật 2 vai trò: GMHS sửa TSKT → RHM thấy ngay · RHM sửa số
+1.000→1.234, tổng thành 46.234 kèm cờ *2 khoa tự sửa* · GMHS đề 45.000 / dải
+41.484–44.396 → tô đỏ · GMHS xác nhận lần 1 → PĐD sửa TSKT → xác nhận huỷ kèm
+lý do → nút thành *lần 2*, nút chốt của PĐD mờ.
+
+Nghiệm thu: `pytest` **107** · `smoke_workflow_v3` **13/13** (thêm 1 bước đo
+chính cái chặn cứng) · `kiem_truoc_deploy` **Sạch** · `test:formula` 5/5 · `build` ✓
+
+## Tài liệu đã đồng bộ
+
+`Full workflow vtyt web.docx` (8 chỗ + 3 điều khoản 19/20/21 + 6 dòng nhật ký
+quyết định; bản gốc lưu trong `.scratch/link-tong-hop-xuong-khoa/`) ·
+`Tổng quan/01_NGHIEP_VU_VA_QUYET_DINH.md` · `00_BAT_DAU.md` ·
+`docs/workflow-khoa-pdd/README.md`.
+
+**Điểm suy ra, chưa hỏi chủ dự án:** cột chữ là giá trị chung nên một khoa sửa
+TSKT cũng làm các khoa khác dùng mã đó mất xác nhận.
 
 Cũng vá trong phiên: **Lỗi 24** — bản Tổng hợp ghi `goi_id` kèm hậu tố ':dot:N',
 bản khoa đọc không kèm, nên PĐD sửa TSKT mà khoa không thấy gì. Đã push
@@ -104,8 +120,6 @@ Cần `SUPABASE_STAGING_DB_URL` trong `backend/.env.local`. Bẫy: host
 
 ## E. Việc tiếp theo, theo thứ tự đề nghị
 
-0. **Thi công V2 "một giá trị chung"** — xem mục đầu file. Chen lên trước mọi việc
-   dưới đây vì nó đổi luật, làm sau thì phần làm trước phải sửa lại.
 1. **Bổ sung smoke đường thành công** cho các RPC hiện chỉ có `phai_loi` — lỗ
    hổng đã chứng minh được, không phải phòng xa.
 2. **Rà cờ `da_di_thau`** — v3 không bật nó nữa; chỗ nào còn đọc đang đọc sai.

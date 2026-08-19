@@ -1,3 +1,14 @@
+> ⚠️ **ĐÂY LÀ NHẬT KÝ LỊCH SỬ, KHÔNG PHẢI LUẬT HIỆN HÀNH.**
+>
+> Ghi lại vòng test full 2 vai trò 18–19/08/2026. Chiều+tối 19/08 chủ dự án đảo
+> nhiều luật (V2): **"khoa chốt danh mục" đã bị bỏ**, thay bằng vòng xác nhận
+> lần N không khoá dữ liệu; cột chữ thành một giá trị chung toàn viện; khoa sửa
+> được cột số. Mọi chỗ trong file này nói "chốt danh mục khoá ô" là mô tả trạng
+> thái CŨ, đúng tại thời điểm viết.
+>
+> Luật đang chạy: `../link-tong-hop-xuong-khoa/THIET_KE_V2_BO_KHOA_O.md`.
+> Trạng thái hiện tại: `BAN_GIAO.md`.
+
 # Test full 2 vai trò (PĐD ↔ Khoa) — 18/08/2026
 
 Nguồn chuẩn: `Full workflow vtyt web.docx` (v3, 17/08/2026).

@@ -33,7 +33,7 @@ không đo được thì ghi rõ.
 | IV.2 | Khoa lập đề xuất, quy đổi ĐVT, P50–P95 | Đủ | Kiểm chéo tay 3 năm lịch sử, khớp từng số |
 | IV.2 | Số gợi ý không tự điền | Đủ | Ô Tổng rỗng tới khi bấm mức |
 | IV.2 | Giỏ sống trên server, mọi tài khoản cùng khoa thấy chung | Đủ | `gio_nhap` khoá `don_vi+dot_id`; `phongmo@` đăng nhập thấy chung giỏ của `dvsd1@` |
-| IV.3 | Khoa chốt danh mục + nhánh không phát sinh nhu cầu | Đủ | 2 khoa chốt, 1 khoa không phát sinh |
+| IV.3 | Khoa xác nhận đề xuất (lần N) + nhánh không phát sinh nhu cầu | Đủ | 2 khoa xác nhận, 1 khoa không phát sinh · V2 19/08: xác nhận không khoá dữ liệu, tự huỷ khi dữ liệu đổi |
 | IV.3 | Chốt là khoá ở SERVER | Đủ | **Lỗ hổng lớn trước Bước 3** — khoa vẫn gửi thêm được |
 | IV.4 | PĐD hiệu chỉnh, bắt lý do, khoa thấy số cũ/mới/người/lý do | Đủ | Bảng minh bạch dựng mới ở Bước 4 |
 | IV.5 | Danh mục tổng hợp: cột số là view, cột chữ sửa đè | Đủ | Cả hai đường kiểm riêng |
@@ -52,7 +52,7 @@ không đo được thì ghi rõ.
 | VIII.1 | Gợi ý đợt bổ sung gần nhất + Chờ mở đợt bổ sung | Đủ | Dựng mới 19/08; kiểm cả 4 ý, kể cả nhánh chưa có đợt mở |
 | VIII.2 | Bổ sung KHÔNG áp P50–P95, không bắt lý do | Đủ | **Lỗi 19**, vừa fix và đo lại |
 | VIII.2 | Bổ sung vẫn kiểm số nguyên, ĐVT, tổng khớp | Đủ | Dùng chung đường submit đã kiểm |
-| VIII.3 | Đề xuất bổ sung đi lại pipeline đầy đủ | Đủ | Đợt 32 chạy trọn: submit → chốt danh mục → Q → 3 GĐ → phân bổ → trình ký rev 1 |
+| VIII.3 | Đề xuất bổ sung đi lại pipeline đầy đủ | Đủ | Đợt 32 chạy trọn: submit → PĐD hiệu chỉnh ⇄ khoa xác nhận → Q → 3 GĐ → phân bổ → trình ký rev 1 |
 | IX.1 | Chốt từng bảng khoa, chỉ PĐD | Đủ | |
 | IX.2 | Chốt tổng hợp chỉ khi đủ mọi bảng khoa | Đủ | Khoá ở cả UI lẫn server |
 | IX.3 | Mở 1 bảng khoa → revision tổng hợp hết hiệu lực | Đủ | Chỉ bảng khoa đó mở, các bảng khác vẫn khoá |
@@ -176,3 +176,19 @@ sung phép thử đường THÀNH CÔNG cho mọi RPC, không chỉ đường th
    `danh_muc_khoa_chot_audit`) — không neo theo `dot_goi_id` nên sống sót qua
    xoá đợt; với production đây là mầm mống dữ liệu kỳ trước lẫn sang kỳ sau.
 7. Test Word cam kết + giỏ sống qua đăng xuất/F5.
+
+---
+
+## Cập nhật 19/08/2026 (V2)
+
+Bảng trên chấm theo bản docx TRƯỚC V2. Sau khi thi công V2 và đồng bộ docx,
+ba điều khoản mới được thêm (19, 20, 21) và hai điều khoản bị viết lại
+(điều 11 · Giai đoạn 6 cổng mềm → cổng cứng). Phép thử phủ chúng:
+
+| Điều | Phủ bởi |
+|---|---|
+| 19 — cột chữ một giá trị chung | `test_v2_khoa_ghi_duoc_bang_chung_nhung_chi_ma_cua_minh`, `test_v2_khoa_o_chi_con_giu_giai_trinh` · đo Chrome 2 khoa |
+| 20 — tổng là phép cộng | đo Chrome: RHM 1.000→1.234, tổng 46.234 · `patch_zzzzs` |
+| 21 — xác nhận mất hiệu lực khi dữ liệu đổi | smoke bước mới (13/13): sửa số → huỷ → chốt Q chặn → bấm lại lên lần 2 |
+| 11 (viết lại) — xác nhận không khoá | `test_v2_go_han_luat_khoa_o_theo_duyet`, `test_v2_o_ben_khoa_sua_duoc_va_doc_tu_dong` |
+| GĐ6 cổng cứng | smoke: `phai_loi` khi chốt Q lúc chưa ai xác nhận |

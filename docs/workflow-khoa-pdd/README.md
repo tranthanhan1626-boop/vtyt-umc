@@ -71,7 +71,8 @@ DOT_GOI = dot_id × goi_id
 Workflow không phải một state machine duy nhất. Có ít nhất ba checkpoint
 nghiệp vụ độc lập:
 
-1. `KHOA_READY`: Khoa chốt danh mục; Khoa hoặc PĐD có thể mở lại.
+1. `KHOA_READY`: Khoa xác nhận thông tin đề xuất (lần N). KHÔNG khoá dữ liệu;
+   xác nhận tự mất hiệu lực khi có ai sửa mã khoa đó đề xuất (V2, 19/08/2026).
 2. `TENDER_INPUT_FROZEN`: PĐD đóng băng số mang đi thầu.
 3. `TENDER_RESULT_FINALIZED`: chốt kết quả sau ba giai đoạn và sau khi xử lý
    mã rớt.

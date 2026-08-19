@@ -1,7 +1,17 @@
 # Phụ lục V2 — những chỗ `Full workflow vtyt web.docx` không còn khớp mã nguồn
 
-Lập 19/08/2026 sau khi thi công xong 4 bước V2. **Chưa sửa file docx** — đó là
-văn bản nghiệp vụ của chủ dự án, chờ quyết định sửa thẳng hay giữ phụ lục.
+Lập 19/08/2026 sau khi thi công xong 4 bước V2.
+
+> ✅ **ĐÃ ÁP HẾT VÀO `Full workflow vtyt web.docx`** ngày 19/08/2026, theo yêu
+> cầu của chủ dự án. Bản gốc trước khi sửa giữ ở
+> `Full workflow vtyt web — BAN GOC truoc V2.docx` cùng thư mục này.
+>
+> Đã sửa: **8 chỗ** dưới đây · thêm **3 điều khoản mới** (19, 20, 21) ·
+> thêm **6 dòng** vào bảng nhật ký quyết định (ghi rõ những gì bị đảo).
+> File đã kiểm: zip sạch, XML hợp lệ, macOS mở được, không còn chữ "chốt danh
+> mục" nào sót lại.
+
+Giữ file này làm bản đối chiếu trước/sau, đừng xoá.
 
 Quét toàn văn: **8 chỗ** nhắc "chốt danh mục", trong đó **2 chỗ mâu thuẫn
 thẳng** với mã nguồn hiện tại (in đậm).
@@ -53,7 +63,7 @@ nhau về cùng một nút.
 
 Mũi tên hai chiều là có chủ ý: PĐD sửa thì xác nhận huỷ, vòng lặp lại.
 
-## 6. Điều khoản 11 của danh sách 43 — MÂU THUẪN
+## 6. Điều khoản 11 của danh sách bất biến — MÂU THUẪN
 
 > Nguyên văn: *"Chốt danh mục khóa toàn bộ phần khoa được sửa, khóa ở server."*
 
@@ -69,14 +79,24 @@ Không còn đúng. Nay: **xác nhận không khoá gì**; việc khoá ở serv
 
 ---
 
-## Ba điều khoản NÊN THÊM
+## Ba điều khoản ĐÃ THÊM — đánh số 19, 20, 21
 
-Ba luật V2 dưới đây không có chỗ nào trong docx nói tới:
+**Lưu ý về cách đánh số:** "43 điều khoản" là con số đếm của phép thử, không
+phải một danh sách đánh số 1→43 trong docx. Trong file, danh sách bất biến đánh
+số lại theo từng mục và dừng ở **18**, nên ba điều mới nối tiếp thành **19, 20,
+21** chứ không phải 44/45/46 như bản nháp đầu của phụ lục này.
 
-44. **Cột chữ là một giá trị chung toàn viện** cho mỗi (mã hàng, cột). Ai sửa
-    sau đè cho tất cả — PĐD hay khoa đều vậy. Ngoại lệ duy nhất:
-    `giai_trinh_2627` giữ riêng theo khoa.
-45. **Tổng đi thầu = tổng số hiện hành của các khoa.** Khoa sửa số của mình thì
-    tổng đổi theo; `so_luong_goc` đóng băng làm dấu vết.
-46. **Xác nhận của khoa mất hiệu lực** khi có ai sửa dữ liệu của mã khoa đó đề
-    xuất, kể cả chính khoa. Số lần xác nhận không giới hạn.
+19. **Cột chữ là MỘT giá trị chung toàn viện** cho mỗi (mã hàng, cột). Ai sửa
+    sau đè cho tất cả — PĐD hay khoa đều vậy. Ngoại lệ duy nhất: giải trình đề
+    xuất giữ riêng theo từng khoa. (QĐ 19/08/2026)
+20. **Tổng đi thầu bằng tổng số hiện hành của các khoa.** Khoa sửa số của mình
+    thì tổng đổi theo; số khoa gửi ban đầu đóng băng làm dấu vết. (QĐ 19/08/2026)
+21. **Xác nhận của khoa mất hiệu lực** khi có ai sửa dữ liệu của mã khoa đó đề
+    xuất, kể cả chính khoa. Số lần xác nhận không giới hạn. (QĐ 19/08/2026)
+
+## Sáu dòng thêm vào bảng nhật ký quyết định
+
+Bảng cuối docx ghi "quyết định cũ → quyết định mới → ngày". Thêm sáu dòng
+19/08/2026, mỗi dòng nêu rõ thứ bị đảo: cổng mềm→cổng cứng · duyệt-là-khoá→bỏ
+hẳn · mỗi khoa một bản chữ→một giá trị chung · khoa chốt danh mục→vòng xác nhận
+· số chỉ sửa ở màn Nhập đề xuất→sửa ngay trên bảng khoa · thêm cột dải P50–P75.

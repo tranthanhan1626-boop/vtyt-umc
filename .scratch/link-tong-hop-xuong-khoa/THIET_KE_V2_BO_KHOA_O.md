@@ -1,7 +1,15 @@
 # V2 — một giá trị chung, ai sửa sau đè, xác nhận theo vòng
 
 Chốt với chủ dự án 19/08/2026 (chiều + tối). **THAY THẾ** `THIET_KE.md` (bản
-sáng cùng ngày) ở mọi điểm mâu thuẫn. **Chưa thi công dòng nào.**
+sáng cùng ngày) ở mọi điểm mâu thuẫn.
+
+> ✅ **ĐÃ THI CÔNG XONG 19/08/2026** — 4 bước, 4 patch SQL đã chạy staging, giao
+> diện xong, đo bằng Chrome với JWT thật của cả hai vai trò. Kết quả từng bước:
+> `CHECKLIST_THI_CONG.md`. `Full workflow vtyt web.docx` cũng đã sửa theo
+> (8 chỗ + 3 điều khoản mới + 6 dòng nhật ký quyết định) — xem `PHU_LUC_DOCX_V2.md`.
+>
+> Nghiệm thu: `pytest` **107** · `smoke_workflow_v3` **13/13** ·
+> `kiem_truoc_deploy` **Sạch** · `test:formula` 5/5 · `build` ✓
 
 Tên file giữ nguyên từ lúc tạo, nhưng nội dung đã đi xa hơn "bỏ khoá ô" — đọc
 hết mục 1 trước khi làm bất cứ việc gì.
@@ -97,6 +105,11 @@ việc "mọi khoa đã ngó qua bản cuối" giao cho vòng xác nhận.
 ## 3. Việc phải làm
 
 ### Tầng DB
+
+> Bảng dưới là kế hoạch lúc lập. Trạng thái thật của từng mục:
+> `CHECKLIST_THI_CONG.md`. **D7 hoá ra không cần cột `sua_luc`** — cột chữ về
+> một bảng chung nên không còn hai giá trị để so "ai sửa sau"; **D5 cũng không
+> cần hàm mới** — `trg_khoa_o_tong_hop_sau_chot_q` đã tách số/chữ sẵn.
 
 | # | Việc | Ghi chú |
 |---|---|---|

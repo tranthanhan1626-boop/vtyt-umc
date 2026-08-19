@@ -32,7 +32,7 @@ trạng thái và giữ đúng ba khóa cứng toán học (xem `01`, mục 0).
 
 Hai vai trò nghiệp vụ:
 
-- **Đơn vị sử dụng (ĐVSD):** lập đề xuất, chốt danh mục của khoa, xử lý mã rớt,
+- **Đơn vị sử dụng (ĐVSD):** lập đề xuất, xác nhận thông tin đề xuất (lần N), xử lý mã rớt,
   theo dõi kết quả và mức sử dụng của khoa.
 - **Phòng Điều dưỡng (PĐD) — cũng chính là admin:** quản lý đợt/gói, hiệu chỉnh
   và phân bổ số về các khoa, chốt số tham gia đấu thầu, nhập ngoại lệ rớt theo

@@ -1,6 +1,8 @@
 # Nghiệp vụ và quyết định hiện hành
 
-Viết lại **17/08/2026** theo bản chốt workflow v3. Nguồn gốc là
+Viết lại **17/08/2026** theo bản chốt workflow v3, cập nhật **19/08/2026** theo
+bản V2 (một giá trị chung · ai sửa sau đè · vòng xác nhận lần N · cột dải
+P50–P75). Bản `.docx` đã đồng bộ cùng ngày. Nguồn gốc là
 `Full workflow vtyt web.docx` ở gốc repo; file này là **bản thi hành** — cùng
 nội dung nhưng nói rõ tới mức code và schema. Hai file phải luôn khớp nhau;
 sửa một bên thì sửa cả bên kia.
@@ -80,12 +82,14 @@ quyền** — PĐD chính là admin (QĐ 17/08/2026), không tách vai trò th�
 
 ### ĐVSD (khoa)
 
-Được phép: nhập/sửa đề xuất trước khi chốt danh mục · xác nhận không phát sinh
+Được phép: nhập/sửa đề xuất tới khi PĐD chốt số tham gia đấu thầu (cột số)
+và chốt dữ liệu trình ký (cột chữ) · xác nhận thông tin đề xuất lần N · xác nhận không phát sinh
 nhu cầu · xem mọi điều chỉnh của PĐD · xử lý phần nhu cầu rớt (đề xuất bổ sung
 hoặc chọn không còn nhu cầu) · đề nghị mã kỹ thuật mới · sinh Word cam kết bất
 kỳ lúc nào.
 
-Không được: tự mở lại sau khi đã chốt danh mục · sửa dữ liệu sau khi chốt ·
+Không được: tự chốt hoặc tự mở chốt của PĐD · sửa cột số sau khi đã chốt số
+tham gia đấu thầu · sửa cột chữ sau khi đã chốt dữ liệu trình ký ·
 tự ghi kết quả trúng/rớt · tự phân bổ số trúng · thêm mã sau khi đã chốt số
 tham gia đấu thầu.
 
@@ -183,7 +187,7 @@ trên `vat_tu` (phân loại cũ theo dữ liệu thầu trước, có thể l�
 **Khi thêm vào giỏ hoặc gửi, cả mã quản lý bị ẩn khỏi danh sách của khoa.** Mã
 chỉ hiện lại cho kỳ sau khi PĐD đã chốt dữ liệu trình ký (mục 8).
 
-### Giai đoạn 3 — Khoa chốt danh mục
+### Giai đoạn 3 — Khoa xác nhận thông tin đề xuất (lần N)
 
 Mỗi khoa trong danh sách chọn một trong hai đường:
 
@@ -218,10 +222,12 @@ Cột số vận hành theo mục 3. Cột chữ PĐD sửa đè trực tiếp.
 
 ### Giai đoạn 6 — Chốt số tham gia đấu thầu
 
-PĐD bấm **Chốt số tham gia đấu thầu** — nút này **luôn bấm được** (QĐ
-17/08/2026, cổng mềm). Bảng theo dõi hiển thị khoa nào chưa chốt danh mục và
-chưa bao lâu; PĐD nhắc qua Teams và tự quyết thời điểm chốt. Hệ thống ghi kèm
-"chốt khi còn N khoa chưa nộp" vào audit.
+PĐD bấm **Chốt số tham gia đấu thầu** — nút này **chỉ bấm được khi mọi khoa
+đã gửi đề xuất đều đã xác nhận bản hiện tại** (QĐ 19/08/2026 — cổng cứng, đảo
+lại QĐ 17/08/2026). Khoa tham gia mà chưa gửi đề xuất nào thì **không tính**:
+nếu tính, một khoa không tham gia là nút không bao giờ sáng. Bảng theo dõi hiển
+thị khoa nào chưa xác nhận; PĐD nhắc qua Teams. Hệ thống ghi kèm số khoa chưa
+gửi đề xuất vào audit.
 
 Checkpoint này:
 
@@ -337,8 +343,8 @@ xuất cũ. Khoa được đề xuất ít hơn, bằng hoặc nhiều hơn số
 Vẫn kiểm tra kỹ thuật: số nguyên dương · ĐVT và hệ số hợp lệ · tổng mã hàng
 khớp tổng mã quản lý · một giỏ chỉ thuộc một DOT_GOI.
 
-Sau khi submit, đề xuất bổ sung đi lại **pipeline đầy đủ**: chốt danh mục → PĐD
-hiệu chỉnh → chốt số tham gia đấu thầu → ba giai đoạn → mặc định trúng, chỉ
+Sau khi submit, đề xuất bổ sung đi lại **pipeline đầy đủ**: PĐD hiệu chỉnh ⇄
+khoa xác nhận lần N → chốt số tham gia đấu thầu → ba giai đoạn → mặc định trúng, chỉ
 nhập mã rớt → phân bổ kết quả → chốt dữ liệu trình ký.
 
 Pipeline bổ sung **độc lập**, không chặn việc chốt kết quả của gói gốc.
@@ -541,7 +547,8 @@ CHỜ XỬ LÝ → KHÔNG CÒN NHU CẦU
 8. Không có kho dự phòng hoặc số trúng chưa phân bổ.
 9. Chỉ khoa từng đề xuất mã mới được nhận phân bổ.
 10. Phân bổ vượt số ban đầu của khoa phải có lý do.
-11. Chốt danh mục khóa toàn bộ phần khoa được sửa, khóa ở server.
+11. Xác nhận đề xuất của khoa KHÔNG khoá dữ liệu. Việc khoá ở server do chốt
+    số tham gia đấu thầu (cột số) và chốt dữ liệu trình ký (cột chữ) đảm nhiệm.
 12. Sau chốt số tham gia thầu không được thêm mã mới.
 13. Mọi lần mở lại sau chốt phải có lý do.
 14. Mở bảng khoa sau chốt tổng hợp làm revision tổng hợp hết hiệu lực.
@@ -549,6 +556,13 @@ CHỜ XỬ LÝ → KHÔNG CÒN NHU CẦU
 16. `proposals` là dấu vết gốc, không bao giờ bị sửa đè.
 17. File Word/Excel không phải nguồn dữ liệu đúng.
 18. Tùy chọn 30% chỉ kích hoạt được sau khi chốt dữ liệu trình ký.
+19. Cột chữ là MỘT giá trị chung toàn viện cho mỗi (mã hàng, cột). Ai sửa sau
+    đè cho tất cả — PĐD hay khoa đều vậy. Ngoại lệ duy nhất: giải trình đề xuất
+    giữ riêng theo từng khoa. (QĐ 19/08/2026)
+20. Tổng đi thầu bằng tổng số hiện hành của các khoa. Khoa sửa số của mình thì
+    tổng đổi theo; số khoa gửi ban đầu đóng băng làm dấu vết. (QĐ 19/08/2026)
+21. Xác nhận của khoa mất hiệu lực khi có ai sửa dữ liệu của mã khoa đó đề
+    xuất, kể cả chính khoa. Số lần xác nhận không giới hạn. (QĐ 19/08/2026)
 
 ---
 
@@ -558,7 +572,7 @@ CHỜ XỬ LÝ → KHÔNG CÒN NHU CẦU
 |---|---|---|
 | Xem/sửa danh mục đề xuất | đúng khoa, cột chưa khóa | toàn viện |
 | Khóa sửa / ghim cột | đúng khoa mình | toàn viện |
-| Chốt / mở chốt danh mục khoa | chốt được, mở được | cả hai |
+| Xác nhận đề xuất của khoa (lần N) | xác nhận được cho khoa mình | PĐD xác nhận thay được |
 | Xem/sửa Danh mục tổng hợp | không | có |
 | Phân bổ số về các khoa | không | có |
 | Chốt số tham gia đấu thầu | không | có |
@@ -618,3 +632,9 @@ Không mang sang, không code lại:
 | **Gói bổ sung chia gói con** | Mỗi đợt bổ sung là một gói phẳng | 17/08/2026 |
 | Vai trò `admin` tách khỏi `dieu_duong` | PĐD = admin, cùng quyền | 17/08/2026 |
 | Mọi cột giá | Bỏ hẳn | 17/08/2026 |
+| **Cổng mềm — PĐD tự quyết thời điểm chốt số tham gia đấu thầu** | Cổng cứng — đủ xác nhận của mọi khoa đã gửi đề xuất mới chốt được | 19/08/2026 |
+| **PĐD duyệt ô là khoá ô đó bên khoa** | Bỏ hẳn — ai sửa sau đè; đóng băng bằng chốt Q (cột số) và chốt trình ký (cột chữ) | 19/08/2026 |
+| **Mỗi khoa giữ một bản cột chữ riêng, Tổng hợp báo cờ lệch** | Cột chữ là MỘT giá trị chung toàn viện; không còn gì để lệch | 19/08/2026 |
+| **Khoa chốt danh mục của mình (khoá dữ liệu)** | Vòng xác nhận lần N — không khoá gì, huỷ khi dữ liệu đổi | 19/08/2026 |
+| **Số lượng khoa chỉ sửa được ở màn Nhập đề xuất** | Khoa sửa ngay trên Danh mục đề xuất; tổng đi thầu là tổng của các khoa | 19/08/2026 |
+| Không có mốc so sánh số đề xuất trên hai bảng danh mục | Thêm cột dải P50–P75 ở cả hai bảng; vượt P75 chỉ tô nổi bật, không chặn | 19/08/2026 |

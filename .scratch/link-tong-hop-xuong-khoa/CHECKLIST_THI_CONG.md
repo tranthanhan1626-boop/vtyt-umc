@@ -9,7 +9,7 @@ chủ dự án, **chờ chấp thuận mới đi tiếp**.
 | 2. Cột số: khoa sửa được, tổng là phép cộng | D6 · F2 F8 | ✅ xong, đã đo trên staging |
 | 3. Cột range P50–P75 hai bảng | F3 | ✅ xong, đã đo trên staging |
 | 4. Vòng xác nhận lần N | D7 D8 D9 D10 · F4 F5 F6 F7 | ✅ xong, đã đo trên staging |
-| 5. Rà test + smoke + docx 43 điều khoản | — | 🟡 test/smoke xong · docx CHỜ QUYẾT ĐỊNH |
+| 5. Rà test + smoke + docx 43 điều khoản | — | ✅ xong, docx đã sửa |
 
 ## Bước 1 — chi tiết
 
@@ -86,7 +86,9 @@ trong tooltip của ô.
 - [x] Test hợp đồng: 4 test của luật cũ thay bằng 6 test V2 · **107 passed**
 - [x] Smoke: thêm 1 bước đo chính cái chặn cứng · **13/13**
 - [x] `kiem_truoc_deploy` Sạch · `test:formula` 5/5 · `build` ✓
-- [ ] ⏸️ **`Full workflow vtyt web.docx` — CHƯA SỬA, chờ chủ dự án quyết**
+- [x] **`Full workflow vtyt web.docx` — ĐÃ SỬA** (8 chỗ + 3 điều khoản 19/20/21
+      + 6 dòng nhật ký quyết định). Bản gốc lưu ở
+      `Full workflow vtyt web — BAN GOC truoc V2.docx`
 
 Đã quét toàn văn docx: 8 chỗ nhắc "chốt danh mục", **2 chỗ mâu thuẫn thẳng**
 với mã nguồn. Liệt kê đầy đủ kèm câu chữ đề nghị: `PHU_LUC_DOCX_V2.md`.

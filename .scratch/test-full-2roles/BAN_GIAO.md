@@ -4,9 +4,11 @@
 > hội thoại. Nhật ký chi tiết ở `00_ke_hoach.md`, đánh giá % ở
 > `DANH_GIA_PHAN_TRAM.md`.
 >
-> ⚠️ **Luật link Tổng hợp→khoa đã đổi cuối ngày 19/08.** Đọc
+> ⚠️ **Luật link Tổng hợp→khoa đã đổi cuối ngày 19/08 và ĐÃ THI CÔNG.** Đọc
 > `../link-tong-hop-xuong-khoa/THIET_KE_V2_BO_KHOA_O.md` (bản đang hiệu lực),
 > KHÔNG đọc `THIET_KE.md` (bản sáng cùng ngày, quyết định 1/2/3/6 đã bị thay).
+> `Full workflow vtyt web.docx` và `Tổng quan/01_NGHIEP_VU_VA_QUYET_DINH.md`
+> đều đã đồng bộ theo V2 ngày 19/08.
 
 ---
 
@@ -19,35 +21,36 @@
 | Invariant đúng | **17/18** |
 | **Lỗi thật đã fix** | **24** |
 | Tính năng mới theo yêu cầu | PĐD duyệt cột chữ → link xuống khoa |
-| Commit đã push | `22e47e6` · `5979e1a` · `f5c5572` trên `phase-a-luong-de-xuat` |
+| **V2 (một giá trị chung · vòng xác nhận · dải P50–P75)** | ✅ **thi công xong 19/08/2026** |
+| Commit đã push | tới `011927d` trên `phase-a-luong-de-xuat` |
 
-Nghiệm thu cuối: `pytest` **105 passed** · `test:formula` 5/5 · `build` ✓ ·
-`smoke_workflow_v3_staging` **12/12** · `kiem_truoc_deploy` **Sạch — deploy được**.
+Nghiệm thu cuối: `pytest` **107 passed** · `test:formula` 5/5 · `build` ✓ ·
+`smoke_workflow_v3_staging` **13/13** · `kiem_truoc_deploy` **Sạch — deploy được**.
 
 ---
 
 ## 2. VIỆC ĐANG DỞ — làm tiếp từ đây
 
-### 2A. V2 "một giá trị chung" — ĐÃ CHỐT QUY TẮC, CHƯA THI CÔNG DÒNG NÀO
+### 2A. V2 — ĐÃ THI CÔNG XONG 19/08/2026
 
-Chốt cuối ngày 19/08/2026 với chủ dự án. **Đảo ngược luật khoá ô vừa dựng cùng
-ngày.** Thiết kế đầy đủ + 12 đầu việc: `../link-tong-hop-xuong-khoa/THIET_KE_V2_BO_KHOA_O.md`.
+Không còn việc phải làm ở đây. Giữ mục này để biết hệ thống đang chạy luật nào.
 
-> **Cột chữ là MỘT giá trị chung toàn viện. Ai sửa sau đè. Không ai bị khoá
-> cho tới khi PĐD chốt.** Thêm vòng xác nhận lần N và cột range P50–P75.
+> **Cột chữ là MỘT giá trị chung toàn viện. Ai sửa sau đè. Không ai bị khoá cho
+> tới khi PĐD chốt.** Cột số: mỗi khoa một số, tổng là phép cộng. Thêm cột dải
+> P50–P75 và vòng xác nhận lần N.
 
-Nguyên văn: *"PĐD chỉnh sửa rồi khoa chỉnh sửa nữa, đừng có PĐD xong là khoá ô"*
-và *"cả 2 phải là 1 chứ sao khác nhau được?"*.
+4 patch đã chạy staging: `patch_zzzzr` (cột chữ về một bảng) · `patch_zzzzs`
+(khoa sửa số) · `patch_zzzzt` (cờ khoa tự sửa) · `patch_zzzzu` (vòng xác nhận).
+Chi tiết từng bước + kết quả đo: `../link-tong-hop-xuong-khoa/CHECKLIST_THI_CONG.md`.
+Thiết kế: `../link-tong-hop-xuong-khoa/THIET_KE_V2_BO_KHOA_O.md`.
 
-Vào việc thì đọc THIET_KE_V2 trước, đừng đọc `THIET_KE.md` (bản sáng 19/08 —
-quyết định 1, 2, 3, 6 của nó ĐÃ BỊ THAY). Hai điểm phải biết trước khi gõ:
+**`Full workflow vtyt web.docx` đã sửa theo** (8 chỗ · 3 điều khoản mới 19/20/21
+· 6 dòng nhật ký quyết định). Bản gốc trước khi sửa:
+`../link-tong-hop-xuong-khoa/Full workflow vtyt web — BAN GOC truoc V2.docx`.
+Đối chiếu trước/sau: `../link-tong-hop-xuong-khoa/PHU_LUC_DOCX_V2.md`.
 
-1. **Việc D1 là chuyển nhà, không phải thêm cột.** Cột chữ đang nằm ở HAI bảng
-   với hai phạm vi khoá khác nhau. Gộp về `danh_muc_tong_hop_o` phải quyết
-   trước: khi 2 khoa đang giữ 2 giá trị khác nhau thì lấy bản nào.
-2. **Một điểm suy ra, chưa hỏi chủ dự án:** cột chữ là giá trị chung nên GMHS
-   sửa TSKT mã X cũng làm RHM mất xác nhận. Đúng logic "xác nhận = tôi đã xem
-   bản này", nhưng chưa được xác nhận.
+**Còn một điểm suy ra, chưa hỏi chủ dự án:** cột chữ là giá trị chung nên GMHS
+sửa TSKT mã X cũng làm RHM mất xác nhận. Code đang chạy theo logic đó.
 
 ### 2B. Rà nốt các nhánh còn lại của `xoa_du_lieu_kiem_thu`
 
@@ -77,22 +80,22 @@ chủ dự án là người phát hiện khi tự test trên Netlify.
 ```
 dot_de_xuat 1  <- đợt 39 "Gói rộng rãi 1/2027 - 6/2028", ĐANG MỞ, của chủ dự án
 dot_goi     5  <- 5 gói con của đợt đó
-proposals   0     phan_bo_khoa 0     chot_q_phien 0
-danh_muc_khoa_o 0     danh_muc_tong_hop_o 0
-ho_so_cong_tac 0      gio_nhap 0     giai_doan_thau_v3 0
+proposals  24     phan_bo_khoa 24     chot_q_phien 0
+danh_muc_khoa_o 0        <- V2 dồn cột chữ đi hết; bảng này giờ CHỈ giữ giai_trinh_2627
+danh_muc_tong_hop_o 1    <- ô TSKT mã 67159, nơi duy nhất giữ cột chữ
+danh_muc_khoa_chot 1     <- xác nhận của GMHS, đang ở trạng thái ĐÃ HUỶ (thử vòng lần 2)
+ho_so_cong_tac 0      gio_nhap 2     giai_doan_thau_v3 0
 ```
 
 Nền nguyên vẹn: `users` 8 · `vat_tu` 3.327 · `nhom_ky_thuat` 1.369 ·
 `usage_history_current` 141.623 · `usage_history_changelog` 291.622.
 
-> ⚠️ Trong lúc vá lỗi xoá đề xuất, **5 đề xuất chủ dự án vừa tạo đã bị xoá** —
-> dùng chính dữ liệu đó để chứng minh fix chạy, đáng lẽ phải hỏi trước.
-> Đợt 39 thì vẫn còn.
+> Dữ liệu trên staging đang mang **vết của vòng test V2**: TSKT mã 67159 là câu
+> "PĐD sửa lại TSKT — thử vòng xác nhận", số của RHM là 1.234 (gốc 1.000). Muốn
+> bàn giao sạch thì dọn, nhưng để nguyên thì tiện xem lại đường đi của V2.
 
 **Ba mã quản lý vắt ngang gói con** để nguyên theo ý chủ dự án — tự phân trên
 web: `N03.03.050.07` · `N05.02.030.14` · `N07.03.020.01`.
-
----
 
 ## 4. Tài khoản — MẬT KHẨU ĐÃ ĐỔI
 
@@ -123,8 +126,8 @@ cd /Users/tranhien/Downloads/9.vtyt/backend
 set -a && . ./.env.local && . ../frontend/.env && set +a
 
 .venv/bin/python scripts/chay_patch.py sql/<ten_patch>.sql      # chạy patch
-.venv/bin/pytest -q tests                                       # phải 105 passed
-.venv/bin/python scripts/smoke_workflow_v3_staging.py --xac-nhan-staging   # 12/12
+.venv/bin/pytest -q tests                                       # phải 107 passed
+.venv/bin/python scripts/smoke_workflow_v3_staging.py --xac-nhan-staging   # 13/13
 .venv/bin/python scripts/kiem_truoc_deploy.py                   # phải "Sạch"
 cd ../frontend && npm run test:formula && npm run build
 ```
@@ -182,26 +185,22 @@ từ đầu; việc "mọi khoa đã ngó qua bản cuối" giao cho vòng xác 
 
 ## 7. Việc tiếp theo, theo thứ tự đề nghị
 
-1. **Thi công V2** (mục 2A) — 18 đầu việc, 10 DB + 8 giao diện.
-   Kéo theo phải sửa 3 file test hợp đồng, 2 script smoke, và **`Full workflow
-   vtyt web.docx`**: bỏ bước "khoa chốt danh mục" nghĩa là văn bản 43 điều
-   khoản không còn khớp mã nguồn, không sửa thì vòng test sau lại báo thiếu.
-2. **Rà nốt các nhánh `xoa_du_lieu_kiem_thu`** (mục 2B).
-3. **Bổ sung smoke đường THÀNH CÔNG** cho các RPC hiện chỉ có `phai_loi`.
-   Lỗ hổng đã chứng minh: `cap_nhat_tong_phan_bo_khoa` hỏng hoàn toàn mà smoke
-   vẫn 12/12, vì phép thử duy nhất gọi nó kỳ vọng nó ném lỗi.
-4. **Rà cờ `da_di_thau`** — v3 không bật nó nữa, chỗ nào còn đọc là đọc sai.
-5. **Chuẩn hoá khoá 3 bảng ô sửa tay** (`danh_muc_khoa_o`, `danh_muc_tong_hop_o`,
+1. **Rà nốt các nhánh `xoa_du_lieu_kiem_thu`** (mục 2B) — việc đang dở duy nhất.
+2. **Rà cờ `da_di_thau`** — v3 không bật nó nữa, chỗ nào còn đọc là đọc sai.
+3. **Chuẩn hoá khoá 3 bảng ô sửa tay** (`danh_muc_khoa_o`, `danh_muc_tong_hop_o`,
    `danh_muc_khoa_chot_audit`) — không neo theo `dot_goi_id` nên sống sót qua
-   xoá đợt. Hệ quả đang có: giá trị PĐD sửa ở đợt này hiện sang mọi đợt cùng
-   gói con. Làm V2 (mục 2A) thì đụng đúng chỗ này — cân nhắc gộp một lần.
-6. **Quyết định 3 mã quản lý vắt ngang gói con.**
-7. **Test ở quy mô thật** — vòng vừa rồi chỉ chạy 1 mã quản lý, 11 mã hàng,
-   3 khoa. Gói 18T thật có hàng trăm mã và 62 khoa.
-8. Test các chức năng **ngoài pipeline** (mục XII: Sổ thiếu hàng, TSKT, Duyệt
+   xoá đợt. V2 đã dồn cột chữ về một bảng nên phạm vi việc này nhỏ đi, nhưng
+   `danh_muc_tong_hop_o` vẫn dùng `goi_id` dạng chuỗi `<gói>:dot:N` thay vì
+   khoá ngoại thật.
+4. **Quyết định 3 mã quản lý vắt ngang gói con.**
+5. **Test ở quy mô thật** — vòng vừa rồi chỉ chạy 1 mã quản lý, 11 mã hàng,
+   3 khoa. Gói 18T thật có hàng trăm mã và 62 khoa. V2 đổi hành vi ở chỗ đông
+   người dùng nhất (ai cũng sửa được cột chữ) nên vòng test thật càng cần.
+6. Test các chức năng **ngoài pipeline** (mục XII: Sổ thiếu hàng, TSKT, Duyệt
    mã kỹ thuật, Tiến độ sử dụng) — chưa đụng.
-
----
+7. **Bổ sung smoke đường THÀNH CÔNG** cho các RPC còn lại hiện chỉ có `phai_loi`.
+   V2 đã trả một món nợ này (thêm bước đo chính cái chặn cứng của chốt Q), còn
+   các RPC khác thì chưa rà.
 
 ## 7b. Lỗi 24 — PĐD duyệt trên Tổng hợp, khoa không thấy (vá 19/08/2026)
 
@@ -244,3 +243,9 @@ không có lỗi đỏ nào, chỉ là dữ liệu không bao giờ khớp.
    phải mở tab mới.
 9. **Khoá phạm vi phải giống nhau ở mọi màn.** Lỗi 24: Tổng hợp ghi `goi_id`
    kèm `:dot:N`, khoa đọc không kèm — im lặng, không lỗi đỏ.
+10. **Nạp chồng hàm là chết cả API.** Tạo bản 3 tham số mà quên bỏ bản 2 tham
+    số → PostgREST trả `PGRST203` cho MỌI lần gọi, kể cả lệnh cũ đang chạy tốt.
+    Luôn `drop function ...(chữ ký cũ)` trước khi đổi chữ ký.
+11. **Phép thử phải làm dữ liệu ĐỔI THẬT.** Bản smoke đầu của vòng xác nhận ghi
+    lại đúng con số đang có, trigger không kích hoạt, test xanh mà không chứng
+    minh gì. Cùng họ với bài học số 1.
