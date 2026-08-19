@@ -221,6 +221,18 @@ export function cotKhoaSangPdd(colKey) {
   return COT_KHOA_DOI_TEN[colKey] || colKey;
 }
 
+// Chiều ngược, dựng TỪ CHÍNH `COT_KHOA_DOI_TEN` để hai chiều không thể lệch
+// nhau. V2 cần chiều này vì cột chữ là một giá trị chung: màn khoa đọc bản ghi
+// mang tên cột bên PĐD rồi phải đặt lại đúng tên cột của mình.
+const COT_PDD_DOI_TEN = Object.fromEntries(
+  Object.entries(COT_KHOA_DOI_TEN).map(([khoa, pdd]) => [pdd, khoa])
+);
+
+/** Khoá cột bên bản tổng hợp PĐD -> khoá cột tương ứng bên màn khoa. */
+export function cotPddSangKhoa(colKey) {
+  return COT_PDD_DOI_TEN[colKey] || colKey;
+}
+
 // -------- Cột "Số lượng đã sử dụng" SINH ĐỘNG theo dữ liệu thật -----------
 // Hai file mẫu bệnh viện đóng đinh 4 cột 2022/2023/2024/"7 tháng 2025" vì
 // chúng được soạn cho kỳ thầu 2026-2027. Dữ liệu HIS thì chạy tiếp: đến

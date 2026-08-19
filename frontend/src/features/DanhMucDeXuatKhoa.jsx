@@ -7,7 +7,7 @@ import { tinhTuyChonMuaThem30 } from "../lib/tuyChonMuaThem";
 import {
   COT_KHOA, NHOM_COT_KHOA, GOI_ID_MAP, sapXepFreezeTruoc, tinhLeftFreeze,
   tinhSegmentsGroup, taoCotLichSu, thayCotLichSu, suyRaNamCoDuLieu,
-  taoCotLichSuNhom, chenCotLichSuNhom, cotKhoaSangPdd,
+  taoCotLichSuNhom, chenCotLichSuNhom, cotKhoaSangPdd, cotPddSangKhoa,
 } from "../lib/cotChuan";
 import { xuatExcelDong, tenFileAnToan } from "../lib/xuatExcelDong";
 import { docTenCotTuMau, ganTenMau } from "../lib/tenCotBieuMau";
@@ -50,6 +50,7 @@ import { taiDotIdCuaGoi, locTheoDot } from "../lib/dotBoSung";
 // Khớp với `cot_khong_link_xuong_khoa()` bên SQL (patch_zzzzp); sửa một bên
 // thì phải sửa cả bên kia.
 const COT_KHONG_NHAN_DUYET = new Set(["giai_trinh_2627", "sl_de_xuat_18t"]);
+
 
 /** Ô PĐD nào được ưu tiên khi một mã có bản ghi ở nhiều đợt: đợt đang mở
  *  thắng, sau đó tới bản mới nhất. */
@@ -482,6 +483,10 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
   // Lấy theo đúng cách trigger lấy: mọi bản ghi cùng gói con, bất kể đợt.
   // Ưu tiên đợt đang mở, sau đó tới bản mới nhất — khớp với ghi chú phạm vi
   // trong patch_zzzzp (ô khoa chưa neo theo `dot_goi_id`, xem mục E3).
+  // Một chỗ duy nhất dựng khoá phạm vi của bản tổng hợp. Trước đây mỗi nơi tự
+  // ghép một kiểu, và đó chính là Lỗi 24.
+  const goiScopeTongHop = dotId ? `${goiId}:dot:${dotId}` : goiId;
+
   const taiSuaDeCuaPdd = useCallback(async () => {
     if (!goiId) return new Map();
     const { data, error } = await supabase.from("danh_muc_tong_hop_o")
@@ -490,7 +495,7 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
     // Chưa chạy patch_zs -> RLS trả rỗng chứ không lỗi. Không cản trở gì, chỉ
     // là chưa thấy được phần PĐD sửa.
     if (error) return new Map();
-    const goiScope = dotId ? `${goiId}:dot:${dotId}` : goiId;
+    const goiScope = goiScopeTongHop;
     const m = new Map();
     (data || [])
       // `like` bắt cả gói con khác có cùng tiền tố tên; lọc lại cho chắc.
@@ -515,6 +520,18 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
         ? await taiKetQuaThau(bo.loai_mua_sam, khoaHienTai, dsMaHang, dotId)
         : new Map();
       const [oDaLuu, suaDePdd] = await Promise.all([taiODaLuu(), taiSuaDeCuaPdd()]);
+      // V2: giá trị chung là giá trị DUY NHẤT, nên áp thẳng lên dòng thay vì
+      // giữ song song rồi chọn lúc vẽ. Nhờ vậy ô gõ được như mọi ô khác —
+      // bản cũ lấy giá trị PĐD lúc vẽ nên gõ vào không thấy chữ đổi.
+      const apGiaTriChung = (dong) => {
+        const cua = suaDePdd.get(dong.ma_hang);
+        if (!cua) return;
+        cua.forEach((o, cotPdd) => {
+          const cotKhoa = cotPddSangKhoa(cotPdd);
+          if (COT_KHONG_NHAN_DUYET.has(cotKhoa)) return;
+          dong[cotKhoa] = o.gia_tri;
+        });
+      };
       setSuaDeCuaPdd(suaDePdd);
       setBoThau(bo);
       setDotGoiId(dgId || null);
@@ -535,6 +552,7 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
             daSua.set(`${r.ma_hang}|${cot}`, true);
           });
         }
+        apGiaTriChung(dong);
         return dong;
       });
       // Mã nguồn đã được xử lý không còn hiện trong danh mục làm việc. Đánh
@@ -566,12 +584,26 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
   useEffect(() => { taiLai(); }, [taiLai]);
 
 
+  // V2 (19/08/2026) — cột chữ là MỘT giá trị chung toàn viện, nên ghi thẳng
+  // vào `danh_muc_tong_hop_o` chứ không còn bản riêng của khoa. Chỉ
+  // `giai_trinh_2627` còn đi đường cũ: giải trình là tiếng nói của từng khoa.
+  // patch_zzzzr mở RLS cho dvsd ghi bảng tổng hợp, giới hạn ở mã hàng khoa
+  // thật sự có đề xuất trong đợt.
   const luuOLenServer = async (maHang, colKey, giaTri) => {
-    const { error } = await supabase.rpc("luu_o_danh_muc_khoa", {
-      p_goi_id: goiId, p_nam_de_xuat: NAM_DE_XUAT, p_khoa: khoaHienTai,
-      p_ma_hang: maHang, p_cot: colKey,
-      p_gia_tri: giaTri == null ? "" : String(giaTri),
-    });
+    const gt = giaTri == null ? "" : String(giaTri);
+    const laGiaiTrinh = colKey === "giai_trinh_2627";
+
+    const { error } = laGiaiTrinh
+      ? await supabase.rpc("luu_o_danh_muc_khoa", {
+        p_goi_id: goiId, p_nam_de_xuat: NAM_DE_XUAT, p_khoa: khoaHienTai,
+        p_ma_hang: maHang, p_cot: colKey, p_gia_tri: gt,
+      })
+      : await supabase.from("danh_muc_tong_hop_o").upsert({
+        goi_id: goiScopeTongHop, nam_de_xuat: NAM_DE_XUAT, ma_hang: maHang,
+        cot: cotKhoaSangPdd(colKey), gia_tri: gt === "" ? null : gt,
+        updated_by: profile?.email || khoaHienTai,
+      }, { onConflict: "goi_id,nam_de_xuat,ma_hang,cot" });
+
     if (error) {
       const chuaPatch = error.code === "PGRST202" || /luu_o_danh_muc_khoa/i.test(error.message || "");
       setLoiLuuO(chuaPatch
@@ -585,6 +617,22 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
       next.set(`${maHang}|${colKey}`, true);
       return next;
     });
+    // Giữ bản đồ giá trị chung khớp ngay, không chờ tải lại: nhãn "đã sửa" và
+    // tên người sửa phải đổi cùng lúc với con chữ trong ô.
+    if (!laGiaiTrinh) {
+      setSuaDeCuaPdd((prev) => {
+        const next = new Map(prev);
+        const cua = new Map(next.get(maHang) || []);
+        cua.set(cotKhoaSangPdd(colKey), {
+          gia_tri: gt === "" ? null : gt,
+          updated_by: profile?.email || khoaHienTai,
+          updated_at: new Date().toISOString(),
+          goi_id: goiScopeTongHop,
+        });
+        next.set(maHang, cua);
+        return next;
+      });
+    }
   };
 
   const capNhatO = (maHang, colKey, giaTri) => {
@@ -916,8 +964,8 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
           )}
           {soOPddSuaDe > 0 && (
             <span className="qtdx-badge violet">
-              Phòng Điều dưỡng đã sửa {soOPddSuaDe} ô của khoa này
-              {" "}— ô có viền tím là số ĐI THẦU, không phải số khoa nộp
+              {soOPddSuaDe} ô đang mang giá trị DÙNG CHUNG toàn viện
+              {" "}— ô viền tím sửa được, nhưng sửa là mọi khoa đổi theo
             </span>
           )}
           <span className="qtdx-badge green">Số lượng khoa đề xuất: chỉ sửa được ở màn Nhập đề xuất trước đấu thầu</span>
@@ -1113,21 +1161,24 @@ function RowKhoa({
           const isEditing = oDangChon?.maHang === r.ma_hang && oDangChon?.colKey === c.key;
           const canSua = oCoTheSua(c);
           const pdd = oPddSuaDe(r.ma_hang, c.key);
-          // QĐ 19/08/2026 — "khi PĐD làm trên file tổng hợp thì TẤT CẢ các khoa
-          // phải theo thông tin PĐD duyệt". Ô có giá trị duyệt thì giá trị đó
-          // là giá trị CHÍNH của khoa, không còn là nhãn phụ đứng cạnh giá trị
-          // cũ nữa; và ô thành chỉ đọc.
+          // V2 (19/08/2026 chiều) — cột chữ là MỘT giá trị chung toàn viện.
+          // Giá trị đã được áp thẳng lên `r` lúc tải, nên ở đây chỉ đọc `r`
+          // như mọi ô khác. `oChung` chỉ còn dùng để hiện ai sửa lần cuối.
+          //
+          // Ô KHÔNG còn chỉ đọc: bản sáng cùng ngày khoá ô ngay khi PĐD gõ,
+          // chủ dự án bỏ luật đó — "PĐD chỉnh sửa rồi khoa chỉnh sửa nữa,
+          // đừng có PĐD xong là khoá ô". Việc đóng băng dời sang chốt trình ký.
           //
           // Ngoại lệ `giai_trinh_2627`: giải trình là tiếng nói của từng khoa,
-          // PĐD giữ bản riêng cho hồ sơ thầu nhưng KHÔNG đè xuống khoa.
-          const pddDuyet = pdd && !COT_KHONG_NHAN_DUYET.has(c.key) ? pdd : null;
-          const value = pddDuyet ? pddDuyet.gia_tri : r[c.key];
+          // vẫn lưu riêng theo khoa.
+          const oChung = pdd && !COT_KHONG_NHAN_DUYET.has(c.key) ? pdd : null;
+          const value = r[c.key];
           const cn = [
             "qtdx-cell",
-            c.readonly || !canSua || pddDuyet ? "readonly" : "",
+            c.readonly || !canSua ? "readonly" : "",
             daKhoaSua(c.key) ? "col-locked" : "",
             oDaSua.has(`${r.ma_hang}|${c.key}`) ? "sua-de" : "",
-            pddDuyet ? "pdd-sua" : "",
+            oChung ? "pdd-sua" : "",
             isEditing ? "editing" : "",
             c.kieu === "num" ? "num" : "",
             c.freeze ? "freeze" : "",
@@ -1141,7 +1192,7 @@ function RowKhoa({
                 minWidth: c.width, maxWidth: c.width * 1.3,
                 ...(c.freeze ? { left: tinhLeftFreeze(cotHienThi, c.key) } : {}),
               }}
-              onClick={() => canSua && !pddDuyet && setODangChon({ maHang: r.ma_hang, colKey: c.key })}
+              onClick={() => canSua && setODangChon({ maHang: r.ma_hang, colKey: c.key })}
             >
               {isEditing ? (
                 c.kieu === "wide" ? (
@@ -1166,18 +1217,17 @@ function RowKhoa({
                   {/* Lịch sử sửa ô — hiện ở MỌI ô như bên Tổng hợp PĐD, kể cả
                       ô chưa từng sửa (bấm vào thì panel báo "chưa có lần sửa
                       nào"), để không phải đoán ô nào có lịch sử. */}
-                  {/* PĐD sửa gì khoa thấy hết (QĐ 08/08/2026). Số của PĐD là
-                      số ĐI THẦU nên phải hiện ngay cạnh số khoa nộp, không
-                      giấu trong tooltip. Khoa KHÔNG sửa được ô của PĐD. */}
-                  {pddDuyet && (
+                  {/* V2: ô này đang mang giá trị CHUNG toàn viện. Nhãn cho
+                      biết ai chạm sau cùng — sửa được, không phải chỉ đọc. */}
+                  {oChung && (
                     <span
                       className="ml-1.5 inline-flex items-center rounded bg-violet-100 px-1 py-0.5 align-middle text-[10px] font-semibold text-violet-800"
-                      title={"Giá trị này do Phòng Điều dưỡng duyệt trên bản Tổng hợp — "
-                        + "toàn viện dùng chung, khoa không sửa được nữa. "
-                        + `Duyệt bởi ${pddDuyet.updated_by} lúc `
-                        + `${new Date(pddDuyet.updated_at).toLocaleString("vi-VN")}. `
-                        + "Bấm biểu tượng lịch sử để xem giá trị khoa đã ghi trước đó."}>
-                      PĐD duyệt
+                      title={"Cột chữ là giá trị dùng chung toàn viện cho mã hàng này — "
+                        + "sửa ở đây thì mọi khoa và bản Tổng hợp đều đổi theo. "
+                        + `Sửa lần cuối bởi ${oChung.updated_by} lúc `
+                        + `${new Date(oChung.updated_at).toLocaleString("vi-VN")}. `
+                        + "Bấm biểu tượng lịch sử để xem các lần sửa trước."}>
+                      Dùng chung
                     </span>
                   )}
                   <button
