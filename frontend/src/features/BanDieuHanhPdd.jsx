@@ -238,7 +238,11 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
 
     // Bảng chốt danh mục là patch mới — thiếu thì chỉ mất một cột, không được
     // làm hỏng cả màn hình.
-    let qChot = supabase.from("danh_muc_khoa_chot").select("khoa, dot_goi_id");
+    // V2 (19/08/2026): bảng này giờ là VÒNG XÁC NHẬN. Chỉ dòng còn `hieu_luc`
+    // mới tính là "khoa đã xác nhận bản hiện tại" — dòng bị huỷ vẫn nằm đó để
+    // giữ số lần, đếm cả nó thì màn này báo xanh trong khi PĐD không chốt được.
+    let qChot = supabase.from("danh_muc_khoa_chot")
+      .select("khoa, dot_goi_id, lan, hieu_luc").eq("hieu_luc", true);
     if (dotGoiIds.length) qChot = qChot.in("dot_goi_id", dotGoiIds);
     const { data: chotData, error: loiChot } = await qChot;
     if (loiChot) {
@@ -246,7 +250,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
       setChotDanhMucV3([]);
       setCanhBaoChot(
         loiChot.code === "42P01" || /danh_muc_khoa_chot/i.test(loiChot.message || "")
-          ? "Chưa chạy backend/sql/patch_zj_ban_dieu_hanh_pdd.sql — cột \"Đã chốt danh mục\" tạm để trống."
+          ? "Chưa chạy backend/sql/patch_zj_ban_dieu_hanh_pdd.sql — cột \"Đã xác nhận\" tạm để trống."
           : loiChot.message
       );
     } else {
@@ -471,7 +475,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
     const thieu = [
       !k.daDeXuat && "chưa gửi đề xuất",
       k.daDeXuat && !k.coWord && "chưa tạo bản cam kết Word",
-      k.daDeXuat && !k.daChot && "chưa chốt Danh mục đề xuất",
+      k.daDeXuat && !k.daChot && "chưa xác nhận Danh mục đề xuất (bản hiện tại)",
     ].filter(Boolean).join(", ");
     const tin = `Kính gửi ${k.don_vi},\nĐợt "${dot?.ten}" hiện ${thieu || "đã đủ hồ sơ"}. `
       + `Kính đề nghị khoa hoàn tất trên phần mềm VTYT giúp Phòng Điều dưỡng tổng hợp đúng hạn. Trân trọng.`;
@@ -565,7 +569,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
             mau={tongQuan.soKhoaChuaDeXuat > 0 ? "text-red-600" : "text-slate-800"}
             vach={tongQuan.soKhoaChuaDeXuat > 0 ? "bg-red-500" : "bg-emerald-500"} />
           <ONhanh nhan="Đủ Word cam kết" so={`${tongQuan.soKhoaCoWord}/${tongQuan.soKhoaDaDeXuat}`} vach="bg-cyan-400" />
-          <ONhanh nhan="Đã chốt danh mục" so={`${tongQuan.soKhoaDaChot}/${tongQuan.soKhoaCanChot}`} vach="bg-cyan-400" />
+          <ONhanh nhan="Đã xác nhận bản hiện tại" so={`${tongQuan.soKhoaDaChot}/${tongQuan.soKhoaCanChot}`} vach="bg-cyan-400" />
           <ONhanh nhan="Tổng SL toàn viện" so={fmt(tongQuan.tongSoLuong)} mau="text-umc-600" vach="bg-umc-600" />
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
@@ -798,7 +802,7 @@ function TabKhoa({
               <th className="px-3 py-2 text-right">Mã QL</th>
               <th className="px-3 py-2 text-right">Mã hàng</th>
               <th className="px-3 py-2 text-center">Word cam kết</th>
-              <th className="px-3 py-2 text-center">Chốt danh mục</th>
+              <th className="px-3 py-2 text-center">Xác nhận đề xuất</th>
               <th className="px-3 py-2 text-right">Thao tác</th>
             </tr>
           </thead>
@@ -807,7 +811,7 @@ function TabKhoa({
               <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-500">Không có khoa nào khớp bộ lọc.</td></tr>
             ) : khoaHienThi.map((k) => (
               // Sọc ngựa vằn + đổi nền khi rê chuột: bảng 7 cột × 62 khoa, mắt
-              // phải dò ngang từ tên khoa sang cột "Chốt danh mục" tận bên phải.
+              // phải dò ngang từ tên khoa sang cột "Xác nhận đề xuất" tận bên phải.
               // Hàng khoa CHƯA đề xuất vẫn giữ nền đỏ nhạt, đè lên sọc.
               <tr key={k.don_vi} className={`border-b border-slate-100 transition-colors last:border-0 hover:bg-umc-50/70 ${
                 !k.daDeXuat ? "bg-red-50/40" : "even:bg-slate-50/60"}`}>

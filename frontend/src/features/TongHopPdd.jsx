@@ -327,6 +327,10 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   // Chốt CẢ BẢN tổng hợp (patch_zs). Khác khoá cột/dòng: chốt là khoá tất,
   // dùng khi số đã xong và sắp mang đi thầu. Server chặn độc lập bằng trigger.
   const [chot, setChot] = useState(null);   // { chot_boi, chot_luc } | null
+  // V2 — khoa nào đã gửi đề xuất mà chưa xác nhận bản hiện tại. DB chặn cứng
+  // việc chốt khi danh sách này còn phần tử (patch_zzzzu); màn hình phải cho
+  // thấy TRƯỚC, không để PĐD bấm rồi mới ăn lỗi.
+  const [khoaChuaXacNhan, setKhoaChuaXacNhan] = useState([]);
   const [dangChot, setDangChot] = useState(false);
   const [dotGoiId, setDotGoiId] = useState(null);
 
@@ -340,6 +344,13 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       ]);
       const { overrideTheoMa: ov, cotLocked: cl, dongLocked: dl, cotAn: ca,
         oKhoaTheoMa: okm } = khoaVaOverride;
+      // Danh sách khoa chưa xác nhận — tải cùng lúc với trạng thái chốt.
+      if (dgId) {
+        const { data: chuaXn } = await supabase.rpc("khoa_chua_xac_nhan", { p_dot_goi_id: dgId });
+        setKhoaChuaXacNhan((chuaXn || []).map((x) => (typeof x === "string" ? x : x.khoa)));
+      } else {
+        setKhoaChuaXacNhan([]);
+      }
       const [chotRes, trinhKyRes] = await Promise.all([
         dgId
           ? supabase.from("chot_q_phien")
@@ -868,10 +879,14 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
               <AlignLeft size={13} /> Nội dung ô: {dongGon ? "GỌN" : "ĐẦY ĐỦ"}
             </button>
             <button className={`qtdx-tb ${chot ? "" : "primary"}`}
-              onClick={doiChot} disabled={dangChot || !rows.length}
+              onClick={doiChot}
+              disabled={dangChot || !rows.length || (!chot && khoaChuaXacNhan.length > 0)}
               title={chot
                 ? "Bản tổng hợp đang KHOÁ. Mở chốt để sửa tiếp."
-                : "Chốt số để mang đi thầu — khoá mọi ô, không ai sửa được nữa."}>
+                : khoaChuaXacNhan.length > 0
+                  ? `Còn ${khoaChuaXacNhan.length} khoa chưa xác nhận bản hiện tại: `
+                    + `${khoaChuaXacNhan.join(", ")}. Nhắn Teams để khoa vào bấm xác nhận.`
+                  : "Chốt số để mang đi thầu — khoá mọi ô, không ai sửa được nữa."}>
               {chot ? <Unlock size={13} /> : <Lock size={13} />}
               {dangChot ? "Đang lưu…" : chot ? "Mở chốt để sửa" : "Chốt số đi thầu"}
             </button>
@@ -889,6 +904,13 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
         <div className="mt-2 flex items-center gap-1.5 text-[11px] flex-wrap">
           <span className="qtdx-badge blue">Tổng mã hàng: {tongMaHang}</span>
           <span className="qtdx-badge green">{tongKhoaThamGia} khoa đã đề xuất</span>
+          {/* V2 — điều kiện chốt, nên phải nằm ngay đầu bảng chứ không giấu
+              trong tooltip của nút. Liệt kê tên để PĐD biết nhắn Teams cho ai. */}
+          <span className={`qtdx-badge ${khoaChuaXacNhan.length ? "amber" : "green"}`}>
+            {khoaChuaXacNhan.length
+              ? `${khoaChuaXacNhan.length} khoa chưa xác nhận: ${khoaChuaXacNhan.join(", ")} — chưa chốt số đi thầu được`
+              : "Mọi khoa đã xác nhận bản hiện tại"}
+          </span>
           {chot && (
             <span className="qtdx-badge amber">
               ĐÃ CHỐT SỐ ĐI THẦU — mọi ô đang khoá · {chot.chot_boi}

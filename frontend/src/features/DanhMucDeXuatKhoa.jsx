@@ -377,14 +377,17 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
       .forEach(([colKey]) => luuCauHinhCot(colKey, { an: false }));
   };
 
-  // ---- Chốt Danh mục đề xuất (patch_zj) -----------------------------------
-  // "Khoa đã nộp xong chưa" là câu hỏi PĐD cần trả lời được ở Bàn điều hành.
-  // Chỉ dựa vào "có dữ liệu" thì không phân biệt được khoa đang sửa dở với
-  // khoa đã làm xong, nên khoa phải CHỦ ĐỘNG bấm chốt (chốt 07/08/2026).
+  // ---- VÒNG XÁC NHẬN (V2, 19/08/2026) --------------------------------------
+  // Thay cho "khoa chốt danh mục". Khác ở chỗ căn bản: xác nhận KHÔNG khoá ô
+  // nào, nó chỉ trả lời "khoa đã ngó qua bản hiện tại chưa". Ai sửa dữ liệu
+  // của mã khoa đó đề xuất — kể cả chính khoa — thì xác nhận mất hiệu lực và
+  // lần sau bấm là lần N+1. PĐD không chốt số đi thầu được khi còn khoa chưa
+  // xác nhận (chặn cứng ở DB, patch_zzzzu).
   const taiTrangThaiChot = useCallback(async () => {
     if (!goiId || !khoaHienTai) return;
     let q = supabase.from("danh_muc_khoa_chot")
-      .select("chot_boi, chot_luc, khong_phat_sinh").eq("khoa", khoaHienTai);
+      .select("chot_boi, chot_luc, khong_phat_sinh, lan, hieu_luc, huy_luc, huy_do")
+      .eq("khoa", khoaHienTai);
     q = dotGoiId
       ? q.eq("dot_goi_id", dotGoiId)
       : q.eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT);
@@ -402,42 +405,33 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
 
   useEffect(() => { taiTrangThaiChot(); }, [taiTrangThaiChot]);
 
-  const doiChot = async (khongPhatSinh = false) => {
+  const xacNhanDeXuat = async (khongPhatSinh = false) => {
     setDangChot(true);
     setLoiChot("");
-    const dangChot = !!trangThaiChot;
     if (!dotGoiId) {
       setLoiChot("Chưa xác định được DOT_GOI của danh mục này.");
       setDangChot(false);
       return;
     }
-    let error;
-    if (dangChot) {
-      if (!laPdd) {
-        setLoiChot("Khoa không tự mở lại sau khi chốt. Vui lòng trao đổi với PĐD qua Teams.");
-        setDangChot(false);
-        return;
-      }
-      const lyDo = window.prompt("Nhập lý do mở lại danh mục của khoa:", "") || "";
-      if (!lyDo.trim()) { setDangChot(false); return; }
-      ({ error } = await supabase.rpc("mo_chot_danh_muc_khoa_v3", {
-        p_dot_goi_id: dotGoiId, p_khoa: khoaHienTai, p_ly_do: lyDo,
-      }));
-    } else {
-      ({ error } = await supabase.rpc("chot_danh_muc_khoa_v3", {
-        p_dot_goi_id: dotGoiId, p_khong_phat_sinh: khongPhatSinh,
-      }));
-    }
+    const { error } = await supabase.rpc("chot_danh_muc_khoa_v3", {
+      p_dot_goi_id: dotGoiId, p_khong_phat_sinh: khongPhatSinh,
+      ...(laPdd ? { p_khoa: khoaHienTai } : {}),
+    });
     if (error) {
       const chuaCoBang = error.code === "42P01" || /danh_muc_khoa_chot/i.test(error.message || "");
       setLoiChot(chuaCoBang
-        ? "Staging chưa có chức năng chốt danh mục v3. Cần chạy patch_zzzzb_v3_chot_q.sql."
+        ? "Staging chưa có chức năng xác nhận. Cần chạy patch_zzzzu_v2_vong_xac_nhan.sql."
         : error.message);
     } else {
       await taiTrangThaiChot();
     }
     setDangChot(false);
   };
+
+  // Đã xác nhận và xác nhận đó CÒN hiệu lực. Có dòng mà `hieu_luc` false nghĩa
+  // là dữ liệu đã đổi sau lần bấm trước — phải bấm lại.
+  const daXacNhan = !!trangThaiChot?.hieu_luc;
+  const lanKe = trangThaiChot ? (trangThaiChot.hieu_luc ? trangThaiChot.lan : trangThaiChot.lan + 1) : 1;
 
   // Bộ cột thật của màn này = COT_KHOA nhưng khối "lịch sử sử dụng" được thay
   // bằng đúng những năm đang có dữ liệu.
@@ -684,7 +678,8 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
   const capNhatO = (maHang, colKey, giaTri) => {
     if (colKey === COT_SO_KHOA && !dotGoiId) return; // đợt cũ: không có đường ghi số
     if (daKhoaSua(colKey)) return;            // cột đang khóa sửa (patch_zi)
-    if (trangThaiChot) return;                // đã chốt danh sách (patch_zs)
+    // V2: xác nhận KHÔNG khoá ô. Việc đóng băng do chốt Q (cột số) và chốt
+    // trình ký (cột chữ) lo, và cả hai đều chặn ở DB.
     setRows((prev) => prev.map((r) => (r.ma_hang === maHang ? { ...r, [colKey]: giaTri } : r)));
   };
 
@@ -693,7 +688,7 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
   const ketThucSuaO = async (maHang, colKey) => {
     setODangChon(null);
     if (colKey === COT_SO_KHOA && !dotGoiId) return;
-    if (daKhoaSua(colKey) || trangThaiChot) return;
+    if (daKhoaSua(colKey)) return;
     const giaTri = rows.find((r) => r.ma_hang === maHang)?.[colKey];
     await luuOLenServer(maHang, colKey, giaTri);
   };
@@ -757,7 +752,7 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
   // độc lập bằng trigger (patch_zs) — đây chỉ là lớp cho người dùng thấy sớm,
   // không phải lớp bảo vệ.
   const oCoTheSua = (col) =>
-    !col.readonly && !daKhoaSua(col.key) && !trangThaiChot
+    !col.readonly && !daKhoaSua(col.key)
     && (col.key !== COT_SO_KHOA || !!dotGoiId);
 
   // ---- Đẩy SL rớt 1 phần (mục 4.3) — mở form, tải ứng viên mã tương đương
@@ -968,16 +963,19 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
             <button className="qtdx-tb" onClick={xuatExcel} disabled={dangXuatExcel || !rows.length}>
               <Download size={13} /> {dangXuatExcel ? "Đang xuất…" : "Xuất Excel in trình ký"}
             </button>
-            <button className={`qtdx-tb ${trangThaiChot ? "" : "primary"}`}
-              onClick={() => doiChot(false)}
-              disabled={dangChot || (!trangThaiChot && !rows.length) || (trangThaiChot && !laPdd)}>
-              {trangThaiChot ? <Unlock size={13} /> : <CheckCircle2 size={13} />}
-              {dangChot ? "Đang lưu…" : trangThaiChot
-                ? (laPdd ? "Mở lại để sửa" : "Đã chốt — liên hệ PĐD để mở")
-                : "Chốt danh mục"}
+            <button className={`qtdx-tb ${daXacNhan ? "" : "primary"}`}
+              onClick={() => xacNhanDeXuat(false)}
+              disabled={dangChot || daXacNhan || !rows.length}
+              title={daXacNhan
+                ? "Bản hiện tại đã được khoa xác nhận. Ai sửa gì thì nút này sáng lại."
+                : "Xác nhận rằng khoa đã xem và đồng ý với bản đang hiển thị. Không khoá ô nào."}>
+              <CheckCircle2 size={13} />
+              {dangChot ? "Đang lưu…" : daXacNhan
+                ? `Đã xác nhận lần ${trangThaiChot.lan}`
+                : `Xác nhận thông tin đề xuất lần ${lanKe}`}
             </button>
-            {!trangThaiChot && !rows.length && !laPdd && (
-              <button className="qtdx-tb primary" onClick={() => doiChot(true)} disabled={dangChot}>
+            {!daXacNhan && !rows.length && !laPdd && (
+              <button className="qtdx-tb primary" onClick={() => xacNhanDeXuat(true)} disabled={dangChot}>
                 <CheckCircle2 size={13} /> Không phát sinh nhu cầu
               </button>
             )}
@@ -995,12 +993,24 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
         {loiChot && <p className="mt-2 text-xs text-red-600">{loiChot}</p>}
         {loiLuuO && <p className="mt-2 text-xs text-red-600">{loiLuuO}</p>}
         <div className="mt-2 flex items-center gap-1.5 text-[11px] flex-wrap">
-          {trangThaiChot && (
-            <span className="qtdx-badge amber">
-              <Lock size={11} className="mr-1" />
-              ĐÃ CHỐT — mọi ô đang khoá · {trangThaiChot.chot_boi} · {new Date(trangThaiChot.chot_luc).toLocaleString("vi-VN")}
+          {daXacNhan && (
+            <span className="qtdx-badge green">
+              <CheckCircle2 size={11} className="mr-1" />
+              Đã xác nhận lần {trangThaiChot.lan} · {trangThaiChot.chot_boi}
+              {" · "}{new Date(trangThaiChot.chot_luc).toLocaleString("vi-VN")}
               {trangThaiChot.khong_phat_sinh ? " · Không phát sinh nhu cầu" : ""}
-              {laPdd ? " · PĐD có thể mở lại với lý do" : " · liên hệ PĐD qua Teams nếu cần mở"}
+              {" · ô vẫn sửa được, sửa thì phải xác nhận lại"}
+            </span>
+          )}
+          {/* Xác nhận bị huỷ: nói rõ VÌ SAO, nếu không khoa mở ra thấy nút
+              nhảy từ "lần 1" sang "lần 2" mà không hiểu chuyện gì xảy ra. */}
+          {trangThaiChot && !trangThaiChot.hieu_luc && (
+            <span className="qtdx-badge amber">
+              <AlertTriangle size={11} className="mr-1" />
+              Xác nhận lần {trangThaiChot.lan} đã hết hiệu lực
+              {trangThaiChot.huy_do ? ` — ${trangThaiChot.huy_do}` : ""}
+              {trangThaiChot.huy_luc ? ` (${new Date(trangThaiChot.huy_luc).toLocaleString("vi-VN")})` : ""}
+              {" "}· kiểm lại rồi bấm “Xác nhận thông tin đề xuất lần {trangThaiChot.lan + 1}”
             </span>
           )}
           {dieuChinhPdd.length > 0 && (

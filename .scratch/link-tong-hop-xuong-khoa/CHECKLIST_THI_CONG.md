@@ -8,8 +8,8 @@ chủ dự án, **chờ chấp thuận mới đi tiếp**.
 | **1. Cột chữ về MỘT giá trị chung** | D1 D2 D3 D4 D5 · F1 | ✅ xong, đã đo trên staging |
 | 2. Cột số: khoa sửa được, tổng là phép cộng | D6 · F2 F8 | ✅ xong, đã đo trên staging |
 | 3. Cột range P50–P75 hai bảng | F3 | ✅ xong, đã đo trên staging |
-| 4. Vòng xác nhận lần N | D7 D8 D9 D10 · F4 F5 F6 F7 | 🔵 đang làm |
-| 5. Rà test + smoke + docx 43 điều khoản | — | ⬜ |
+| 4. Vòng xác nhận lần N | D7 D8 D9 D10 · F4 F5 F6 F7 | ✅ xong, đã đo trên staging |
+| 5. Rà test + smoke + docx 43 điều khoản | — | 🔵 còn docx |
 
 ## Bước 1 — chi tiết
 
@@ -55,3 +55,28 @@ chủ dự án, **chờ chấp thuận mới đi tiếp**.
 như màn Nhập đề xuất, nên dải luôn tính theo **kỳ mặc định của gói** (rộng rãi
 18 tháng). Khoa đã đổi mốc bên Function1 thì dải hai nơi có thể lệch — đã ghi
 trong tooltip của ô.
+
+## Bước 4 — đã làm
+
+- [x] `patch_zzzzu_v2_vong_xac_nhan.sql`: `danh_muc_khoa_chot` thêm `lan`,
+      `hieu_luc`, `huy_luc`, `huy_do`; `chot_danh_muc_khoa_v3` xác nhận lại
+      được (nâng `lan`); hai trigger huỷ xác nhận theo mã; `khoa_chua_xac_nhan()`;
+      `chot_so_tham_gia_thau_v3` **chặn cứng**
+- [x] F4 nút "Xác nhận thông tin đề xuất lần N" + băng báo khi xác nhận bị huỷ
+      (nêu rõ ô nào của mã nào vừa đổi)
+- [x] F5 nút "Chốt số đi thầu" mờ khi chưa đủ + băng liệt kê tên khoa còn thiếu
+- [x] F6 bỏ nút "Chốt danh mục"/"Mở lại để sửa"; gỡ 3 chỗ chặn sửa ô theo
+      trạng thái chốt — xác nhận KHÔNG khoá gì
+- [x] F7 Bàn điều hành: chỉ đếm xác nhận **còn hiệu lực**, đổi nhãn cột
+- [x] Smoke thêm 1 bước: chốt Q khi chưa ai xác nhận → chặn; PĐD sửa số → xác
+      nhận huỷ → chốt Q chặn tiếp → khoa bấm lại lên lần 2 → chốt được. **13/13**
+- [x] Đo Chrome trọn vòng: GMHS bấm lần 1 → PĐD sửa TSKT mã 67159 → xác nhận
+      huỷ kèm lý do `Ô "tskt_2627" của mã 67159 vừa đổi` → nút khoa thành
+      "lần 2", nút chốt của PĐD mờ và báo còn khoa nào
+
+### Hai lỗi tự phát sinh trong lúc thi công, đã vá
+
+1. **Nạp chồng hàm.** Tạo bản 3 tham số mà không bỏ bản 2 tham số → PostgREST
+   trả PGRST203 cho MỌI lần gọi. Phải `drop function ... (bigint, boolean)` trước.
+2. **`v_dg.nam` không tồn tại.** `nam` nằm ở `dot_de_xuat`, không phải `dot_goi`;
+   viết lại hàm mà bỏ phép join của bản gốc là chết ngay ở dòng insert.

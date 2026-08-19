@@ -194,16 +194,55 @@ def main() -> int:
         }).execute(), "khoa có số lượng lại xác nhận không phát sinh")
         ok("RLS tách khoa và DB chặn nhánh không phát sinh sai")
 
+        # Chặn cứng của V2 phải được thử TRƯỚC khi ai xác nhận — nếu không,
+        # cả bước này xanh mà không chứng minh được điều gì (bài học số 1).
+        phai_loi(lambda: pdd.rpc("chot_so_tham_gia_thau_v3", {
+            "p_dot_goi_id": dg_id,
+        }).execute(), "PĐD chốt Q khi chưa khoa nào xác nhận")
+
         a.rpc("chot_danh_muc_khoa_v3", {"p_dot_goi_id": dg_id, "p_khong_phat_sinh": False}).execute()
         b.rpc("chot_danh_muc_khoa_v3", {"p_dot_goi_id": dg_id, "p_khong_phat_sinh": False}).execute()
         c.rpc("chot_danh_muc_khoa_v3", {"p_dot_goi_id": dg_id, "p_khong_phat_sinh": True}).execute()
         phai_loi(lambda: a.rpc("mo_chot_danh_muc_khoa_v3", {
             "p_dot_goi_id": dg_id, "p_khoa": units[0], "p_ly_do": "khoa tự mở",
         }).execute(), "khoa tự mở chốt")
-        ok("hai khoa chốt danh mục, khoa thứ ba xác nhận không phát sinh; khoa không tự mở")
+        ok("hai khoa xác nhận đề xuất, khoa thứ ba xác nhận không phát sinh; khoa không tự mở")
+
+        # V2 (19/08/2026) — chốt Q CHẶN CỨNG khi còn khoa đã gửi đề xuất mà
+        # chưa xác nhận bản hiện tại. Ba lệnh xác nhận ở trên là thứ mở đường
+        # cho lệnh này; bỏ một cái là chốt hỏng.
+        # Vòng lần 2: PĐD sửa số thì xác nhận của khoa liên quan tự huỷ và chốt
+        # Q chặn lại. Đây là toàn bộ ý nghĩa của vòng xác nhận, phải đo chứ
+        # không suy.
+        # Sửa mã2 chứ không phải mã1: tổng của mã1 bị các bước sau kiểm lại.
+        # Và phải là số KHÁC số đang có — trigger chỉ huỷ khi số thật sự đổi,
+        # ghi lại đúng giá trị cũ thì không có gì thay đổi để mà huỷ.
+        tong_ma2 = sum(float(x["so_luong_hien_hanh"]) for x in
+                       admin.table("phan_bo_khoa").select("so_luong_hien_hanh")
+                       .eq("dot_goi_id", dg_id).eq("ma_hang", ma2).execute().data)
+        pdd.rpc("cap_nhat_tong_phan_bo_khoa", {
+            "p_dot_goi_id": dg_id, "p_ma_hang": ma2,
+            "p_tong_moi": int(tong_ma2) + 10,
+            "p_ly_do": "thử vòng xác nhận lần 2",
+        }).execute()
+        con_lai = admin.rpc("khoa_chua_xac_nhan", {"p_dot_goi_id": dg_id}).execute().data
+        assert con_lai, "sửa số mà không huỷ xác nhận khoa nào"
+        phai_loi(lambda: pdd.rpc("chot_so_tham_gia_thau_v3", {
+            "p_dot_goi_id": dg_id,
+        }).execute(), "PĐD chốt Q khi xác nhận đã bị huỷ")
+        for phien in (a, b):
+            phien.rpc("chot_danh_muc_khoa_v3",
+                      {"p_dot_goi_id": dg_id, "p_khong_phat_sinh": False}).execute()
+        lan = admin.table("danh_muc_khoa_chot").select("khoa,lan,hieu_luc") \
+            .eq("dot_goi_id", dg_id).execute().data
+        assert any(int(x["lan"]) >= 2 for x in lan), lan
+        ok("vòng xác nhận: sửa số huỷ xác nhận, chốt Q bị chặn, khoa bấm lại lên lần 2")
 
         q = pdd.rpc("chot_so_tham_gia_thau_v3", {"p_dot_goi_id": dg_id}).execute().data
-        assert int(q["so_khoa_chua_chot"]) == 0
+        # `so_khoa_chua_chot` đổi nghĩa cùng V2: nay là số khoa THAM GIA mà
+        # chưa gửi đề xuất nào — dùng cho dòng cảnh báo, không phải điều kiện
+        # chặn. Khoa thứ ba chọn "không phát sinh" nên đúng bằng 1.
+        assert int(q["so_khoa_chua_chot"]) == 1, q
         q_id = int(q["id"])
         q_rows = admin.table("chot_q_dong").select("ma_hang,khoa,q").eq("phien_id", q_id).execute().data
         assert len(q_rows) == 4 and sum(float(x["q"]) for x in q_rows if x["ma_hang"] == ma1) == 180
