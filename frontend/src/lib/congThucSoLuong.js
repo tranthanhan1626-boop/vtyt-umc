@@ -281,3 +281,48 @@ export function danhGiaSoLuong(lichSu, thieu, H, giaTri, thangCuoiHIS = null) {
     ngoaiKhoang: so > kq.muc.P75,
   };
 }
+
+
+// ---------------------------------------------------------------------------
+// Dải P50–P75 cho hai bảng danh mục (V2, 19/08/2026)
+//
+// Hai bảng đó giữ lịch sử dưới dạng Map(monthId -> số) chứ không phải
+// {năm: [12 tháng]} như Function1, nên cần một cửa vào riêng. Viết ở đây thay
+// vì trong từng màn để công thức chỉ có MỘT bản.
+// ---------------------------------------------------------------------------
+
+/** Kỳ mặc định của gói, tính bằng tháng.
+ *
+ *  Giống hệt `MAC_DINH_NHAP` bên Function1: rộng rãi 18 tháng, phương thức
+ *  khác giữ cả năm tài chính. Khác một điểm phải nhớ: ở Function1 khoa sửa
+ *  được mốc từ/đến cho TỪNG mã, còn hai bảng danh mục không có chỗ nhập đó
+ *  nên luôn dùng kỳ mặc định. Dải hiện ở hai nơi vì thế có thể lệch nhau khi
+ *  khoa đã đổi mốc — nói rõ trong tooltip, đừng để người dùng tự đoán.
+ */
+export function doDaiKyMacDinh(loaiMuaSam) {
+  return loaiMuaSam === "dau_thau_rong_rai" ? 18 : 12;
+}
+
+/** Đổi Map(monthId -> số) sang {năm: [12 tháng]} mà `chuoiNhuCau` cần. */
+function theoThangSangLichSu(theoThang) {
+  if (!theoThang || theoThang.size === 0) return null;
+  const ra = {};
+  theoThang.forEach((sl, m) => {
+    const nam = Math.floor(m / 12);
+    const thang = m % 12;
+    if (!ra[nam]) ra[nam] = new Array(12).fill(0);
+    ra[nam][thang] = Number(sl) || 0;
+  });
+  return ra;
+}
+
+/**
+ * Dải P50–P75 cho một mã, tính từ chuỗi dùng theo tháng.
+ * @returns {{tu:number, den:number, ngoaiKhoang:boolean}|null}
+ *          null khi chưa đủ dữ liệu — KHÔNG được suy thành "ngoài khoảng".
+ */
+export function daiP50P75(theoThang, H, giaTri, thangCuoiHIS = null) {
+  const lichSu = theoThangSangLichSu(theoThang);
+  if (!lichSu || !(H > 0)) return null;
+  return danhGiaSoLuong(lichSu, null, H, giaTri, thangCuoiHIS);
+}

@@ -99,7 +99,9 @@ def test_v2_o_ben_khoa_sua_duoc_va_doc_tu_dong():
     Nếu chỉ bỏ `readonly` mà vẫn lấy giá trị chung lúc VẼ ô thì khoa gõ vào sẽ
     không thấy chữ đổi — bản cũ đọc `pddDuyet.gia_tri` ngay trong hàm vẽ.
     """
-    assert "const value = r[c.key];" in KHOA_JSX
+    # Ô thường đọc thẳng từ `r`; chỉ cột dải P50–P75 là cột tính ra nên dựng
+    # chuỗi tại chỗ vẽ.
+    assert ": r[c.key];" in KHOA_JSX
     assert 'c.readonly || !canSua ? "readonly" : "",' in KHOA_JSX
     assert "canSua && setODangChon" in KHOA_JSX
     assert "apGiaTriChung(dong)" in KHOA_JSX

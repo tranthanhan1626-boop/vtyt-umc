@@ -7,8 +7,8 @@ chủ dự án, **chờ chấp thuận mới đi tiếp**.
 |---|---|---|
 | **1. Cột chữ về MỘT giá trị chung** | D1 D2 D3 D4 D5 · F1 | ✅ xong, đã đo trên staging |
 | 2. Cột số: khoa sửa được, tổng là phép cộng | D6 · F2 F8 | ✅ xong, đã đo trên staging |
-| 3. Cột range P50–P75 hai bảng | F3 | 🔵 đang làm |
-| 4. Vòng xác nhận lần N | D7 D8 D9 D10 · F4 F5 F6 F7 | ⬜ |
+| 3. Cột range P50–P75 hai bảng | F3 | ✅ xong, đã đo trên staging |
+| 4. Vòng xác nhận lần N | D7 D8 D9 D10 · F4 F5 F6 F7 | 🔵 đang làm |
 | 5. Rà test + smoke + docx 43 điều khoản | — | ⬜ |
 
 ## Bước 1 — chi tiết
@@ -36,3 +36,22 @@ chủ dự án, **chờ chấp thuận mới đi tiếp**.
       PĐD mở Tổng hợp thấy tổng **46.234** kèm cờ **2 khoa tự sửa**;
       TSKT trên Tổng hợp là đúng bản GMHS gõ
 - [x] pytest 107 · smoke 12/12 · kiem_truoc_deploy Sạch · test:formula · build
+
+## Bước 3 — đã làm
+
+- [x] `daiP50P75()` + `doDaiKyMacDinh()` trong `congThucSoLuong.js` — cửa vào
+      cho hai bảng danh mục (chúng giữ lịch sử dạng Map(monthId→số), khác hình
+      dạng `{năm:[12 tháng]}` mà `chuoiNhuCau` cần)
+- [x] Cột `dai_p50_p75` thêm vào CẢ `COT_KHOA` và `COT_PDD`, đứng ngay cạnh cột số
+- [x] Dải bên khoa tính trên lịch sử **của khoa đó**; bên Tổng hợp trên **toàn viện**
+- [x] Vượt P75 tô đỏ ô số + ô dải; dưới P50 để yên. Chỉ tô, không chặn
+- [x] Đo Chrome: GMHS mã 67159 đề 45.000 / dải 41.484–44.396 → tô đỏ; mã
+      "Áo phẫu thuật cỡ 150x130" đề 20.000 / dải 23.253–26.355 → không tô;
+      sửa 20.000→30.000 cờ bật ngay, sửa về 20.000 cờ tắt ngay
+- [x] Ảnh: `buoc3-dai-p50-p75.png`
+- [x] pytest 107 · test:formula 5/5 · build ✓
+
+**Một điểm phải nhớ:** hai bảng này không có chỗ nhập mốc từ/đến cho từng mã
+như màn Nhập đề xuất, nên dải luôn tính theo **kỳ mặc định của gói** (rộng rãi
+18 tháng). Khoa đã đổi mốc bên Function1 thì dải hai nơi có thể lệch — đã ghi
+trong tooltip của ô.

@@ -41,6 +41,10 @@ export const COT_KHOA = [
   { key: "sl_7t_2025",      nhan: "SL 7 tháng 2025",                width: 100, kieu: "num", readonly: true, group: "lich_su" },
   // Đề xuất số lượng
   { key: "sl_de_xuat_18t",  nhan: "SL ĐỀ XUẤT 18 tháng",            width: 120, kieu: "num", group: "de_xuat" },
+  // V2 (19/08/2026) — dải thông thường P50–P75 đứng ngay cạnh số đề xuất để
+  // thấy ngay khoa nào đưa số vượt dải. Dưới P50 không sao; trên P75 tô nổi
+  // bật. Không chặn lưu, không bắt nhập lý do — chủ dự án chốt "chỉ tô".
+  { key: "dai_p50_p75",     nhan: "Dải thường P50–P75",            width: 120, readonly: true, group: "de_xuat" },
   { key: "mua_them_30",     nhan: "Tùy chọn mua thêm 30% (18T)",    width: 130, kieu: "num", readonly: true, group: "de_xuat" },
   // Rớt thầu 2025
   { key: "ly_do_rot_2025",  nhan: "Lý do rớt thầu DC 2025",         width: 200, group: "rot_thau" },
@@ -106,6 +110,9 @@ export const COT_PDD = [
   { key: "theo_18t_2025",   nhan: "Theo 18T/2025",                  width: 100, kieu: "num", readonly: true, group: "lich_su" },
   // Đề xuất
   { key: "sl_de_xuat_2627", nhan: "SL đề xuất (2026-2027)",         width: 130, kieu: "num", group: "de_xuat" },
+  // Cùng luật với bảng khoa, khác phạm vi: dải ở đây tính trên lịch sử TOÀN
+  // VIỆN của mã, không phải lịch sử một khoa (chốt 19/08/2026).
+  { key: "dai_p50_p75",     nhan: "Dải thường P50–P75",            width: 120, readonly: true, group: "de_xuat" },
   { key: "mua_them_30",     nhan: "Tùy chọn mua thêm 30%",          width: 130, kieu: "num", readonly: true, group: "de_xuat" },
   { key: "giai_trinh",      nhan: "Giải trình đề xuất mua sắm",     width: 280, kieu: "wide", group: "de_xuat" },
   // Thương mại

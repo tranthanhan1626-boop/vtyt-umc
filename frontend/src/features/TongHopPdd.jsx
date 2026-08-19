@@ -14,6 +14,7 @@ import { taiLichSuTheoThang, gomTheoThang } from "../lib/lichSuSuDung";
 import { taiDotIdCuaGoi, locTheoDot } from "../lib/dotBoSung";
 import { StyleTable, StyleToolbar, formatCell } from "./DanhMucDeXuatKhoa";
 import { xuatExcelDong, tenFileAnToan } from "../lib/xuatExcelDong";
+import { daiP50P75, doDaiKyMacDinh } from "../lib/congThucSoLuong";
 
 /*
  * TongHopPdd — Excel Tổng hợp Danh mục đề xuất cấp PĐD.
@@ -163,6 +164,11 @@ async function taiDuLieuGoc(goiId, dotId = null) {
   const usageRows = usageRes.data;
   const usageTheoMa = gomTheoThang(usageRows, monthId);
   const dsNamCoDuLieu = suyRaNamCoDuLieu(usageRows);
+  // Dải P50–P75 ở màn này tính trên lịch sử TOÀN VIỆN của mã (chốt 19/08/2026)
+  // — `taiLichSuTheoThang` đã gộp sẵn toàn viện ở DB, không lọc theo khoa.
+  const namCuoiTH = dsNamCoDuLieu[dsNamCoDuLieu.length - 1];
+  const thangCuoiHIS = namCuoiTH ? monthId(namCuoiTH.nam, namCuoiTH.thangCuoi) : null;
+  const soThangKy = doDaiKyMacDinh(bo.loai_mua_sam);
 
   const nhomNamTheoMa = new Map();
   (nhomNamRes.data || []).forEach((r) => {
@@ -204,6 +210,10 @@ async function taiDuLieuGoc(goiId, dotId = null) {
       theo_18t_2024: theo18t(2024) || null,
       theo_18t_2025: theo18t(2025) || null,
       sl_de_xuat_2627: slDeXuat,
+      ...(() => {
+        const d = daiP50P75(theoThang, soThangKy, slDeXuat, thangCuoiHIS);
+        return { _daiTu: d?.tu ?? null, _daiDen: d?.den ?? null };
+      })(),
       mua_them_30: tinhTuyChonMuaThem30(slDeXuat),
       giai_trinh: thucTe18tGanNhat > 0
         ? `Tổng đề xuất ${fmt(slDeXuat)} (18 tháng) / tổng sử dụng ${fmt(thucTe18tGanNhat)} `
@@ -989,7 +999,14 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                     const isEditing = oDangChon?.maHang === r.ma_hang && oDangChon?.colKey === c.key;
                     const isLocked = cotLocked.has(c.key) || dongKhoa;
                     const canSua = oCoTheSua(c, r.ma_hang);
-                    const value = r[c.key];
+                    // V2 — dải thông thường P50–P75, tính trên lịch sử toàn
+                    // viện. Vượt P75 tô nổi bật ô số và ô dải; dưới P50 không
+                    // sao. Chỉ tô, không chặn (chốt 19/08/2026).
+                    const coDai = r._daiTu != null && r._daiDen != null;
+                    const vuotP75 = coDai && Number(r.sl_de_xuat_2627) > r._daiDen;
+                    const value = c.key === "dai_p50_p75"
+                      ? (coDai ? `${fmt(r._daiTu)} – ${fmt(r._daiDen)}` : "—")
+                      : r[c.key];
                     const daSuaDe = oBiSuaDe(r.ma_hang, c.key);
                     // Các khoa đã ghi gì vào ô này? Ô nào nhiều khoa ghi khác
                     // nhau thì PĐD phải biết ngay để duyệt, không phải mở từng
@@ -999,6 +1016,8 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                     const khoaLech = soGiaTriKhac > 1;
                     const cn = [
                       "qtdx-cell",
+                      vuotP75 && (c.key === "sl_de_xuat_2627" || c.key === "dai_p50_p75")
+                        ? "vuot-p75" : "",
                       // Mọi cột đều sửa được (chốt 07/08/2026) nên KHÔNG còn
                       // tô xám theo cờ `readonly` của định nghĩa cột nữa —
                       // để xám mà vẫn gõ được thì gây hiểu nhầm.
@@ -1024,7 +1043,8 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                             ? dsKhoaGhi.map((x) => `${x.khoa}: ${x.giaTri}`).join("\n")
                             : null,
                         ].filter(Boolean).join("\n") || undefined}
-                        onClick={() => canSua && !isEditing && batDauSua(r.ma_hang, c.key, value)}
+                        onClick={() => c.key !== "dai_p50_p75" && canSua && !isEditing
+                          && batDauSua(r.ma_hang, c.key, value)}
                       >
                         {isEditing ? (
                           <div>

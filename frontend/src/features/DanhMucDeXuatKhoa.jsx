@@ -4,6 +4,7 @@ import { EyeOff, ChevronLeft, ChevronDown as ChevronDownIcon, Download, Search, 
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import { tinhTuyChonMuaThem30 } from "../lib/tuyChonMuaThem";
+import { daiP50P75, doDaiKyMacDinh } from "../lib/congThucSoLuong";
 import {
   COT_KHOA, NHOM_COT_KHOA, GOI_ID_MAP, sapXepFreezeTruoc, tinhLeftFreeze,
   tinhSegmentsGroup, taoCotLichSu, thayCotLichSu, suyRaNamCoDuLieu,
@@ -163,6 +164,11 @@ async function taiDuLieuKhoa(goiId, khoa, dotId = null) {
   // Năm nào ĐANG CÓ dữ liệu thì có cột đó — không đóng đinh 2022..2025 theo
   // biểu mẫu kỳ 2026-2027 nữa (xem taoCotLichSu trong cotChuan.js).
   const dsNamCoDuLieu = suyRaNamCoDuLieu(usageRows);
+  // Mốc cuối cửa sổ phải là tháng HIS MỚI NHẤT CHUNG, không phải tháng gần
+  // nhất của riêng từng mã — bẫy đã đo trên mã 67340, xem chuoiNhuCau().
+  const namCuoi = dsNamCoDuLieu[dsNamCoDuLieu.length - 1];
+  const thangCuoiHIS = namCuoi ? monthId(namCuoi.nam, namCuoi.thangCuoi) : null;
+  const soThangKy = doDaiKyMacDinh(bo.loai_mua_sam);
 
   const nhomNamTheoMa = new Map();
   (nhomNamRes.data || []).forEach((r) => {
@@ -199,6 +205,13 @@ async function taiDuLieuKhoa(goiId, khoa, dotId = null) {
         (vt.ma_quan_ly ? nhomNamTheoMa.get(vt.ma_quan_ly)?.get(nam) : null) || null,
       ])),
       sl_de_xuat_18t: slDeXuat,
+      // Dải P50–P75 của CHÍNH KHOA NÀY (chuỗi dùng đã lọc theo khoa từ đầu
+      // hàm). Giữ hai đầu dải dạng số chứ không dựng sẵn chuỗi: số đề xuất sửa
+      // được ngay trên bảng, cờ vượt dải phải tính lại theo số đang gõ.
+      ...(() => {
+        const d = daiP50P75(theoThang, soThangKy, slDeXuat, thangCuoiHIS);
+        return { _daiTu: d?.tu ?? null, _daiDen: d?.den ?? null };
+      })(),
       _sl_goc: slGoc,
       _pdd_da_sua: laPhanBoV3 && slGoc !== slDeXuat,
       mua_them_30: tinhTuyChonMuaThem30(slDeXuat),
@@ -1210,13 +1223,22 @@ function RowKhoa({
           // Ngoại lệ `giai_trinh_2627`: giải trình là tiếng nói của từng khoa,
           // vẫn lưu riêng theo khoa.
           const oChung = pdd && !COT_KHONG_NHAN_DUYET.has(c.key) ? pdd : null;
-          const value = r[c.key];
+          // V2 — dải thông thường P50–P75. Vượt P75 thì tô nổi bật ô SỐ và ô
+          // DẢI; dưới P50 không sao (chốt 19/08/2026: chỉ tô, không chặn,
+          // không bắt nhập lý do). Chưa đủ dữ liệu để dựng dải thì KHÔNG được
+          // coi là ngoài khoảng — không có khoảng nào để đối chiếu.
+          const coDai = r._daiTu != null && r._daiDen != null;
+          const vuotP75 = coDai && Number(r[COT_SO_KHOA]) > r._daiDen;
+          const value = c.key === "dai_p50_p75"
+            ? (coDai ? `${fmt(r._daiTu)} – ${fmt(r._daiDen)}` : "—")
+            : r[c.key];
           const cn = [
             "qtdx-cell",
             c.readonly || !canSua ? "readonly" : "",
             daKhoaSua(c.key) ? "col-locked" : "",
             oDaSua.has(`${r.ma_hang}|${c.key}`) ? "sua-de" : "",
             oChung ? "pdd-sua" : "",
+            vuotP75 && (c.key === COT_SO_KHOA || c.key === "dai_p50_p75") ? "vuot-p75" : "",
             isEditing ? "editing" : "",
             c.kieu === "num" ? "num" : "",
             c.freeze ? "freeze" : "",
@@ -1232,7 +1254,16 @@ function RowKhoa({
               }}
               onClick={() => canSua && setODangChon({ maHang: r.ma_hang, colKey: c.key })}
             >
-              {isEditing ? (
+              {c.key === "dai_p50_p75" ? (
+                <span title={coDai
+                  ? `Dải thông thường của riêng khoa này: ${fmt(r._daiTu)}–${fmt(r._daiDen)}. `
+                    + `Số đang đề xuất ${fmt(r[COT_SO_KHOA])}. `
+                    + (vuotP75 ? "VƯỢT P75 — cần theo dõi lý do." : "Nằm trong dải hoặc dưới P50 — không sao.")
+                    + " Dải tính theo kỳ mặc định của gói; ở màn Nhập đề xuất khoa có thể đã đổi mốc từ/đến nên dải bên đó có thể khác."
+                  : "Chưa đủ lịch sử sử dụng để dựng dải cho mã này."}>
+                  {value}
+                </span>
+              ) : isEditing ? (
                 c.kieu === "wide" ? (
                   <textarea value={value ?? ""} rows={3}
                     style={{ resize: "vertical", width: "100%", minHeight: 52 }}
@@ -1381,6 +1412,10 @@ export function StyleTable() {
          thầu, phải phân biệt được với số khoa tự nộp. Viền tím ở mép phải để
          không đụng vạch cam của "khoa đã sửa" bên mép trái. */
       td.qtdx-cell.pdd-sua { box-shadow: inset -3px 0 0 #7c3aed; }
+      /* V2 — số đề xuất vượt P75. Chỉ tô nổi bật, không chặn: chốt 19/08/2026.
+         Dùng nền đỏ nhạt + chữ đậm để đọc được cả khi ô đang có viền tím của
+         giá trị dùng chung. */
+      td.qtdx-cell.vuot-p75 { background: #fef2f2; color: #991b1b; font-weight: 700; }
       th.freeze, td.freeze { position: sticky; z-index: 15; }
       th.freeze { background: var(--umc-navy); color: #f1f7fd; z-index: 30; }
       /* Cột ghim: nền xanh rất nhạt + vạch phải để người dùng thấy rõ ranh
