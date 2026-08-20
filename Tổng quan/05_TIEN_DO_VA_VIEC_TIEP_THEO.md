@@ -4,6 +4,71 @@ Cập nhật **19/08/2026**. Nhánh chính hiện tại: `phase-a-luong-de-xuat`
 
 ---
 
+# 20/08/2026 — VÒNG TEST FULL QUA TRÌNH DUYỆT · 3 LỖI
+
+Chạy trọn workflow trên localhost bằng Chrome, hai vai trò, JWT thật, đối chiếu
+database từng mốc. Dữ liệu giữ nguyên từ 19/08 (đợt 39), test tiếp từ bước 6.
+
+## Đo lại luật V2 — đúng như thiết kế
+
+PĐD sửa TSKT mã 66326 trên Danh mục tổng hợp → **cả GMHS và RHM thấy ngay**,
+kèm nhãn "Dùng chung". RHM sửa đè chính ô đó → PĐD và GMHS đổi theo; DB chỉ có
+**một hàng**, `updated_by` đổi từ `pdd@` sang `dvsd2@`. `giai_trinh_2627` vẫn
+riêng theo khoa: GMHS thấy "—".
+
+**Hệ quả cần biết:** PĐD KHÔNG phải người quyết cuối — khoa sửa sau vẫn đè được
+lên giá trị PĐD. Và một khoa sửa cột chữ chung làm **mọi khoa** cùng đề xuất mã
+đó mất xác nhận (lý do ghi rõ trên bản ghi). Đây là điểm 19/08 còn để ngỏ, nay
+đã đo.
+
+## Chạy đúng: chốt Q · ba giai đoạn · rớt · phân bổ
+
+Snapshot Q 24 dòng / tổng 2.267.534 khớp `phan_bo_khoa` · chặn sai thứ tự giai
+đoạn · mở lại GĐ1 làm GĐ2–3 hết hiệu lực · khoá cứng 3 ("Tổng rớt 200000 vượt Q
+161000") · "Cả nhóm rớt" rải xuống đúng 2 mã hàng · chia sẵn phân bổ
+112.733 + 8.267 = 121.000 đúng tỉ lệ Q · khoá cứng 2 · bắt lý do khi vượt Q ·
+cả ba ca phân bổ đúng trên 24 dòng.
+
+## Ba lỗi tìm được
+
+**Lỗi 1 — giao diện chặn rớt nhiều giai đoạn.** DB nhận R1+R2 cho CÙNG một mã
+(đo: 40.000 chào giá + 20.000 mở thầu → trúng 101.000, phân bổ 94.100+6.900),
+nhưng ô "RỚT THẦU" render `rot ? "Bỏ tích" : "Tích rớt"` nên mã đã có rớt là
+mất đường nhập R2/R3. Smoke không bắt được vì nó thử **hai mã hàng khác nhau**
+ở hai giai đoạn, không phải cùng một mã. → **Đã vá**: thêm nút "Rớt thêm" khi
+còn số trúng, và chọn sẵn đúng giai đoạn đang thực hiện.
+
+**Lỗi 2 — cổng chốt trình ký toàn bộ không bao giờ sáng.** Đòi đủ 100% khoa
+tham gia vừa xác nhận danh mục vừa chốt trình ký. Gói Dùng chung 49 khoa tham
+gia / 2 khoa gửi → chốt cả 2 vẫn "Đủ chốt 2/49", nút mờ. Cùng cái bẫy mà chốt Q
+đã nới 19/08. → **Đã vá cả hai tầng** (QĐ 20/08, xem 01_NGHIEP_VU mục 8.2).
+
+**Lỗi 3 — xoá đợt để sót ô sửa tay.** `xoa_du_lieu_v3_cua_dot` bỏ quên
+`danh_muc_tong_hop_o` và `danh_muc_khoa_o`. Xoá đợt 39 xong còn 3 + 1 dòng; vì
+màn Danh mục đề xuất khoa đọc `danh_muc_khoa_o` bằng (goi_id, nam, khoa) KHÔNG
+có đợt, chạy lại đúng truy vấn đó bằng JWT của khoa vẫn trả về giải trình của
+đợt đã chết. → **Đã vá đường xoá đợt** (chứng minh: trước 1+1, sau 0+0).
+
+## Rà xong việc dở của 19/08
+
+Đủ **14 nhánh** `xoa_du_lieu_kiem_thu`. 9 loại mà giao diện thực sự gọi đều
+chạy sạch. Chỉ `su_kien_nhu_cau` vỡ (`42P01`, bảng đã bỏ theo QĐ 17/08) nhưng
+là **mã chết** — không nút nào gọi tới. Chưa gỡ, vì gỡ phải viết lại nguyên hàm
+14KB, rủi ro lớn hơn lợi ích.
+
+## Còn nợ
+
+`danh_muc_khoa_o` vẫn **không có cột neo đợt**. Bản vá chỉ dọn được khi (gói
+con, năm) có đúng một đợt. **Gói bổ sung chắc chắn đụng**: cả 3 đợt/năm đều
+dùng `goi_id = 'bo-sung'` và cùng `nam_de_xuat`, nên ba đợt dùng chung một
+dòng. Fix thật là thêm `dot_goi_id` — lan tới 6 RPC và 3 chỗ đọc ở frontend,
+để thành miếng riêng.
+
+Nghiệm thu 20/08: pytest **115** · smoke v3 **13/13** · kiem_truoc_deploy
+**Sạch** · test:formula OK · build ✓. Staging đã dọn về nền.
+
+---
+
 # 19/08/2026 (chiều+tối) — V2: MỘT GIÁ TRỊ CHUNG · ĐÃ THI CÔNG XONG
 
 **Chốt quy tắc và thi công trọn trong ngày.** Thiết kế:

@@ -381,11 +381,17 @@ chỉ đọc, ghi revision + người chốt + thời gian, không ai sửa nế
 
 ### 8.2 Chốt bảng tổng hợp
 
-Chỉ chốt được khi **tất cả** bảng khoa trong DOT_GOI đã chốt. PĐD bấm **Chốt
-toàn bộ dữ liệu trình ký**. Khi chốt: khóa toàn bộ DOT_GOI · tạo revision chính
-thức · cho phép xuất Excel chính thức · Excel khoa và Excel tổng hợp dùng
-**cùng revision** · số lượng trên Excel cuối là **số trúng đã phân bổ sau thầu**
-· template PĐD giữ nguyên.
+Chỉ chốt được khi **tất cả bảng khoa ĐÃ GỬI ĐỀ XUẤT** trong DOT_GOI đã chốt
+(QĐ 20/08/2026). Khoa tham gia mà **chưa gửi đề xuất nào thì không tính** — hệ
+ghi số khoa đó vào audit và hiển thị "N khoa chưa gửi đề xuất · không chặn",
+nhưng không chặn nút. Đây là **cùng một luật** với cổng chốt số tham gia đấu
+thầu ở Giai đoạn 6, vì cùng một lý do: gói Dùng chung có 49 khoa tham gia mà
+thường chỉ vài khoa gửi, nếu tính cả khoa im lặng thì nút không bao giờ sáng.
+
+PĐD bấm **Chốt toàn bộ dữ liệu trình ký**. Khi chốt: khóa toàn bộ DOT_GOI · tạo
+revision chính thức · cho phép xuất Excel chính thức · Excel khoa và Excel tổng
+hợp dùng **cùng revision** · số lượng trên Excel cuối là **số trúng đã phân bổ
+sau thầu** · template PĐD giữ nguyên.
 
 **Mã hàng trở lại danh sách của khoa cho kỳ đề xuất sau.**
 

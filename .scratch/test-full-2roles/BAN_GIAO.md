@@ -1,4 +1,38 @@
-# BÀN GIAO — dự án VTYT, chốt cuối phiên 19/08/2026
+# BÀN GIAO — dự án VTYT, chốt cuối phiên 20/08/2026
+
+> **CẬP NHẬT 20/08/2026 — đọc mục này trước, phần dưới là bàn giao 19/08.**
+>
+> Đã chạy trọn vòng test workflow qua Chrome (2 vai trò, JWT thật). Tìm **3 lỗi**,
+> đã vá cả 3 (`backend/sql/patch_zzzzv_noi_chot_trinh_ky_va_don_o_sua_tay.sql`,
+> đã chạy staging + `backend/tests/test_patch_zzzzv_contract.py`).
+> Chi tiết đầy đủ: `Tổng quan/05_TIEN_DO_VA_VIEC_TIEP_THEO.md`, mục 20/08.
+>
+> 1. Giao diện chặn rớt nhiều giai đoạn (DB nhận R1+R2, UI chỉ cho tích 1 lần).
+> 2. Cổng "Chốt trình ký toàn bộ" đòi đủ 100% khoa tham gia → không bao giờ
+>    sáng. **QĐ 20/08: nới giống chốt Q** — chỉ tính khoa đã gửi đề xuất.
+> 3. Xoá đợt để sót `danh_muc_tong_hop_o` / `danh_muc_khoa_o`.
+>
+> **Việc dở của 19/08 (rà nhánh `xoa_du_lieu_kiem_thu`) ĐÃ XONG** — 14/14 nhánh,
+> chỉ `su_kien_nhu_cau` vỡ và đó là mã chết, không nút nào gọi.
+>
+> **NỢ MỚI, ưu tiên cao:** `danh_muc_khoa_o` chưa có cột `dot_goi_id`. Gói bổ
+> sung dùng chung `goi_id='bo-sung'` cho cả 3 đợt/năm nên ba đợt xài chung một
+> dòng giải trình. Bản vá hôm nay chỉ chữa đường xoá đợt khi gói con + năm có
+> đúng một đợt. Fix thật lan tới 6 RPC + 3 chỗ đọc frontend.
+>
+> **Câu đã trả lời cho chủ dự án:** cột chữ là một giá trị chung, **ai sửa sau
+> đè — kể cả khoa đè lên PĐD**. PĐD KHÔNG có quyền quyết cuối. Không tồn tại
+> cảnh 2 khoa 2 giá trị khác nhau. Một khoa sửa cột chữ chung làm MỌI khoa cùng
+> đề xuất mã đó mất xác nhận.
+>
+> Staging đã dọn về nền: mọi bảng nghiệp vụ = 0; `users` 8 · `vat_tu` 3.327 ·
+> `nhom_ky_thuat` 1.369 · `usage_history_current` 141.623.
+> Nghiệm thu 20/08: pytest **115** · smoke v3 **13/13** · kiem_truoc_deploy
+> **Sạch** · test:formula OK · build ✓.
+
+---
+
+# Bàn giao phiên 19/08/2026 (giữ nguyên để tra cứu)
 
 > **Vào phiên mới thì đọc file này TRƯỚC.** Đủ để chạy tiếp mà không cần lịch sử
 > hội thoại. Nhật ký chi tiết ở `00_ke_hoach.md`, đánh giá % ở

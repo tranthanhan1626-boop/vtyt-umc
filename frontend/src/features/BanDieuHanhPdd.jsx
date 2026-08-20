@@ -338,7 +338,13 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
       return;
     }
     setFormRot({ maHang, nhan, laCaNhom, maQuanLy, rotToanBo: laCaNhom });
-    setMocRot("chao_gia");
+    // Ngoại lệ rớt chỉ ghi được khi giai đoạn ĐANG THỰC HIỆN, nên chọn sẵn
+    // đúng giai đoạn đó. Mặc định cũ luôn là "chao_gia", nên khi đang ở Mở
+    // thầu/Đánh giá thì PĐD bấm Xác nhận là ăn ngay "Giai đoạn phải ở trạng
+    // thái đang thực hiện" mà không hiểu vì sao.
+    const dangChay = giaiDoanThau.find(
+      (x) => x.dot_goi_id === dotGoiHienTai.id && x.trang_thai === "dang_thuc_hien");
+    setMocRot(dangChay?.giai_doan || "chao_gia");
     setSoLuongRot("");
     setLyDoRot("");
     setLoiRot("");
@@ -348,8 +354,11 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
     if (!lyDoRot.trim()) { setLoiRot("Phải nhập lý do rớt thầu."); return; }
     setDangLuuRot(true);
     setLoiRot("");
-    if (!dotGoiHienTai) { setLoiRot("Chưa chọn gói con."); return; }
+    // Ba nhánh thoát sớm này PHẢI tắt cờ đang lưu, nếu không nút kẹt ở
+    // "Đang lưu…" vĩnh viễn và chỉ F5 mới thoát được.
+    if (!dotGoiHienTai) { setDangLuuRot(false); setLoiRot("Chưa chọn gói con."); return; }
     if (!formRot.rotToanBo && (!soLuongRot || Number(soLuongRot) <= 0)) {
+      setDangLuuRot(false);
       setLoiRot("Nhập số lượng rớt một phần, hoặc chọn Rớt toàn bộ.");
       return;
     }
@@ -981,8 +990,23 @@ function FragmentNhom({
                     <span className="rounded bg-red-100 px-2 py-1 text-[11px] font-semibold text-red-700">
                       Rớt {fmt(Number(rot.r1 || 0) + Number(rot.r2 || 0) + Number(rot.r3 || 0))} · Trúng {fmt(rot.so_luong_trung)}
                     </span>
+                    {/* Một mã được rớt một phần ở NHIỀU giai đoạn: tổng rớt =
+                        R1+R2+R3 (mục V.3). Trước 20/08/2026 ô này chỉ render
+                        "Bỏ tích" khi đã có rớt, nên mã rớt một phần ở Chào giá
+                        là mất luôn đường nhập rớt ở Mở thầu / Đánh giá — dù DB
+                        nhận đúng (đo thật: 40.000 + 20.000 -> trúng 101.000).
+                        Còn số trúng thì còn rớt thêm được. */}
+                    {Number(rot.so_luong_trung) > 0 && (
+                      <button type="button"
+                        onClick={() => moFormRot([mh.ma_hang], `mã ${mh.ma_hang}`, false)}
+                        title={`Còn trúng ${fmt(rot.so_luong_trung)} — ghi thêm ngoại lệ rớt ở giai đoạn sau`}
+                        className="rounded border border-red-200 bg-white px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-50">
+                        Rớt thêm
+                      </button>
+                    )}
                     <button type="button" onClick={() => boRot(mh.ma_hang,
                       Number(rot.r3) > 0 ? "danh_gia" : Number(rot.r2) > 0 ? "mo_thau" : "chao_gia")}
+                      title="Bỏ ngoại lệ rớt của giai đoạn muộn nhất"
                       className="rounded border border-slate-200 px-2 py-1 text-[11px] text-slate-500 hover:bg-slate-50">
                       Bỏ tích
                     </button>
@@ -1060,7 +1084,19 @@ function TabKetQua({ ketQuaRot, dot, boRot, giaiDoanThau, gioRot, phanBoTrung, d
   const phienChinhThuc = phienTrinhKy.find((x) => x.dot_goi_id === dotGoiHienTai.id) || null;
   const duBaGiaiDoan = GIAI_DOAN.every((g) => giaiDoanThau
     .find((x) => x.dot_goi_id === dotGoiHienTai.id && x.giai_doan === g.ma)?.trang_thai === "hoan_thanh");
-  const soDuChot = dsKhoa.filter((x) => chotDau.has(x.khoa) && chotCuoi.has(x.khoa)).length;
+  // QĐ 20/08/2026 — cổng chốt trình ký chỉ tính khoa ĐÃ GỬI ĐỀ XUẤT, giống hệt
+  // cổng chốt Q đã nới ngày 19/08. Trước đó mẫu số là MỌI khoa tham gia, nên
+  // gói Dùng chung (49 khoa tham gia, 2 khoa gửi) không bao giờ bấm được nút:
+  // 47 khoa im lặng vĩnh viễn thiếu vế "đã xác nhận danh mục".
+  // `khoaDaGui` phải khớp định nghĩa của server (`phan_bo_khoa` > 0) — lệch
+  // định nghĩa giữa hai tầng là lỗi im lặng, đã mắc một lần (bài học 9).
+  const khoaDaGui = new Set(phanBoTrung
+    .filter((x) => x.dot_goi_id === dotGoiHienTai.id && Number(x.q_khoa) > 0)
+    .map((x) => x.khoa));
+  const dsKhoaTinhCong = dsKhoa.filter((x) => khoaDaGui.has(x.khoa));
+  const soKhoaImLang = dsKhoa.length - dsKhoaTinhCong.length;
+  const soDuChot = dsKhoaTinhCong.filter((x) => chotDau.has(x.khoa) && chotCuoi.has(x.khoa)).length;
+  const duChotHet = dsKhoaTinhCong.length > 0 && soDuChot === dsKhoaTinhCong.length;
 
   const chotKhoa = async (khoa) => {
     setDangTrinhKy(`chot:${khoa}`); setLoiTrinhKy("");
@@ -1148,11 +1184,22 @@ function TabKetQua({ ketQuaRot, dot, boRot, giaiDoanThau, gioRot, phanBoTrung, d
           <span className={`rounded-full px-2.5 py-1 font-medium ${duBaGiaiDoan ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
             {duBaGiaiDoan ? "Đã hoàn thành 3/3 giai đoạn" : "Chưa hoàn thành đủ 3 giai đoạn"}
           </span>
-          <span className="rounded-full bg-blue-50 px-2.5 py-1 font-medium text-blue-700">
-            Đủ chốt {soDuChot}/{dsKhoa.length} khoa
+          <span className="rounded-full bg-blue-50 px-2.5 py-1 font-medium text-blue-700"
+            title="Chỉ đếm khoa đã gửi đề xuất. Khoa tham gia mà không gửi gì không làm kẹt cổng.">
+            Đủ chốt {soDuChot}/{dsKhoaTinhCong.length} khoa đã gửi đề xuất
           </span>
+          {soKhoaImLang > 0 && (
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-500"
+              title="Các khoa này tham gia gói nhưng chưa gửi đề xuất nào — chỉ ghi vào audit, không chặn chốt.">
+              {soKhoaImLang} khoa chưa gửi đề xuất · không chặn
+            </span>
+          )}
           <button type="button" onClick={chotToanBo}
-            disabled={!duBaGiaiDoan || soDuChot !== dsKhoa.length || dsKhoa.length === 0 || !!phienChinhThuc || !!dangTrinhKy}
+            disabled={!duBaGiaiDoan || !duChotHet || !!phienChinhThuc || !!dangTrinhKy}
+            title={!duBaGiaiDoan ? "Phải hoàn thành đủ ba giai đoạn đấu thầu trước."
+              : dsKhoaTinhCong.length === 0 ? "Chưa khoa nào gửi đề xuất cho gói con này."
+              : !duChotHet ? `Còn ${dsKhoaTinhCong.length - soDuChot} khoa đã gửi đề xuất nhưng chưa đủ chốt danh mục và chốt trình ký.`
+              : phienChinhThuc ? "Gói con này đã có revision chính thức." : ""}
             className="ml-auto rounded-lg bg-umc-700 px-3 py-1.5 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-35">
             {dangTrinhKy === "toan_bo" ? "Đang tạo snapshot…" : "Chốt trình ký toàn bộ"}
           </button>
