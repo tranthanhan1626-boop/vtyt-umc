@@ -1,19 +1,36 @@
-flowchart LR
+flowchart TB
+  classDef khoa fill:#E6FFFB,stroke:#0F766E,color:#134E4A,stroke-width:2px
   classDef pdd fill:#EFF6FF,stroke:#2563EB,color:#1E3A8A,stroke-width:2px
   classDef sys fill:#F5F3FF,stroke:#7C3AED,color:#4C1D95,stroke-width:2px
   classDef fail fill:#FEF2F2,stroke:#DC2626,color:#7F1D1D,stroke-width:2px
   classDef ok fill:#ECFDF5,stroke:#16A34A,color:#14532D,stroke-width:2px
   classDef gap fill:#FFFBEB,stroke:#D97706,color:#78350F,stroke-width:2px,stroke-dasharray: 6 4
 
-  A["Tạo / mở đợt"]:::pdd --> B["Bàn điều hành<br/>theo dõi 62 Khoa"]:::pdd --> C["Lọc & nhắc Khoa thiếu việc"]:::pdd
-  C --> D["Danh mục tổng hợp theo Đợt × Gói con"]:::pdd --> E["Sửa đè / khóa / audit"]:::pdd
-  E --> F["Excel tổng hợp + Word đề nghị mua"]:::pdd --> G["Chào giá → Mở thầu → Đánh giá"]:::pdd
-  G --> H{"Có mã rớt?"}
-  H -->|Có| I["Tích mã / cả nhóm rớt<br/>sync về mọi Khoa"]:::fail --> J["Giỏ rớt toàn viện<br/>theo dõi & nhắc xử lý"]:::pdd
-  J --> K["Chờ Khoa chuyển SL / sang bổ sung"]:::sys --> L["Một cờ chốt / hai thời điểm<br/>hiện khóa theo dot_id"]:::gap
-  H -->|Không| L
-  L --> M["Mặc định trúng + tạo 5 mốc"]:::ok --> N["Ký hợp đồng"]:::pdd --> O["Hàng về đợt đầu"]:::pdd
-  O --> P["Nạp HIS + giám sát cam kết<br/>chậm / sắp hết sớm"]:::pdd
-  P -. "mở đợt bổ sung" .-> A
-  E -.-> Q["CHƯA NỐI ĐỦ: chưa chia ngược tổng PĐD sửa<br/>vào proposal từng Khoa"]:::gap
-  L -.-> R["P0 SCOPE: chốt dot_id có thể chốt cả 5 gói con<br/>override/view/Khoa không dùng cùng khóa"]:::fail
+  A1["1 · Tạo / mở đợt<br/>18T sinh 5 DOT_GOI · bổ sung là gói phẳng<br/>đóng đợt là chặn ở DB, không chỉ ở giao diện"]:::pdd
+  A1 --> A2["2 · Phân gói con & khoa tham gia<br/>đổi được tới khi chốt Q"]:::pdd
+  A2 --> A3["3 · Bàn điều hành<br/>ai đã gửi · ai đã xác nhận · lọc khoa còn thiếu<br/>nhắc qua Teams — web KHÔNG tự gửi thông báo"]:::pdd
+  A3 --> A4["4 · Danh mục tổng hợp<br/>cột SỐ là VIEW SUM, KHÔNG sửa trực tiếp<br/>cột CHỮ sửa đè, đè cho toàn viện"]:::pdd
+  A4 --> A5["5 · Hiệu chỉnh số<br/>gõ TỔNG, hệ chia theo tỉ lệ khoa đã đề xuất<br/>làm tròn xuống, dư dồn vào khoa lớn nhất<br/>không lưu được nếu tổng chưa khớp"]:::pdd
+  A5 -. "sửa sau khi khoa đã xác nhận" .-> A5B["BẮT BUỘC nhập lý do<br/>khoa thấy số cũ, số mới, người sửa, lý do"]:::gap
+
+  A5 --> Q["6 · CHỐT SỐ THAM GIA ĐẤU THẦU = Q<br/>CỔNG CỨNG: mọi khoa ĐÃ GỬI phải đã xác nhận bản hiện tại<br/>khoa tham gia mà chưa gửi gì thì KHÔNG tính<br/>snapshot Q bất biến · khoá phạm vi danh mục"]:::ok
+  Q --> A7["7 · Ba giai đoạn<br/>Chào giá → Mở thầu → Đánh giá<br/>mở lại thì bắt lý do, giai đoạn SAU hết hiệu lực"]:::pdd
+  A7 --> D1{"Mã này có rớt?"}
+  D1 -->|không| WIN["MẶC ĐỊNH TRÚNG TOÀN BỘ<br/>PĐD không phải tích trúng cho hàng nghìn mã"]:::ok
+  D1 -->|có| A8["8 · Ngoại lệ rớt — cấp MÃ HÀNG<br/>giai đoạn · toàn bộ hay một phần · lý do<br/>nút Rớt toàn bộ mã quản lý tự rải xuống<br/>KHOÁ CỨNG 3 — 0 ≤ ΣR ≤ Q"]:::fail
+
+  WIN --> A9
+  A8 -->|số trúng = Q − ΣR| A9["9 · Phân bổ số trúng về khoa<br/>CHỈ PĐD phân bổ · trúng toàn bộ thì giữ nguyên phân bổ Q<br/>trúng một phần thì chia sẵn theo tỉ lệ Q<br/>KHOÁ CỨNG 2 — tổng phân bổ = số trúng"]:::pdd
+
+  A9 -->|mã quản lý trúng 0| A10["10 · Giỏ rớt toàn viện<br/>khoa nào chưa xử lý, bao nhiêu ngày<br/>nút Nhắc sinh template copy sang Teams<br/>PĐD thao tác thay khoa được, có audit"]:::fail
+  A10 --> A11["11 · Mở đợt bổ sung T1 T5 T9<br/>pipeline bổ sung ĐỘC LẬP,<br/>không chặn chốt kết quả của gói gốc"]:::pdd
+  A11 -. "đợt mới" .-> A1
+
+  A9 -->|đã phân bổ hết| A12["12 · CHỐT DỮ LIỆU TRÌNH KÝ<br/>chốt từng bảng khoa rồi chốt toàn bộ<br/>QĐ 20/08 — chỉ tính khoa ĐÃ GỬI đề xuất,<br/>khoa im lặng ghi vào audit, KHÔNG chặn"]:::ok
+  A12 --> A13["13 · Xuất Excel chính thức<br/>trước khi chốt chỉ xuất được bản NHÁP<br/>số trên Excel cuối là SỐ TRÚNG đã phân bổ<br/>file sinh tạm rồi xoá"]:::pdd
+  A13 -.-> A14["Mở lại sau khi chốt<br/>mở một bảng khoa thì bản tổng hợp tự hết hiệu lực<br/>mọi lần mở lại BẮT LÝ DO"]:::sys
+
+  A12 --> A15["14 · Sau trình ký<br/>bật mua thêm 30% · trả mã về khoa cho kỳ sau"]:::pdd
+  A15 --> A16["15 · Tiến độ sử dụng<br/>nạp HIS · ngưỡng 20/50/80<br/>tách CHẬM CAM KẾT và SẮP HẾT SỚM"]:::pdd
+
+  DEBT["⚠ NỢ KỸ THUẬT — danh_muc_khoa_o chưa neo đợt<br/>3 đợt bổ sung/năm dùng chung goi_id bo-sung và cùng năm<br/>nên xài chung một dòng giải trình"]:::gap

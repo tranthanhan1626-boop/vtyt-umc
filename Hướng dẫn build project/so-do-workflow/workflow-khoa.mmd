@@ -1,20 +1,38 @@
-flowchart LR
+flowchart TB
   classDef khoa fill:#E6FFFB,stroke:#0F766E,color:#134E4A,stroke-width:2px
+  classDef pdd fill:#EFF6FF,stroke:#2563EB,color:#1E3A8A,stroke-width:2px
   classDef sys fill:#F5F3FF,stroke:#7C3AED,color:#4C1D95,stroke-width:2px
   classDef fail fill:#FEF2F2,stroke:#DC2626,color:#7F1D1D,stroke-width:2px
   classDef ok fill:#ECFDF5,stroke:#16A34A,color:#14532D,stroke-width:2px
   classDef gap fill:#FFFBEB,stroke:#D97706,color:#78350F,stroke-width:2px,stroke-dasharray: 6 4
 
-  A["Chọn đợt + gói con<br/>khóa logic = dot_id × goi_id"]:::khoa --> B["Chọn mã quản lý<br/>ĐVT chuẩn + hệ số"]:::khoa
-  B --> C["TSB 24 tháng<br/>P50/P75/P90/P95"]:::sys --> D{"Số > P75?"}
-  D -->|Có| E["Lý do + ghi chú"]:::gap --> F["Chốt tổng mã quản lý"]:::khoa
-  D -->|Không| F
-  F --> G["Phân bổ mã hàng"]:::khoa --> H{"Tổng quy đổi khớp?"}
-  H -->|Không| G
-  H -->|Có| I["Thêm cả mã quản lý vào giỏ server"]:::khoa --> J{"Đợt mở?"}
-  J -->|Không| I
-  J -->|Có| K["Gửi giỏ = chính thức"]:::ok --> L["Word cam kết + Danh mục Khoa"]:::khoa
-  L --> M["Sửa / audit / chốt danh mục"]:::khoa --> N["Nhận kết quả"]:::sys --> O{"Kết quả?"}
-  O -->|Rớt 1 phần| P["Đẩy SL cùng mã quản lý<br/>tổng không đổi"]:::fail --> R["Theo dõi hợp đồng / sử dụng"]:::ok
-  O -->|Rớt hoàn toàn| Q["Giỏ rớt → đợt bổ sung"]:::fail -.-> I
-  O -->|Trúng| R
+  S0["Đợt đang MỞ và khoa có trong danh sách tham gia"]:::pdd
+  S0 --> S1["1 · Chọn phạm vi<br/>loại mua sắm → đợt → gói con"]:::khoa
+  S1 --> S2["2 · Chọn mã quản lý<br/>chọn MỘT ĐVT chuẩn + hệ số cho các ĐVT còn lại<br/>trộn ĐVT mà thiếu hệ số thì bị chặn"]:::khoa
+  S2 --> S3["3 · Tham chiếu nhu cầu<br/>lịch sử 24 tháng + TSB · P50 P75 P90 P95<br/>P50 là mức CHỌN SẴN"]:::sys
+  S3 --> D1{"Số nhập lớn hơn P75?"}
+  D1 -->|có| S4["Bắt buộc nhập lý do + ghi chú<br/>dưới P50 thì không hỏi gì"]:::gap
+  D1 -->|không| S5
+  S4 --> S5["4 · Chốt tổng mã quản lý<br/>snapshot quy đổi lưu cùng đề xuất"]:::khoa
+  S5 --> S6["5 · Phân bổ xuống mã hàng<br/>chỉ số nguyên dương"]:::khoa
+  S6 --> D2{"KHOÁ CỨNG 1<br/>tổng quy đổi khớp?"}
+  D2 -->|lệch| S6
+  D2 -->|khớp| S7["6 · Thêm cả mã quản lý vào giỏ<br/>giỏ lưu server: sống qua F5, đăng xuất, máy khác<br/>mọi tài khoản cùng khoa thấy chung một giỏ"]:::khoa
+  S7 --> S8["7 · Gửi giỏ = CHÍNH THỨC<br/>1 giỏ = 1 gói con của tab đang đứng<br/>mã đã gửi bị ẩn khỏi danh sách khoa"]:::ok
+  S8 --> S9["8 · Danh mục đề xuất của khoa<br/>sửa SỐ của khoa mình · cột CHỮ đè cho TOÀN VIỆN<br/>giai_trinh_2627 là ngoại lệ, riêng theo khoa"]:::khoa
+  S9 --> S11["9 · Xác nhận thông tin lần N<br/>không khoá gì · không giới hạn số lần"]:::ok
+  S11 -. "bất kỳ ô nào đổi — kể cả do khoa KHÁC sửa cột chữ chung" .-> CANCEL["Xác nhận TỰ HUỶ<br/>bấm lại thì lên lần N+1"]:::gap
+  CANCEL -.-> S11
+  S1 -. "không có nhu cầu" .-> NONE["Xác nhận không phát sinh nhu cầu<br/>vẫn tính là đã phản hồi"]:::khoa
+
+  FREEZE["Khoa hết sửa khi nào<br/>chốt Q khoá cột SỐ · chốt trình ký khoá cột CHỮ<br/>chỉ PĐD mở lại được, và phải nhập lý do"]:::sys
+
+  S11 -->|PĐD chốt Q rồi đấu thầu| D4{"Kết quả mã quản lý?"}
+  D4 -->|còn số trúng| S14["Trúng — nhận phân bổ do PĐD chia<br/>khoa KHÔNG tự phân bổ"]:::ok
+  D4 -->|trúng 0| S13["Vào giỏ rớt<br/>gợi ý đợt bổ sung gần nhất đang mở<br/>chưa có đợt thì Chờ mở đợt bổ sung"]:::fail
+  S13 --> S15["Xử lý phần rớt<br/>đề xuất lại, hoặc chọn Không còn nhu cầu<br/>vào giỏ nháp CHƯA tính là đã xử lý"]:::khoa
+  S15 --> BS["Đề xuất bổ sung<br/>KHÔNG áp P50–P95, không bắt lý do<br/>vẫn kiểm số nguyên, ĐVT, tổng khớp"]:::sys
+  BS -. "đi lại pipeline đầy đủ" .-> S7
+  S14 -->|sau khi PĐD chốt trình ký| S16["10 · Mua thêm 30%<br/>floor số trúng của khoa × 30%<br/>cấp khoa × mã quản lý"]:::ok
+
+  SUP["Luồng hỗ trợ — ngoài pipeline<br/>Sổ thiếu hàng · đề nghị mã kỹ thuật mới<br/>đề nghị sửa tiêu chí kỹ thuật"]:::khoa

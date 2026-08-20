@@ -199,6 +199,18 @@ chuyển vào `lich-su/`. Hai dòng đường dẫn trong
 `backend/tests/test_cong_thuc_tuy_chon_contract.py` đổi theo (chỉ đổi chuỗi
 đường dẫn, không đổi logic) — `pytest` vẫn **115 passed**.
 
+**20/08 (cùng ngày) — vẽ lại toàn bộ sơ đồ workflow.** Bốn trang trong
+`so-do-workflow/` được viết lại từ dữ liệu nguồn của `generate-diagrams.mjs`
+theo v3 + V2 + QĐ 20/08. Nội dung cũ mô tả một hệ thống khác hẳn: khoa tự đẩy
+SL từ mã rớt sang mã tương đương, "khoa chốt danh mục", Sổ sự kiện nhu cầu,
+và ba khối "khoảng trống / split-brain" nay đã được v3 giải quyết. Bản mới thêm
+khối "KHÔNG có trong hệ thống — đừng dựng lại" ở trang 04.
+
+**Bẫy phát hiện khi vẽ lại:** script sinh `.drawio`, `.svg`, `.mmd` nhưng
+**KHÔNG sinh `.png`**. Vì vậy lần cập nhật trước SVG đã đổi mà PNG thì không —
+mà PNG lại là thứ người ta hay mở. Cách xuất PNG đã ghi vào
+`so-do-workflow/README.md`.
+
 ---
 
 ## Bài học kỹ thuật tích luỹ — đừng lặp lại

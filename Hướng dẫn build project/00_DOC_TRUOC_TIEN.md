@@ -73,7 +73,7 @@ chốt số đi thầu và chốt trình ký (xem `01`, mục 4.6 và 8.2).
 | Mục | Nội dung |
 |---|---|
 | `Full workflow vtyt web.docx` | **Nguồn gốc nghiệp vụ**, do chủ dự án viết. `01` là bản thi hành của nó |
-| `so-do-workflow/` | Sơ đồ Draw.io / Mermaid / PNG. ⚠️ **đang lạc hậu**, xem README trong đó |
+| `so-do-workflow/` | Sơ đồ Draw.io / Mermaid / SVG / PNG, **vẽ lại 20/08/2026** theo v3 + V2 |
 | `bao-cao-cong-thuc/` | Nghiên cứu và backtest chọn công thức (T8/2026). Script sinh ra chúng ở `phan-tich-cong-thuc/` ngoài gốc repo |
 | `lich-su/` | Nhật ký tiến độ đầy đủ theo ngày + phụ lục backtest. Tra khi cần, không cần đọc để làm việc |
 

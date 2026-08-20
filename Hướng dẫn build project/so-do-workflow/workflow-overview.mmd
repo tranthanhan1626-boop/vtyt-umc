@@ -6,28 +6,35 @@ flowchart LR
   classDef ok fill:#ECFDF5,stroke:#16A34A,color:#14532D,stroke-width:2px
   classDef gap fill:#FFFBEB,stroke:#D97706,color:#78350F,stroke-width:2px,stroke-dasharray: 6 4
 
-  P0["PĐD tạo / mở đợt<br/>chọn loại mua sắm + gói con"]:::pdd -->|đợt mở| K0["Khoa chọn đợt + gói con<br/>khóa logic = dot_id × goi_id"]:::khoa
-  K0 --> K1["ĐVT chuẩn + hệ số quy đổi<br/>TSB 24 tháng → P50/P75/P90/P95"]:::khoa
-  K1 --> K2["Chốt tổng mã quản lý<br/>phân bổ xuống mã hàng, tổng quy đổi phải khớp"]:::khoa
-  K2 --> K3["Giỏ lưu server<br/>Thêm cả mã quản lý"]:::khoa
-  K3 --> K4["Gửi giỏ = chính thức<br/>1 transaction · 1 giỏ = 1 gói con<br/>không PĐD duyệt giỏ"]:::ok
-  K4 --> K5["Word cam kết ngay<br/>Danh mục Khoa: sửa + audit + chốt"]:::khoa
-  K4 --> P1["Bàn điều hành<br/>theo dõi 62 Khoa"]:::pdd
+  P0["1 · PĐD chuẩn bị đợt<br/>hệ sinh 5 DOT_GOI · phân mã quản lý vào gói con<br/>chỉ định khoa tham gia · mở đợt"]:::pdd
+  P0 -->|mở đợt nhận đề xuất| K1["2 · Khoa lập số ở cấp MÃ QUẢN LÝ<br/>ĐVT chuẩn + hệ số · lịch sử 24T<br/>P50 là mức chọn sẵn, số không tự điền"]:::khoa
+  K1 --> K2["3 · Phân bổ xuống mã hàng<br/>KHOÁ CỨNG 1 — tổng sau quy đổi phải khớp"]:::khoa
+  K2 --> K3["4 · Gửi giỏ = CHÍNH THỨC<br/>1 transaction · 1 giỏ = 1 gói con<br/>KHÔNG có bước PĐD duyệt giỏ"]:::ok
+  K3 --> K4["5 · Danh mục đề xuất của khoa<br/>khoa sửa SỐ của mình · cột CHỮ đè toàn viện<br/>dải P50–P75, vượt P75 chỉ tô nổi bật"]:::khoa
+  K4 --> K5["6 · Xác nhận thông tin lần N<br/>không khoá gì · dữ liệu đổi là TỰ HUỶ"]:::khoa
+
+  K3 --> P1["7 · Bàn điều hành PĐD<br/>ai đã gửi · ai đã xác nhận · nhắc qua Teams"]:::pdd
   K5 --> P1
-  P1 --> P2["Danh mục tổng hợp<br/>Đợt × Gói con, drill-down từng Khoa"]:::pdd
-  P2 --> P3["PĐD sửa/khóa + audit<br/>Excel tổng hợp + Word đề nghị mua"]:::pdd
-  P3 --> P4["3 giai đoạn thầu<br/>chỉ tích mã RỚT"]:::pdd
-  P4 --> D{"Kết quả?"}
-  D -->|rớt 1 phần| K6["Khoa đẩy SL sang mã tương đương còn trúng<br/>giữ nguyên tổng mã quản lý"]:::fail
-  K6 --> P2
-  D -->|rớt hoàn toàn| K7["Giỏ rớt → chọn đợt bổ sung<br/>chuyển vào giỏ server"]:::fail
-  K7 -. "gửi vòng bổ sung" .-> K3
-  D -->|trúng / xử lý xong| P5["CỜ CHỐT ĐANG GÁNH 2 MỐC<br/>UI: số đi thầu · docs: sau thầu<br/>DB chưa có RESULT_FINALIZED"]:::gap
-  K6 --> P5
-  P5 --> P6["Ký hợp đồng → hàng về đợt đầu"]:::pdd
-  P5 --> K8["Khoa xem kết quả<br/>mua thêm ≤ floor(30%) sau chốt"]:::ok
-  P6 --> P7["PĐD nạp HIS / chỉnh ngưỡng<br/>giám sát chậm cam kết & sắp hết sớm"]:::pdd
-  K8 --> K9["Sử dụng · báo thiếu hàng<br/>khai sự kiện nhu cầu"]:::khoa --> P7
-  P7 -. "sắp hết sớm" .-> P0
-  P3 -.-> G1["CHƯA NỐI ĐỦ: số PĐD sửa ở cấp toàn viện<br/>chưa chia ngược vào proposal từng Khoa"]:::gap
-  P2 -.-> G2["P0 SCOPE: nghiệp vụ cần dot_id × goi_id<br/>DB đang trộn dot_id, goi_id và goi:dot:id"]:::fail
+  P1 --> P2["8 · Danh mục tổng hợp<br/>cột SỐ là VIEW SUM, không sửa trực tiếp"]:::pdd
+  P2 --> P3["9 · PĐD hiệu chỉnh<br/>gõ TỔNG, hệ chia theo tỉ lệ đề xuất<br/>sửa sau khi khoa xác nhận thì bắt lý do"]:::pdd
+  P3 --> Q
+  P2 --> Q["10 · CHỐT SỐ ĐI THẦU = Q<br/>CỔNG CỨNG: mọi khoa ĐÃ GỬI phải đã xác nhận<br/>khoa chưa gửi gì thì không tính<br/>snapshot Q bất biến, khoá phạm vi danh mục"]:::ok
+
+  Q --> P4["11 · Ba giai đoạn<br/>Chào giá → Mở thầu → Đánh giá"]:::pdd
+  P4 --> D{"Có ngoại lệ rớt?"}
+  D -->|không| WIN["MẶC ĐỊNH TRÚNG TOÀN BỘ<br/>số trúng = Q, số rớt = 0"]:::ok
+  D -->|có| P5["12 · Ngoại lệ rớt — cấp MÃ HÀNG<br/>rớt được ở nhiều giai đoạn: ΣR = R1+R2+R3<br/>KHOÁ CỨNG 3 — 0 ≤ ΣR ≤ Q"]:::fail
+  WIN --> P6
+  P5 -->|số trúng = Q − ΣR| P6["13 · Phân bổ số trúng về khoa<br/>CHỈ PĐD phân bổ · trúng một phần thì chia theo tỉ lệ Q<br/>KHOÁ CỨNG 2 — tổng phân bổ = số trúng"]:::pdd
+
+  P6 -->|mã quản lý trúng 0| K6["Giỏ rớt của khoa<br/>gợi ý đợt bổ sung gần nhất đang mở"]:::fail
+  K6 --> K7["Đề xuất bổ sung<br/>KHÔNG áp P50–P95, không bắt lý do<br/>không bị chặn bởi số đã rớt"]:::khoa
+  K7 -. "đi lại pipeline đầy đủ" .-> K3
+
+  P6 -->|đã phân bổ hết| P7["14 · Chốt dữ liệu trình ký<br/>từng bảng khoa rồi chốt toàn bộ<br/>QĐ 20/08: chỉ tính khoa ĐÃ GỬI đề xuất"]:::ok
+  P7 --> P8["15 · Revision & Excel chính thức<br/>số trên Excel cuối là SỐ TRÚNG đã phân bổ"]:::pdd
+  P7 -->|mới bật được| K8["16 · Mua thêm 30%<br/>floor số trúng của khoa × 30%<br/>cấp khoa × mã quản lý"]:::ok
+  P7 -->|trả mã về khoa| K9["Mã hàng trở lại danh sách khoa<br/>cho kỳ đề xuất sau"]:::khoa
+  K9 -. "kỳ sau" .-> P0
+
+  OUT["NGOÀI PIPELINE — không chặn bước nào<br/>Sổ thiếu hàng · Điều chỉnh TSKT<br/>Duyệt mã kỹ thuật · Tiến độ sử dụng<br/>⚠ chưa test lần nào"]:::sys

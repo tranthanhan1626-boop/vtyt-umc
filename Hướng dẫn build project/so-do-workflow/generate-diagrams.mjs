@@ -21,76 +21,93 @@ const laneColors = {
   system: { fill: "#FAF5FF", stroke: "#DDD6FE", text: "#5B21B6" },
 };
 
+// ---------------------------------------------------------------------------
+// DỮ LIỆU SƠ ĐỒ — vẽ lại 20/08/2026 theo workflow v3 (17/08) + luật V2 (19/08)
+// + QĐ 20/08 (cổng chốt trình ký chỉ tính khoa đã gửi đề xuất).
+//
+// Nguồn chuẩn: ../01_NGHIEP_VU_HIEN_HANH.md
+// Quyết định đã bị đảo (ĐỪNG vẽ lại): ../06_DUNG_LAM_LAI.md
+// ---------------------------------------------------------------------------
+
 const overview = {
   id: "overview",
   name: "01 Tổng quan Khoa ↔ PĐD",
-  title: "WORKFLOW VTYT LIÊN ĐƠN VỊ — KHOA ↔ PHÒNG ĐIỀU DƯỠNG",
-  subtitle: "Luồng hiện hành trong nhánh phase-a-luong-de-xuat (staging) · phạm vi nghiệp vụ đúng là Đợt × Gói con",
-  width: 3040,
-  height: 2060,
+  title: "WORKFLOW VTYT — KHOA ↔ PHÒNG ĐIỀU DƯỠNG",
+  subtitle: "Đơn vị workflow là DOT_GOI = Đợt × Gói con · Web là sổ ghi và dấu vết, Teams là nơi thương lượng · Cập nhật 20/08/2026",
+  width: 3060,
+  height: 2150,
   lanes: [
-    { id: "lane-khoa", label: "KHOA / ĐƠN VỊ SỬ DỤNG", group: "khoa", x: 60, y: 210, w: 1370, h: 1660 },
-    { id: "lane-pdd", label: "PHÒNG ĐIỀU DƯỠNG (PĐD)", group: "pdd", x: 1510, y: 210, w: 1470, h: 1660 },
+    { id: "lane-khoa", label: "KHOA / ĐƠN VỊ SỬ DỤNG (ĐVSD)", group: "khoa", x: 60, y: 210, w: 1390, h: 1780 },
+    { id: "lane-pdd", label: "PHÒNG ĐIỀU DƯỠNG (PĐD) — cũng là admin", group: "pdd", x: 1530, y: 210, w: 1470, h: 1780 },
   ],
   nodes: [
-    { id: "p0", group: "pdd", x: 1600, y: 280, w: 390, h: 112, title: "1. Khởi tạo vòng", lines: ["Tạo / mở đợt đề xuất", "Khi vận hành chọn đúng gói con"] },
-    { id: "k0", group: "khoa", x: 150, y: 280, w: 390, h: 112, title: "2. Vào đúng phạm vi", lines: ["Chọn đợt + gói con", "Khóa logic cần là dot_id × goi_id"] },
-    { id: "k1", group: "khoa", x: 150, y: 465, w: 390, h: 138, title: "3. Lập số ở cấp mã quản lý", lines: ["Chọn ĐVT chuẩn + hệ số quy đổi", "TSB 24 tháng → P50 / P75 / P90 / P95"] },
-    { id: "k2", group: "khoa", x: 585, y: 465, w: 390, h: 138, title: "4. Chốt tổng & phân bổ", lines: ["Chốt tổng mã quản lý", "Phân bổ xuống mã hàng; tổng quy đổi phải khớp"] },
-    { id: "k3", group: "khoa", x: 1020, y: 465, w: 330, h: 138, title: "5. Giỏ bền vững", lines: ["Thêm cả mã quản lý", "Lưu server; account cùng Khoa dùng chung"] },
-    { id: "k4", group: "khoa", x: 1020, y: 680, w: 330, h: 142, title: "6. Gửi giỏ = chính thức", lines: ["1 transaction · 1 giỏ = 1 gói con", "KHÔNG có bước PĐD duyệt giỏ"] },
-    { id: "k5", group: "khoa", x: 585, y: 680, w: 390, h: 142, title: "7. Danh mục Khoa / KHOA_READY", lines: ["Tạo Word cam kết ngay", "Sửa ô + audit; chốt/mở là checkpoint riêng"] },
-    { id: "p1", group: "pdd", x: 1600, y: 680, w: 390, h: 142, title: "8. Bàn điều hành PĐD", lines: ["Theo dõi 62 Khoa: đề xuất / Word / chốt", "Mở danh mục từng Khoa; nhắc hoàn tất"] },
-    { id: "scopeGap", group: "gap", shape: "note", x: 1600, y: 450, w: 1260, h: 155, title: "LỆCH PHẠM VI TRIỂN KHAI CẦN ƯU TIÊN", lines: ["Nghiệp vụ cần Đợt × Gói con. Hiện bảng chốt chỉ khóa dot_id; override PĐD tự ghép goi_id:dot:dot_id,", "trong khi view và màn Khoa còn đọc goi_id tĩnh → có nguy cơ chốt cả 5 gói con hoặc lệch số hiển thị."] },
-    { id: "p2", group: "pdd", x: 2035, y: 680, w: 390, h: 142, title: "9. Danh mục tổng hợp", lines: ["Cộng theo mã hàng trong đúng đợt + gói con", "Sổ xuống xem đóng góp từng Khoa"] },
-    { id: "p3", group: "pdd", x: 2470, y: 680, w: 390, h: 142, title: "10. Hiệu chỉnh & hồ sơ", lines: ["PĐD sửa / khóa + audit", "Xuất Excel tổng hợp + Word đề nghị mua"] },
-    { id: "p4", group: "pdd", x: 2470, y: 905, w: 390, h: 142, title: "11. Đấu thầu — 3 giai đoạn", lines: ["Chào giá → Mở thầu → Đánh giá", "Chỉ tích RỚT; không tích = mặc định TRÚNG"] },
-    { id: "d1", group: "decision", shape: "decision", x: 2170, y: 920, w: 190, h: 120, title: "Kết quả mã?", lines: [] },
-    { id: "k6", group: "failure", x: 150, y: 1055, w: 410, h: 155, title: "Rớt 1 phần", lines: ["Khoa nhận thông báo", "Đẩy SL sang mã tương đương còn trúng", "Giữ nguyên tổng mã quản lý"] },
-    { id: "k7", group: "failure", x: 605, y: 1055, w: 410, h: 155, title: "Rớt hoàn toàn", lines: ["Vào giỏ rớt", "Chọn đợt bổ sung đang mở"] },
-    { id: "k8", group: "system", x: 1060, y: 1055, w: 290, h: 155, title: "Vòng bổ sung", lines: ["Chuyển vào giỏ server", "Chỉnh số → gửi chính thức"] },
-    { id: "p5", group: "gap", x: 2020, y: 1185, w: 430, h: 170, title: "12. Một cờ chốt đang gánh 2 mốc", lines: ["UI: chốt số đi thầu; tài liệu: chốt sau thầu", "DB chưa có RESULT_FINALIZED riêng", "Hiện chốt dot_id, rộng hơn một gói con 18T"] },
-    { id: "p6", group: "pdd", x: 2500, y: 1190, w: 360, h: 155, title: "13. Hợp đồng & hàng về", lines: ["Ký hợp đồng", "Đánh dấu hàng về đợt đầu"] },
-    { id: "k9", group: "success", x: 150, y: 1365, w: 410, h: 155, title: "14. Sau đấu thầu", lines: ["Xem kết quả; xác nhận đã xem", "Mua thêm ≤ floor(30%) sau khi đúng đợt đã chốt"] },
-    { id: "k10", group: "khoa", x: 605, y: 1365, w: 410, h: 155, title: "15. Sử dụng & phản hồi", lines: ["Sổ thiếu hàng", "Sự kiện nhu cầu / mã kỹ thuật mới"] },
-    { id: "p7", group: "pdd", x: 1600, y: 1365, w: 430, h: 170, title: "16. Giám sát toàn viện", lines: ["Nạp HIS; chỉnh ngưỡng cam kết", "4 tầng: gói → MQ → mã hàng → Khoa", "Tách cảnh báo chậm / sắp hết sớm"] },
-    { id: "p8", group: "pdd", x: 2080, y: 1380, w: 390, h: 140, title: "17. Can thiệp", lines: ["Theo dõi giỏ rớt toàn viện; nhắc Khoa", "Sắp hết sớm → mở đợt bổ sung"] },
-    { id: "k11", group: "khoa", x: 150, y: 1610, w: 500, h: 135, title: "Các luồng hỗ trợ Khoa → PĐD", lines: ["Báo thiếu hàng · khai sự kiện nhu cầu", "Đề nghị mã kỹ thuật / sửa tiêu chí"] },
-    { id: "gap1", group: "gap", shape: "note", x: 700, y: 1595, w: 650, h: 165, title: "Khoảng trống đã biết", lines: ["PĐD sửa tổng toàn viện: Khoa thấy số + audit,", "nhưng chưa có thuật toán chia ngược vào proposal từng Khoa."] },
-    { id: "p9", group: "pdd", x: 1600, y: 1610, w: 500, h: 135, title: "PĐD tiếp nhận / duyệt / trả lại", lines: ["Xử lý thiếu hàng", "Duyệt hoặc từ chối sự kiện, mã kỹ thuật, tiêu chí"] },
-    { id: "gap2", group: "gap", shape: "note", x: 2170, y: 1595, w: 690, h: 165, title: "Quy tắc đang chạy khác tài liệu", lines: ["Code chỉ bắt giải trình khi > P75; dưới P50 vẫn nhận.", "Tài liệu 01 hiện viết ‘ngoài P50–P75’ phải giải trình."] },
+    { id: "p0", group: "pdd", x: 1620, y: 275, w: 400, h: 145, title: "1 · Chuẩn bị đợt", lines: ["Tạo đợt → hệ sinh 5 DOT_GOI (gói 18T)", "Phân mã quản lý vào từng gói con", "Chỉ định khoa tham gia · Mở đợt"] },
+    { id: "rule", group: "success", shape: "note", x: 2070, y: 275, w: 800, h: 145, title: "LUẬT V2 — MỘT GIÁ TRỊ CHUNG (19/08/2026)", lines: ["Cột CHỮ: một giá trị chung toàn viện cho mỗi (mã hàng, cột). AI SỬA SAU ĐÈ — khoa đè được lên PĐD.", "Ngoại lệ duy nhất: giai_trinh_2627 riêng theo khoa.  ·  Cột SỐ: mỗi khoa một số, tổng = phép cộng."] },
+
+    { id: "k1", group: "khoa", x: 150, y: 470, w: 400, h: 150, title: "2 · Lập số ở cấp MÃ QUẢN LÝ", lines: ["Chọn một ĐVT chuẩn + hệ số quy đổi", "Lịch sử 24 tháng → P50 · P75 · P90 · P95", "P50 là mức chọn sẵn; số không tự điền"] },
+    { id: "k2", group: "khoa", x: 595, y: 470, w: 400, h: 150, title: "3 · Phân bổ xuống mã hàng", lines: ["Chốt tổng ở cấp mã quản lý trước", "KHOÁ CỨNG 1 — tổng sau quy đổi phải", "đúng bằng số đã chốt"] },
+    { id: "k3", group: "khoa", x: 1040, y: 470, w: 380, h: 150, title: "4 · Gửi giỏ = CHÍNH THỨC", lines: ["Một transaction · 1 giỏ = 1 gói con", "Giỏ sống trên server, cùng khoa dùng chung", "KHÔNG có bước PĐD duyệt giỏ"] },
+
+    { id: "k4", group: "khoa", x: 150, y: 700, w: 400, h: 155, title: "5 · Danh mục đề xuất của khoa", lines: ["Khoa sửa SỐ của khoa mình ngay tại đây", "Cột CHỮ sửa được — đè cho toàn viện", "Dải P50–P75; vượt P75 chỉ TÔ NỔI BẬT"] },
+    { id: "k5", group: "khoa", x: 595, y: 700, w: 400, h: 155, title: "6 · Xác nhận thông tin lần N", lines: ["Thay cho “khoa chốt danh mục” đã bỏ", "Không khoá gì cả", "Dữ liệu đổi → xác nhận TỰ HUỶ, lên lần N+1"] },
+    { id: "kword", group: "system", x: 1040, y: 700, w: 380, h: 155, title: "Word cam kết", lines: ["Bấm là ra, bất kỳ lúc nào", "Không phải checkpoint", "In revision + thời điểm sinh lên file"] },
+
+    { id: "p1", group: "pdd", x: 1620, y: 470, w: 400, h: 150, title: "7 · Bàn điều hành", lines: ["Theo dõi khoa nào đã gửi / đã xác nhận", "Mở thẳng danh mục của từng khoa", "Nhắc qua Teams — web không tự nhắc"] },
+    { id: "p2", group: "pdd", x: 2070, y: 470, w: 400, h: 150, title: "8 · Danh mục tổng hợp", lines: ["Cột SỐ là VIEW SUM — không sửa trực tiếp", "Sổ xuống xem đóng góp từng khoa", "Dải P50–P75 tính theo toàn viện"] },
+    { id: "p3", group: "pdd", x: 2520, y: 470, w: 350, h: 150, title: "9 · PĐD hiệu chỉnh", lines: ["Gõ TỔNG → hệ chia theo tỉ lệ đề xuất", "PĐD sửa tay từng dòng được", "Sửa sau khi khoa xác nhận: BẮT LÝ DO"] },
+
+    { id: "pq", group: "success", x: 2070, y: 700, w: 800, h: 155, title: "10 · CHỐT SỐ THAM GIA ĐẤU THẦU  →  Q", lines: ["CỔNG CỨNG: chặn khi còn khoa ĐÃ GỬI mà chưa xác nhận bản hiện tại. Khoa chưa gửi gì thì KHÔNG tính.", "Tạo snapshot Q bất biến theo (DOT_GOI × mã hàng × khoa) · Khoá phạm vi danh mục — không thêm mã nữa"] },
+
+    { id: "p4", group: "pdd", x: 1620, y: 935, w: 400, h: 150, title: "11 · Ba giai đoạn đấu thầu", lines: ["Chào giá → Mở thầu → Đánh giá", "Phải xong giai đoạn trước mới sang sau", "Mở lại: bắt lý do, giai đoạn sau hết hiệu lực"] },
+    { id: "d1", group: "decision", shape: "decision", x: 2130, y: 945, w: 220, h: 130, title: "Có ngoại lệ\nrớt không?", lines: [] },
+    { id: "pwin", group: "success", x: 2450, y: 935, w: 420, h: 150, title: "MẶC ĐỊNH TRÚNG TOÀN BỘ", lines: ["Không nhập gì → số trúng = Q, số rớt = 0", "PĐD không phải tích trúng cho hàng nghìn mã"] },
+
+    { id: "p5", group: "failure", x: 1620, y: 1170, w: 400, h: 160, title: "12 · Ngoại lệ rớt — cấp MÃ HÀNG", lines: ["Nhập: giai đoạn · toàn bộ hay một phần · lý do", "Rớt được ở nhiều giai đoạn: R1 + R2 + R3", "KHOÁ CỨNG 3 — 0 ≤ ΣR ≤ Q"] },
+    { id: "p6", group: "pdd", x: 2070, y: 1170, w: 400, h: 160, title: "13 · Phân bổ số trúng về khoa", lines: ["Số trúng = Q − ΣR · Chỉ PĐD phân bổ", "Trúng một phần → chia sẵn theo tỉ lệ Q", "KHOÁ CỨNG 2 — tổng phân bổ = số trúng"] },
+    { id: "pnote", group: "neutral", shape: "note", x: 2520, y: 1170, w: 350, h: 160, title: "Chỉ khoa ĐÃ đề xuất mã đó", lines: ["mới được nhận phân bổ.", "Phân bổ vượt Q của một khoa:", "được, nhưng phải nhập lý do."] },
+
+    { id: "k6", group: "failure", x: 150, y: 1170, w: 400, h: 160, title: "Giỏ rớt của khoa", lines: ["Mã quản lý trúng 0 → tự vào giỏ rớt", "Hệ gợi ý đợt bổ sung gần nhất đang mở", "Không tự tạo đề xuất, không tự điền số"] },
+    { id: "k7", group: "khoa", x: 595, y: 1170, w: 400, h: 160, title: "Đề xuất bổ sung", lines: ["KHÔNG áp P50–P95, không bắt lý do", "Không bị chặn bởi số đã rớt", "Hoặc chọn “Không còn nhu cầu”"] },
+
+    { id: "p7", group: "success", x: 1620, y: 1420, w: 400, h: 160, title: "14 · Chốt dữ liệu trình ký", lines: ["Chốt từng bảng khoa → rồi chốt toàn bộ", "QĐ 20/08: chỉ tính khoa ĐÃ GỬI đề xuất;", "khoa im lặng ghi vào audit, KHÔNG chặn"] },
+    { id: "p8", group: "pdd", x: 2070, y: 1420, w: 400, h: 160, title: "15 · Revision & Excel chính thức", lines: ["Khoá toàn bộ DOT_GOI, tạo revision", "Excel khoa và Excel tổng hợp cùng revision", "Số trên Excel cuối là SỐ TRÚNG đã phân bổ"] },
+    { id: "preopen", group: "neutral", shape: "note", x: 2520, y: 1420, w: 350, h: 160, title: "Mở lại", lines: ["Mở một bảng khoa → bản tổng hợp", "tự hết hiệu lực, revision cũ mất giá trị.", "Mọi lần mở lại đều BẮT LÝ DO."] },
+
+    { id: "k8", group: "success", x: 150, y: 1420, w: 400, h: 160, title: "16 · Tuỳ chọn mua thêm 30%", lines: ["CHỈ kích hoạt được SAU khi chốt trình ký", "Trần = floor(số trúng của khoa × 30%)", "Tính ở cấp khoa × mã quản lý"] },
+    { id: "k9", group: "khoa", x: 595, y: 1420, w: 400, h: 160, title: "Mã hàng trở lại danh sách khoa", lines: ["Sau khi chốt trình ký, mã hiện lại", "cho kỳ đề xuất sau"] },
+
+    { id: "outside", group: "system", shape: "note", x: 150, y: 1650, w: 1270, h: 175, title: "NGOÀI PIPELINE — vẫn dùng, nhưng KHÔNG chặn bước nào của luồng trên", lines: ["Sổ thiếu hàng (nguồn DUY NHẤT đo nhu cầu thật — HIS chỉ có lượng đã cấp khi còn hàng)  ·  Điều chỉnh tiêu chí kỹ thuật", "Đề nghị mã kỹ thuật mới → PĐD duyệt  ·  Tiến độ sử dụng theo cam kết 20/50/80 (module sau khi hàng về)", "⚠ Bốn màn này CHƯA được test lần nào — xem ../05_TRANG_THAI_VA_VIEC_TIEP_THEO.md"] },
+
+    { id: "locks", group: "decision", shape: "note", x: 1620, y: 1650, w: 1250, h: 175, title: "BA KHOÁ CỨNG — ngoài ba cái này, hệ CẢNH BÁO chứ không chặn", lines: ["1 · Tổng mã hàng sau quy đổi = tổng mã quản lý        (lúc khoa phân bổ)", "2 · Tổng phân bổ về các khoa = số trúng của mã          (lúc PĐD phân bổ kết quả)", "3 · Tổng rớt ba giai đoạn ≤ số tham gia thầu (ΣR ≤ Q)   (lúc PĐD nhập ngoại lệ rớt)"] },
   ],
   edges: [
-    { from: "p0", to: "k0", label: "mở quyền gửi", color: "#2563EB" },
-    { from: "k0", to: "k1" },
+    { from: "p0", to: "k1", label: "mở đợt nhận đề xuất", color: "#2563EB" },
     { from: "k1", to: "k2" },
     { from: "k2", to: "k3" },
-    { from: "k3", to: "k4" },
+    { from: "k3", to: "k4", label: "sinh danh mục", color: "#0F766E", points: [[1230, 630], [1230, 665], [350, 665], [350, 690]] },
     { from: "k4", to: "k5" },
-    { from: "k4", to: "p1", label: "proposal chính thức", color: "#7C3AED" },
-    { from: "k5", to: "p1", label: "Word + cờ chốt", color: "#7C3AED" },
+    { from: "k4", to: "kword", color: "#7C3AED", dashed: true },
+    { from: "k3", to: "p1", label: "đề xuất chính thức", color: "#7C3AED" },
+    { from: "k5", to: "p1", label: "trạng thái xác nhận", color: "#7C3AED" },
     { from: "p1", to: "p2" },
-    { from: "p2", to: "scopeGap", label: "phạm vi chưa đồng nhất", color: "#D97706", dashed: true },
     { from: "p2", to: "p3" },
-    { from: "p3", to: "p4" },
+    { from: "p3", to: "pq", label: "số đã ổn", color: "#16A34A", points: [[2695, 630], [2695, 665], [2470, 665], [2470, 690]] },
+    { from: "p2", to: "pq" },
+    { from: "pq", to: "p4", label: "Q đã đóng băng", color: "#16A34A" },
     { from: "p4", to: "d1" },
-    { from: "d1", to: "k6", label: "rớt 1 phần", color: "#DC2626" },
-    { from: "d1", to: "k7", label: "rớt cả nhóm", color: "#DC2626" },
-    { from: "d1", to: "p5", label: "trúng / đã xử lý", color: "#16A34A" },
-    { from: "k6", to: "p2", label: "tải lại → tổng đổi", color: "#0F766E" },
-    { from: "k6", to: "p5", label: "xử lý xong", color: "#16A34A" },
-    { from: "k7", to: "k8", color: "#DC2626" },
-    { from: "k8", to: "k4", label: "submit vòng bổ sung", color: "#7C3AED", dashed: true, points: [[1390, 1130], [1435, 1130], [1435, 750], [1390, 750]] },
-    { from: "p5", to: "p6" },
-    { from: "p5", to: "k9", label: "kết quả + quyền 30%", color: "#16A34A" },
-    { from: "p6", to: "p7" },
-    { from: "k9", to: "k10" },
-    { from: "k10", to: "p7", label: "dữ liệu sử dụng / phản hồi", color: "#7C3AED" },
+    { from: "d1", to: "pwin", label: "không", color: "#16A34A" },
+    { from: "d1", to: "p5", label: "có", color: "#DC2626", points: [[2240, 1075], [2240, 1130], [1820, 1130], [1820, 1160]] },
+    { from: "pwin", to: "p6", label: "giữ nguyên phân bổ Q", color: "#16A34A" },
+    { from: "p5", to: "p6", label: "số trúng = Q − ΣR", color: "#DC2626" },
+    { from: "p6", to: "k6", label: "mã quản lý trúng 0", color: "#DC2626" },
+    { from: "k6", to: "k7" },
+    { from: "k7", to: "k3", label: "đi lại pipeline đầy đủ", color: "#7C3AED", dashed: true, points: [[1015, 1250], [1120, 1250], [1120, 900], [1230, 900], [1230, 630]] },
+    { from: "p6", to: "p7", label: "đã phân bổ hết", color: "#16A34A" },
     { from: "p7", to: "p8" },
-    { from: "p8", to: "p0", label: "mở vòng bổ sung", color: "#D97706", dashed: true, points: [[2920, 1450], [2945, 1450], [2945, 335], [2020, 335]] },
-    { from: "k11", to: "p9", label: "gửi", color: "#7C3AED" },
-    { from: "p9", to: "k11", label: "duyệt / trả lại", color: "#D97706", dashed: true, points: [[1570, 1690], [1435, 1690], [1435, 1775], [400, 1775], [400, 1755]] },
-    { from: "p3", to: "gap1", label: "chưa chia ngược", color: "#D97706", dashed: true },
+    { from: "p8", to: "preopen", color: "#64748B", dashed: true },
+    { from: "p7", to: "k8", label: "mới bật được 30%", color: "#16A34A" },
+    { from: "p7", to: "k9", label: "trả mã về khoa", color: "#0F766E" },
+    { from: "k9", to: "p0", label: "kỳ đề xuất sau", color: "#D97706", dashed: true, points: [[995, 1500], [1470, 1500], [1470, 240], [1820, 240], [1820, 275]] },
   ],
 };
 
@@ -98,36 +115,44 @@ const khoa = {
   id: "khoa",
   name: "02 Workflow Khoa chi tiết",
   title: "WORKFLOW CHI TIẾT — KHOA / ĐƠN VỊ SỬ DỤNG",
-  subtitle: "Từ chọn đợt → lập số → gửi chính thức → xử lý kết quả → theo dõi sử dụng",
-  width: 2200,
-  height: 2080,
+  subtitle: "Từ chọn phạm vi → lập số → gửi → xác nhận lần N → xử lý rớt → 30% · Cập nhật 20/08/2026",
+  width: 2260,
+  height: 2060,
   lanes: [
-    { id: "lane-khoa-detail", label: "KHOA / ĐVSD", group: "khoa", x: 60, y: 210, w: 2080, h: 1690 },
+    { id: "lane-khoa-detail", label: "KHOA / ĐVSD", group: "khoa", x: 60, y: 210, w: 2140, h: 1690 },
   ],
   nodes: [
-    { id: "ks0", group: "pdd", x: 120, y: 270, w: 420, h: 105, title: "Tín hiệu bắt đầu từ PĐD", lines: ["Đợt đề xuất đang MỞ"] },
-    { id: "ks1", group: "khoa", x: 120, y: 455, w: 380, h: 125, title: "1. Chọn phạm vi", lines: ["Loại mua sắm → đợt → gói con", "Khóa logic: dot_id × goi_id; 18T có 5 gói con"] },
-    { id: "ks2", group: "khoa", x: 570, y: 455, w: 380, h: 125, title: "2. Chọn mã quản lý", lines: ["Chọn ĐVT chuẩn", "Nhập đủ hệ số cho các ĐVT còn lại"] },
-    { id: "ks3", group: "system", x: 1020, y: 455, w: 380, h: 125, title: "3. Tham chiếu nhu cầu", lines: ["Lịch sử 24 tháng + TSB", "P50 / P75 / P90 / P95; mặc định P75"] },
-    { id: "kd1", group: "decision", shape: "decision", x: 1510, y: 455, w: 190, h: 125, title: "Số > P75?", lines: [] },
-    { id: "ks4", group: "gap", x: 1770, y: 455, w: 310, h: 125, title: "Có", lines: ["Chọn lý do + ghi chú cụ thể"] },
-    { id: "ks5", group: "khoa", x: 1020, y: 690, w: 380, h: 125, title: "4. Chốt tổng mã quản lý", lines: ["Có thể chọn phân vị hoặc tự nhập", "Lưu snapshot quy đổi của lần đề xuất"] },
-    { id: "ks6", group: "khoa", x: 570, y: 690, w: 380, h: 125, title: "5. Phân bổ xuống mã hàng", lines: ["Chỉ số nguyên dương", "Quy đổi từng mã về ĐVT chuẩn"] },
-    { id: "kd2", group: "decision", shape: "decision", x: 120, y: 690, w: 220, h: 125, title: "Tổng quy đổi\n= số đã chốt?", lines: [] },
-    { id: "ks7", group: "khoa", x: 120, y: 925, w: 380, h: 125, title: "6. Thêm cả mã quản lý vào giỏ", lines: ["Giỏ lưu server", "Account khác cùng Khoa mở lại vẫn thấy"] },
-    { id: "kd3", group: "decision", shape: "decision", x: 570, y: 925, w: 220, h: 125, title: "Đợt còn MỞ?", lines: [] },
-    { id: "ks8", group: "success", x: 1020, y: 925, w: 380, h: 125, title: "7. Gửi giỏ = chính thức", lines: ["Một transaction; 1 giỏ = 1 gói con", "Gửi xong xóa bản nháp để tránh gửi trùng"] },
-    { id: "ks9", group: "khoa", x: 1510, y: 925, w: 380, h: 125, title: "8. Hoàn thiện hồ sơ Khoa", lines: ["Tạo Word cam kết ngay", "Danh mục đề xuất: sửa ô, audit, ẩn/ghim/khóa cột"] },
-    { id: "ks10", group: "success", x: 1510, y: 1160, w: 380, h: 125, title: "9. Chốt danh mục", lines: ["Chốt = khóa sửa ở server", "Khoa hoặc PĐD có thể mở lại; mọi lần đều audit"] },
-    { id: "ks11", group: "system", x: 1020, y: 1160, w: 380, h: 125, title: "10. Nhận kết quả thầu", lines: ["Thông báo rớt + xác nhận đã xem", "Không tích rớt được; chỉ PĐD có quyền"] },
-    { id: "kd4", group: "decision", shape: "decision", x: 570, y: 1160, w: 220, h: 125, title: "Kết quả?", lines: [] },
-    { id: "ks12", group: "failure", x: 120, y: 1395, w: 380, h: 135, title: "Rớt 1 phần", lines: ["Đẩy SL sang mã tương đương còn trúng", "RPC chặn khác mã quản lý; tổng không đổi"] },
-    { id: "ks13", group: "failure", x: 570, y: 1395, w: 380, h: 135, title: "Rớt hoàn toàn", lines: ["Chọn đợt bổ sung đang mở", "Chuyển mã vào giỏ bổ sung"] },
-    { id: "ks14", group: "success", x: 1020, y: 1395, w: 380, h: 135, title: "Trúng / hoàn tất", lines: ["Mã không bị tích mặc định trúng", "Theo dõi hợp đồng và hàng về"] },
-    { id: "ks15", group: "system", x: 570, y: 1635, w: 380, h: 130, title: "Vòng bổ sung", lines: ["Điều chỉnh số trong giỏ", "Gửi lại như một vòng đề xuất mới"] },
-    { id: "ks16", group: "khoa", x: 1020, y: 1635, w: 380, h: 130, title: "11. Sau khi hàng về", lines: ["Theo dõi mức dùng trên số trúng", "Báo thiếu hàng / sự kiện nhu cầu"] },
-    { id: "ks17", group: "khoa", x: 1510, y: 1395, w: 380, h: 135, title: "Luồng hỗ trợ", lines: ["Đề nghị mã kỹ thuật mới / tương đương", "Đề nghị sửa tiêu chí → chờ PĐD duyệt"] },
-    { id: "kgap", group: "gap", shape: "note", x: 120, y: 1650, w: 380, h: 150, title: "Lưu ý đúng theo code", lines: ["Dưới P50 vẫn được nhận không cần giải trình.", "Chỉ > P75 mới bị chặn để bắt lý do + ghi chú."] },
+    { id: "ks0", group: "pdd", x: 120, y: 275, w: 420, h: 110, title: "Tín hiệu từ PĐD", lines: ["Đợt đang MỞ và khoa có trong danh sách tham gia"] },
+
+    { id: "ks1", group: "khoa", x: 120, y: 460, w: 390, h: 135, title: "1 · Chọn phạm vi", lines: ["Loại mua sắm → đợt → gói con", "18T có 5 gói con; bổ sung là gói phẳng"] },
+    { id: "ks2", group: "khoa", x: 580, y: 460, w: 390, h: 135, title: "2 · Chọn mã quản lý", lines: ["Chọn MỘT ĐVT chuẩn", "Nhập hệ số cho các ĐVT còn lại", "Trộn ĐVT mà thiếu hệ số → bị chặn"] },
+    { id: "ks3", group: "system", x: 1040, y: 460, w: 390, h: 135, title: "3 · Tham chiếu nhu cầu", lines: ["Lịch sử 24 tháng + TSB", "P50 · P75 · P90 · P95", "P50 là mức CHỌN SẴN"] },
+    { id: "kd1", group: "decision", shape: "decision", x: 1500, y: 460, w: 210, h: 135, title: "Số nhập\n> P75 ?", lines: [] },
+    { id: "ks4", group: "gap", x: 1780, y: 460, w: 340, h: 135, title: "Có", lines: ["Bắt buộc nhập lý do + ghi chú", "Dưới P50 thì KHÔNG hỏi gì"] },
+
+    { id: "ks5", group: "khoa", x: 1040, y: 690, w: 390, h: 135, title: "4 · Chốt tổng mã quản lý", lines: ["Chọn một mức, hoặc tự nhập", "Số gợi ý KHÔNG tự điền vào ô", "Snapshot quy đổi lưu cùng đề xuất"] },
+    { id: "ks6", group: "khoa", x: 580, y: 690, w: 390, h: 135, title: "5 · Phân bổ xuống mã hàng", lines: ["Chỉ số nguyên dương", "Quy đổi từng mã về ĐVT chuẩn"] },
+    { id: "kd2", group: "decision", shape: "decision", x: 120, y: 690, w: 240, h: 135, title: "KHOÁ CỨNG 1\ntổng khớp?", lines: [] },
+
+    { id: "ks7", group: "khoa", x: 120, y: 925, w: 390, h: 135, title: "6 · Thêm cả mã quản lý vào giỏ", lines: ["Toàn bộ phân bổ trong MỘT transaction", "Giỏ lưu server: sống qua F5, đăng xuất, máy khác", "Mọi tài khoản cùng khoa thấy chung một giỏ"] },
+    { id: "ks8", group: "success", x: 580, y: 925, w: 390, h: 135, title: "7 · Gửi giỏ = CHÍNH THỨC", lines: ["1 giỏ = 1 gói con của tab đang đứng", "KHÔNG có bước PĐD duyệt giỏ", "Mã đã gửi bị ẩn khỏi danh sách của khoa"] },
+    { id: "ks9", group: "khoa", x: 1040, y: 925, w: 390, h: 135, title: "8 · Danh mục đề xuất của khoa", lines: ["Sửa SỐ của khoa mình ngay tại đây", "Cột CHỮ: sửa là ĐÈ CHO TOÀN VIỆN", "giai_trinh_2627 là ngoại lệ, riêng theo khoa"] },
+    { id: "ks10", group: "system", x: 1500, y: 925, w: 620, h: 135, title: "Dải P50–P75 cạnh cột số", lines: ["Dải bên khoa tính theo lịch sử CỦA KHOA", "(bên PĐD tính theo toàn viện — nên hai bên khác nhau là đúng)", "Vượt P75 chỉ TÔ NỔI BẬT, không chặn"] },
+
+    { id: "ks11", group: "success", x: 1040, y: 1155, w: 390, h: 140, title: "9 · Xác nhận thông tin lần N", lines: ["Thay cho “chốt danh mục” đã bỏ", "Không khoá gì cả", "Không giới hạn số lần bấm"] },
+    { id: "ksNo", group: "khoa", x: 1500, y: 1155, w: 620, h: 140, title: "Đường KHÔNG có nhu cầu", lines: ["Xác nhận “Không phát sinh nhu cầu trong gói này”", "Vẫn tính là đã phản hồi"] },
+    { id: "kcancel", group: "gap", shape: "note", x: 580, y: 1155, w: 390, h: 140, title: "Xác nhận TỰ HUỶ khi", lines: ["bất kỳ ô nào của mã khoa đã đề xuất đổi —", "kể cả do KHOA KHÁC sửa cột chữ chung.", "Bấm lại thì lên lần N+1."] },
+
+    { id: "kfreeze", group: "neutral", shape: "note", x: 120, y: 1155, w: 390, h: 140, title: "Khoa hết sửa khi nào", lines: ["Chốt Q → khoá cột SỐ", "Chốt trình ký → khoá cột CHỮ", "Chỉ PĐD mở lại được, và phải nhập lý do"] },
+
+    { id: "kd4", group: "decision", shape: "decision", x: 1500, y: 1390, w: 240, h: 135, title: "Kết quả\nmã quản lý?", lines: [] },
+    { id: "ks14", group: "success", x: 1040, y: 1390, w: 390, h: 135, title: "Trúng", lines: ["Nhận phân bổ số trúng do PĐD chia", "Khoa KHÔNG tự phân bổ"] },
+    { id: "ks13", group: "failure", x: 580, y: 1390, w: 390, h: 135, title: "Trúng 0 → giỏ rớt", lines: ["Hệ gợi ý đợt bổ sung gần nhất đang mở", "Chưa có đợt → “Chờ mở đợt bổ sung”"] },
+    { id: "ks15", group: "khoa", x: 120, y: 1390, w: 390, h: 135, title: "Xử lý phần rớt", lines: ["Đề xuất lại ở đợt bổ sung", "hoặc chọn “Không còn nhu cầu”", "Vào giỏ nháp CHƯA tính là đã xử lý"] },
+
+    { id: "ks16", group: "success", x: 1040, y: 1620, w: 390, h: 140, title: "10 · Mua thêm 30%", lines: ["Chỉ bật SAU khi PĐD chốt trình ký", "Trần = floor(số trúng của khoa × 30%)", "Cấp khoa × mã quản lý; tổng các lần ≤ trần"] },
+    { id: "ks17", group: "khoa", x: 1500, y: 1620, w: 620, h: 140, title: "Luồng hỗ trợ — ngoài pipeline", lines: ["Sổ thiếu hàng · Đề nghị mã kỹ thuật mới", "Đề nghị sửa tiêu chí kỹ thuật → PĐD duyệt", "Không chặn bất kỳ bước nào ở trên"] },
+    { id: "kbosung", group: "system", x: 580, y: 1620, w: 390, h: 140, title: "Đề xuất bổ sung", lines: ["KHÔNG áp P50–P95, không bắt lý do vượt ngưỡng", "Không bị giới hạn bởi số đã rớt", "Vẫn kiểm: số nguyên dương · ĐVT · tổng khớp"] },
   ],
   edges: [
     { from: "ks0", to: "ks1", label: "đợt mở", color: "#2563EB" },
@@ -135,26 +160,26 @@ const khoa = {
     { from: "ks2", to: "ks3" },
     { from: "ks3", to: "kd1" },
     { from: "kd1", to: "ks4", label: "có", color: "#D97706" },
-    { from: "kd1", to: "ks5", label: "không", color: "#16A34A" },
-    { from: "ks4", to: "ks5" },
+    { from: "kd1", to: "ks5", label: "không → đi tiếp", color: "#16A34A", points: [[1605, 605], [1605, 650], [1235, 650], [1235, 680]] },
+    { from: "ks4", to: "ks5", color: "#D97706", dashed: true, points: [[1950, 605], [1950, 655], [1360, 655], [1360, 680]] },
     { from: "ks5", to: "ks6" },
     { from: "ks6", to: "kd2" },
-    { from: "kd2", to: "ks7", label: "đúng", color: "#16A34A" },
-    { from: "kd2", to: "ks6", label: "sai → nhập lại", color: "#DC2626", dashed: true, points: [[370, 755], [520, 755]] },
-    { from: "ks7", to: "kd3" },
-    { from: "kd3", to: "ks8", label: "có", color: "#16A34A" },
-    { from: "kd3", to: "ks7", label: "đóng → giữ giỏ", color: "#D97706", dashed: true, points: [[540, 990], [520, 990]] },
+    { from: "kd2", to: "ks7", label: "khớp", color: "#16A34A" },
+    { from: "kd2", to: "ks6", label: "lệch → nhập lại", color: "#DC2626", dashed: true, points: [[390, 757], [530, 757]] },
+    { from: "ks7", to: "ks8" },
     { from: "ks8", to: "ks9" },
-    { from: "ks9", to: "ks10" },
-    { from: "ks10", to: "ks11" },
-    { from: "ks11", to: "kd4" },
-    { from: "kd4", to: "ks12", label: "rớt 1 phần", color: "#DC2626" },
-    { from: "kd4", to: "ks13", label: "rớt hoàn toàn", color: "#DC2626" },
-    { from: "kd4", to: "ks14", label: "trúng", color: "#16A34A" },
+    { from: "ks9", to: "ks10", color: "#7C3AED", dashed: true },
+    { from: "ks9", to: "ks11" },
+    { from: "ks11", to: "kcancel", label: "dữ liệu đổi", color: "#D97706", dashed: true },
+    { from: "kcancel", to: "ks11", label: "bấm lại → lần N+1", color: "#16A34A", dashed: true, points: [[790, 1130], [1235, 1130]] },
+    { from: "ks1", to: "ksNo", label: "không có nhu cầu", color: "#64748B", dashed: true, points: [[510, 527], [545, 527], [545, 1100], [1810, 1100], [1810, 1145]] },
+    { from: "ks11", to: "kd4", label: "PĐD chốt Q rồi đấu thầu", color: "#2563EB" },
+    { from: "kd4", to: "ks14", label: "còn số trúng", color: "#16A34A" },
+    { from: "kd4", to: "ks13", label: "trúng 0", color: "#DC2626", points: [[1620, 1525], [1620, 1560], [775, 1560], [775, 1525]] },
     { from: "ks13", to: "ks15" },
-    { from: "ks15", to: "ks7", label: "giỏ bổ sung", color: "#7C3AED", dashed: true, points: [[770, 1810], [70, 1810], [70, 990], [100, 990]] },
-    { from: "ks12", to: "ks14", label: "đã chuyển hết SL", color: "#16A34A", points: [[310, 1565], [970, 1565], [970, 1462]] },
-    { from: "ks14", to: "ks16" },
+    { from: "ks15", to: "kbosung", label: "đề xuất lại", color: "#7C3AED" },
+    { from: "kbosung", to: "ks7", label: "bổ sung", color: "#7C3AED", dashed: true, points: [[775, 1790], [110, 1790], [110, 993], [100, 993]] },
+    { from: "ks14", to: "ks16", label: "sau chốt trình ký", color: "#16A34A" },
   ],
 };
 
@@ -162,117 +187,129 @@ const pdd = {
   id: "pdd",
   name: "03 Workflow PĐD chi tiết",
   title: "WORKFLOW CHI TIẾT — PHÒNG ĐIỀU DƯỠNG (PĐD)",
-  subtitle: "Điều hành Đợt × Gói con → tổng hợp → đấu thầu → chốt → hợp đồng / hàng về → giám sát",
-  width: 2200,
-  height: 1960,
+  subtitle: "Chuẩn bị đợt → hiệu chỉnh → CHỐT Q → ba giai đoạn → rớt → phân bổ số trúng → chốt trình ký · Cập nhật 20/08/2026",
+  width: 2260,
+  height: 2010,
   lanes: [
-    { id: "lane-pdd-detail", label: "PHÒNG ĐIỀU DƯỠNG", group: "pdd", x: 60, y: 210, w: 2080, h: 1570 },
+    { id: "lane-pdd-detail", label: "PHÒNG ĐIỀU DƯỠNG (cũng là admin — cùng quyền)", group: "pdd", x: 60, y: 210, w: 2140, h: 1640 },
   ],
   nodes: [
-    { id: "ps1", group: "pdd", x: 120, y: 285, w: 380, h: 125, title: "1. Tạo / mở đợt", lines: ["Chọn loại mua sắm, năm, mốc T1/T5/T9 nếu bổ sung", "Đóng đợt sẽ chặn Khoa gửi ở DB"] },
-    { id: "ps2", group: "pdd", x: 570, y: 285, w: 380, h: 125, title: "2. Bàn điều hành", lines: ["Chọn đợt + gói con", "Theo dõi đề xuất / Word / chốt của 62 Khoa"] },
-    { id: "ps3", group: "pdd", x: 1020, y: 285, w: 380, h: 125, title: "3. Theo dõi & nhắc", lines: ["Lọc Khoa chưa gửi / thiếu Word / chưa chốt", "Copy mẫu nhắc Zalo / Email / Teams"] },
-    { id: "ps4", group: "pdd", x: 1510, y: 285, w: 380, h: 125, title: "4. Danh mục tổng hợp", lines: ["Cộng theo mã hàng trong đúng đợt + gói con", "Mở chi tiết đóng góp từng Khoa"] },
-    { id: "ps5", group: "pdd", x: 1510, y: 515, w: 380, h: 135, title: "5. Hiệu chỉnh có audit", lines: ["Sửa đè, khóa dòng/cột, ẩn cột", "Khoa thấy phần PĐD sửa nhưng không được ghi"] },
-    { id: "ps6", group: "pdd", x: 1020, y: 515, w: 380, h: 135, title: "6. Hồ sơ trình ký", lines: ["Xuất Excel danh mục đi thầu", "Tạo Word Phiếu đề nghị mua thầu"] },
-    { id: "ps7", group: "pdd", x: 570, y: 515, w: 380, h: 135, title: "7. Ba giai đoạn thầu", lines: ["Chào giá → Mở thầu → Đánh giá", "Chỉ chọn mã rớt + giai đoạn + lý do"] },
-    { id: "pd1", group: "decision", shape: "decision", x: 120, y: 515, w: 220, h: 135, title: "Có mã rớt?", lines: [] },
-    { id: "ps8", group: "failure", x: 120, y: 760, w: 380, h: 145, title: "8a. Rớt 1 phần / cả nhóm", lines: ["Tự sync kết quả về mọi Khoa liên quan", "Có đường bỏ tích nếu chưa xử lý"] },
-    { id: "ps9", group: "pdd", x: 570, y: 760, w: 380, h: 145, title: "8b. Giỏ rớt toàn viện", lines: ["Theo dõi Khoa còn mã chưa xử lý + số ngày", "Nhắc Khoa chuyển SL hoặc sang đợt bổ sung"] },
-    { id: "ps10", group: "system", x: 1020, y: 760, w: 380, h: 145, title: "9. Chờ Khoa xử lý", lines: ["Rớt 1 phần: tổng đổi khi tải lại", "Rớt hoàn toàn: Khoa đưa vào giỏ bổ sung"] },
-    { id: "ps11", group: "gap", x: 1510, y: 760, w: 380, h: 145, title: "10. Một cờ chốt / hai thời điểm", lines: ["UI: chốt số đi thầu; docs: chốt sau thầu", "Hiện chỉ khóa dot_id, rộng hơn một gói con"] },
-    { id: "ps12", group: "success", x: 1510, y: 1015, w: 380, h: 145, title: "11. Hoàn thiện kết quả", lines: ["Mã không bị tích → mặc định trúng", "Tự tạo gói theo dõi + đủ 5 mốc"] },
-    { id: "ps13", group: "pdd", x: 1020, y: 1015, w: 380, h: 145, title: "12. Hợp đồng", lines: ["Hoàn thành mốc ký hợp đồng", "Theo dõi số trúng thầu"] },
-    { id: "ps14", group: "pdd", x: 570, y: 1015, w: 380, h: 145, title: "13. Hàng về đợt đầu", lines: ["Đánh dấu ngày hàng về", "Từ đây mới bắt đầu tính cam kết sử dụng"] },
-    { id: "ps15", group: "pdd", x: 120, y: 1015, w: 380, h: 145, title: "14. Giám sát sử dụng", lines: ["Nạp HIS; chỉnh ngưỡng 6/12/18 tháng", "Cảnh báo chậm cam kết và sắp hết sớm"] },
-    { id: "ps16", group: "pdd", x: 120, y: 1275, w: 380, h: 140, title: "15. Mở vòng bổ sung", lines: ["Khi có mã rớt hoàn toàn hoặc nguy cơ hết sớm", "Quay lại tạo / mở đợt bổ sung"] },
-    { id: "ps17", group: "pdd", x: 570, y: 1275, w: 380, h: 140, title: "Luồng dùng chung", lines: ["Xử lý Sổ thiếu hàng", "Duyệt / trả lại sự kiện nhu cầu"] },
-    { id: "ps18", group: "pdd", x: 1020, y: 1275, w: 380, h: 140, title: "Danh mục kỹ thuật", lines: ["Gán mã hàng / mã quản lý", "Duyệt hoặc từ chối mã mới và sửa tiêu chí"] },
-    { id: "pgap", group: "gap", shape: "note", x: 1510, y: 1260, w: 380, h: 170, title: "Khoảng trống cần quyết định", lines: ["Sửa tổng toàn viện chưa tự chia lại proposal từng Khoa.", "Hiện Khoa chỉ nhìn thấy số sửa đè và lịch sử audit."] },
-    { id: "pgapScope", group: "gap", shape: "note", x: 120, y: 1500, w: 1770, h: 165, title: "Lỗi mô hình phạm vi: Đợt × Gói con chưa thành một thực thể DB thống nhất", lines: ["danh_muc_dot_chot chỉ có PK dot_id; patch tạo kết quả mặc định cho mọi proposal trong đợt. PĐD override dùng goi_id:dot:dot_id,", "nhưng view số chốt và màn Khoa còn dùng goi_id tĩnh. Vì vậy không được hiểu thao tác chốt hiện tại là đã cô lập tuyệt đối từng gói con."] },
+    { id: "ps1", group: "pdd", x: 120, y: 280, w: 390, h: 135, title: "1 · Tạo / mở đợt", lines: ["Hệ tự sinh 5 DOT_GOI cho gói 18T", "Mỗi đợt bổ sung = 1 gói phẳng", "Đóng đợt là chặn ở DB, không chỉ ở giao diện"] },
+    { id: "ps2", group: "pdd", x: 580, y: 280, w: 390, h: 135, title: "2 · Phân gói con & khoa", lines: ["Phân mã quản lý vào từng gói con", "Chỉ định danh sách khoa tham gia", "Đổi được tới khi chốt Q"] },
+    { id: "ps3", group: "pdd", x: 1040, y: 280, w: 390, h: 135, title: "3 · Bàn điều hành", lines: ["Theo dõi: đã gửi · đã xác nhận · Word", "Lọc khoa còn thiếu → nhắc qua Teams", "Web KHÔNG tự gửi thông báo"] },
+    { id: "ps4", group: "pdd", x: 1500, y: 280, w: 620, h: 135, title: "4 · Danh mục tổng hợp", lines: ["Cộng theo mã hàng trong đúng một DOT_GOI", "Cột SỐ là VIEW SUM — KHÔNG sửa trực tiếp được", "Cột CHỮ sửa đè trực tiếp (đè cho toàn viện)"] },
+
+    { id: "ps5", group: "pdd", x: 1500, y: 510, w: 620, h: 145, title: "5 · Hiệu chỉnh số", lines: ["PĐD gõ TỔNG của mã → hệ chia sẵn theo tỉ lệ khoa đã đề xuất", "(làm tròn xuống, phần dư dồn vào khoa có số lớn nhất) — PĐD sửa tay được", "Không lưu được nếu tổng các dòng chưa khớp tổng mới"] },
+    { id: "ps5b", group: "gap", shape: "note", x: 1040, y: 510, w: 390, h: 145, title: "Sửa số sau khi khoa đã xác nhận", lines: ["BẮT BUỘC nhập lý do.", "Khoa thấy số cũ, số mới, người sửa và lý do", "ngay trên bảng của mình."] },
+
+    { id: "psq", group: "success", x: 120, y: 510, w: 850, h: 145, title: "6 · CHỐT SỐ THAM GIA ĐẤU THẦU  →  Q", lines: ["CỔNG CỨNG — chỉ bấm được khi MỌI khoa ĐÃ GỬI đề xuất đều đã xác nhận bản hiện tại.", "Khoa tham gia mà chưa gửi gì thì KHÔNG tính (nếu tính, nút không bao giờ sáng).", "Tạo snapshot Q bất biến · Khoá phạm vi: không thêm mã, không đổi gói con nữa."] },
+
+    { id: "ps7", group: "pdd", x: 120, y: 745, w: 390, h: 145, title: "7 · Ba giai đoạn đấu thầu", lines: ["Chào giá → Mở thầu → Đánh giá", "Phải hoàn thành giai đoạn trước mới sang sau", "Mở lại: bắt lý do; giai đoạn SAU hết hiệu lực"] },
+    { id: "pd1", group: "decision", shape: "decision", x: 580, y: 745, w: 240, h: 145, title: "Mã này\ncó rớt?", lines: [] },
+    { id: "psWin", group: "success", x: 890, y: 745, w: 540, h: 145, title: "MẶC ĐỊNH TRÚNG TOÀN BỘ", lines: ["Không nhập ngoại lệ → số trúng = Q, số rớt = 0.", "PĐD KHÔNG phải tích trúng cho hàng nghìn mã."] },
+    { id: "ps8", group: "failure", x: 1500, y: 745, w: 620, h: 145, title: "8 · Nhập ngoại lệ rớt — cấp MÃ HÀNG", lines: ["Nhập: mã hàng · giai đoạn · toàn bộ hay một phần · số lượng · lý do", "Nút “Rớt toàn bộ mã quản lý” tự rải xuống mọi mã hàng bên trong", "Rớt được ở NHIỀU giai đoạn: ΣR = R1+R2+R3 · KHOÁ CỨNG 3: 0 ≤ ΣR ≤ Q"] },
+
+    { id: "ps9", group: "pdd", x: 1500, y: 975, w: 620, h: 150, title: "9 · Phân bổ số trúng về khoa", lines: ["Số trúng = Q − ΣR  ·  CHỈ PĐD được phân bổ", "Trúng toàn bộ → giữ nguyên phân bổ Q, không phải nhập lại", "Trúng một phần → chia sẵn theo tỉ lệ Q · Rớt toàn bộ → mọi khoa = 0"] },
+    { id: "ps9b", group: "neutral", shape: "note", x: 1040, y: 975, w: 390, h: 150, title: "KHOÁ CỨNG 2", lines: ["Tổng phân bổ = số trúng của mã.", "Không có kho dự phòng, không có số chưa phân bổ.", "Vượt Q của một khoa: được, nhưng phải có lý do."] },
+
+    { id: "ps10", group: "failure", x: 580, y: 975, w: 390, h: 150, title: "10 · Giỏ rớt toàn viện", lines: ["Theo dõi khoa nào chưa xử lý, bao nhiêu ngày", "Nút “Nhắc” sinh template để copy sang Teams", "PĐD thao tác thay khoa được — có audit"] },
+    { id: "ps11", group: "pdd", x: 120, y: 975, w: 390, h: 150, title: "11 · Mở đợt bổ sung", lines: ["3 đợt/năm: T1 · T5 · T9", "Pipeline bổ sung ĐỘC LẬP,", "không chặn việc chốt kết quả của gói gốc"] },
+
+    { id: "ps12", group: "success", x: 120, y: 1210, w: 850, h: 150, title: "12 · CHỐT DỮ LIỆU TRÌNH KÝ", lines: ["Chốt từng bảng khoa → rồi “Chốt toàn bộ” mới tạo được revision chính thức.", "QĐ 20/08/2026 — cổng chỉ tính khoa ĐÃ GỬI đề xuất; khoa im lặng ghi vào audit, KHÔNG chặn.", "Khi chốt: khoá toàn bộ DOT_GOI · Excel khoa và Excel tổng hợp dùng CÙNG revision."] },
+    { id: "ps13", group: "pdd", x: 1040, y: 1210, w: 390, h: 150, title: "13 · Xuất Excel chính thức", lines: ["Trước khi chốt: chỉ xuất được bản NHÁP", "Số trên Excel cuối là SỐ TRÚNG đã phân bổ", "File sinh tạm rồi xoá — web không lưu file nhị phân"] },
+    { id: "ps14", group: "neutral", shape: "note", x: 1500, y: 1210, w: 620, h: 150, title: "Mở lại sau khi đã chốt", lines: ["Mở một bảng khoa → bản tổng hợp TỰ HẾT HIỆU LỰC, revision cũ mất giá trị.", "Chỉ bảng khoa đó mở, các bảng khác vẫn khoá. Mọi lần mở lại BẮT LÝ DO.", "Hệ không cưỡng chế được bản giấy đã in — nên mọi file đều in revision + thời điểm."] },
+
+    { id: "ps15", group: "pdd", x: 120, y: 1445, w: 390, h: 145, title: "14 · Sau trình ký", lines: ["Bật tuỳ chọn mua thêm 30% cho các khoa", "Trả mã hàng về danh sách khoa cho kỳ sau"] },
+    { id: "ps16", group: "pdd", x: 580, y: 1445, w: 390, h: 145, title: "15 · Tiến độ sử dụng", lines: ["Nạp HIS · chỉnh ngưỡng cam kết 20/50/80", "Tách CHẬM CAM KẾT và SẮP HẾT SỚM", "Module sau khi hàng về, ngoài pipeline"] },
+    { id: "ps17", group: "pdd", x: 1040, y: 1445, w: 390, h: 145, title: "Luồng dùng chung", lines: ["Xử lý Sổ thiếu hàng", "Duyệt mã kỹ thuật mới khoa đề nghị", "Duyệt đề nghị sửa tiêu chí kỹ thuật"] },
+    { id: "pgap", group: "gap", shape: "note", x: 1500, y: 1445, w: 620, h: 145, title: "⚠ NỢ KỸ THUẬT ĐANG CÒN (20/08/2026)", lines: ["danh_muc_khoa_o chưa có cột neo đợt → 3 đợt bổ sung/năm dùng chung goi_id 'bo-sung'", "và cùng năm, nên xài chung một dòng giải trình. Fix lan tới 6 RPC + 3 chỗ đọc frontend.", "Chi tiết: ../05_TRANG_THAI_VA_VIEC_TIEP_THEO.md mục 3."] },
   ],
   edges: [
     { from: "ps1", to: "ps2" },
     { from: "ps2", to: "ps3" },
     { from: "ps3", to: "ps4" },
     { from: "ps4", to: "ps5" },
-    { from: "ps5", to: "ps6" },
-    { from: "ps6", to: "ps7" },
+    { from: "ps5", to: "ps5b", label: "bắt lý do", color: "#D97706", dashed: true },
+    { from: "ps5", to: "psq", label: "số đã ổn", color: "#16A34A", points: [[1810, 655], [1810, 700], [545, 700], [545, 500]] },
+    { from: "psq", to: "ps7", label: "Q đã đóng băng", color: "#16A34A" },
     { from: "ps7", to: "pd1" },
-    { from: "pd1", to: "ps8", label: "có", color: "#DC2626" },
-    { from: "pd1", to: "ps11", label: "không / đã xử lý", color: "#16A34A", points: [[80, 590], [80, 690], [1700, 690], [1700, 730]] },
-    { from: "ps8", to: "ps9" },
-    { from: "ps9", to: "ps10" },
+    { from: "pd1", to: "psWin", label: "không", color: "#16A34A" },
+    { from: "pd1", to: "ps8", label: "có", color: "#DC2626", points: [[700, 890], [700, 925], [1810, 925], [1810, 890]] },
+    { from: "psWin", to: "ps9", label: "giữ nguyên phân bổ Q", color: "#16A34A", points: [[1160, 890], [1160, 940], [1810, 940], [1810, 965]] },
+    { from: "ps8", to: "ps9", label: "số trúng = Q − ΣR", color: "#DC2626" },
+    { from: "ps9", to: "ps9b", color: "#64748B", dashed: true },
+    { from: "ps9", to: "ps10", label: "mã quản lý trúng 0", color: "#DC2626", points: [[1810, 1125], [1810, 1160], [775, 1160], [775, 1125]] },
     { from: "ps10", to: "ps11" },
-    { from: "ps11", to: "ps12" },
+    { from: "ps11", to: "ps1", label: "đợt bổ sung mới", color: "#D97706", dashed: true, points: [[80, 1050], [80, 348], [100, 348]] },
+    { from: "ps9", to: "ps12", label: "đã phân bổ hết", color: "#16A34A", points: [[1810, 1125], [1810, 1185], [545, 1185], [545, 1200]] },
     { from: "ps12", to: "ps13" },
-    { from: "ps13", to: "ps14" },
-    { from: "ps14", to: "ps15" },
-    { from: "ps15", to: "ps16", label: "sắp hết sớm", color: "#D97706" },
-    { from: "ps16", to: "ps1", label: "đợt bổ sung mới", color: "#D97706", dashed: true, points: [[70, 1345], [70, 350], [100, 350]] },
-    { from: "ps5", to: "pgap", label: "chưa có thuật toán", color: "#D97706", dashed: true },
-    { from: "ps11", to: "pgapScope", label: "scope chốt quá rộng", color: "#D97706", dashed: true },
+    { from: "ps13", to: "ps14", color: "#64748B", dashed: true },
+    { from: "ps12", to: "ps15" },
+    { from: "ps15", to: "ps16" },
+    { from: "ps16", to: "ps17" },
   ],
 };
 
 const knowledge = {
   id: "knowledge",
-  name: "04 Knowledge graph & checkpoint",
-  title: "KNOWLEDGE GRAPH — THỰC THỂ, CHECKPOINT VÀ VÒNG LẶP",
-  subtitle: "Mô hình đúng cần DOT_GOI = dot_id × goi_id; màu đỏ/cam là seam chưa khép kín trong code hiện tại",
-  width: 2560,
-  height: 2100,
+  name: "04 Kiến trúc số & checkpoint",
+  title: "KIẾN TRÚC SỐ, CHECKPOINT VÀ VÒNG LẶP",
+  subtitle: "Chuỗi số một chiều một nguồn (QĐ 17/08/2026) · Cập nhật 20/08/2026",
+  width: 2600,
+  height: 2060,
   lanes: [
-    { id: "lane-kg-khoa", label: "KHOA / ĐVSD", group: "khoa", x: 60, y: 210, w: 690, h: 1680 },
-    { id: "lane-kg-system", label: "MÔ HÌNH LÕI / HỆ THỐNG", group: "system", x: 790, y: 210, w: 920, h: 1680 },
-    { id: "lane-kg-pdd", label: "PHÒNG ĐIỀU DƯỠNG", group: "pdd", x: 1750, y: 210, w: 750, h: 1680 },
+    { id: "lane-kg-khoa", label: "KHOA / ĐVSD", group: "khoa", x: 60, y: 210, w: 700, h: 1660 },
+    { id: "lane-kg-system", label: "MÔ HÌNH LÕI", group: "system", x: 800, y: 210, w: 930, h: 1660 },
+    { id: "lane-kg-pdd", label: "PHÒNG ĐIỀU DƯỠNG", group: "pdd", x: 1770, y: 210, w: 760, h: 1660 },
   ],
   nodes: [
-    { id: "kgDot", group: "system", x: 980, y: 285, w: 540, h: 110, title: "DOT_DE_XUAT", lines: ["Cổng nhận đề xuất: mo ↔ dong", "Không đồng nghĩa với chốt Khoa / chốt thầu"] },
-    { id: "kgScope", group: "failure", shape: "note", x: 900, y: 465, w: 700, h: 165, title: "DOT_GOI = dot_id × goi_id  [THỰC THỂ ĐANG THIẾU]", lines: ["Một đợt 18T có 5 gói con đi thầu riêng", "DB hiện chia khóa giữa dot_id, goi_id tĩnh và goi_id:dot:dot_id"] },
+    { id: "kgDot", group: "system", x: 870, y: 280, w: 790, h: 115, title: "DOT_DE_XUAT", lines: ["Cổng nhận đề xuất: mo ↔ dong. Một đợt 18T sinh 5 DOT_GOI; mỗi đợt bổ sung sinh 1."] },
+    { id: "kgScope", group: "success", x: 870, y: 445, w: 790, h: 130, title: "DOT_GOI = Đợt × Gói con   ⟵ đơn vị workflow thật", lines: ["Mỗi DOT_GOI có riêng: khoa tham gia · trạng thái · danh mục · snapshot Q · ba giai đoạn ·", "kết quả · phân bổ · revision. Chốt/mở/sửa một gói con KHÔNG tác động bốn gói còn lại."] },
 
-    { id: "kgDraft", group: "khoa", x: 135, y: 315, w: 540, h: 125, title: "NHÓM ĐỀ XUẤT / PROPOSAL", lines: ["Giỏ server → submit transaction", "Proposal chính thức; không PĐD duyệt giỏ"] },
-    { id: "kgCatalog", group: "khoa", x: 135, y: 520, w: 540, h: 125, title: "DANH MỤC KHOA", lines: ["Ô cộng tác + audit + khóa cột", "Word cam kết được tạo song song"] },
-    { id: "kgReady", group: "success", x: 135, y: 725, w: 540, h: 125, title: "CHECKPOINT 1 — KHOA_READY", lines: ["Khoa chốt danh mục", "Có thể mở lại; là trục riêng với trạng thái đợt"] },
-    { id: "kgPartial", group: "failure", x: 135, y: 1070, w: 540, h: 140, title: "RESULT.failed — Rớt một phần", lines: ["Đẩy SL sang SKU tương đương cùng mã quản lý", "Tạo version mới; giữ tổng mã quản lý"] },
-    { id: "kgFull", group: "failure", x: 135, y: 1285, w: 540, h: 140, title: "RESULT.failed — Rớt cả nhóm", lines: ["Chọn đợt bổ sung đang mở", "Đưa vào giỏ nháp → phải submit bổ sung riêng"] },
-    { id: "kgSupport", group: "khoa", x: 135, y: 1530, w: 540, h: 140, title: "PHẢN HỒI VẬN HÀNH", lines: ["Thiếu hàng · sự kiện nhu cầu · mã kỹ thuật", "Làm dữ liệu đầu vào cho kỳ kế tiếp"] },
+    { id: "kgProp", group: "khoa", x: 130, y: 625, w: 590, h: 130, title: "proposals — DẤU VẾT GỐC", lines: ["Khoa gửi giỏ trong một transaction.", "BẤT BIẾN — không ai sửa đè, kể cả PĐD."] },
+    { id: "kgAlloc", group: "system", x: 870, y: 625, w: 790, h: 130, title: "phan_bo_khoa — SỐ HIỆN HÀNH  (nguồn DUY NHẤT)", lines: ["Khoá theo (DOT_GOI × mã hàng × khoa). Khoa và PĐD CÙNG sửa ở đây.", "so_luong_goc đóng băng làm dấu vết khi khoa tự sửa."] },
+    { id: "kgView", group: "pdd", x: 1840, y: 625, w: 620, h: 130, title: "Danh mục tổng hợp = VIEW SUM", lines: ["Cộng lên, KHÔNG lưu số riêng.", "Vì vậy “tổng PĐD = tổng phân bổ về khoa”", "đúng THEO CẤU TRÚC, không cần code canh."] },
 
-    { id: "kgTracker", group: "system", x: 980, y: 760, w: 540, h: 130, title: "TENDER_TRACKER", lines: ["5 mốc: chào giá → mở thầu → đánh giá", "→ ký hợp đồng → hàng về đợt đầu"] },
-    { id: "kgResult", group: "system", x: 980, y: 990, w: 540, h: 140, title: "RESULT = SKU × Khoa", lines: ["Mặc định trúng; PĐD chỉ ghi dòng rớt", "khoa_da_xem và da_xu_ly là hai trục riêng"] },
-    { id: "kgFinal", group: "gap", shape: "note", x: 900, y: 1235, w: 700, h: 155, title: "CHECKPOINT 3 — TENDER_RESULT_FINALIZED  [ĐANG THIẾU]", lines: ["Cần chốt sau 3 giai đoạn và sau khi Khoa xử lý rớt", "Hiện chưa có entity/cờ độc lập để phân biệt với số đầu vào đi thầu"] },
-    { id: "kgUsage", group: "system", x: 980, y: 1510, w: 540, h: 140, title: "USAGE_MONITOR", lines: ["Số trúng + hàng về + HIS", "Cam kết sử dụng / chậm / dự kiến hết sớm"] },
-    { id: "kgAxes", group: "neutral", shape: "note", x: 850, y: 1710, w: 800, h: 130, title: "Các trục trạng thái độc lập", lines: ["Đợt · Khoa-ready · đầu vào thầu · kết quả · mốc thầu", "proposal current/rút/đã đi thầu · đã xem · đã xử lý"] },
+    { id: "kgText", group: "success", shape: "note", x: 130, y: 800, w: 1530, h: 130, title: "CỘT CHỮ — một giá trị chung toàn viện (danh_muc_tong_hop_o)", lines: ["TSKT là thuộc tính của MÃ HÀNG, không phải của khoa. Ai sửa sau đè, khoa hay PĐD đều vậy.", "Ngoại lệ duy nhất: giai_trinh_2627 lưu riêng theo khoa ở danh_muc_khoa_o."] },
 
-    { id: "kgAggregate", group: "pdd", x: 1825, y: 390, w: 600, h: 130, title: "PDD_AGGREGATE", lines: ["Tổng hợp đúng phạm vi Đợt × Gói con", "Drill-down đóng góp từng Khoa"] },
-    { id: "kgOverride", group: "pdd", x: 1825, y: 600, w: 600, h: 135, title: "OVERRIDE / LOCK / AUDIT", lines: ["PĐD sửa tổng, khóa dòng/cột, xuất hồ sơ", "Chưa chia ngược tổng vào proposal từng Khoa"] },
-    { id: "kgFreeze", group: "gap", shape: "note", x: 1825, y: 815, w: 600, h: 145, title: "CHECKPOINT 2 — TENDER_INPUT_FROZEN", lines: ["Cần đóng băng số trước khi mang đi thầu", "Hiện dùng chung cờ chốt với thời điểm sau thầu"] },
-    { id: "kgTender", group: "pdd", x: 1825, y: 1040, w: 600, h: 140, title: "BA GIAI ĐOẠN ĐẤU THẦU", lines: ["Chào giá → Mở thầu → Đánh giá", "Tích mã rớt + lý do; mã không tích mặc định trúng"] },
-    { id: "kgContract", group: "pdd", x: 1825, y: 1360, w: 600, h: 140, title: "HỢP ĐỒNG / HÀNG VỀ", lines: ["Hoàn thành mốc ký hợp đồng", "Đánh dấu hàng về đợt đầu"] },
-    { id: "kgCritical", group: "failure", shape: "note", x: 1825, y: 1585, w: 600, h: 190, title: "P0 — SPLIT-BRAIN HIỆN TẠI", lines: ["Chốt mới chỉ dot_id; khóa/view cũ còn gói+năm", "Override PĐD dùng goi:dot:id; Khoa/view dùng goi tĩnh", "Proposal current-version chưa có dot_id"] },
+    { id: "kgConfirm", group: "khoa", x: 130, y: 980, w: 590, h: 135, title: "VÒNG XÁC NHẬN lần N  (danh_muc_khoa_chot)", lines: ["Không khoá dữ liệu. Có sửa là xác nhận tự huỷ,", "kể cả khi khoa KHÁC sửa cột chữ chung của mã đó.", "Bấm lại → lần N+1, không giới hạn."] },
+
+    { id: "kgQ", group: "success", x: 870, y: 980, w: 790, h: 135, title: "CHECKPOINT 1 — CHỐT Q  (chot_q_phien + chot_q_dong)", lines: ["Cổng CỨNG: mọi khoa đã gửi phải đã xác nhận. Khoa chưa gửi gì thì không tính.", "Snapshot BẤT BIẾN theo (DOT_GOI × mã hàng × khoa) → khoá cột SỐ, khoá phạm vi danh mục."] },
+
+    { id: "kgStage", group: "pdd", x: 1840, y: 980, w: 620, h: 135, title: "giai_doan_thau_v3", lines: ["Chào giá → Mở thầu → Đánh giá.", "Đúng thứ tự; mở lại làm giai đoạn SAU", "hết hiệu lực và bắt nhập lý do."] },
+
+    { id: "kgRot", group: "failure", x: 870, y: 1165, w: 790, h: 140, title: "ket_qua_rot_v3 — chỉ ghi NGOẠI LỆ RỚT", lines: ["Mặc định mọi mã TRÚNG TOÀN BỘ. Rớt ghi ở cấp MÃ HÀNG, được ở nhiều giai đoạn.", "Số trúng = Q − (R1+R2+R3).   KHOÁ CỨNG 3: 0 ≤ ΣR ≤ Q."] },
+    { id: "kgWin", group: "pdd", x: 1840, y: 1165, w: 620, h: 140, title: "phan_bo_trung_v3", lines: ["CHỈ PĐD phân bổ. Chỉ khoa đã đề xuất mã", "mới được nhận. KHOÁ CỨNG 2: tổng phân bổ", "= số trúng. Không có kho dự phòng."] },
+    { id: "kgBasket", group: "failure", x: 130, y: 1165, w: 590, h: 140, title: "xu_ly_gio_rot_v3", lines: ["Mã quản lý trúng 0 → tạo mục giỏ rớt cho từng khoa.", "Chỉ tính ĐÃ XỬ LÝ khi đề xuất bổ sung đã SUBMIT,", "hoặc chọn “Không còn nhu cầu”. Giỏ nháp chưa tính."] },
+
+    { id: "kgFinal", group: "success", x: 870, y: 1355, w: 790, h: 140, title: "CHECKPOINT 2 — CHỐT TRÌNH KÝ  (chot_trinh_ky_phien_v3)", lines: ["Chốt từng bảng khoa → chốt toàn bộ → revision chính thức, bất biến.", "QĐ 20/08: cổng chỉ tính khoa đã gửi đề xuất. Khi chốt: khoá cột CHỮ, khoá cả DOT_GOI."] },
+    { id: "kg30", group: "khoa", x: 130, y: 1355, w: 590, h: 140, title: "tuy_chon_mua_them_30_v3", lines: ["CHỈ bật sau CHECKPOINT 2.", "Trần = floor(số trúng của khoa × 30%),", "tính ở cấp khoa × mã quản lý."] },
+    { id: "kgRev", group: "pdd", x: 1840, y: 1355, w: 620, h: 140, title: "Revision & Excel chính thức", lines: ["Excel khoa và Excel tổng hợp cùng revision.", "Mở lại một bảng khoa → revision tổng hợp", "tự hết hiệu lực. File sinh tạm rồi xoá."] },
+
+    { id: "kgAxes", group: "neutral", shape: "note", x: 870, y: 1550, w: 790, h: 130, title: "Các trục trạng thái ĐỘC LẬP — đừng gộp", lines: ["Trạng thái DOT_GOI  ·  vòng xác nhận lần N của từng khoa  ·  snapshot Q  ·  ba giai đoạn thầu", "·  kết quả rớt/trúng  ·  xử lý giỏ rớt  ·  revision trình ký  ·  hạn mức 30% đã dùng"] },
+    { id: "kgOut", group: "system", shape: "note", x: 130, y: 1550, w: 590, h: 130, title: "NGOÀI PIPELINE", lines: ["Sổ thiếu hàng · Điều chỉnh tiêu chí kỹ thuật", "· Duyệt mã kỹ thuật · Tiến độ sử dụng.", "Không chặn bước nào. ⚠ Chưa test lần nào."] },
+    { id: "kgDebt", group: "gap", shape: "note", x: 1840, y: 1550, w: 620, h: 130, title: "⚠ Nợ kỹ thuật còn lại", lines: ["danh_muc_khoa_o chưa neo đợt → gói bổ sung", "dùng chung một dòng giải trình cho cả 3 đợt/năm.", "Xem ../05_TRANG_THAI_VA_VIEC_TIEP_THEO.md."] },
+
+    { id: "kgNo", group: "neutral", shape: "note", x: 130, y: 1720, w: 2330, h: 120, title: "KHÔNG có trong hệ thống — đừng dựng lại (chi tiết: ../06_DUNG_LAM_LAI.md)", lines: ["Bước PĐD duyệt giỏ · khoá ô sau khi PĐD sửa · mỗi khoa một bản cột chữ riêng · khoa tự đẩy SL từ mã rớt sang mã tương đương", "· Sổ sự kiện nhu cầu · vòng đời duyệt hồ sơ Word/Excel · MỌI cột giá · hạn nộp, nhắc tự động, thông báo tự động"] },
   ],
   edges: [
-    { from: "kgDot", to: "kgScope", label: "có nhiều gói con", color: "#7C3AED" },
-    { from: "kgScope", to: "kgDraft", label: "HAS_SUBMISSION", color: "#7C3AED" },
-    { from: "kgDraft", to: "kgCatalog", label: "sinh sau submit", color: "#0F766E" },
-    { from: "kgCatalog", to: "kgReady", label: "chốt / mở", color: "#16A34A" },
-    { from: "kgReady", to: "kgAggregate", label: "handoff", color: "#7C3AED" },
-    { from: "kgScope", to: "kgAggregate", label: "AGGREGATES_TO", color: "#7C3AED" },
-    { from: "kgAggregate", to: "kgOverride", color: "#2563EB" },
-    { from: "kgOverride", to: "kgFreeze", label: "freeze", color: "#D97706", dashed: true },
-    { from: "kgFreeze", to: "kgTracker", label: "tạo tracker / mặc định trúng", color: "#7C3AED", dashed: true },
-    { from: "kgTracker", to: "kgTender", label: "theo dõi", color: "#7C3AED" },
-    { from: "kgTender", to: "kgResult", label: "ghi mã rớt", color: "#2563EB" },
-    { from: "kgResult", to: "kgPartial", label: "còn SKU tương đương", color: "#DC2626" },
-    { from: "kgResult", to: "kgFull", label: "cả nhóm rớt", color: "#DC2626" },
-    { from: "kgPartial", to: "kgAggregate", label: "DB-derived khi tải lại", color: "#0F766E", dashed: true, points: [[720, 1140], [1735, 1140], [1735, 455], [1800, 455]] },
-    { from: "kgFull", to: "kgDraft", label: "DOT_GOI bổ sung", color: "#7C3AED", dashed: true, points: [[95, 1355], [95, 375], [110, 375]] },
-    { from: "kgResult", to: "kgFinal", label: "sau xử lý rớt", color: "#D97706", dashed: true },
-    { from: "kgFinal", to: "kgContract", label: "nên là gate", color: "#D97706", dashed: true },
-    { from: "kgContract", to: "kgUsage", label: "hàng về", color: "#7C3AED" },
-    { from: "kgUsage", to: "kgSupport", label: "cảnh báo / phản hồi", color: "#7C3AED" },
-    { from: "kgSupport", to: "kgDot", label: "dữ liệu kỳ sau", color: "#D97706", dashed: true, points: [[720, 1600], [770, 1600], [770, 340], [950, 340]] },
-    { from: "kgScope", to: "kgCritical", label: "triển khai chưa thống nhất", color: "#DC2626", dashed: true, points: [[1640, 550], [1685, 550], [1685, 1680], [1800, 1680]] },
+    { from: "kgDot", to: "kgScope", label: "sinh gói con", color: "#7C3AED" },
+    { from: "kgScope", to: "kgProp", label: "khoa gửi giỏ", color: "#0F766E" },
+    { from: "kgProp", to: "kgAlloc", label: "khởi tạo", color: "#7C3AED" },
+    { from: "kgAlloc", to: "kgView", label: "SUM", color: "#2563EB" },
+    { from: "kgAlloc", to: "kgText", label: "cột chữ tách riêng", color: "#16A34A", dashed: true },
+    { from: "kgText", to: "kgConfirm", label: "đổi ô → huỷ xác nhận", color: "#D97706", dashed: true },
+    { from: "kgConfirm", to: "kgQ", label: "cổng cứng", color: "#16A34A" },
+    { from: "kgView", to: "kgQ", label: "đóng băng số", color: "#2563EB" },
+    { from: "kgQ", to: "kgStage", label: "mở ba giai đoạn", color: "#7C3AED" },
+    { from: "kgStage", to: "kgRot", label: "ghi ngoại lệ rớt", color: "#DC2626" },
+    { from: "kgRot", to: "kgWin", label: "số trúng = Q − ΣR", color: "#2563EB" },
+    { from: "kgRot", to: "kgBasket", label: "mã quản lý trúng 0", color: "#DC2626" },
+    { from: "kgBasket", to: "kgProp", label: "bổ sung", color: "#7C3AED", dashed: true, points: [[105, 1235], [105, 690], [110, 690]] },
+    { from: "kgWin", to: "kgFinal", label: "đã phân bổ hết", color: "#16A34A", points: [[2150, 1305], [2150, 1330], [1265, 1330], [1265, 1345]] },
+    { from: "kgFinal", to: "kgRev", label: "tạo revision", color: "#2563EB" },
+    { from: "kgFinal", to: "kg30", label: "mới bật được 30%", color: "#16A34A" },
+    { from: "kgFinal", to: "kgAxes", color: "#64748B", dashed: true },
   ],
 };
 
@@ -518,12 +555,12 @@ function svgFile(page) {
     <circle cx="420" cy="27" r="8" fill="#DC2626"/><text x="436" y="31" class="legend">Nhánh rớt</text>
     <circle cx="540" cy="27" r="8" fill="#D97706"/><text x="556" y="31" class="legend">Điểm cần lưu ý</text>
     <line x1="26" y1="62" x2="92" y2="62" stroke="#475569" stroke-width="2.4" marker-end="url(#arrow-slate)"/><text x="105" y="66" class="legend">Đã triển khai</text>
-    <line x1="260" y1="62" x2="326" y2="62" stroke="#D97706" stroke-width="2.4" stroke-dasharray="9 7" marker-end="url(#arrow-amber)"/><text x="340" y="66" class="legend">Vòng lặp / lưu ý / chưa nối đủ</text>
+    <line x1="260" y1="62" x2="326" y2="62" stroke="#D97706" stroke-width="2.4" stroke-dasharray="9 7" marker-end="url(#arrow-amber)"/><text x="340" y="66" class="legend">Vòng lặp · quay lại · ghi chú</text>
   </g>
   ${laneSvg}
   <g>${edges}</g>
   <g>${nodes}</g>
-  <text x="60" y="${page.height - 34}" class="footer">Nguồn: frontend + SQL/RLS + contract tests + smoke_pipeline_hien_tai.py · tạo ngày 16/08/2026</text>
+  <text x="60" y="${page.height - 34}" class="footer">Nguồn chuẩn: ../01_NGHIEP_VU_HIEN_HANH.md · Quyết định đã bị đảo: ../06_DUNG_LAM_LAI.md · Vẽ lại 20/08/2026 theo workflow v3 + luật V2</text>
 </svg>
 `;
 }
@@ -537,94 +574,152 @@ const mermaid = {
   classDef ok fill:#ECFDF5,stroke:#16A34A,color:#14532D,stroke-width:2px
   classDef gap fill:#FFFBEB,stroke:#D97706,color:#78350F,stroke-width:2px,stroke-dasharray: 6 4
 
-  P0["PĐD tạo / mở đợt<br/>chọn loại mua sắm + gói con"]:::pdd -->|đợt mở| K0["Khoa chọn đợt + gói con<br/>khóa logic = dot_id × goi_id"]:::khoa
-  K0 --> K1["ĐVT chuẩn + hệ số quy đổi<br/>TSB 24 tháng → P50/P75/P90/P95"]:::khoa
-  K1 --> K2["Chốt tổng mã quản lý<br/>phân bổ xuống mã hàng, tổng quy đổi phải khớp"]:::khoa
-  K2 --> K3["Giỏ lưu server<br/>Thêm cả mã quản lý"]:::khoa
-  K3 --> K4["Gửi giỏ = chính thức<br/>1 transaction · 1 giỏ = 1 gói con<br/>không PĐD duyệt giỏ"]:::ok
-  K4 --> K5["Word cam kết ngay<br/>Danh mục Khoa: sửa + audit + chốt"]:::khoa
-  K4 --> P1["Bàn điều hành<br/>theo dõi 62 Khoa"]:::pdd
+  P0["1 · PĐD chuẩn bị đợt<br/>hệ sinh 5 DOT_GOI · phân mã quản lý vào gói con<br/>chỉ định khoa tham gia · mở đợt"]:::pdd
+  P0 -->|mở đợt nhận đề xuất| K1["2 · Khoa lập số ở cấp MÃ QUẢN LÝ<br/>ĐVT chuẩn + hệ số · lịch sử 24T<br/>P50 là mức chọn sẵn, số không tự điền"]:::khoa
+  K1 --> K2["3 · Phân bổ xuống mã hàng<br/>KHOÁ CỨNG 1 — tổng sau quy đổi phải khớp"]:::khoa
+  K2 --> K3["4 · Gửi giỏ = CHÍNH THỨC<br/>1 transaction · 1 giỏ = 1 gói con<br/>KHÔNG có bước PĐD duyệt giỏ"]:::ok
+  K3 --> K4["5 · Danh mục đề xuất của khoa<br/>khoa sửa SỐ của mình · cột CHỮ đè toàn viện<br/>dải P50–P75, vượt P75 chỉ tô nổi bật"]:::khoa
+  K4 --> K5["6 · Xác nhận thông tin lần N<br/>không khoá gì · dữ liệu đổi là TỰ HUỶ"]:::khoa
+
+  K3 --> P1["7 · Bàn điều hành PĐD<br/>ai đã gửi · ai đã xác nhận · nhắc qua Teams"]:::pdd
   K5 --> P1
-  P1 --> P2["Danh mục tổng hợp<br/>Đợt × Gói con, drill-down từng Khoa"]:::pdd
-  P2 --> P3["PĐD sửa/khóa + audit<br/>Excel tổng hợp + Word đề nghị mua"]:::pdd
-  P3 --> P4["3 giai đoạn thầu<br/>chỉ tích mã RỚT"]:::pdd
-  P4 --> D{"Kết quả?"}
-  D -->|rớt 1 phần| K6["Khoa đẩy SL sang mã tương đương còn trúng<br/>giữ nguyên tổng mã quản lý"]:::fail
-  K6 --> P2
-  D -->|rớt hoàn toàn| K7["Giỏ rớt → chọn đợt bổ sung<br/>chuyển vào giỏ server"]:::fail
-  K7 -. "gửi vòng bổ sung" .-> K3
-  D -->|trúng / xử lý xong| P5["CỜ CHỐT ĐANG GÁNH 2 MỐC<br/>UI: số đi thầu · docs: sau thầu<br/>DB chưa có RESULT_FINALIZED"]:::gap
-  K6 --> P5
-  P5 --> P6["Ký hợp đồng → hàng về đợt đầu"]:::pdd
-  P5 --> K8["Khoa xem kết quả<br/>mua thêm ≤ floor(30%) sau chốt"]:::ok
-  P6 --> P7["PĐD nạp HIS / chỉnh ngưỡng<br/>giám sát chậm cam kết & sắp hết sớm"]:::pdd
-  K8 --> K9["Sử dụng · báo thiếu hàng<br/>khai sự kiện nhu cầu"]:::khoa --> P7
-  P7 -. "sắp hết sớm" .-> P0
-  P3 -.-> G1["CHƯA NỐI ĐỦ: số PĐD sửa ở cấp toàn viện<br/>chưa chia ngược vào proposal từng Khoa"]:::gap
-  P2 -.-> G2["P0 SCOPE: nghiệp vụ cần dot_id × goi_id<br/>DB đang trộn dot_id, goi_id và goi:dot:id"]:::fail
-`,
-  khoa: `flowchart LR
-  classDef khoa fill:#E6FFFB,stroke:#0F766E,color:#134E4A,stroke-width:2px
-  classDef sys fill:#F5F3FF,stroke:#7C3AED,color:#4C1D95,stroke-width:2px
-  classDef fail fill:#FEF2F2,stroke:#DC2626,color:#7F1D1D,stroke-width:2px
-  classDef ok fill:#ECFDF5,stroke:#16A34A,color:#14532D,stroke-width:2px
-  classDef gap fill:#FFFBEB,stroke:#D97706,color:#78350F,stroke-width:2px,stroke-dasharray: 6 4
+  P1 --> P2["8 · Danh mục tổng hợp<br/>cột SỐ là VIEW SUM, không sửa trực tiếp"]:::pdd
+  P2 --> P3["9 · PĐD hiệu chỉnh<br/>gõ TỔNG, hệ chia theo tỉ lệ đề xuất<br/>sửa sau khi khoa xác nhận thì bắt lý do"]:::pdd
+  P3 --> Q
+  P2 --> Q["10 · CHỐT SỐ ĐI THẦU = Q<br/>CỔNG CỨNG: mọi khoa ĐÃ GỬI phải đã xác nhận<br/>khoa chưa gửi gì thì không tính<br/>snapshot Q bất biến, khoá phạm vi danh mục"]:::ok
 
-  A["Chọn đợt + gói con<br/>khóa logic = dot_id × goi_id"]:::khoa --> B["Chọn mã quản lý<br/>ĐVT chuẩn + hệ số"]:::khoa
-  B --> C["TSB 24 tháng<br/>P50/P75/P90/P95"]:::sys --> D{"Số > P75?"}
-  D -->|Có| E["Lý do + ghi chú"]:::gap --> F["Chốt tổng mã quản lý"]:::khoa
-  D -->|Không| F
-  F --> G["Phân bổ mã hàng"]:::khoa --> H{"Tổng quy đổi khớp?"}
-  H -->|Không| G
-  H -->|Có| I["Thêm cả mã quản lý vào giỏ server"]:::khoa --> J{"Đợt mở?"}
-  J -->|Không| I
-  J -->|Có| K["Gửi giỏ = chính thức"]:::ok --> L["Word cam kết + Danh mục Khoa"]:::khoa
-  L --> M["Sửa / audit / chốt danh mục"]:::khoa --> N["Nhận kết quả"]:::sys --> O{"Kết quả?"}
-  O -->|Rớt 1 phần| P["Đẩy SL cùng mã quản lý<br/>tổng không đổi"]:::fail --> R["Theo dõi hợp đồng / sử dụng"]:::ok
-  O -->|Rớt hoàn toàn| Q["Giỏ rớt → đợt bổ sung"]:::fail -.-> I
-  O -->|Trúng| R
+  Q --> P4["11 · Ba giai đoạn<br/>Chào giá → Mở thầu → Đánh giá"]:::pdd
+  P4 --> D{"Có ngoại lệ rớt?"}
+  D -->|không| WIN["MẶC ĐỊNH TRÚNG TOÀN BỘ<br/>số trúng = Q, số rớt = 0"]:::ok
+  D -->|có| P5["12 · Ngoại lệ rớt — cấp MÃ HÀNG<br/>rớt được ở nhiều giai đoạn: ΣR = R1+R2+R3<br/>KHOÁ CỨNG 3 — 0 ≤ ΣR ≤ Q"]:::fail
+  WIN --> P6
+  P5 -->|số trúng = Q − ΣR| P6["13 · Phân bổ số trúng về khoa<br/>CHỈ PĐD phân bổ · trúng một phần thì chia theo tỉ lệ Q<br/>KHOÁ CỨNG 2 — tổng phân bổ = số trúng"]:::pdd
+
+  P6 -->|mã quản lý trúng 0| K6["Giỏ rớt của khoa<br/>gợi ý đợt bổ sung gần nhất đang mở"]:::fail
+  K6 --> K7["Đề xuất bổ sung<br/>KHÔNG áp P50–P95, không bắt lý do<br/>không bị chặn bởi số đã rớt"]:::khoa
+  K7 -. "đi lại pipeline đầy đủ" .-> K3
+
+  P6 -->|đã phân bổ hết| P7["14 · Chốt dữ liệu trình ký<br/>từng bảng khoa rồi chốt toàn bộ<br/>QĐ 20/08: chỉ tính khoa ĐÃ GỬI đề xuất"]:::ok
+  P7 --> P8["15 · Revision & Excel chính thức<br/>số trên Excel cuối là SỐ TRÚNG đã phân bổ"]:::pdd
+  P7 -->|mới bật được| K8["16 · Mua thêm 30%<br/>floor số trúng của khoa × 30%<br/>cấp khoa × mã quản lý"]:::ok
+  P7 -->|trả mã về khoa| K9["Mã hàng trở lại danh sách khoa<br/>cho kỳ đề xuất sau"]:::khoa
+  K9 -. "kỳ sau" .-> P0
+
+  OUT["NGOÀI PIPELINE — không chặn bước nào<br/>Sổ thiếu hàng · Điều chỉnh TSKT<br/>Duyệt mã kỹ thuật · Tiến độ sử dụng<br/>⚠ chưa test lần nào"]:::sys
 `,
-  pdd: `flowchart LR
+
+  khoa: `flowchart TB
+  classDef khoa fill:#E6FFFB,stroke:#0F766E,color:#134E4A,stroke-width:2px
   classDef pdd fill:#EFF6FF,stroke:#2563EB,color:#1E3A8A,stroke-width:2px
   classDef sys fill:#F5F3FF,stroke:#7C3AED,color:#4C1D95,stroke-width:2px
   classDef fail fill:#FEF2F2,stroke:#DC2626,color:#7F1D1D,stroke-width:2px
   classDef ok fill:#ECFDF5,stroke:#16A34A,color:#14532D,stroke-width:2px
   classDef gap fill:#FFFBEB,stroke:#D97706,color:#78350F,stroke-width:2px,stroke-dasharray: 6 4
 
-  A["Tạo / mở đợt"]:::pdd --> B["Bàn điều hành<br/>theo dõi 62 Khoa"]:::pdd --> C["Lọc & nhắc Khoa thiếu việc"]:::pdd
-  C --> D["Danh mục tổng hợp theo Đợt × Gói con"]:::pdd --> E["Sửa đè / khóa / audit"]:::pdd
-  E --> F["Excel tổng hợp + Word đề nghị mua"]:::pdd --> G["Chào giá → Mở thầu → Đánh giá"]:::pdd
-  G --> H{"Có mã rớt?"}
-  H -->|Có| I["Tích mã / cả nhóm rớt<br/>sync về mọi Khoa"]:::fail --> J["Giỏ rớt toàn viện<br/>theo dõi & nhắc xử lý"]:::pdd
-  J --> K["Chờ Khoa chuyển SL / sang bổ sung"]:::sys --> L["Một cờ chốt / hai thời điểm<br/>hiện khóa theo dot_id"]:::gap
-  H -->|Không| L
-  L --> M["Mặc định trúng + tạo 5 mốc"]:::ok --> N["Ký hợp đồng"]:::pdd --> O["Hàng về đợt đầu"]:::pdd
-  O --> P["Nạp HIS + giám sát cam kết<br/>chậm / sắp hết sớm"]:::pdd
-  P -. "mở đợt bổ sung" .-> A
-  E -.-> Q["CHƯA NỐI ĐỦ: chưa chia ngược tổng PĐD sửa<br/>vào proposal từng Khoa"]:::gap
-  L -.-> R["P0 SCOPE: chốt dot_id có thể chốt cả 5 gói con<br/>override/view/Khoa không dùng cùng khóa"]:::fail
+  S0["Đợt đang MỞ và khoa có trong danh sách tham gia"]:::pdd
+  S0 --> S1["1 · Chọn phạm vi<br/>loại mua sắm → đợt → gói con"]:::khoa
+  S1 --> S2["2 · Chọn mã quản lý<br/>chọn MỘT ĐVT chuẩn + hệ số cho các ĐVT còn lại<br/>trộn ĐVT mà thiếu hệ số thì bị chặn"]:::khoa
+  S2 --> S3["3 · Tham chiếu nhu cầu<br/>lịch sử 24 tháng + TSB · P50 P75 P90 P95<br/>P50 là mức CHỌN SẴN"]:::sys
+  S3 --> D1{"Số nhập lớn hơn P75?"}
+  D1 -->|có| S4["Bắt buộc nhập lý do + ghi chú<br/>dưới P50 thì không hỏi gì"]:::gap
+  D1 -->|không| S5
+  S4 --> S5["4 · Chốt tổng mã quản lý<br/>snapshot quy đổi lưu cùng đề xuất"]:::khoa
+  S5 --> S6["5 · Phân bổ xuống mã hàng<br/>chỉ số nguyên dương"]:::khoa
+  S6 --> D2{"KHOÁ CỨNG 1<br/>tổng quy đổi khớp?"}
+  D2 -->|lệch| S6
+  D2 -->|khớp| S7["6 · Thêm cả mã quản lý vào giỏ<br/>giỏ lưu server: sống qua F5, đăng xuất, máy khác<br/>mọi tài khoản cùng khoa thấy chung một giỏ"]:::khoa
+  S7 --> S8["7 · Gửi giỏ = CHÍNH THỨC<br/>1 giỏ = 1 gói con của tab đang đứng<br/>mã đã gửi bị ẩn khỏi danh sách khoa"]:::ok
+  S8 --> S9["8 · Danh mục đề xuất của khoa<br/>sửa SỐ của khoa mình · cột CHỮ đè cho TOÀN VIỆN<br/>giai_trinh_2627 là ngoại lệ, riêng theo khoa"]:::khoa
+  S9 --> S11["9 · Xác nhận thông tin lần N<br/>không khoá gì · không giới hạn số lần"]:::ok
+  S11 -. "bất kỳ ô nào đổi — kể cả do khoa KHÁC sửa cột chữ chung" .-> CANCEL["Xác nhận TỰ HUỶ<br/>bấm lại thì lên lần N+1"]:::gap
+  CANCEL -.-> S11
+  S1 -. "không có nhu cầu" .-> NONE["Xác nhận không phát sinh nhu cầu<br/>vẫn tính là đã phản hồi"]:::khoa
+
+  FREEZE["Khoa hết sửa khi nào<br/>chốt Q khoá cột SỐ · chốt trình ký khoá cột CHỮ<br/>chỉ PĐD mở lại được, và phải nhập lý do"]:::sys
+
+  S11 -->|PĐD chốt Q rồi đấu thầu| D4{"Kết quả mã quản lý?"}
+  D4 -->|còn số trúng| S14["Trúng — nhận phân bổ do PĐD chia<br/>khoa KHÔNG tự phân bổ"]:::ok
+  D4 -->|trúng 0| S13["Vào giỏ rớt<br/>gợi ý đợt bổ sung gần nhất đang mở<br/>chưa có đợt thì Chờ mở đợt bổ sung"]:::fail
+  S13 --> S15["Xử lý phần rớt<br/>đề xuất lại, hoặc chọn Không còn nhu cầu<br/>vào giỏ nháp CHƯA tính là đã xử lý"]:::khoa
+  S15 --> BS["Đề xuất bổ sung<br/>KHÔNG áp P50–P95, không bắt lý do<br/>vẫn kiểm số nguyên, ĐVT, tổng khớp"]:::sys
+  BS -. "đi lại pipeline đầy đủ" .-> S7
+  S14 -->|sau khi PĐD chốt trình ký| S16["10 · Mua thêm 30%<br/>floor số trúng của khoa × 30%<br/>cấp khoa × mã quản lý"]:::ok
+
+  SUP["Luồng hỗ trợ — ngoài pipeline<br/>Sổ thiếu hàng · đề nghị mã kỹ thuật mới<br/>đề nghị sửa tiêu chí kỹ thuật"]:::khoa
 `,
-  knowledge: `flowchart LR
+
+  pdd: `flowchart TB
   classDef khoa fill:#E6FFFB,stroke:#0F766E,color:#134E4A,stroke-width:2px
   classDef pdd fill:#EFF6FF,stroke:#2563EB,color:#1E3A8A,stroke-width:2px
   classDef sys fill:#F5F3FF,stroke:#7C3AED,color:#4C1D95,stroke-width:2px
-  classDef fail fill:#FEF2F2,stroke:#DC2626,color:#7F1D1D,stroke-width:3px
+  classDef fail fill:#FEF2F2,stroke:#DC2626,color:#7F1D1D,stroke-width:2px
   classDef ok fill:#ECFDF5,stroke:#16A34A,color:#14532D,stroke-width:2px
   classDef gap fill:#FFFBEB,stroke:#D97706,color:#78350F,stroke-width:2px,stroke-dasharray: 6 4
 
-  DOT["DOT_DE_XUAT<br/>mo ↔ dong"]:::sys --> SCOPE["DOT_GOI = dot_id × goi_id<br/>THỰC THỂ ĐANG THIẾU"]:::fail
-  SCOPE --> SUB["Nhóm đề xuất / Proposal<br/>submit chính thức"]:::khoa --> CAT["Danh mục Khoa<br/>ô + audit + Word"]:::khoa
-  CAT --> READY["1 · KHOA_READY"]:::ok --> AGG["PDD_AGGREGATE"]:::pdd
-  SCOPE --> AGG --> OV["Override / lock / audit<br/>chưa chia ngược về từng Khoa"]:::pdd
-  OV -.-> FREEZE["2 · TENDER_INPUT_FROZEN<br/>chưa là checkpoint độc lập"]:::gap
-  FREEZE -.-> TRACK["Tracker + 5 mốc<br/>mặc định trúng"]:::sys --> TENDER["3 giai đoạn<br/>PĐD chỉ tích mã rớt"]:::pdd
-  TENDER --> RESULT["RESULT = SKU × Khoa"]:::sys
-  RESULT -->|rớt một phần| PART["Chuyển SL cùng mã quản lý<br/>tổng bất biến"]:::fail -. "refresh" .-> AGG
-  RESULT -->|rớt cả nhóm| FULL["Giỏ bổ sung<br/>phải submit vòng mới"]:::fail -.-> SUB
-  RESULT -.-> FINAL["3 · TENDER_RESULT_FINALIZED<br/>ĐANG THIẾU"]:::gap
-  FINAL -.-> CONTRACT["Hợp đồng → hàng về"]:::pdd --> USE["HIS / giám sát sử dụng"]:::sys
-  USE --> FEEDBACK["Thiếu hàng / nhu cầu / mã kỹ thuật"]:::khoa -.-> DOT
-  SCOPE -.-> P0["P0 split-brain: chốt dot_id; override goi:dot:id;<br/>Khoa/view goi tĩnh; proposal version không có dot"]:::fail
+  A1["1 · Tạo / mở đợt<br/>18T sinh 5 DOT_GOI · bổ sung là gói phẳng<br/>đóng đợt là chặn ở DB, không chỉ ở giao diện"]:::pdd
+  A1 --> A2["2 · Phân gói con & khoa tham gia<br/>đổi được tới khi chốt Q"]:::pdd
+  A2 --> A3["3 · Bàn điều hành<br/>ai đã gửi · ai đã xác nhận · lọc khoa còn thiếu<br/>nhắc qua Teams — web KHÔNG tự gửi thông báo"]:::pdd
+  A3 --> A4["4 · Danh mục tổng hợp<br/>cột SỐ là VIEW SUM, KHÔNG sửa trực tiếp<br/>cột CHỮ sửa đè, đè cho toàn viện"]:::pdd
+  A4 --> A5["5 · Hiệu chỉnh số<br/>gõ TỔNG, hệ chia theo tỉ lệ khoa đã đề xuất<br/>làm tròn xuống, dư dồn vào khoa lớn nhất<br/>không lưu được nếu tổng chưa khớp"]:::pdd
+  A5 -. "sửa sau khi khoa đã xác nhận" .-> A5B["BẮT BUỘC nhập lý do<br/>khoa thấy số cũ, số mới, người sửa, lý do"]:::gap
+
+  A5 --> Q["6 · CHỐT SỐ THAM GIA ĐẤU THẦU = Q<br/>CỔNG CỨNG: mọi khoa ĐÃ GỬI phải đã xác nhận bản hiện tại<br/>khoa tham gia mà chưa gửi gì thì KHÔNG tính<br/>snapshot Q bất biến · khoá phạm vi danh mục"]:::ok
+  Q --> A7["7 · Ba giai đoạn<br/>Chào giá → Mở thầu → Đánh giá<br/>mở lại thì bắt lý do, giai đoạn SAU hết hiệu lực"]:::pdd
+  A7 --> D1{"Mã này có rớt?"}
+  D1 -->|không| WIN["MẶC ĐỊNH TRÚNG TOÀN BỘ<br/>PĐD không phải tích trúng cho hàng nghìn mã"]:::ok
+  D1 -->|có| A8["8 · Ngoại lệ rớt — cấp MÃ HÀNG<br/>giai đoạn · toàn bộ hay một phần · lý do<br/>nút Rớt toàn bộ mã quản lý tự rải xuống<br/>KHOÁ CỨNG 3 — 0 ≤ ΣR ≤ Q"]:::fail
+
+  WIN --> A9
+  A8 -->|số trúng = Q − ΣR| A9["9 · Phân bổ số trúng về khoa<br/>CHỈ PĐD phân bổ · trúng toàn bộ thì giữ nguyên phân bổ Q<br/>trúng một phần thì chia sẵn theo tỉ lệ Q<br/>KHOÁ CỨNG 2 — tổng phân bổ = số trúng"]:::pdd
+
+  A9 -->|mã quản lý trúng 0| A10["10 · Giỏ rớt toàn viện<br/>khoa nào chưa xử lý, bao nhiêu ngày<br/>nút Nhắc sinh template copy sang Teams<br/>PĐD thao tác thay khoa được, có audit"]:::fail
+  A10 --> A11["11 · Mở đợt bổ sung T1 T5 T9<br/>pipeline bổ sung ĐỘC LẬP,<br/>không chặn chốt kết quả của gói gốc"]:::pdd
+  A11 -. "đợt mới" .-> A1
+
+  A9 -->|đã phân bổ hết| A12["12 · CHỐT DỮ LIỆU TRÌNH KÝ<br/>chốt từng bảng khoa rồi chốt toàn bộ<br/>QĐ 20/08 — chỉ tính khoa ĐÃ GỬI đề xuất,<br/>khoa im lặng ghi vào audit, KHÔNG chặn"]:::ok
+  A12 --> A13["13 · Xuất Excel chính thức<br/>trước khi chốt chỉ xuất được bản NHÁP<br/>số trên Excel cuối là SỐ TRÚNG đã phân bổ<br/>file sinh tạm rồi xoá"]:::pdd
+  A13 -.-> A14["Mở lại sau khi chốt<br/>mở một bảng khoa thì bản tổng hợp tự hết hiệu lực<br/>mọi lần mở lại BẮT LÝ DO"]:::sys
+
+  A12 --> A15["14 · Sau trình ký<br/>bật mua thêm 30% · trả mã về khoa cho kỳ sau"]:::pdd
+  A15 --> A16["15 · Tiến độ sử dụng<br/>nạp HIS · ngưỡng 20/50/80<br/>tách CHẬM CAM KẾT và SẮP HẾT SỚM"]:::pdd
+
+  DEBT["⚠ NỢ KỸ THUẬT — danh_muc_khoa_o chưa neo đợt<br/>3 đợt bổ sung/năm dùng chung goi_id bo-sung và cùng năm<br/>nên xài chung một dòng giải trình"]:::gap
+`,
+
+  knowledge: `flowchart TB
+  classDef khoa fill:#E6FFFB,stroke:#0F766E,color:#134E4A,stroke-width:2px
+  classDef pdd fill:#EFF6FF,stroke:#2563EB,color:#1E3A8A,stroke-width:2px
+  classDef sys fill:#F5F3FF,stroke:#7C3AED,color:#4C1D95,stroke-width:2px
+  classDef fail fill:#FEF2F2,stroke:#DC2626,color:#7F1D1D,stroke-width:2px
+  classDef ok fill:#ECFDF5,stroke:#16A34A,color:#14532D,stroke-width:2px
+  classDef gap fill:#FFFBEB,stroke:#D97706,color:#78350F,stroke-width:2px,stroke-dasharray: 6 4
+
+  DOT["DOT_DE_XUAT<br/>cổng nhận đề xuất: mo ↔ dong"]:::sys
+  DOT -->|sinh gói con| SCOPE["DOT_GOI = Đợt × Gói con — đơn vị workflow thật<br/>mỗi DOT_GOI có riêng: khoa tham gia · danh mục · snapshot Q<br/>ba giai đoạn · kết quả · phân bổ · revision<br/>chốt hay mở một gói con KHÔNG tác động bốn gói còn lại"]:::ok
+
+  SCOPE -->|khoa gửi giỏ| PROP["proposals — DẤU VẾT GỐC<br/>BẤT BIẾN, không ai sửa đè, kể cả PĐD"]:::khoa
+  PROP -->|khởi tạo| ALLOC["phan_bo_khoa — SỐ HIỆN HÀNH, nguồn DUY NHẤT<br/>khoá theo DOT_GOI × mã hàng × khoa<br/>khoa và PĐD CÙNG sửa ở đây<br/>so_luong_goc đóng băng làm dấu vết"]:::sys
+  ALLOC -->|SUM| VIEW["Danh mục tổng hợp = VIEW SUM<br/>cộng lên, KHÔNG lưu số riêng<br/>nên tổng PĐD = tổng phân bổ về khoa<br/>đúng THEO CẤU TRÚC, không cần code canh"]:::pdd
+
+  ALLOC -. "cột chữ tách riêng" .-> TEXT["CỘT CHỮ — một giá trị chung toàn viện<br/>danh_muc_tong_hop_o · TSKT là thuộc tính của MÃ HÀNG<br/>ai sửa sau đè, khoa hay PĐD đều vậy<br/>ngoại lệ: giai_trinh_2627 riêng theo khoa"]:::ok
+  TEXT -. "đổi ô là huỷ xác nhận" .-> CONF["VÒNG XÁC NHẬN lần N — danh_muc_khoa_chot<br/>không khoá dữ liệu · tự huỷ kể cả khi khoa KHÁC<br/>sửa cột chữ chung của mã đó"]:::khoa
+
+  CONF -->|cổng cứng| Q["CHECKPOINT 1 — CHỐT Q<br/>chot_q_phien + chot_q_dong<br/>mọi khoa đã gửi phải đã xác nhận<br/>snapshot BẤT BIẾN, khoá cột SỐ và khoá phạm vi"]:::ok
+  VIEW -->|đóng băng số| Q
+  Q -->|mở ba giai đoạn| STAGE["giai_doan_thau_v3<br/>Chào giá → Mở thầu → Đánh giá, đúng thứ tự"]:::pdd
+  STAGE -->|ghi ngoại lệ rớt| ROT["ket_qua_rot_v3 — chỉ ghi NGOẠI LỆ RỚT<br/>mặc định mọi mã TRÚNG TOÀN BỘ<br/>rớt ở cấp MÃ HÀNG, được ở nhiều giai đoạn<br/>số trúng = Q − R1+R2+R3 · KHOÁ CỨNG 3"]:::fail
+  ROT -->|số trúng| WIN["phan_bo_trung_v3<br/>CHỈ PĐD phân bổ · chỉ khoa đã đề xuất mã mới nhận<br/>KHOÁ CỨNG 2 — tổng phân bổ = số trúng<br/>không có kho dự phòng"]:::pdd
+  ROT -->|mã quản lý trúng 0| BASKET["xu_ly_gio_rot_v3<br/>chỉ tính ĐÃ XỬ LÝ khi đề xuất bổ sung đã SUBMIT<br/>hoặc chọn Không còn nhu cầu — giỏ nháp chưa tính"]:::fail
+  BASKET -. "pipeline đầy đủ" .-> PROP
+
+  WIN -->|đã phân bổ hết| FINAL["CHECKPOINT 2 — CHỐT TRÌNH KÝ<br/>chot_trinh_ky_phien_v3<br/>chốt từng bảng khoa rồi chốt toàn bộ<br/>QĐ 20/08: chỉ tính khoa đã gửi đề xuất<br/>khoá cột CHỮ và khoá cả DOT_GOI"]:::ok
+  FINAL -->|tạo revision| REV["Revision & Excel chính thức<br/>Excel khoa và Excel tổng hợp CÙNG revision<br/>mở lại một bảng khoa thì revision tổng hợp hết hiệu lực"]:::pdd
+  FINAL -->|mới bật được| P30["tuy_chon_mua_them_30_v3<br/>floor số trúng của khoa × 30%<br/>cấp khoa × mã quản lý"]:::khoa
+
+  AXES["Các trục trạng thái ĐỘC LẬP — đừng gộp<br/>trạng thái DOT_GOI · vòng xác nhận lần N · snapshot Q<br/>ba giai đoạn · kết quả rớt/trúng · xử lý giỏ rớt<br/>revision trình ký · hạn mức 30% đã dùng"]:::sys
+  OUT["NGOÀI PIPELINE — không chặn bước nào<br/>Sổ thiếu hàng · Điều chỉnh TSKT<br/>Duyệt mã kỹ thuật · Tiến độ sử dụng"]:::sys
+  NO["KHÔNG có trong hệ thống — ĐỪNG dựng lại<br/>PĐD duyệt giỏ · khoá ô sau khi PĐD sửa<br/>mỗi khoa một bản cột chữ riêng · khoa tự đẩy SL mã rớt<br/>Sổ sự kiện nhu cầu · vòng đời duyệt hồ sơ · MỌI cột giá<br/>hạn nộp, nhắc tự động, thông báo tự động"]:::fail
+  DEBT["⚠ Nợ kỹ thuật — danh_muc_khoa_o chưa neo đợt"]:::gap
 `,
 };
 

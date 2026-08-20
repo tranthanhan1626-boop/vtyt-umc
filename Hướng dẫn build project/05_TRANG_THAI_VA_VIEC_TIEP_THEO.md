@@ -55,22 +55,19 @@ cùng `nam_de_xuat`, nên ba đợt xài chung một dòng giải trình. Fix th
 tính khoa đã gửi đề xuất) đã vào `01_NGHIEP_VU_HIEN_HANH.md` nhưng chưa vào
 `Full workflow vtyt web.docx`. Hai file theo quy ước phải luôn khớp.
 
-**c. Sơ đồ workflow lạc hậu.** `so-do-workflow/` chưa vẽ lại theo V2 — vẫn còn
-khái niệm "khoa chốt danh mục" mà V2 đã thay bằng vòng xác nhận lần N.
-
-**d. Rà cờ `da_di_thau`.** v3 không bật nó nữa; chỗ nào còn đọc là đọc sai.
+**c. Rà cờ `da_di_thau`.** v3 không bật nó nữa; chỗ nào còn đọc là đọc sai.
 Chưa rà.
 
-**e. Bổ sung smoke đường THÀNH CÔNG** cho các RPC hiện chỉ có `phai_loi`. Đây
+**d. Bổ sung smoke đường THÀNH CÔNG** cho các RPC hiện chỉ có `phai_loi`. Đây
 là lỗ hổng **đã chứng minh được**, không phải phòng xa: `cap_nhat_tong_phan_bo_khoa`
 từng hỏng hoàn toàn mà smoke vẫn xanh, vì phép thử duy nhất gọi nó là
 `phai_loi(...)` — nó ném lỗi thật nhưng vì lý do sai.
 
-**f. Gỡ nhánh chết `su_kien_nhu_cau`** trong `xoa_du_lieu_kiem_thu` (trỏ vào
+**e. Gỡ nhánh chết `su_kien_nhu_cau`** trong `xoa_du_lieu_kiem_thu` (trỏ vào
 bảng đã bỏ theo QĐ 17/08, gọi tới là `42P01`). Hiện **không nút nào gọi tới**
 nên vô hại; gỡ phải viết lại nguyên hàm 14KB.
 
-**g. Comment trong code còn trỏ đường dẫn/tên file cũ.** Sau khi gom tài liệu
+**f. Comment trong code còn trỏ đường dẫn/tên file cũ.** Sau khi gom tài liệu
 ngày 20/08, sáu chỗ còn ghi `Tổng quan/...` hoặc tên file cũ. **Tất cả đều là
 comment hoặc docstring — không chỗ nào đọc file, nên không ảnh hưởng chạy** (đã
 kiểm: `pytest` 115 đạt sau khi chuyển).
@@ -82,6 +79,11 @@ kiểm: `pytest` 115 đạt sau khi chuyển).
 | `frontend/src/lib/congThucSoLuong.js` | 3 | `Tổng quan/02_CONG_THUC_SO_LUONG.md` |
 | `frontend/src/features/DeXuatTongHop.jsx` | 24 · 196 | phụ lục `01_NGHIEP_VU_VA_QUYET_DINH.md` (nay là `06_DUNG_LAM_LAI.md`) |
 | `backend/scripts/smoke_pipeline_hien_tai.py` | 7 · 10 | như trên |
+
+**g. Sơ đồ workflow — ĐÃ VẼ LẠI 20/08/2026.** `so-do-workflow/` nay khớp v3 + V2
++ QĐ 20/08. Lưu ý: script `generate-diagrams.mjs` **không sinh `.png`** — đó
+chính là lý do bộ sơ đồ từng lệch. Sau khi chạy script phải xuất lại PNG theo
+hướng dẫn trong `so-do-workflow/README.md`.
 
 ## 4. Đang chờ quyết định của chủ dự án
 

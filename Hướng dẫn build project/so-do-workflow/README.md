@@ -1,26 +1,28 @@
 # Sơ đồ workflow Khoa ↔ Phòng Điều dưỡng
 
-> # ⚠️ BỘ SƠ ĐỒ NÀY ĐANG LẠC HẬU — ĐỪNG LẤY LÀM CHUẨN
+> **Vẽ lại ngày 20/08/2026** theo workflow v3 (17/08) + luật V2 (19/08) + QĐ 20/08
+> (cổng chốt trình ký chỉ tính khoa đã gửi đề xuất).
 >
-> Kiểm ngày **20/08/2026**: các file `.mmd` / `.drawio` / `.png` / `.svg` ở đây
-> **chưa được vẽ lại theo luật V2** (chốt chiều 19/08/2026). Commit "Đồng bộ
-> toàn bộ tài liệu theo V2" hôm 19/08 chỉ sửa đúng `README.md` này, không đụng
-> tới sơ đồ.
->
-> **Chỗ đã sai cụ thể:**
-> - Sơ đồ tổng quan vẫn ghi *"Danh mục Khoa: sửa + audit + **chốt**"* — khái
->   niệm "khoa chốt danh mục" đã bị **vòng xác nhận lần N** thay thế.
-> - Không sơ đồ nào nhắc *"xác nhận"*, *"một giá trị chung"* hay việc cột chữ
->   là giá trị chung toàn viện.
-> - Không sơ đồ nào có cổng cứng chốt Q, cũng không có luật 20/08 về cổng chốt
->   trình ký.
->
-> **Nguồn chuẩn là `../01_NGHIEP_VU_HIEN_HANH.md`.** Dùng sơ đồ để nắm hình
-> dạng chung, đừng dùng để tra luật.
->
-> Muốn vẽ lại: sửa `generate-diagrams.mjs` rồi chạy
-> `node "Hướng dẫn build project/so-do-workflow/generate-diagrams.mjs"`.
+> Sơ đồ là **bản tóm tắt hình ảnh**, không phải nguồn luật. Khi sơ đồ và
+> `../01_NGHIEP_VU_HIEN_HANH.md` khác nhau thì **tài liệu đúng, sơ đồ sai** —
+> sửa sơ đồ theo tài liệu, không làm ngược lại.
 
+## Sơ đồ nói gì mà tài liệu khó nói
+
+Bốn thứ dễ hiểu sai nhất, đã vẽ nổi bật:
+
+1. **Chuỗi số một chiều** — `proposals` (bất biến) → `phan_bo_khoa` (nguồn duy
+   nhất) → Danh mục tổng hợp là **VIEW SUM**. Vì vậy "tổng PĐD = tổng phân bổ về
+   khoa" đúng *theo cấu trúc*, không cần code canh.
+2. **Cột CHỮ là một giá trị chung toàn viện** — ai sửa sau đè, khoa đè được lên
+   PĐD. Ngoại lệ duy nhất: `giai_trinh_2627`.
+3. **Hai checkpoint thật**: chốt Q (khoá cột SỐ) và chốt trình ký (khoá cột CHỮ).
+   Cả hai đều là **cổng cứng**, và cả hai chỉ tính khoa **đã gửi đề xuất**.
+4. **Mặc định TRÚNG TOÀN BỘ** — PĐD chỉ ghi *ngoại lệ rớt*, không tích trúng cho
+   hàng nghìn mã. Số trúng = Q − (R1+R2+R3).
+
+Trang 04 còn có một khối **"KHÔNG có trong hệ thống — đừng dựng lại"**, liệt kê
+những cơ chế đã bị bỏ. Chi tiết đầy đủ ở `../06_DUNG_LAM_LAI.md`.
 
 Bộ sơ đồ này mô tả workflow hiện hành của nhánh `phase-a-luong-de-xuat`
 trên staging, dựa trên code frontend, SQL/RLS/RPC, contract tests, smoke hiện
@@ -64,6 +66,17 @@ node "Hướng dẫn build project/so-do-workflow/generate-diagrams.mjs"
 
 Lệnh trên ghi đè workbook Draw.io, SVG và Mermaid. Không chạy lệnh này sau
 khi đã sửa thủ công workbook nếu chưa chuyển thay đổi ngược vào script.
+
+⚠️ **Script KHÔNG sinh file `.png`.** Đó là lý do bộ sơ đồ từng lệch: SVG được
+cập nhật còn PNG thì không, mà PNG mới là thứ người ta hay mở. Sau khi chạy
+script phải xuất lại PNG:
+
+1. Bọc mỗi `workflow-*.svg` trong một file HTML đặt đúng `width`/`height` bằng
+   `viewBox` của SVG (nếu không, trình duyệt co giãn SVG cho vừa cửa sổ).
+2. Mở file HTML đó và chụp toàn trang ở đúng kích thước.
+
+Kích thước hiện tại: overview 3060×2150 · khoa 2260×2060 · pdd 2260×2010 ·
+knowledge 2600×2060.
 
 ## Cách đọc sơ đồ
 
