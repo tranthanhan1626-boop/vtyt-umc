@@ -199,6 +199,14 @@ chuyển vào `lich-su/`. Hai dòng đường dẫn trong
 `backend/tests/test_cong_thuc_tuy_chon_contract.py` đổi theo (chỉ đổi chuỗi
 đường dẫn, không đổi logic) — `pytest` vẫn **115 passed**.
 
+**20/08 (cùng ngày) — `patch_zzzzw`: neo đợt cho `danh_muc_khoa_o`.** Bảng khoá
+theo (goi_id, nam, khoa, ma_hang), không có đợt. Frontend hardcode
+`goi_id='bo-sung'` cho MỌI đợt bổ sung ở 5 chỗ, mà 3 đợt/năm lại cùng năm — nên
+ba đợt dùng chung MỘT dòng giải trình. Thêm `dot_goi_id` khoá ngoại CASCADE,
+đưa vào khoá duy nhất, sửa hàm ghi (drop chữ ký cũ trước — bài học 10), hai
+trigger, join của chốt trình ký, và ba chỗ đọc/ghi ở frontend. Làm lúc bảng
+đang 0 dòng nên không phải chuyển dữ liệu cũ.
+
 **20/08 (cùng ngày) — vẽ lại toàn bộ sơ đồ workflow.** Bốn trang trong
 `so-do-workflow/` được viết lại từ dữ liệu nguồn của `generate-diagrams.mjs`
 theo v3 + V2 + QĐ 20/08. Nội dung cũ mô tả một hệ thống khác hẳn: khoa tự đẩy

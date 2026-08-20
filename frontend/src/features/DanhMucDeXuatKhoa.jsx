@@ -463,9 +463,14 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
   // trong patch_zm: rẻ hơn ~15 lần, cần thiết để ở lại gói Supabase free).
   const taiODaLuu = useCallback(async () => {
     if (!goiId || !khoaHienTai) return new Map();
+    // patch_zzzzw — PHẢI lọc theo `dot_goi_id`. Trước đây khoá đọc chỉ có
+    // (goi_id, nam, khoa) nên đợt MỚI đọc trúng giải trình của đợt CŨ; với gói
+    // bổ sung thì cả 3 đợt/năm dùng chung goi_id 'bo-sung' và cùng năm, tức ba
+    // đợt xài chung một dòng. Chưa có DOT_GOI thì không đọc gì, hơn là đọc bừa.
+    if (!dotGoiId) return new Map();
     const { data, error } = await supabase.from("danh_muc_khoa_o")
       .select("ma_hang, gia_tri")
-      .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT).eq("khoa", khoaHienTai);
+      .eq("dot_goi_id", dotGoiId).eq("khoa", khoaHienTai);
     if (error) {
       const chuaCoBang = error.code === "42P01" || /danh_muc_khoa_o/i.test(error.message || "");
       setLoiLuuO(chuaCoBang
@@ -475,7 +480,7 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
     }
     setLoiLuuO("");
     return new Map((data || []).map((r) => [r.ma_hang, r.gia_tri || {}]));
-  }, [goiId, khoaHienTai]);
+  }, [goiId, khoaHienTai, dotGoiId]);
 
   // ---- Minh bạch: PĐD sửa gì trên bản tổng hợp, khoa thấy hết (patch_zs) ---
   // QĐ 08/08/2026 của chủ dự án. Trước patch_zs, dvsd không có policy nào trên
@@ -637,6 +642,8 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
       ? await supabase.rpc("luu_o_danh_muc_khoa", {
         p_goi_id: goiId, p_nam_de_xuat: NAM_DE_XUAT, p_khoa: khoaHienTai,
         p_ma_hang: maHang, p_cot: colKey, p_gia_tri: gt,
+        // patch_zzzzw — hàm từ chối ghi nếu thiếu DOT_GOI.
+        p_dot_goi_id: dotGoiId,
       })
       : await supabase.from("danh_muc_tong_hop_o").upsert({
         goi_id: goiScopeTongHop, nam_de_xuat: NAM_DE_XUAT, ma_hang: maHang,
@@ -719,7 +726,7 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
     const [khoaRes, pddRes] = await Promise.all([
       supabase.from("danh_muc_khoa_o_audit")
         .select("gia_tri_cu, gia_tri_moi, nguoi_sua, thoi_gian")
-        .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT).eq("khoa", khoaHienTai)
+        .eq("dot_goi_id", dotGoiId).eq("khoa", khoaHienTai)
         .eq("ma_hang", maHang).eq("cot", colKey)
         .order("thoi_gian", { ascending: false }).limit(20),
       // Cùng lỗi phạm vi ':dot:N' như `taiSuaDeCuaPdd` — `.eq` ở đây làm phần

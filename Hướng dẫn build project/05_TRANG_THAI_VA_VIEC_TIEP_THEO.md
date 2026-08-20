@@ -44,12 +44,20 @@ càng cần.
 
 ## 3. Việc còn nợ, theo thứ tự đề nghị
 
-**a. `danh_muc_khoa_o` chưa có cột neo đợt — ưu tiên cao.**
-Bảng khoá theo `(goi_id, nam_de_xuat, khoa, ma_hang)`, không có đợt. Bản vá
-20/08 chỉ chữa được đường xoá đợt, và chỉ khi gói con + năm có **đúng một đợt**.
-**Gói bổ sung chắc chắn đụng**: cả 3 đợt/năm dùng chung `goi_id = 'bo-sung'` và
-cùng `nam_de_xuat`, nên ba đợt xài chung một dòng giải trình. Fix thật là thêm
-`dot_goi_id` — lan tới **6 RPC và 3 chỗ đọc ở frontend**.
+**a. `danh_muc_khoa_o` — ĐÃ NEO ĐỢT 20/08/2026 (`patch_zzzzw`).** Thêm cột
+`dot_goi_id` khoá ngoại `ON DELETE CASCADE`, đưa vào khoá duy nhất, bắt mọi
+đường ghi/đọc phải có đợt. Đo thật sau khi vá: hai đợt bổ sung 2027 cùng ghi
+`goi_id='bo-sung'` + cùng khoa + cùng mã hàng giữ được **hai dòng riêng**; xoá
+một đợt thì dòng của đợt kia còn nguyên. Trước đó khoá cũ chỉ cho một dòng —
+đợt sau đè đợt trước.
+
+**a2. Ba bảng cùng loại vẫn CHƯA neo đợt** — cùng lớp lỗi, chưa vá:
+
+| Bảng | Hiện trạng |
+|---|---|
+| `danh_muc_khoa_cot_cau_hinh` | cấu hình khoá/ẩn cột theo (goi_id, nam, khoa). Cấu hình kỳ trước lẫn sang kỳ sau |
+| `danh_muc_tong_hop_o` | có đợt nhưng nhét trong CHUỖI `'<goi>:dot:<id>'`, không phải khoá ngoại — chính là nguồn của Lỗi 24 |
+| `dem_du_lieu_lam_viec` · `don_du_lieu_lam_viec` | nút "Kết thúc đợt & dọn" nhận (goi_id, nam) nên vẫn quét **cả 3 đợt bổ sung cùng năm** |
 
 **b. `.docx` chưa đồng bộ mục 8.2.** Quyết định 20/08 (cổng chốt trình ký chỉ
 tính khoa đã gửi đề xuất) đã vào `01_NGHIEP_VU_HIEN_HANH.md` nhưng chưa vào

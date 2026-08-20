@@ -247,6 +247,17 @@ async function taiDuLieuGoc(goiId, dotId = null) {
 async function taiOverrideVaKhoa(goiId, namDeXuat) {
   // `goi_id` của bản khoa KHÔNG mang hậu tố ':dot:N' như bản tổng hợp.
   const goiIdKhoa = String(goiId).split(":dot:")[0];
+  // patch_zzzzw — `danh_muc_khoa_o` giờ neo theo `dot_goi_id`. Hàm này chạy
+  // song song với `taiDuLieuGoc` nên chưa có sẵn dotGoiId, phải tự tra lấy.
+  // Tra từ chính hậu tố ':dot:N' của goiId bản tổng hợp.
+  const dotIdTuGoi = String(goiId).includes(":dot:")
+    ? Number(String(goiId).split(":dot:")[1]) : null;
+  let dotGoiIdKhoa = null;
+  if (dotIdTuGoi) {
+    const { data: dg } = await supabase.from("dot_goi")
+      .select("id").eq("dot_id", dotIdTuGoi).eq("goi_id", goiIdKhoa).maybeSingle();
+    dotGoiIdKhoa = dg?.id || null;
+  }
   const [{ data: oRows, error: loiO }, { data: khoaRows, error: loiKhoa },
     { data: oKhoaRows, error: loiOKhoa }] = await Promise.all([
     fetchAllRows((f, t) => supabase.from("danh_muc_tong_hop_o")
@@ -258,9 +269,11 @@ async function taiOverrideVaKhoa(goiId, namDeXuat) {
     // Ô do KHOA tự sửa. Trước 19/08/2026 màn này không hề đọc bảng đó, nên
     // PĐD mở Tổng hợp ra chỉ thấy giá trị gốc từ `vat_tu` — khoa gõ TSKT cả
     // buổi mà PĐD không thấy, rồi PĐD sửa đè, công của khoa mất im lặng.
-    fetchAllRows((f, t) => supabase.from("danh_muc_khoa_o")
-      .select("khoa, ma_hang, gia_tri")
-      .eq("goi_id", goiIdKhoa).eq("nam_de_xuat", namDeXuat).range(f, t), { order: "id" }),
+    dotGoiIdKhoa
+      ? fetchAllRows((f, t) => supabase.from("danh_muc_khoa_o")
+        .select("khoa, ma_hang, gia_tri")
+        .eq("dot_goi_id", dotGoiIdKhoa).range(f, t), { order: "id" })
+      : Promise.resolve({ data: [] }),
   ]);
   if (loiO) throw loiO;
   if (loiKhoa) throw loiKhoa;
