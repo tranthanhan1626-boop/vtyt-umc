@@ -1,6 +1,6 @@
 # Workflow V3 — phase A / staging
 
-Nguồn yêu cầu: `Full workflow vtyt web.docx` và bộ `Tổng quan/` cập nhật
+Nguồn yêu cầu: `Full workflow vtyt web.docx` và bộ `Hướng dẫn build project/` cập nhật
 17/08/2026. Mọi thay đổi thực hiện trên nhánh `phase-a-luong-de-xuat` và được
 kiểm trên staging trước production.
 

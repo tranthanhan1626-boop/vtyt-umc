@@ -53,10 +53,10 @@ báo/thực tế nhóm gián đoạn từ 0,84–0,92 lên 1,07; nhóm thưa t�
 đề xuất >1,5× thực tế** — không phải thiên lệch còn sót (trung vị đúng), mà là
 phương sai vốn có của nhu cầu gián đoạn ở quy mô một khoa với 30 tháng lịch
 sử, không có cờ hết hàng, không có số ca bệnh. Xem mục 7,
-`phan-tich-cong-thuc/BAO_CAO_THANG_0_VA_CONG_THUC_MOI.md`.
+`bao-cao-cong-thuc/BAO_CAO_THANG_0_VA_CONG_THUC_MOI.md`.
 
 Chi tiết đầy đủ, kể cả một kết luận sai đã đính chính giữa chừng:
-`phan-tich-cong-thuc/BAO_CAO_THANG_0_VA_CONG_THUC_MOI.md`.
+`bao-cao-cong-thuc/BAO_CAO_THANG_0_VA_CONG_THUC_MOI.md`.
 
 ## 2. Mức nhu cầu TSB
 

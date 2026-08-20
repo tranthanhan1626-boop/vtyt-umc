@@ -5,7 +5,7 @@
 > Đã chạy trọn vòng test workflow qua Chrome (2 vai trò, JWT thật). Tìm **3 lỗi**,
 > đã vá cả 3 (`backend/sql/patch_zzzzv_noi_chot_trinh_ky_va_don_o_sua_tay.sql`,
 > đã chạy staging + `backend/tests/test_patch_zzzzv_contract.py`).
-> Chi tiết đầy đủ: `Tổng quan/05_TIEN_DO_VA_VIEC_TIEP_THEO.md`, mục 20/08.
+> Chi tiết đầy đủ: `Hướng dẫn build project/07_NHAT_KY_THAY_DOI.md`.
 >
 > 1. Giao diện chặn rớt nhiều giai đoạn (DB nhận R1+R2, UI chỉ cho tích 1 lần).
 > 2. Cổng "Chốt trình ký toàn bộ" đòi đủ 100% khoa tham gia → không bao giờ
@@ -39,9 +39,9 @@
 > `DANH_GIA_PHAN_TRAM.md`.
 >
 > ⚠️ **Luật link Tổng hợp→khoa đã đổi cuối ngày 19/08 và ĐÃ THI CÔNG.** Đọc
-> `../link-tong-hop-xuong-khoa/THIET_KE_V2_BO_KHOA_O.md` (bản đang hiệu lực),
-> KHÔNG đọc `THIET_KE.md` (bản sáng cùng ngày, quyết định 1/2/3/6 đã bị thay).
-> `Full workflow vtyt web.docx` và `Tổng quan/01_NGHIEP_VU_VA_QUYET_DINH.md`
+> `../link-tong-hop-xuong-khoa/THIET_KE_V2_BO_KHOA_O.md` (bản đang hiệu lực).
+> `THIET_KE.md` (bản sáng cùng ngày) đã bị XOÁ ngày 20/08 vì đã bị thay hoàn toàn.
+> `Hướng dẫn build project/Full workflow vtyt web.docx` và `01_NGHIEP_VU_HIEN_HANH.md`
 > đều đã đồng bộ theo V2 ngày 19/08.
 
 ---

@@ -311,7 +311,7 @@ từng khoa × mã).
 sổ chồng nhau nên các điểm chấm không độc lập. Kết quả đủ để nói "không phương
 pháp nào đạt", chưa đủ để xếp hạng chắc chắn giữa các phương pháp gần nhau.
 
-**Cảnh báo về tài liệu backtest cũ:** `Tổng quan/02_CONG_THUC_SO_LUONG.md` ghi
+**Cảnh báo về tài liệu backtest cũ:** `../02_CONG_THUC_SO_LUONG.md` ghi
 WAPE 29,9% từ 149.999 dòng. Con số đó lấy từ
 `backend/du_lieu_staging/usage_history_current.json`, mà **hai năm 2022–2023
 trong tệp đó không khớp file Excel thật của bệnh viện** (2024 trở đi mới khớp).

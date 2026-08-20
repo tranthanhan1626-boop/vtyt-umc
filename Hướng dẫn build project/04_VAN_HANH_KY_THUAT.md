@@ -458,7 +458,7 @@ lịch sử HIS, bản Word, kết quả thầu hay audit.
 2. Xác định bảng/view/RPC và quyền.
 3. Sửa code/SQL.
 4. Chạy test, build, kiểm dữ liệu và smoke test giao diện.
-5. Ghi kết quả vào `05_TIEN_DO_VA_VIEC_TIEP_THEO.md`.
+5. Ghi kết quả vào `05_TRANG_THAI_VA_VIEC_TIEP_THEO.md`.
 
 Không deploy chỉ vì build thành công; workflow có database phải được kiểm bằng
 phiên đăng nhập thật của cả hai vai trò.

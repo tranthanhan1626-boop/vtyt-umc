@@ -1,8 +1,30 @@
-# Workflow Khoa ↔ Phòng Điều dưỡng
+# Sơ đồ workflow Khoa ↔ Phòng Điều dưỡng
+
+> # ⚠️ BỘ SƠ ĐỒ NÀY ĐANG LẠC HẬU — ĐỪNG LẤY LÀM CHUẨN
+>
+> Kiểm ngày **20/08/2026**: các file `.mmd` / `.drawio` / `.png` / `.svg` ở đây
+> **chưa được vẽ lại theo luật V2** (chốt chiều 19/08/2026). Commit "Đồng bộ
+> toàn bộ tài liệu theo V2" hôm 19/08 chỉ sửa đúng `README.md` này, không đụng
+> tới sơ đồ.
+>
+> **Chỗ đã sai cụ thể:**
+> - Sơ đồ tổng quan vẫn ghi *"Danh mục Khoa: sửa + audit + **chốt**"* — khái
+>   niệm "khoa chốt danh mục" đã bị **vòng xác nhận lần N** thay thế.
+> - Không sơ đồ nào nhắc *"xác nhận"*, *"một giá trị chung"* hay việc cột chữ
+>   là giá trị chung toàn viện.
+> - Không sơ đồ nào có cổng cứng chốt Q, cũng không có luật 20/08 về cổng chốt
+>   trình ký.
+>
+> **Nguồn chuẩn là `../01_NGHIEP_VU_HIEN_HANH.md`.** Dùng sơ đồ để nắm hình
+> dạng chung, đừng dùng để tra luật.
+>
+> Muốn vẽ lại: sửa `generate-diagrams.mjs` rồi chạy
+> `node "Hướng dẫn build project/so-do-workflow/generate-diagrams.mjs"`.
+
 
 Bộ sơ đồ này mô tả workflow hiện hành của nhánh `phase-a-luong-de-xuat`
 trên staging, dựa trên code frontend, SQL/RLS/RPC, contract tests, smoke hiện
-hành và tài liệu nghiệp vụ trong `Tổng quan/`.
+hành và tài liệu nghiệp vụ trong thư mục cha.
 
 ## File bàn giao
 
@@ -37,7 +59,7 @@ workflow bằng text và quản lý diff trong Git.
 ### Sinh lại file từ nguồn
 
 ```bash
-node docs/workflow-khoa-pdd/generate-diagrams.mjs
+node "Hướng dẫn build project/so-do-workflow/generate-diagrams.mjs"
 ```
 
 Lệnh trên ghi đè workbook Draw.io, SVG và Mermaid. Không chạy lệnh này sau
@@ -156,9 +178,9 @@ checkpoint này.
 
 ### Tài liệu nghiệp vụ
 
-- [00_BAT_DAU.md](../../Tổng%20quan/00_BAT_DAU.md): điểm vào và tuyến hiện hành.
-- [01_NGHIEP_VU_VA_QUYET_DINH.md](../../Tổng%20quan/01_NGHIEP_VU_VA_QUYET_DINH.md): quyết định nghiệp vụ, gói con, xử lý rớt và chốt sau thầu.
-- [05_TIEN_DO_VA_VIEC_TIEP_THEO.md](../../Tổng%20quan/05_TIEN_DO_VA_VIEC_TIEP_THEO.md): phần đã làm, phần cũ và công việc còn mở.
+- [00_DOC_TRUOC_TIEN.md](../00_DOC_TRUOC_TIEN.md): điểm vào và bản đồ tài liệu.
+- [01_NGHIEP_VU_HIEN_HANH.md](../01_NGHIEP_VU_HIEN_HANH.md): quyết định nghiệp vụ, gói con, xử lý rớt và chốt sau thầu.
+- [05_TRANG_THAI_VA_VIEC_TIEP_THEO.md](../05_TRANG_THAI_VA_VIEC_TIEP_THEO.md): trạng thái hiện tại và việc còn mở.
 
 ## Phạm vi không đưa vào luồng chính
 

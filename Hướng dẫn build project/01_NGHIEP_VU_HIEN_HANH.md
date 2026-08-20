@@ -2,13 +2,20 @@
 
 Viết lại **17/08/2026** theo bản chốt workflow v3, cập nhật **19/08/2026** theo
 bản V2 (một giá trị chung · ai sửa sau đè · vòng xác nhận lần N · cột dải
-P50–P75). Bản `.docx` đã đồng bộ cùng ngày. Nguồn gốc là
-`Full workflow vtyt web.docx` ở gốc repo; file này là **bản thi hành** — cùng
-nội dung nhưng nói rõ tới mức code và schema. Hai file phải luôn khớp nhau;
-sửa một bên thì sửa cả bên kia.
+P50–P75), cập nhật **20/08/2026** mục 8.2 (cổng chốt trình ký chỉ tính khoa đã
+gửi đề xuất).
 
-Tài liệu chỉ giữ quyết định **còn hiệu lực**. Quyết định đã bị đảo nằm ở phụ
-lục cuối file, không được mang sang.
+Nguồn gốc là `Full workflow vtyt web.docx` cùng thư mục — bản chốt nghiệp vụ do
+chủ dự án viết. File này là **bản thi hành**: cùng nội dung nhưng nói rõ tới
+mức code và schema. Hai file phải luôn khớp nhau; sửa một bên thì sửa cả bên
+kia.
+
+> ⚠️ **Còn lệch:** mục 8.2 đã cập nhật theo QĐ 20/08/2026 ở file này nhưng
+> `.docx` **chưa** sửa theo. Xem `07_NHAT_KY_THAY_DOI.md`, mục "Việc còn nợ".
+
+Tài liệu này **chỉ giữ quyết định còn hiệu lực**. Những quyết định đã bị đảo
+nằm ở `06_DUNG_LAM_LAI.md` — đọc file đó trước khi dựng lại bất cứ cơ chế nào
+bạn thấy "còn thiếu".
 
 ---
 
@@ -615,32 +622,3 @@ cấu hình và hợp đồng.
 go-live** — xem `04_VAN_HANH_KY_THUAT.md` mục 4.
 
 ---
-
-## Phụ lục — quyết định đã bị đảo
-
-Không mang sang, không code lại:
-
-| Quyết định cũ | Thay bằng | Ngày đảo |
-|---|---|---|
-| Bước "PĐD duyệt giỏ" | Submit giỏ là chính thức | 05/08/2026 |
-| Hai file Word/Excel neo theo từng giỏ | Bảng danh mục cộng tác trực tiếp | 05/08/2026 |
-| Gộp nhiều giỏ cùng khoa thành Excel gộp | Danh mục đề xuất của khoa đã là bản chính thức | 05/08/2026 |
-| Snapshot `phien_tong_hop` PĐD tạo tay | Danh mục tổng hợp live | 05/08/2026 |
-| Tùy chọn 30% nhân trực tiếp | `floor(× 30%)` | 05/08/2026 |
-| **Excel "Quá trình đề xuất" 50–70 cột** | Bỏ hẳn — chỉ còn Danh mục đề xuất và Danh mục tổng hợp | 09/08/2026 |
-| **PĐD chọn 10–15 cột tạo Danh mục đề xuất** | Bỏ — danh mục khoa dùng template cố định | 09/08/2026 |
-| **Số chốt chỉ ở cấp toàn viện, không chia về khoa** (`patch_zs`) | `phan_bo_khoa` — số hiện hành theo từng khoa, tổng hợp là view | 17/08/2026 |
-| **ĐVSD tự đẩy SL từ mã rớt sang mã tương đương** | Chỉ PĐD phân bổ số trúng | 17/08/2026 |
-| **Vòng đời duyệt bộ hồ sơ Word/Excel** | Bấm là sinh file, không trạng thái | 17/08/2026 |
-| **Sổ sự kiện nhu cầu** | Bỏ hẳn | 17/08/2026 |
-| **Bắt lý do khi ra ngoài dải P50–P75** | Chỉ khi **> P75** | 17/08/2026 |
-| **Kích hoạt 30% dựa trên số đề xuất** | Chỉ sau khi chốt trình ký, tính trên số trúng | 17/08/2026 |
-| **Gói bổ sung chia gói con** | Mỗi đợt bổ sung là một gói phẳng | 17/08/2026 |
-| Vai trò `admin` tách khỏi `dieu_duong` | PĐD = admin, cùng quyền | 17/08/2026 |
-| Mọi cột giá | Bỏ hẳn | 17/08/2026 |
-| **Cổng mềm — PĐD tự quyết thời điểm chốt số tham gia đấu thầu** | Cổng cứng — đủ xác nhận của mọi khoa đã gửi đề xuất mới chốt được | 19/08/2026 |
-| **PĐD duyệt ô là khoá ô đó bên khoa** | Bỏ hẳn — ai sửa sau đè; đóng băng bằng chốt Q (cột số) và chốt trình ký (cột chữ) | 19/08/2026 |
-| **Mỗi khoa giữ một bản cột chữ riêng, Tổng hợp báo cờ lệch** | Cột chữ là MỘT giá trị chung toàn viện; không còn gì để lệch | 19/08/2026 |
-| **Khoa chốt danh mục của mình (khoá dữ liệu)** | Vòng xác nhận lần N — không khoá gì, huỷ khi dữ liệu đổi | 19/08/2026 |
-| **Số lượng khoa chỉ sửa được ở màn Nhập đề xuất** | Khoa sửa ngay trên Danh mục đề xuất; tổng đi thầu là tổng của các khoa | 19/08/2026 |
-| Không có mốc so sánh số đề xuất trên hai bảng danh mục | Thêm cột dải P50–P75 ở cả hai bảng; vượt P75 chỉ tô nổi bật, không chặn | 19/08/2026 |

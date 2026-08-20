@@ -5,8 +5,8 @@ ROOT = Path(__file__).resolve().parents[2]
 CONG_THUC = (ROOT / "frontend/src/lib/congThucSoLuong.js").read_text()
 GOI_Y = (ROOT / "frontend/src/features/GoiYSoLuong.jsx").read_text()
 FUNCTION_1 = (ROOT / "frontend/src/features/Function1.jsx").read_text()
-HUONG_DAN = (ROOT / "Tổng quan/02_CONG_THUC_SO_LUONG.md").read_text()
-QUYET_DINH = (ROOT / "Tổng quan/01_NGHIEP_VU_VA_QUYET_DINH.md").read_text()
+HUONG_DAN = (ROOT / "Hướng dẫn build project/02_CONG_THUC_SO_LUONG.md").read_text()
+QUYET_DINH = (ROOT / "Hướng dẫn build project/01_NGHIEP_VU_HIEN_HANH.md").read_text()
 
 
 def test_dai_thong_thuong_la_p50_p75_va_mac_dinh_p50():

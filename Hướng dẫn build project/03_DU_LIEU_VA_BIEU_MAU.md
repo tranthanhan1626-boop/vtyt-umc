@@ -66,7 +66,7 @@ sẵn; Excel đổ từng mã hàng theo mã quản lý và giữ đủ metadata
 Biểu mẫu 4 và 5 trước đây nằm chung ở màn "Tổng hợp & xuất hồ sơ"
 (`TongHopPhongDieuDuong.jsx`), dựng trên một snapshot `phien_tong_hop` do PĐD
 chốt tay. **Màn đó đã bị gỡ 09/08/2026** — snapshot thủ công là quyết định đã
-bị đảo (xem phụ lục `01_NGHIEP_VU_VA_QUYET_DINH.md`), và giữ hai đường tổng
+bị đảo (xem `06_DUNG_LAM_LAI.md`), và giữ hai đường tổng
 hợp song song là cách chắc chắn để hai file trình ký lệch số nhau. Bản tổng hợp
 duy nhất hiện nay là Danh mục tổng hợp live sync, mở từ Bàn điều hành.
 

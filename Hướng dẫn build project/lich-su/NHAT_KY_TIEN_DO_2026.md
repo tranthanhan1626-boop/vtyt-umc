@@ -1,3 +1,20 @@
+> # 📦 LƯU TRỮ — không phải tài liệu đang hiệu lực
+>
+> Đây là **nhật ký tiến độ đầy đủ theo ngày** từ 22/07 tới 19/08/2026, giữ
+> nguyên như lúc viết. Dùng để tra "hôm đó đã quyết gì, vì sao", **không** dùng
+> để tra luật đang chạy.
+>
+> - Luật đang chạy → `../01_NGHIEP_VU_HIEN_HANH.md`
+> - Hôm nay đang ở đâu → `../05_TRANG_THAI_VA_VIEC_TIEP_THEO.md`
+> - Tóm tắt lịch sử dễ đọc hơn → `../07_NHAT_KY_THAY_DOI.md`
+>
+> ⚠️ **Đường dẫn trong file này là đường dẫn CŨ** (`Tổng quan/...`,
+> `docs/workflow-khoa-pdd/...`). Tài liệu đã gom vào `Hướng dẫn build project/`
+> ngày 20/08/2026. Không sửa lại các đường dẫn đó — chúng là dấu vết của thời
+> điểm viết.
+
+---
+
 # Tiến độ và việc tiếp theo
 
 Cập nhật **19/08/2026**. Nhánh chính hiện tại: `phase-a-luong-de-xuat`.

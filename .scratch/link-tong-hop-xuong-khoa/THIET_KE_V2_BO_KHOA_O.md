@@ -1,6 +1,6 @@
 # V2 — một giá trị chung, ai sửa sau đè, xác nhận theo vòng
 
-Chốt với chủ dự án 19/08/2026 (chiều + tối). **THAY THẾ** `THIET_KE.md` (bản
+Chốt với chủ dự án 19/08/2026 (chiều + tối). **THAY THẾ** `THIET_KE.md` (đã xoá 20/08/2026) (bản
 sáng cùng ngày) ở mọi điểm mâu thuẫn.
 
 > ✅ **ĐÃ THI CÔNG XONG 19/08/2026** — 4 bước, 4 patch SQL đã chạy staging, giao
