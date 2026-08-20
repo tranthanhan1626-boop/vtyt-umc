@@ -238,6 +238,49 @@ def main() -> int:
         assert any(int(x["lan"]) >= 2 for x in lan), lan
         ok("vòng xác nhận: sửa số huỷ xác nhận, chốt Q bị chặn, khoa bấm lại lên lần 2")
 
+        # QĐ 20/08/2026 — huỷ xác nhận CHỈ với khoa vừa sửa, không huỷ của khoa
+        # khác. Trước đó một khoa sửa cột chữ chung là MỌI khoa có đề xuất mã đó
+        # cùng mất xác nhận; gói 18T có hàng trăm mã và 62 khoa nên không chạy nổi.
+        # Ba nhánh phải đo, không được suy:
+        #   khoa sửa -> chỉ khoa đó · PĐD sửa -> không ai · số đổi -> chỉ khoa của dòng.
+        goi_o = f"{GOI_ID}:dot:{dot_id}"
+
+        def con_thieu() -> set[str]:
+            return {x["khoa"] for x in
+                    admin.rpc("khoa_chua_xac_nhan", {"p_dot_goi_id": dg_id}).execute().data}
+
+        def sua_o_chu(phien: Client, gia_tri: str, nguoi: str) -> None:
+            phien.table("danh_muc_tong_hop_o").upsert({
+                "goi_id": goi_o, "nam_de_xuat": nam, "ma_hang": ma1,
+                "cot": "tskt_2627", "gia_tri": gia_tri, "updated_by": nguoi,
+            }, on_conflict="goi_id,nam_de_xuat,ma_hang,cot").execute()
+
+        def cho_hai_khoa_xac_nhan() -> None:
+            # RPC từ chối bấm lại khi xác nhận còn hiệu lực, nên chỉ bấm cho
+            # khoa nào đang thiếu.
+            thieu_luc_nay = con_thieu()
+            for phien, ten in ((a, units[0]), (b, units[1])):
+                if ten in thieu_luc_nay:
+                    phien.rpc("chot_danh_muc_khoa_v3",
+                              {"p_dot_goi_id": dg_id, "p_khong_phat_sinh": False}).execute()
+            assert not (con_thieu() & {units[0], units[1]}), "chưa dựng được mốc hai khoa đã xác nhận"
+
+        cho_hai_khoa_xac_nhan()
+        sua_o_chu(a, "KHOA A SUA TSKT", accounts[0][0])
+        thieu = con_thieu()
+        assert units[0] in thieu, "khoa tự sửa cột chữ mà KHÔNG mất xác nhận của chính mình"
+        assert units[1] not in thieu, (
+            "khoa A sửa cột chữ mà khoa B cũng mất xác nhận — QĐ 20/08 đã bỏ luật này", thieu)
+
+        cho_hai_khoa_xac_nhan()
+        sua_o_chu(pdd, "PDD SUA DE LEN KHOA A", accounts[3][0])
+        thieu = con_thieu()
+        assert not (thieu & {units[0], units[1]}), (
+            "PĐD sửa cột chữ mà khoa mất xác nhận — mục 4: khoa không phải xác nhận lại", thieu)
+
+        cho_hai_khoa_xac_nhan()
+        ok("huỷ xác nhận đúng phạm vi: khoa sửa thì chỉ khoa đó, PĐD sửa thì không ai")
+
         q = pdd.rpc("chot_so_tham_gia_thau_v3", {"p_dot_goi_id": dg_id}).execute().data
         # `so_khoa_chua_chot` đổi nghĩa cùng V2: nay là số khoa THAM GIA mà
         # chưa gửi đề xuất nào — dùng cho dòng cảnh báo, không phải điều kiện

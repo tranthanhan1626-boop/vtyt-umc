@@ -63,8 +63,31 @@ một đợt thì dòng của đợt kia còn nguyên. Trước đó khoá cũ c
 tính khoa đã gửi đề xuất) đã vào `01_NGHIEP_VU_HIEN_HANH.md` nhưng chưa vào
 `Full workflow vtyt web.docx`. Hai file theo quy ước phải luôn khớp.
 
-**c. Rà cờ `da_di_thau`.** v3 không bật nó nữa; chỗ nào còn đọc là đọc sai.
-Chưa rà.
+**c. Cờ `da_di_thau` — ĐÃ RÀ VÀ ĐÃ ĐÓNG 20/08/2026 (`patch_zzzzy`).**
+Kết quả rà khác giả thiết ban đầu: cờ **vẫn đang được bật**, không phải "v3
+không bật nữa". Đường bật là trigger `trg_chot_tong_hop_tra_ma_ve_khoa` trên
+bảng `danh_muc_tong_hop_chot` — cơ chế chốt **trước v3**, khoá theo
+(goi_id, nam_de_xuat), đơn vị mà v3 đã bỏ.
+
+Ba kịch bản hỏng tìm được, hai cái đã đóng:
+
+| | Kịch bản | Trạng thái |
+|---|---|---|
+| A | Một dòng insert vào `danh_muc_tong_hop_chot` (RLS cho PĐD insert thẳng qua PostgREST) bật cờ cho MỌI proposal khớp (gói, năm) → khoa thấy lại mã **ngay trong đợt đang chạy**, gửi lại, và **hiệu chỉnh của PĐD bị ghi đè im lặng**. Phá bất biến số 1 của v3 | ✅ đã đóng |
+| B | `goi_id='bo-sung'` lật cờ cho **cả ba** đợt bổ sung cùng lúc | ✅ đã đóng |
+| C | `fn_chan_o_da_lock` + `fn_chan_xoa_o_da_chot` chặn mọi sửa ô tổng hợp khi có dòng `danh_muc_tong_hop_chot`, mà **không có nút nào trên giao diện mở lại** | ⚠️ còn — hiện vô hại vì không code frontend nào ghi bảng đó |
+
+Điều tra cũng bác một giả thiết: màn "Hồ sơ trực tuyến" **không** có nút gọi
+`chot_danh_muc_da_di_thau` — đó là mã chết, đã gỡ.
+
+Còn lại: `.eq("da_di_thau", false)` ở `Function1.jsx:495` giờ là **no-op** (không
+ai bật cờ nữa). Để nguyên, vô hại. Việc "mã trở lại danh sách khoa cho kỳ sau"
+do **cấu trúc** lo: tập ẩn mã neo theo `dot_id`, kỳ sau là đợt mới nên tập ẩn rỗng.
+
+> **Một câu hỏi nghiệp vụ mới lộ ra, cần chủ dự án quyết:** hôm nay mã trở lại
+> danh sách khoa **ngay khi PĐD mở đợt mới**, bất kể đợt trước đã chốt trình ký
+> hay chưa. Mục 8.2 viết là "*sau khi* chốt trình ký". Cổng đó **chưa hề tồn
+> tại** ở đâu cả.
 
 **d. Bổ sung smoke đường THÀNH CÔNG** cho các RPC hiện chỉ có `phai_loi`. Đây
 là lỗ hổng **đã chứng minh được**, không phải phòng xa: `cap_nhat_tong_phan_bo_khoa`

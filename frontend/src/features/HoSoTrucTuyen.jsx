@@ -493,42 +493,20 @@ export default function HoSoTrucTuyen({
     setDangLuu("");
   };
 
-  const chotDaDiThau = async () => {
-    if (!laPdd || !doc || maDangMo !== "danh_muc_dvsd"
-        || !nguonKey.startsWith("gop:") || doc.trang_thai === "da_di_thau") return;
-    if (!window.confirm(
-      "Chọn Đã đi thầu sẽ khóa vĩnh viễn Excel này và trả các mã hàng về danh sách đề xuất của khoa. Tiếp tục?"
-    )) return;
-    setDangLuu("di_thau");
-    setLoi("");
-    setThongBao("");
-
-    if (daSua[maDangMo]) {
-      const { error: loiLuu } = await goiLuuTaiLieu(maDangMo, "pdd_sua");
-      if (loiLuu) {
-        setLoi(`Không lưu được thay đổi trước khi khóa: ${loiLuu.message}`);
-        setDangLuu("");
-        return;
-      }
-    }
-    const { data, error } = await supabase.rpc("chot_danh_muc_da_di_thau", {
-      p_ho_so_id: doc.id,
-    });
-    if (error) {
-      const canPatch = error.code === "PGRST202" || /chot_danh_muc_da_di_thau/i.test(error.message || "");
-      setLoi(canPatch
-        ? "Staging chưa có chức năng khóa Đã đi thầu. Cần chạy lại patch_x_quyen_khoa_va_ho_so_theo_gio.sql."
-        : error.message);
-      setDangLuu("");
-      return;
-    }
-    setThongBao(
-      `Đã khóa Excel chính thức. ${data?.so_ma_hang ?? 0} mã hàng đã được trả về danh sách đề xuất của khoa.`
-    );
-    await tai();
-    onSaved?.(data);
-    setDangLuu("");
-  };
+  // (Gỡ 20/08/2026 — patch_zzzzy) Ở đây từng có `chotDaDiThau`: bấm "Đã đi
+  // thầu" -> RPC `chot_danh_muc_da_di_thau` -> bật `proposals.da_di_thau` để
+  // trả mã về danh sách của khoa. Đó là cơ chế chốt TRƯỚC v3, neo theo
+  // (goi_id, nam_de_xuat) — đơn vị mà v3 đã bỏ ngày 17/08/2026 để thay bằng
+  // DOT_GOI = đợt × gói con.
+  //
+  // Rà 20/08/2026: hàm này KHÔNG có nút nào gọi tới (mã chết), và dù gọi thẳng
+  // qua API cũng chỉ ném lỗi vì nó đòi mọi proposal nguồn ở trạng thái
+  // 'hoan_thanh' — trạng thái không còn đường tạo từ khi bỏ bước "PĐD duyệt
+  // giỏ" ngày 05/08/2026. RPC đã bị thu quyền ở patch_zzzzy.
+  //
+  // Việc "mã hàng trở lại danh sách của khoa cho kỳ sau" (mục 8.2) nay do CẤU
+  // TRÚC lo: tập ẩn mã ở Function1.jsx neo theo `dot_id`, kỳ sau là đợt mới
+  // nên tập ẩn rỗng. Không cần cờ nào cả.
 
   if (dangTai) {
     return <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500">Đang mở không gian hồ sơ…</p>;

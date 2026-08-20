@@ -447,13 +447,19 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   // và phải xem trước sẽ xoá bao nhiêu dòng rồi mới xác nhận — xoá nhầm là
   // mất công cả khoa gõ tay, không hoàn tác được.
   const moDonDuLieu = async () => {
-    if (!goiIdHienTai) {
-      setLoi("Chọn một gói con trước khi dọn — mỗi gói con có bộ dữ liệu làm việc riêng.");
+    // patch_zzzzx (20/08/2026) — PHẢI truyền DOT_GOI. Trước đây chỉ truyền
+    // (goi_id, nam), mà với gói bổ sung `goiIdHienTai` là hằng "bo-sung" cho
+    // MỌI đợt: bấm dọn ở đợt T1 là xoá luôn ô sửa tay và xác nhận của T5, T9
+    // cùng năm. Hộp xác nhận cũng đếm theo (gói, năm) nên đếm cả phần của đợt
+    // khác — người bấm không hề biết mình xoá gì.
+    if (!goiIdHienTai || !dotGoiHienTai) {
+      setLoi("Chọn một gói con cụ thể trước khi dọn — mỗi ĐỢT × GÓI CON có bộ dữ liệu làm việc riêng.");
       return;
     }
     setLoi("");
     const { data, error } = await supabase.rpc("dem_du_lieu_lam_viec", {
       p_goi_id: goiIdHienTai, p_nam_de_xuat: NAM_DE_XUAT,
+      p_dot_goi_id: dotGoiHienTai.id,
     });
     if (error) {
       const chuaPatch = error.code === "PGRST202" || /dem_du_lieu_lam_viec/i.test(error.message || "");
@@ -469,6 +475,8 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
     setDangDon(true);
     const { data, error } = await supabase.rpc("don_du_lieu_lam_viec", {
       p_goi_id: goiIdHienTai, p_nam_de_xuat: NAM_DE_XUAT,
+      // Hàm ném lỗi nếu thiếu — thà từ chối còn hơn xoá xuyên đợt như trước.
+      p_dot_goi_id: dotGoiHienTai?.id ?? null,
     });
     setDangDon(false);
     if (error) { setLoi(error.message); return; }
@@ -722,14 +730,23 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
               Kết thúc đợt &amp; dọn dữ liệu làm việc
             </h3>
             <p className="mt-1 text-xs text-slate-500">
-              Chỉ làm việc này khi gói <b>{GOI_ID_MAP[goiIdHienTai]?.nhan}</b> đã đấu thầu xong hẳn
-              và đã xuất/lưu file trình ký. <b>Không hoàn tác được.</b>
+              Chỉ làm việc này khi gói <b>{GOI_ID_MAP[goiIdHienTai]?.nhan}</b> của đợt{" "}
+              <b>{dot?.ten}</b> đã đấu thầu xong hẳn và đã xuất/lưu file trình ký.{" "}
+              <b>Không hoàn tác được.</b>
             </p>
             <ul className="mt-3 space-y-1 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
               <li>{fmt(formDon.o_danh_muc_khoa || 0)} ô các khoa đã sửa tay trên Danh mục đề xuất</li>
               <li>{fmt(formDon.o_tong_hop_pdd || 0)} ô PĐD đã sửa đè trên Danh mục tổng hợp</li>
+              <li>{fmt(formDon.xac_nhan_khoa || 0)} lượt khoa xác nhận thông tin đề xuất</li>
               <li>{fmt(formDon.cau_hinh_cot || 0)} cấu hình ẩn/khoá cột</li>
             </ul>
+            {/* patch_zzzzx — ba dòng đầu đã đếm theo ĐÚNG đợt đang chọn. Dòng
+                cấu hình cột thì chưa: bảng đó không có neo đợt nên vẫn tính
+                theo (gói con, năm). Nói thẳng ra để người bấm biết. */}
+            <p className="mt-2 text-[11px] text-amber-800">
+              Ba dòng đầu chỉ thuộc <b>đợt đang chọn</b>. Riêng <b>cấu hình ẩn/khoá cột</b>{" "}
+              chưa neo theo đợt nên tính chung cho cả gói con trong năm {NAM_DE_XUAT}.
+            </p>
             <p className="mt-2 text-[11px] text-slate-500">
               <b>KHÔNG</b> đụng tới: đề xuất của khoa, lịch sử HIS, bản Word cam kết,
               kết quả thầu và toàn bộ lịch sử chỉnh sửa (audit).
@@ -1051,6 +1068,79 @@ function TabKetQua({ ketQuaRot, dot, boRot, giaiDoanThau, gioRot, phanBoTrung, d
   const [dangLuuPhanBo, setDangLuuPhanBo] = useState(false);
   const [dangTrinhKy, setDangTrinhKy] = useState("");
   const [loiTrinhKy, setLoiTrinhKy] = useState("");
+
+  // ---- CỔNG "Chốt trình ký toàn bộ" — hỏi thẳng server, không tự suy -------
+  // QĐ 20/08/2026 nới cổng này: chỉ khoa ĐÃ GỬI đề xuất mới tính vào mẫu số
+  // (gói Dùng chung có 49 khoa tham gia nhưng chỉ 2 khoa gửi — đòi đủ 49 thì
+  // nút không bao giờ sáng). Bản vá hôm đó để lại HAI định nghĩa cho cùng một
+  // cổng: server có hàm `khoa_chua_du_chot_trinh_ky(p_dot_goi_id)`, còn màn
+  // này tự suy danh sách "khoa đã gửi" từ `phanBoTrung` (view
+  // `phan_bo_trung_v3`, điều kiện `q_khoa > 0`).
+  //
+  // Hai định nghĩa đó KHÔNG bằng nhau. Server hỏi `phan_bo_khoa` (đề xuất khoa
+  // gửi), còn `phan_bo_trung_v3` chỉ có dòng cho mã TRÚNG thầu — khoa gửi đề
+  // xuất rồi rớt sạch sẽ biến mất khỏi view, màn này coi là "chưa gửi", bỏ ra
+  // khỏi mẫu số, cho nút sáng, và server ném exception ngay lúc bấm. Không có
+  // lỗi đỏ nào cho tới lúc đó — đúng cái bẫy của Lỗi 24 (khoá phạm vi đặt khác
+  // nhau giữa hai màn, số chỉ đơn giản là không bao giờ khớp). Từ 20/08/2026
+  // cổng này đọc THẲNG kết quả RPC; màn hình chỉ còn việc đếm và hiển thị.
+  //
+  // `trangThai`: dang_tai | xong | loi. Chỉ `xong` mới được phép mở nút —
+  // chưa biết chắc thì để nút mờ, vì bấm bừa là ăn exception từ server.
+  const [congChot, setCongChot] = useState({ trangThai: "dang_tai", khoaThieu: [], loi: "" });
+  // Mẫu số "khoa đã gửi đề xuất" cho các nhãn đếm. RPC chỉ trả về danh sách
+  // khoa CÒN THIẾU nên không suy ngược ra mẫu số được: lấy "số khoa đã đủ chốt"
+  // cộng vào sẽ đếm nhầm nhóm khoa xác nhận "không phát sinh" rồi được chốt
+  // trình ký — nhóm đó đủ chốt nhưng KHÔNG gửi gì cả. Nên đọc thẳng
+  // `phan_bo_khoa` với ĐÚNG vị từ mà hàm SQL dùng (`so_luong_hien_hanh > 0`),
+  // tuyệt đối không quay lại `phan_bo_trung_v3`. null = chưa đọc được.
+  const [khoaDaGuiServer, setKhoaDaGuiServer] = useState(null);
+  // `onTaiLai()` chỉ nạp lại state của component cha; `dotGoiHienTai.id` không
+  // đổi nên effect dưới đây sẽ không tự chạy sau khi chốt/mở chốt một bảng
+  // khoa. Phải đá nhịp bằng tay, nếu không cổng giữ nguyên số cũ.
+  const [nhipNapCong, setNhipNapCong] = useState(0);
+  const dotGoiId = dotGoiHienTai?.id ?? null;
+
+  useEffect(() => {
+    if (!dotGoiId) {
+      setCongChot({ trangThai: "dang_tai", khoaThieu: [], loi: "" });
+      setKhoaDaGuiServer(null);
+      return undefined;
+    }
+    let boQua = false;
+    setCongChot({ trangThai: "dang_tai", khoaThieu: [], loi: "" });
+    (async () => {
+      const [rThieu, rDaGui] = await Promise.all([
+        supabase.rpc("khoa_chua_du_chot_trinh_ky", { p_dot_goi_id: dotGoiId }),
+        supabase.from("phan_bo_khoa").select("khoa")
+          .eq("dot_goi_id", dotGoiId).gt("so_luong_hien_hanh", 0),
+      ]);
+      if (boQua) return; // đổi gói con giữa chừng: bỏ kết quả cũ, khỏi nhấp nháy
+      if (rThieu.error) {
+        // PGRST202 = PostgREST không thấy hàm ⇒ database chưa chạy patch_zzzzv.
+        // Không được đoán thay server: khoá nút, nói rõ thiếu patch nào. Chốt
+        // trình ký tạo revision chính thức bất biến, bấm nhầm là phải mở chốt
+        // và huỷ revision — thà mờ nút.
+        setCongChot({
+          trangThai: "loi", khoaThieu: [],
+          loi: rThieu.error.code === "PGRST202"
+            ? "Database chưa có hàm khoa_chua_du_chot_trinh_ky — chạy backend/sql/patch_zzzzv_noi_chot_trinh_ky_va_don_o_sua_tay.sql rồi tải lại trang. Cổng chốt trình ký tạm khoá."
+            : `Không kiểm tra được cổng chốt trình ký: ${rThieu.error.message}`,
+        });
+        setKhoaDaGuiServer(null);
+        return;
+      }
+      // Hàm trả `returns table(khoa text)` ⇒ PostgREST cho mảng {khoa}. Vẫn
+      // chịu được dạng mảng chuỗi phòng khi chữ ký hàm đổi.
+      setCongChot({
+        trangThai: "xong", loi: "",
+        khoaThieu: (rThieu.data || []).map((x) => (typeof x === "string" ? x : x.khoa)),
+      });
+      setKhoaDaGuiServer(rDaGui.error ? null
+        : new Set((rDaGui.data || []).map((x) => x.khoa)));
+    })();
+    return () => { boQua = true; };
+  }, [dotGoiId, nhipNapCong]);
   const moSuaPhanBo = (r) => {
     const ds = phanBoTrung.filter((p) => p.ma_hang === r.ma_hang);
     setLoiPhanBo("");
@@ -1088,15 +1178,32 @@ function TabKetQua({ ketQuaRot, dot, boRot, giaiDoanThau, gioRot, phanBoTrung, d
   // cổng chốt Q đã nới ngày 19/08. Trước đó mẫu số là MỌI khoa tham gia, nên
   // gói Dùng chung (49 khoa tham gia, 2 khoa gửi) không bao giờ bấm được nút:
   // 47 khoa im lặng vĩnh viễn thiếu vế "đã xác nhận danh mục".
-  // `khoaDaGui` phải khớp định nghĩa của server (`phan_bo_khoa` > 0) — lệch
-  // định nghĩa giữa hai tầng là lỗi im lặng, đã mắc một lần (bài học 9).
-  const khoaDaGui = new Set(phanBoTrung
-    .filter((x) => x.dot_goi_id === dotGoiHienTai.id && Number(x.q_khoa) > 0)
-    .map((x) => x.khoa));
-  const dsKhoaTinhCong = dsKhoa.filter((x) => khoaDaGui.has(x.khoa));
-  const soKhoaImLang = dsKhoa.length - dsKhoaTinhCong.length;
-  const soDuChot = dsKhoaTinhCong.filter((x) => chotDau.has(x.khoa) && chotCuoi.has(x.khoa)).length;
-  const duChotHet = dsKhoaTinhCong.length > 0 && soDuChot === dsKhoaTinhCong.length;
+  //
+  // Danh sách khoa còn thiếu KHÔNG còn tính ở đây nữa — nó là của server, nạp
+  // trong effect `congChot` ở đầu component (xem lý do dài ở đó). Dưới đây chỉ
+  // là phép đếm để hiển thị.
+  const khoaThieu = congChot.khoaThieu;
+  const soThieu = khoaThieu.length;
+  // Mẫu số = khoa THAM GIA (dsKhoa đọc từ `dot_goi_khoa.tham_gia`) ∩ khoa ĐÃ
+  // GỬI — đúng hai điều kiện hàm SQL dùng, không thêm không bớt. null = chưa
+  // đọc được `phan_bo_khoa`, khi đó không đoán bừa con số nào.
+  const dsKhoaTinhCong = khoaDaGuiServer
+    ? dsKhoa.filter((x) => khoaDaGuiServer.has(x.khoa)) : null;
+  const soDaGui = dsKhoaTinhCong ? dsKhoaTinhCong.length : null;
+  const soDuChot = soDaGui === null ? null : Math.max(0, soDaGui - soThieu);
+  const soKhoaImLang = soDaGui === null ? 0 : dsKhoa.length - soDaGui;
+  // Nút chỉ sáng khi server nói "không còn khoa nào thiếu" VÀ có ít nhất một
+  // khoa đã gửi. Vế sau là hành vi cũ giữ nguyên: server cho phép chốt gói
+  // rỗng (v_thieu rỗng thì đi tiếp), nhưng snapshot rỗng thì vô nghĩa nên màn
+  // này vẫn chặn. Chưa đọc được mẫu số ⇒ coi như chưa biết ⇒ khoá nút.
+  const congSanSang = congChot.trangThai === "xong" && soThieu === 0 && (soDaGui ?? 0) > 0;
+
+  // Mọi thao tác chốt/mở chốt đều đổi kết quả `khoa_chua_du_chot_trinh_ky`,
+  // nên nạp lại cha xong là hỏi lại server luôn.
+  const taiLaiTatCa = async () => {
+    await onTaiLai();
+    setNhipNapCong((n) => n + 1);
+  };
 
   const chotKhoa = async (khoa) => {
     setDangTrinhKy(`chot:${khoa}`); setLoiTrinhKy("");
@@ -1105,7 +1212,7 @@ function TabKetQua({ ketQuaRot, dot, boRot, giaiDoanThau, gioRot, phanBoTrung, d
     });
     setDangTrinhKy("");
     if (error) { setLoiTrinhKy(error.message); return; }
-    await onTaiLai();
+    await taiLaiTatCa();
   };
   const moChotKhoa = async (khoa) => {
     const lyDo = window.prompt("Lý do mở lại bảng trình ký khoa (revision chính thức hiện tại sẽ hết hiệu lực):", "") || "";
@@ -1116,7 +1223,7 @@ function TabKetQua({ ketQuaRot, dot, boRot, giaiDoanThau, gioRot, phanBoTrung, d
     });
     setDangTrinhKy("");
     if (error) { setLoiTrinhKy(error.message); return; }
-    await onTaiLai();
+    await taiLaiTatCa();
   };
   const chotToanBo = async () => {
     setDangTrinhKy("toan_bo"); setLoiTrinhKy("");
@@ -1125,7 +1232,7 @@ function TabKetQua({ ketQuaRot, dot, boRot, giaiDoanThau, gioRot, phanBoTrung, d
     });
     setDangTrinhKy("");
     if (error) { setLoiTrinhKy(error.message); return; }
-    await onTaiLai();
+    await taiLaiTatCa();
   };
   return (
     <div className="space-y-3">
@@ -1184,9 +1291,15 @@ function TabKetQua({ ketQuaRot, dot, boRot, giaiDoanThau, gioRot, phanBoTrung, d
           <span className={`rounded-full px-2.5 py-1 font-medium ${duBaGiaiDoan ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
             {duBaGiaiDoan ? "Đã hoàn thành 3/3 giai đoạn" : "Chưa hoàn thành đủ 3 giai đoạn"}
           </span>
-          <span className="rounded-full bg-blue-50 px-2.5 py-1 font-medium text-blue-700"
-            title="Chỉ đếm khoa đã gửi đề xuất. Khoa tham gia mà không gửi gì không làm kẹt cổng.">
-            Đủ chốt {soDuChot}/{dsKhoaTinhCong.length} khoa đã gửi đề xuất
+          {/* Nhãn này phải nói đúng cái server nghĩ, nếu không PĐD lại nhìn một
+              con số rồi bấm phải một luật khác. Số "còn thiếu" là của RPC. */}
+          <span className={`rounded-full px-2.5 py-1 font-medium ${
+            congChot.trangThai === "loi" ? "bg-red-50 text-red-700" : "bg-blue-50 text-blue-700"}`}
+            title="Số khoa còn thiếu lấy thẳng từ hàm SQL khoa_chua_du_chot_trinh_ky — đúng luật server dùng để chặn. Khoa tham gia mà không gửi gì không làm kẹt cổng.">
+            {congChot.trangThai === "dang_tai" ? "Đang hỏi server cổng chốt…"
+              : congChot.trangThai === "loi" ? "Chưa kiểm tra được cổng chốt"
+              : soDaGui === null ? `Còn ${soThieu} khoa chưa đủ chốt · không đọc được mẫu số`
+              : `Đủ chốt ${soDuChot}/${soDaGui} khoa đã gửi đề xuất`}
           </span>
           {soKhoaImLang > 0 && (
             <span className="rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-500"
@@ -1195,16 +1308,22 @@ function TabKetQua({ ketQuaRot, dot, boRot, giaiDoanThau, gioRot, phanBoTrung, d
             </span>
           )}
           <button type="button" onClick={chotToanBo}
-            disabled={!duBaGiaiDoan || !duChotHet || !!phienChinhThuc || !!dangTrinhKy}
+            disabled={!duBaGiaiDoan || !congSanSang || !!phienChinhThuc || !!dangTrinhKy}
             title={!duBaGiaiDoan ? "Phải hoàn thành đủ ba giai đoạn đấu thầu trước."
-              : dsKhoaTinhCong.length === 0 ? "Chưa khoa nào gửi đề xuất cho gói con này."
-              : !duChotHet ? `Còn ${dsKhoaTinhCong.length - soDuChot} khoa đã gửi đề xuất nhưng chưa đủ chốt danh mục và chốt trình ký.`
+              : congChot.trangThai === "dang_tai" ? "Đang hỏi server xem còn khoa nào chưa đủ chốt."
+              : congChot.trangThai === "loi" ? congChot.loi
+              : soDaGui === null ? "Không đọc được danh sách khoa đã gửi đề xuất — cổng tạm khoá cho khỏi bấm bừa."
+              : soDaGui === 0 ? "Chưa khoa nào gửi đề xuất cho gói con này."
+              : soThieu > 0 ? `Còn ${soThieu} khoa đã gửi đề xuất nhưng chưa đủ chốt danh mục và chốt trình ký: ${khoaThieu.join(", ")}.`
               : phienChinhThuc ? "Gói con này đã có revision chính thức." : ""}
             className="ml-auto rounded-lg bg-umc-700 px-3 py-1.5 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-35">
             {dangTrinhKy === "toan_bo" ? "Đang tạo snapshot…" : "Chốt trình ký toàn bộ"}
           </button>
         </div>
 
+        {congChot.trangThai === "loi" && (
+          <p className="mt-2 rounded bg-red-50 px-3 py-2 text-xs text-red-700">{congChot.loi}</p>
+        )}
         {loiTrinhKy && <p className="mt-2 rounded bg-red-50 px-3 py-2 text-xs text-red-700">{loiTrinhKy}</p>}
         <div className="mt-3 max-h-72 overflow-auto rounded-lg border border-slate-200">
           {dsKhoa.length === 0 ? <p className="p-4 text-center text-xs text-slate-500">Chưa có danh sách khoa tham gia.</p> : (

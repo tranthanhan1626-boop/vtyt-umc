@@ -1304,17 +1304,20 @@ function RowKhoa({
                       ô chưa từng sửa (bấm vào thì panel báo "chưa có lần sửa
                       nào"), để không phải đoán ô nào có lịch sử. */}
                   {/* V2: ô này đang mang giá trị CHUNG toàn viện. Nhãn cho
-                      biết ai chạm sau cùng — sửa được, không phải chỉ đọc. */}
+                      biết ai chạm sau cùng — sửa được, không phải chỉ đọc.
+                      20/08/2026 — đổi nhãn cố định "Dùng chung" thành dấu vết
+                      "AI SỬA CUỐI · lúc mấy giờ". Nhãn cũ nói đúng nhưng nói
+                      thứ giống hệt nhau ở mọi ô, nên nhìn cả bảng không phân
+                      biệt được ô nào vừa bị đổi; thông tin "ai sửa" thì nằm
+                      trong tooltip, phải rê chuột từng ô mới thấy. Phần "giá
+                      trị dùng chung, sửa là cả viện đổi theo" chuyển hết vào
+                      tooltip qua `moTaThem` — vẫn còn nguyên, chỉ đổi chỗ. */}
                   {oChung && (
-                    <span
-                      className="ml-1.5 inline-flex items-center rounded bg-violet-100 px-1 py-0.5 align-middle text-[10px] font-semibold text-violet-800"
-                      title={"Cột chữ là giá trị dùng chung toàn viện cho mã hàng này — "
+                    <DauVetSuaCuoi
+                      updatedBy={oChung.updated_by} updatedAt={oChung.updated_at}
+                      moTaThem={"Cột chữ là giá trị dùng chung toàn viện cho mã hàng này — "
                         + "sửa ở đây thì mọi khoa và bản Tổng hợp đều đổi theo. "
-                        + `Sửa lần cuối bởi ${oChung.updated_by} lúc `
-                        + `${new Date(oChung.updated_at).toLocaleString("vi-VN")}. `
-                        + "Bấm biểu tượng lịch sử để xem các lần sửa trước."}>
-                      Dùng chung
-                    </span>
+                        + "Bấm biểu tượng lịch sử để xem các lần sửa trước."} />
                   )}
                   <button
                     onClick={(e) => { e.stopPropagation(); xemAudit(r.ma_hang, c.key); }}
@@ -1377,6 +1380,76 @@ function RowKhoa({
 }
 
 // -------- helpers dùng chung -----------------------------------------------
+
+/* DẤU VẾT "AI SỬA CUỐI" TRÊN Ô DÙNG CHUNG (chốt 20/08/2026 của chủ dự án).
+ *
+ * Luật V2 (19/08/2026) GIỮ NGUYÊN: cột chữ là MỘT giá trị chung toàn viện,
+ * ai sửa sau đè, khoa đè được lên PĐD. Cái được thêm chỉ là dấu vết: ô phải
+ * tự nói ai chạm sau cùng và lúc nào. Vì sao cần: chính vì khoa đè được lên
+ * PĐD nên PĐD duyệt xong quay lại vẫn có thể đang đọc chữ của khoa mà không
+ * hay — trước 20/08 muốn biết phải bấm biểu tượng lịch sử từng ô một, tức là
+ * phải NGHI NGỜ trước mới tra ra, mà ô đáng nghi thì lại không có gì báo.
+ *
+ * VÌ SAO RÚT GỌN TỪ EMAIL, KHÔNG TRA BẢNG `users` LẤY TÊN KHOA:
+ * RLS của `users` chỉ cho admin/dieu_duong đọc dòng của người khác (policy
+ * "user xem chính mình, PĐD xem tất cả", patch_zzzzj_v3_chuan_bi_dot.sql).
+ * Người dùng màn Danh mục đề xuất khoa là dvsd, nên truy vấn đó trả về đúng
+ * một dòng của chính họ — nhãn sẽ trống ở ĐÚNG chỗ cần nó. Mà để hai màn
+ * hiện hai kiểu tên khác nhau cho cùng một người thì còn khó đối chiếu hơn là
+ * cả hai cùng hiện phần trước @. Tooltip luôn mang email ĐẦY ĐỦ nên không
+ * mất thông tin, chỉ là nhãn ngắn phải chấp nhận thô.
+ */
+
+// SUY ĐOÁN THEO QUY ƯỚC ĐẶT TÊN, không phải tra role thật trong `users`:
+// staging đang dùng pdd@ và admin@ cho Phòng Điều dưỡng. Người PĐD dùng email
+// tên riêng sẽ ra nhãn tên riêng chứ không ra "PĐD" — chấp nhận được vì
+// tooltip vẫn hiện email đầy đủ để đối chiếu. Thêm tài khoản PĐD kiểu khác
+// thì bổ sung vào đây.
+const TAI_KHOAN_PDD = new Set(["pdd", "admin", "dieuduong", "dieu_duong", "phongdieuduong"]);
+
+/** Tên người sửa rút gọn cho vừa một ô bảng: "PĐD", "GMHS", "PHONGMO"... */
+export function tenNguoiSuaNgan(email) {
+  if (!email) return "?";
+  const dau = String(email).split("@")[0].trim();
+  if (!dau) return "?";
+  if (TAI_KHOAN_PDD.has(dau.toLowerCase())) return "PĐD";
+  // Cắt 10 ký tự: cột hẹp nhất của bảng chỉ ~90px, nhãn dài hơn sẽ xuống dòng
+  // và đội chiều cao CẢ HÀNG lên (mọi ô đã wraptext, xem StyleTable).
+  return dau.length > 10 ? `${dau.slice(0, 10).toUpperCase()}…` : dau.toUpperCase();
+}
+
+/** Mốc thời gian rút gọn: cùng ngày thì "15:10", khác ngày thì "19/08".
+ *  Phần lớn tranh chấp "ai đè ai" xảy ra trong cùng buổi làm việc, nên giờ:phút
+ *  là thứ phân định được; ô sửa từ tuần trước chỉ cần biết là đã cũ. */
+export function mocThoiGianNgan(iso) {
+  if (!iso) return "";
+  const t = new Date(iso);
+  if (Number.isNaN(t.getTime())) return "";
+  const cungNgay = t.toDateString() === new Date().toDateString();
+  return cungNgay
+    ? t.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
+    : t.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+}
+
+/** Nhãn nhỏ "PĐD · 15:10" gắn vào ô đã bị sửa đè. Dùng CHUNG cho cả bản Tổng
+ *  hợp của PĐD lẫn Danh mục đề xuất của khoa — hai màn nhìn cùng một ô nên
+ *  phải đọc ra cùng một dòng chữ, nếu không thì hai bên gọi tên khác nhau cho
+ *  cùng một lần sửa. `moTaThem` để mỗi màn nói thêm phần nghiệp vụ riêng. */
+export function DauVetSuaCuoi({ updatedBy, updatedAt, moTaThem = "" }) {
+  if (!updatedBy && !updatedAt) return null;
+  const gio = mocThoiGianNgan(updatedAt);
+  const dayDu = updatedAt
+    ? new Date(updatedAt).toLocaleString("vi-VN")
+    : "không rõ thời điểm";
+  return (
+    <span
+      className="ml-1.5 inline-flex items-center whitespace-nowrap rounded bg-violet-100 px-1 py-0.5 align-middle text-[10px] font-semibold text-violet-800"
+      title={`Sửa cuối bởi ${updatedBy || "không rõ"} lúc ${dayDu}.`
+        + (moTaThem ? ` ${moTaThem}` : "")}>
+      {gio ? `${tenNguoiSuaNgan(updatedBy)} · ${gio}` : tenNguoiSuaNgan(updatedBy)}
+    </span>
+  );
+}
 
 export function StyleTable() {
   return (

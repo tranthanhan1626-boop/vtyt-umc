@@ -12,7 +12,7 @@ import {
 import { docTenCotTuMau, ganTenMau } from "../lib/tenCotBieuMau";
 import { taiLichSuTheoThang, gomTheoThang } from "../lib/lichSuSuDung";
 import { taiDotIdCuaGoi, locTheoDot } from "../lib/dotBoSung";
-import { StyleTable, StyleToolbar, formatCell } from "./DanhMucDeXuatKhoa";
+import { StyleTable, StyleToolbar, formatCell, DauVetSuaCuoi } from "./DanhMucDeXuatKhoa";
 import { xuatExcelDong, tenFileAnToan } from "../lib/xuatExcelDong";
 import { daiP50P75, doDaiKyMacDinh } from "../lib/congThucSoLuong";
 
@@ -260,8 +260,13 @@ async function taiOverrideVaKhoa(goiId, namDeXuat) {
   }
   const [{ data: oRows, error: loiO }, { data: khoaRows, error: loiKhoa },
     { data: oKhoaRows, error: loiOKhoa }] = await Promise.all([
+    // `updated_by` + `updated_at` (20/08/2026): hai cột này đã có sẵn trong
+    // bảng từ patch_zd, chỉ là trước giờ màn này không đọc. Phải đọc vì luật
+    // "ai sửa sau đè" cho phép KHOA đè lên giá trị PĐD vừa duyệt — không có
+    // hai cột này thì trên bảng, ô khoa vừa đổi và ô PĐD tự gõ trông y hệt
+    // nhau. Không thêm cột, không đổi schema.
     fetchAllRows((f, t) => supabase.from("danh_muc_tong_hop_o")
-      .select("ma_hang, cot, gia_tri")
+      .select("ma_hang, cot, gia_tri, updated_by, updated_at")
       .eq("goi_id", goiId).eq("nam_de_xuat", namDeXuat).range(f, t), { order: "id" }),
     fetchAllRows((f, t) => supabase.from("danh_muc_tong_hop_khoa")
       .select("loai, khoa_key")
@@ -279,9 +284,18 @@ async function taiOverrideVaKhoa(goiId, namDeXuat) {
   if (loiKhoa) throw loiKhoa;
 
   const overrideTheoMa = new Map();
+  // Dấu vết ai sửa cuối, tách RIÊNG khỏi `overrideTheoMa`. Vì sao không nhét
+  // chung vào một map: `overrideTheoMa` được `apOverride` đọc để ĐẶT THẲNG giá
+  // trị vào ô, và `oBiSuaDe`/`khoiPhucOGoc` cũng dựa vào nó — đổi kiểu phần tử
+  // từ giá trị sang object là phải sờ vào cả ba chỗ đó, đúng loại thay đổi dễ
+  // sót nhất. Map thứ hai cùng khoá (mã hàng -> cột) thì không đụng gì.
+  const veSuaCuoiTheoMa = new Map();
   (oRows || []).forEach((r) => {
     if (!overrideTheoMa.has(r.ma_hang)) overrideTheoMa.set(r.ma_hang, new Map());
     overrideTheoMa.get(r.ma_hang).set(r.cot, r.gia_tri);
+    if (!veSuaCuoiTheoMa.has(r.ma_hang)) veSuaCuoiTheoMa.set(r.ma_hang, new Map());
+    veSuaCuoiTheoMa.get(r.ma_hang).set(r.cot,
+      { updated_by: r.updated_by, updated_at: r.updated_at });
   });
   const cotLocked = new Set((khoaRows || []).filter((k) => k.loai === "cot").map((k) => k.khoa_key));
   const dongLocked = new Set((khoaRows || []).filter((k) => k.loai === "dong").map((k) => k.khoa_key));
@@ -306,7 +320,7 @@ async function taiOverrideVaKhoa(goiId, namDeXuat) {
     });
   });
 
-  return { overrideTheoMa, cotLocked, dongLocked, cotAn, oKhoaTheoMa };
+  return { overrideTheoMa, veSuaCuoiTheoMa, cotLocked, dongLocked, cotAn, oKhoaTheoMa };
 }
 
 // `danhSachCot` phải là bộ cột ĐANG DÙNG (đã thay khối năm động), không phải
@@ -332,6 +346,11 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   const goiScope = dotId ? `${goiId}:dot:${dotId}` : goiId;
   const [rowsGoc, setRowsGoc] = useState([]);
   const [overrideTheoMa, setOverrideTheoMa] = useState(new Map());
+  // (mã hàng -> cột -> {updated_by, updated_at}) — dấu vết AI SỬA CUỐI ô đó.
+  // Chốt 20/08/2026: luật "ai sửa sau đè" giữ nguyên, chỉ bắt ô phải khai ra
+  // người chạm sau cùng. Đi song song với `overrideTheoMa`, xem lý do tách hai
+  // map ở `taiOverrideVaKhoa`.
+  const [veSuaCuoi, setVeSuaCuoi] = useState(new Map());
   const [boThau, setBoThau] = useState(GOI_ID_MAP[goiId] || GOI_ID_MAP["18t-dung-chung"]);
   const [dangTai, setDangTai] = useState(true);
   const [loi, setLoi] = useState("");
@@ -355,8 +374,8 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
         taiDuLieuGoc(goiId, dotId),
         taiOverrideVaKhoa(goiScope, NAM_DE_XUAT),
       ]);
-      const { overrideTheoMa: ov, cotLocked: cl, dongLocked: dl, cotAn: ca,
-        oKhoaTheoMa: okm } = khoaVaOverride;
+      const { overrideTheoMa: ov, veSuaCuoiTheoMa: vsc, cotLocked: cl,
+        dongLocked: dl, cotAn: ca, oKhoaTheoMa: okm } = khoaVaOverride;
       // Danh sách khoa chưa xác nhận — tải cùng lúc với trạng thái chốt.
       if (dgId) {
         const { data: chuaXn } = await supabase.rpc("khoa_chua_xac_nhan", { p_dot_goi_id: dgId });
@@ -386,6 +405,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       setRowsGoc(rows);
       setDsNamCoDuLieu(dsNam || []);
       setOverrideTheoMa(ov);
+      setVeSuaCuoi(vsc || new Map());
       setCotLocked(cl);
       setDongLocked(dl);
       setCotAn(ca);
@@ -516,6 +536,10 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   /** Ô này có đang bị PĐD sửa đè lên số gốc không? */
   const oBiSuaDe = (maHang, cot) => overrideTheoMa.get(maHang)?.has(cot) ?? false;
   const giaTriGoc = (maHang, cot) => rowGocTheoMa.get(maHang)?.[cot];
+  /** Ai chạm ô này sau cùng, lúc nào — null nếu ô chưa từng bị sửa đè.
+   *  Tên hàm cố ý KHÔNG gọi là "pddSuaCuoi": từ V2 người sửa cuối rất có thể
+   *  là KHOA chứ không phải PĐD, đó chính là điều cái nhãn phải nói ra. */
+  const veSuaCuoiCuaO = (maHang, cot) => veSuaCuoi.get(maHang)?.get(cot) || null;
 
   // ---- Xuất Excel -------------------------------------------------------
   // Chỉ xuất CỘT ĐANG HIỆN (ẩn cột thì Excel cũng mất cột đó) và, nếu đang
@@ -706,6 +730,17 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       next.set(maHang, conMa);
       return next;
     });
+    // Dấu vết phải đổi CÙNG LÚC với con chữ trong ô, không chờ lần tải lại kế
+    // tiếp: nếu không, PĐD vừa gõ xong vẫn thấy nhãn mang tên khoa sửa trước
+    // đó và tưởng mình chưa lưu được. `updated_at` lấy giờ máy chỉ để hiện
+    // ngay; lần tải lại sau sẽ thay bằng giờ server (default now() của bảng).
+    setVeSuaCuoi((prev) => {
+      const next = new Map(prev);
+      const conMa = new Map(next.get(maHang) || []);
+      conMa.set(colKey, { updated_by: profile.email, updated_at: new Date().toISOString() });
+      next.set(maHang, conMa);
+      return next;
+    });
     setODangChon(null);
   };
 
@@ -786,6 +821,16 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       return;
     }
     setOverrideTheoMa((prev) => {
+      const next = new Map(prev);
+      const conMa = new Map(next.get(maHang) || []);
+      conMa.delete(colKey);
+      if (conMa.size) next.set(maHang, conMa); else next.delete(maHang);
+      return next;
+    });
+    // Bỏ sửa đè là XOÁ hẳn dòng trong `danh_muc_tong_hop_o`, nên dấu vết cũng
+    // phải biến mất theo — để lại nhãn "ai sửa cuối" trên một ô đã trả về giá
+    // trị gốc là nói sai sự thật.
+    setVeSuaCuoi((prev) => {
       const next = new Map(prev);
       const conMa = new Map(next.get(maHang) || []);
       conMa.delete(colKey);
@@ -1043,6 +1088,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                       ? (coDai ? `${fmt(r._daiTu)} – ${fmt(r._daiDen)}` : "—")
                       : r[c.key];
                     const daSuaDe = oBiSuaDe(r.ma_hang, c.key);
+                    const veSua = veSuaCuoiCuaO(r.ma_hang, c.key);
                     // Các khoa đã ghi gì vào ô này? Ô nào nhiều khoa ghi khác
                     // nhau thì PĐD phải biết ngay để duyệt, không phải mở từng
                     // bảng khoa đi tìm.
@@ -1073,6 +1119,13 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                         title={[
                           daSuaDe
                             ? `Đã sửa đè — số gốc: ${formatCell(giaTriGoc(r.ma_hang, c.key), c.kieu) || "(trống)"}`
+                            : null,
+                          // Nhắc lại dấu vết ở tooltip của CẢ Ô chứ không chỉ
+                          // trên cái nhãn: nhãn cao 14px, rê trúng nó khó hơn
+                          // rê vào ô, mà đây là thông tin PĐD cần nhất.
+                          veSua
+                            ? `Sửa cuối bởi ${veSua.updated_by || "không rõ"} lúc `
+                              + `${veSua.updated_at ? new Date(veSua.updated_at).toLocaleString("vi-VN") : "không rõ thời điểm"}`
                             : null,
                           dsKhoaGhi.length
                             ? dsKhoaGhi.map((x) => `${x.khoa}: ${x.giaTri}`).join("\n")
@@ -1116,6 +1169,21 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                               </button>
                             )}
                             {isLocked && <Lock size={9} className="inline-block ml-1 text-indigo-600" />}
+                            {/* DẤU VẾT AI SỬA CUỐI (chốt 20/08/2026). Luật vẫn
+                                là "ai sửa sau đè" — chủ dự án KHÔNG đổi luật,
+                                chỉ yêu cầu ô phải khai ra ai chạm sau cùng.
+                                Vì sao đặt ngay cạnh giá trị chứ không gom vào
+                                một cột "người sửa" riêng: bảng này rộng vài
+                                chục cột và cuộn ngang, cột phụ đặt ở đầu hay
+                                cuối đều không nằm cùng tầm mắt với ô đang đọc.
+                                Nhãn dùng chung với Danh mục đề xuất khoa
+                                (DauVetSuaCuoi) để hai màn gọi tên cùng một lần
+                                sửa giống hệt nhau. */}
+                            {veSua && (
+                              <DauVetSuaCuoi
+                                updatedBy={veSua.updated_by} updatedAt={veSua.updated_at}
+                                moTaThem="Bấm biểu tượng lịch sử để xem các lần sửa trước." />
+                            )}
                             {/* Cờ khoa đã ghi. Lệch nhau thì báo số giá trị
                                 khác nhau — PĐD nhìn một cái là biết ô nào cần
                                 duyệt. Bấm để sổ danh sách từng khoa. */}
