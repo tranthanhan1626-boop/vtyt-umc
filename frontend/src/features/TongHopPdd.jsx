@@ -680,7 +680,10 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       setLoiO(error.message);
       return;
     }
-    await taiLai();
+    // Chốt/mở chốt Q đổi hẳn cụm cột thầu (Q · R1 · R2 · R3 · Trúng). Không tải
+    // lại ở đây thì bảng đã hiện "đã chốt" mà dải giai đoạn vẫn nói "chưa chốt"
+    // — đo thật bằng trình duyệt 23/08/2026.
+    await Promise.all([taiLai(), thau.taiLaiThau()]);
   };
 
   const batDauSua = (maHang, colKey, giaTriHienTai) => {
@@ -923,6 +926,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                 giaiDoan={thau.giaiDoan}
                 giaiDoanDangChay={thau.giaiDoanDangChay}
                 tongChuaXuLy={thau.tongChuaXuLy}
+                coPhienQ={thau.coPhienQ}
                 onLoi={(m) => setLoi(m)}
                 onXong={async (m) => {
                   setThongBaoThau(m || "");
@@ -1040,6 +1044,15 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
             <col style={{ width: 30 }} />
             {cotHienThi.map((c) => <col key={c.key} style={{ width: c.width }} />)}
             <col style={{ width: 160 }} />
+            {/* Sáu cột cụm thầu. Thiếu <col> ở đây thì bảng `w-max` bóp chúng
+                còn ~16px và ô bên cạnh đè lên — đo thật bằng trình duyệt
+                23/08/2026 (elementFromPoint trả về ô khác, không phải nút). */}
+            <col style={{ width: 84 }} />
+            <col style={{ width: 76 }} />
+            <col style={{ width: 76 }} />
+            <col style={{ width: 76 }} />
+            <col style={{ width: 88 }} />
+            <col style={{ width: 200 }} />
           </colgroup>
           <thead>
             <tr className="group-row">
