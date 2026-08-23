@@ -280,6 +280,26 @@ Chỉ đọc, vài giây, thoát mã 1 nếu có lỗi chặn deploy. Kiểm: đ
 Khác `smoke_full_workflow_staging.py`: cái đó kiểm LUỒNG NGHIỆP VỤ và có ghi
 dữ liệu, chạy lâu hơn. Hai thứ bổ sung nhau, không thay thế nhau.
 
+### 🆕 5c. Kiểm MỌI MÀN — bắt lớp lỗi "hiện rỗng mà không báo lỗi"
+
+```bash
+.venv/bin/python scripts/kiem_moi_man.py --xac-nhan-staging
+```
+
+Vì sao cần thêm một vòng nữa: smoke đi **đúng một đường** xuyên pipeline chính,
+không chạm tới 20+ màn ngoài đường đó. Ngày 23/08/2026 phát hiện ba bảng của mô
+hình trước v3 nằm chết suốt hai tuần — năm màn đọc chúng vẫn chạy, vẫn đẹp, chỉ
+hiện rỗng và **không hề báo lỗi**.
+
+Script quét ngược từ mã nguồn: lấy mọi `.from("...")` và `.rpc("...")` trong
+`frontend/src`, gọi thật bằng JWT của PĐD và của một khoa, rồi chia ba nhóm —
+**LỖI** (hỏng thật) · **RỖNG cả hai vai trò** (có thể là chưa ai dùng, có thể là
+chết) · **CÓ DỮ LIỆU**. Script **không tự phán** một bảng rỗng là hỏng; nó chỉ
+đưa danh sách kèm tên màn đang đọc để người xem quyết.
+
+Chạy sau mỗi lần đổi schema hoặc gỡ/thêm màn. Cần `MAT_KHAU_TEST` nếu mật khẩu
+tài khoản test khác `111111`.
+
 ## 6. Bẫy kỹ thuật quan trọng
 
 1. PostgREST mặc định cắt 1.000 dòng; mọi tải lớn phải phân trang.

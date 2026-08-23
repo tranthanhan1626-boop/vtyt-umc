@@ -1,27 +1,21 @@
 # Sơ đồ workflow Khoa ↔ Phòng Điều dưỡng
 
-> 🔴 **LẠC HẬU TỪ 21/08/2026 — đừng lấy quyết định từ bộ sơ đồ này.**
+> ✅ **VẼ LẠI 23/08/2026** theo workflow v3 (17/08) + luật V2 (19/08) + QĐ 20/08
+> + bản **MỘT MẶT BÀN** (21/08) + bản **VÒNG KHÉP KÍN** D1–D10 (23/08).
 >
-> Vẽ lại ngày 20/08/2026 theo workflow v3 (17/08) + luật V2 (19/08) + QĐ 20/08.
-> Ngày 21/08/2026 dự án đổi hướng sang bản **MỘT MẶT BÀN** và **7 luật trong sơ
-> đồ đã bị đảo**. Chưa vẽ lại vì luật mới **chưa thi công** — vẽ lại sau khi
-> build xong miếng 1 và 2 (`../05_TRANG_THAI_VA_VIEC_TIEP_THEO.md`, mục 3).
+> Bốn chỗ đổi so với bản 20/08:
 >
-> **Chỗ sơ đồ đang vẽ sai so với luật hôm nay:**
->
-> | Sơ đồ vẽ | Luật từ 21/08/2026 |
+> | Bản cũ vẽ | Bản 23/08 |
 > |---|---|
-> | PĐD hiệu chỉnh trên bảng của từng khoa; tích rớt và phân bổ ở Bàn điều hành | Tất cả trên Danh mục tổng hợp — một mặt bàn |
-> | Hệ chia sẵn số trúng theo tỉ lệ Q | Ô để trống, PĐD gõ tay; chia theo tỉ lệ là nút bấm |
-> | Khoá cứng 2 chặn ngay lúc phân bổ | Chặn ở cổng chốt trình ký, lúc gõ chỉ tô đỏ |
-> | Chốt trình ký từng bảng khoa rồi mới chốt tổng hợp | Một nút chốt toàn bộ |
-> | Giỏ rớt: CHỜ KHOA XỬ LÝ → khoa tự chọn đề xuất lại | Cuốn chiếu — mã rớt tự vào đợt bổ sung gần nhất, tự điền số |
-> | Đợt bổ sung do PĐD tạo tay | Lịch T1/T5/T9, hệ tự tạo nếu thiếu |
-> | Sau chốt Q muốn sửa phải mở chốt gói con | Gõ đè tại chỗ kèm lý do |
+> | Giỏ rớt: khoa tự chọn có đề xuất lại không | **Hai nhịp** — gõ nháp, rồi nút **"Xác nhận rớt"** mới là cò |
+> | Mã rớt vào giỏ chờ khoa xử lý | **Đổ sang mã tương đương** (cùng mã quản lý, giữ số theo khoa, lệch ĐVT thì chặn) · phần chưa đổ **cuốn chiếu hết** |
+> | Chốt trình ký từng bảng khoa rồi chốt toàn bộ | **Một nút** chốt toàn bộ |
+> | — | Thêm **hộp thư hai chiều**, **màn theo dõi cuốn chiếu**, và khối **ba bảng đã chết** |
 >
 > Sơ đồ là **bản tóm tắt hình ảnh**, không phải nguồn luật. Khi sơ đồ và
-> `../01_NGHIEP_VU_HIEN_HANH.md` khác nhau thì **tài liệu đúng, sơ đồ sai** —
-> sửa sơ đồ theo tài liệu, không làm ngược lại.
+> `../01_NGHIEP_VU_HIEN_HANH.md` khác nhau thì **tài liệu đúng, sơ đồ sai**.
+>
+> 🆕 **PNG nay sinh tự động** — không phải xuất tay nữa. Xem mục "Sinh lại".
 
 ## Sơ đồ nói gì mà tài liệu khó nói
 
@@ -55,6 +49,7 @@ hành và tài liệu nghiệp vụ trong thư mục cha.
 | `workflow-knowledge.png` / `.svg` | Knowledge graph thực thể, checkpoint và vòng lặp |
 | `workflow-*.mmd` | Mermaid source để sửa nhanh bằng văn bản |
 | `generate-diagrams.mjs` | Nguồn sinh lại Draw.io, SVG và Mermaid |
+| `xuat-png.sh` | 🆕 Xuất PNG từ SVG bằng Chrome headless — chạy SAU generate |
 
 ## Cách chỉnh sửa
 
@@ -83,13 +78,19 @@ node "Hướng dẫn build project/so-do-workflow/generate-diagrams.mjs"
 Lệnh trên ghi đè workbook Draw.io, SVG và Mermaid. Không chạy lệnh này sau
 khi đã sửa thủ công workbook nếu chưa chuyển thay đổi ngược vào script.
 
-⚠️ **Script KHÔNG sinh file `.png`.** Đó là lý do bộ sơ đồ từng lệch: SVG được
-cập nhật còn PNG thì không, mà PNG mới là thứ người ta hay mở. Sau khi chạy
-script phải xuất lại PNG:
+🆕 **Xuất PNG (23/08/2026 — nay tự động):**
 
-1. Bọc mỗi `workflow-*.svg` trong một file HTML đặt đúng `width`/`height` bằng
-   `viewBox` của SVG (nếu không, trình duyệt co giãn SVG cho vừa cửa sổ).
-2. Mở file HTML đó và chụp toàn trang ở đúng kích thước.
+```bash
+bash "Hướng dẫn build project/so-do-workflow/xuat-png.sh"
+```
+
+Script dùng Chrome headless, đọc kích thước từ chính `viewBox` của mỗi SVG nên
+không phải gõ tay kích thước — gõ tay chính là nguồn lệch cũ. Trước ngày này
+phải xuất PNG bằng tay, hậu quả là SVG được cập nhật còn PNG thì không, mà PNG
+mới là thứ người ta hay mở.
+
+**Chạy hai lệnh theo đúng thứ tự** mỗi khi đổi sơ đồ: `generate-diagrams.mjs`
+trước, `xuat-png.sh` sau. Commit cả `.svg` lẫn `.png`.
 
 Kích thước hiện tại: overview 3060×2150 · khoa 2260×2060 · pdd 2260×2010 ·
 knowledge 2600×2060.

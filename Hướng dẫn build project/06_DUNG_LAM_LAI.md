@@ -1,7 +1,7 @@
 # ĐỪNG LÀM LẠI — những quyết định đã bị đảo
 
 > Đọc file này **trước khi** dựng bất kỳ cơ chế nào bạn thấy "còn thiếu".
-> Dự án đã đảo luật **29 lần**. Phần lớn thứ trông như thiếu sót là thứ đã bị
+> Dự án đã đảo luật **35 lần**. Phần lớn thứ trông như thiếu sót là thứ đã bị
 > cố ý bỏ đi, có lý do.
 
 Đây **không** phải tài liệu nghiệp vụ. Luật đang chạy nằm ở
@@ -42,6 +42,12 @@
 | **Sửa số sau chốt Q phải mở chốt cả gói con** | **Gõ đè tại chỗ kèm lý do**, Q vẫn giữ làm snapshot | 21/08/2026 |
 | **Mã rớt: "không tự tạo đề xuất, không tự điền số lượng", khoa tự chọn có đề xuất lại không** | **Cuốn chiếu** — hệ tự đưa mã rớt vào đợt bổ sung gần nhất của khoa, tự điền số = số rớt; khoa sửa và quyết cuối | 21/08/2026 |
 | **Đợt bổ sung do PĐD tạo tay khi cần** | Lịch cố định T1/T5/T9; thiếu thì **hệ tự tạo** | 21/08/2026 |
+| **Cuốn chiếu bắn ngay lúc gõ số rớt** | **Hai nhịp** — gõ nháp không ai bị làm phiền, nút **"Xác nhận rớt"** mới là cò | 23/08/2026 |
+| **Chỉ mã rớt 100% mới cuốn chiếu** | **Mọi phần rớt chưa đổ đi đâu** đều cuốn chiếu, kể cả rớt một phần | 23/08/2026 |
+| **Hệ tự tạo đợt bổ sung khi thiếu** (còn phải đợi ai đó mở) | Đợt T1/T5/T9 **luôn mở sẵn**, tự tạo và tự mở; đợt đích đã chốt Q thì nhảy mốc kế | 23/08/2026 |
+| **Web không nhắc, không thông báo tự động** | **Hộp thư hai chiều** PĐD ↔ khoa + badge đỏ ở Gói bổ sung. Chỉ việc lớn, sửa vặt gộp theo ngày, xem xong xoá hẳn | 23/08/2026 |
+| **ĐVSD đẩy SL mã rớt sang mã tương đương** (đường cũ ở màn khoa vẫn còn nút) | Chặn hẳn đường đó; **PĐD đổ trên bảng tổng hợp**, giữ nguyên số theo từng khoa, lệch ĐVT thì chặn | 23/08/2026 |
+| **Bốn mảng sau đấu thầu + mẫu Excel gom dữ liệu làm trong đợt này** | **Hoãn sang nhánh sau** — tiến độ gói thầu theo số quyết định / số hợp đồng, nạp dữ liệu 2 lần/tuần | 23/08/2026 |
 
 ## Bốn cái bẫy hay khiến người ta code lại đồ đã bỏ
 
@@ -66,6 +72,34 @@ dữ liệu dự án đã gặp.
 Lý do: nó gộp *gõ để soạn* với *chốt để đóng* vào một thao tác, nên PĐD gõ nửa
 chừng là khoa hết đường sửa. Việc đóng băng do **chốt Q** (cột số) và **chốt
 trình ký** (cột chữ) lo, cả hai đều chặn ở server.
+
+## 🆕 Bẫy thứ năm: "màn này hiện rỗng, chắc chưa ai dùng"
+
+Phát hiện ngày **23/08/2026**, sau khi rà toàn bộ 34 màn.
+
+Ba bảng của mô hình **trước v3** — `goi_thau_ket_qua_ma` · `goi_thau_tien_do` ·
+`goi_thau_moc` — không còn gì ghi vào từ 17/08. Năm màn đọc chúng vẫn chạy, vẫn
+đẹp, **chỉ hiện rỗng và không báo lỗi**. Nhìn qua giống "chưa có dữ liệu".
+
+Cách phân biệt, làm được trong một phút:
+
+```bash
+cd backend && .venv/bin/python scripts/kiem_moi_man.py --xac-nhan-staging
+```
+
+Script quét mọi `.from()` / `.rpc()` trong mã nguồn, gọi thật bằng JWT hai vai
+trò, rồi chia ba nhóm: **lỗi** · **rỗng cả hai vai trò** · **có dữ liệu**. Rỗng
+chưa chắc là hỏng, nhưng mọi cái hỏng đều nằm trong nhóm rỗng.
+
+Cách chữa đã dùng: **viết lại NỀN của view**, không sửa từng màn. Ba view
+`v_ket_qua_thau_theo_khoa` · `v_ma_rot_theo_goi` · `v_tien_do_su_dung` được trỏ
+sang bảng v3 mà **giữ nguyên tên cột** — năm màn sống lại cùng lúc, không phải
+đụng dòng giao diện nào.
+
+**Đừng dựng lại ba bảng đó.** Nếu thấy màn nào còn đọc chúng, việc đúng là trỏ
+sang nền v3, không phải bơm dữ liệu vào bảng cũ.
+
+---
 
 ## Một thứ KHÔNG nằm trong bảng nhưng cũng đừng đụng
 

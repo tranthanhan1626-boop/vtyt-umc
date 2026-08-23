@@ -7,11 +7,15 @@ Hướng dẫn cho người và cho agent khi làm việc trong repo này.
 **Toàn bộ tài liệu dự án nằm trong `Hướng dẫn build project/`.** Bắt đầu từ
 `Hướng dẫn build project/00_DOC_TRUOC_TIEN.md` — file đó là bản đồ.
 
-> 🔴 **Dự án đổi hướng ngày 21/08/2026 — bản MỘT MẶT BÀN.** Luật mới đã vào tài
-> liệu nhưng **chưa thi công**. Chỗ nào là luật tương lai đều có nhãn 🆕 trong
-> `01_NGHIEP_VU_HIEN_HANH.md`. Muốn biết code hôm nay chạy ra sao thì đọc
-> `05_TRANG_THAI_VA_VIEC_TIEP_THEO.md`. Sơ đồ trong `so-do-workflow/` **đã lạc
-> hậu**, đừng lấy quyết định từ đó.
+> 🔴 **Hai lần đổi hướng gần nhất:** bản **MỘT MẶT BÀN** (21/08/2026) — mọi thao
+> tác sửa của PĐD dồn về Danh mục tổng hợp; và bản **VÒNG KHÉP KÍN** (23/08/2026,
+> **đã thi công xong**) — rớt → đổ sang mã tương đương → cuốn chiếu về đợt bổ
+> sung → hộp thư hai chiều. Tài liệu, docx và sơ đồ đều đã đồng bộ tới 23/08.
+>
+> ☠️ **Ba bảng ĐÃ CHẾT, đừng dựng lại:** `goi_thau_ket_qua_ma` ·
+> `goi_thau_tien_do` · `goi_thau_moc` (mô hình trước v3). Màn đọc chúng **hiện
+> rỗng mà không báo lỗi** — đó là lớp lỗi khó thấy nhất của dự án này. Nghi ngờ
+> thì chạy `backend/scripts/kiem_moi_man.py --xac-nhan-staging`.
 
 Tối thiểu phải đọc trước khi sửa bất cứ thứ gì:
 

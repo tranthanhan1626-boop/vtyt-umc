@@ -345,3 +345,120 @@ rõ trong `.scratch/mot-mat-ban/UX_MOT_MAT_BAN.md`.
    toàn bộ bản MỘT MẶT BÀN.
 2. `so-do-workflow/` vẽ lại 20/08 theo v3+V2, **chưa có 21/08**.
 3. Chưa thi công miếng nào.
+
+---
+
+## 23/08/2026 — Bản VÒNG KHÉP KÍN: chẩn đoán lệch hướng và thi công trọn 5 bước
+
+Chủ dự án mô tả lại workflow đầy đủ hai vai trò vì thấy dự án đi chệch.
+
+### Chẩn đoán — nguyên nhân thật của cảm giác "lệch hướng"
+
+**Không phải chưa build. Là đã build đầu tháng 8 rồi chết.** Ba bảng của mô hình
+**trước v3** — `goi_thau_ket_qua_ma` · `goi_thau_tien_do` · `goi_thau_moc` —
+nuôi đúng những chức năng chủ dự án cần nhất:
+
+| Chức năng | Xây ở đâu | Vì sao chết |
+|---|---|---|
+| Đổ số rớt sang mã tương đương | RPC `day_so_luong_rot` (patch_ze/zf/zg) | đọc `goi_thau_ket_qua_ma` |
+| Thông báo đỏ khi mã của khoa rớt | `ThongBaoRotThau.jsx` | cùng bảng |
+| Mã rớt hoàn toàn → giỏ bổ sung | `TienDoGoiThau.jsx` | `goi_thau_moc` |
+| Cam kết 20/50/80 | view `v_tien_do_su_dung` | nền đọc cả ba |
+
+Xương sống bị thay ba lần trong ba tuần (v3 17/08 · V2 19/08 · một mặt bàn
+21/08); mỗi lần chỉ kéo theo nhánh *lập đề xuất → tổng hợp → chốt Q → phân bổ số
+trúng*. Nhánh *rớt → thay thế → bổ sung → báo khoa* bị bỏ lại.
+
+Bằng chứng đây là **hướng gốc** chứ không phải hướng mới: comment ở
+`DanhMucDeXuatKhoa.jsx:28`, viết đầu tháng 8, mô tả đúng nguyên văn cơ chế chủ
+dự án nêu lại ngày 23/08.
+
+**Cửa hỏng đang mở:** `DanhMucDeXuatKhoa.jsx:788` — màn khoa **đang chạy** vẫn
+gọi `day_so_luong_rot`, bảng nguồn 0 dòng, khoa bấm là vào ngõ cụt.
+
+### 10 quyết định (D1–D10)
+
+| # | Quyết định |
+|---|---|
+| D1 | PĐD nhập rớt **thẳng trên Danh mục tổng hợp** — ba ô R1/R2/R3, giữ đủ 3 giai đoạn |
+| D2 | **Hai nhịp**: gõ nháp → nút **"Xác nhận rớt"** là cò |
+| D3 | Đổ số rớt sang mã tương đương **cùng mã quản lý**, **giữ nguyên số theo từng khoa** |
+| D4 | **Mọi phần rớt chưa đổ đi đâu** đều cuốn chiếu, không chỉ mã rớt 100% |
+| D5 | **Hộp thư hai chiều**, chỉ việc lớn, sửa vặt gộp theo ngày, xem xong xoá hẳn |
+| D6 | Tiến độ gói thầu · số quyết định · số hợp đồng · nạp 2 lần/tuần → **nhánh sau** |
+| D7 | **Lệch ĐVT thì CHẶN**, bắt gõ tay. Không dựng bảng hệ số quy đổi |
+| D8 | "Xác nhận rớt" bấm được ở **mỗi giai đoạn**, PĐD tự canh |
+| D9 | Khoa **chưa từng đề xuất** mã nhận vẫn được đổ, noti phải nói rõ |
+| D10 | Đợt bổ sung **giữ lịch T1/T5/T9** nhưng **luôn mở sẵn**, không đợi PĐD |
+
+### Số đo nền cho D7 — ĐVT lệch bao nhiêu
+
+Đo thật trên `DM_VAT_TU` (3.061 dòng), không phải ước lượng:
+
+| | |
+|---|---|
+| Mã quản lý | 1.274 |
+| Nhóm có >1 mã hàng (đổ qua lại được) | 446 |
+| **Nhóm lệch ĐVT ngay trong nhóm** | **68 — 15,2%** |
+
+Chủ yếu **Bộ vs Cái**; một nhóm **Chai vs Tuýp**. Giả định "đề xuất đã chọn ĐVT
+chuẩn" đúng ở **cấp mã hàng**, nhưng đổ số là đổ **giữa hai mã hàng**, nên 15%
+trường hợp vẫn lệch. Dựng bảng quy đổi cho 68 nhóm là tốn công vô ích vì phần
+lớn 1 Bộ = 1 Cái — chặn và gõ tay rẻ hơn nhiều.
+
+### Đã thi công
+
+`patch_zzzzz_vong_khep_kin.sql` — bảng `chuyen_so_rot_v3` · `cuon_chieu_rot_v3` ·
+`thong_bao`; view `v_rot_chua_xu_ly_v3` · `v_theo_doi_cuon_chieu_v3`; RPC
+`day_so_luong_rot_v3` · `bo_chuyen_so_rot_v3` · `xac_nhan_rot_v3` ·
+`fn_dot_bo_sung_gan_nhat` · `danh_dau_da_xem_thong_bao`.
+
+**Nguyên tắc giữ được:** patch chỉ GHI THÊM sổ, không `insert`/`update` vào
+`phan_bo_trung_v3` · `ket_qua_rot_v3` · `chot_q_dong`. Ba khoá cứng toán học và
+mọi trigger cũ còn nguyên. Có test khoá chặt điều này.
+
+`patch_zzzzza_hoi_sinh_view_v3.sql` — viết lại nền ba view chết lên v3, **giữ
+nguyên tên cột** nên 5 màn sống lại mà không phải sửa dòng giao diện nào.
+
+Giao diện: `CumThauTongHop.jsx` (cụm cột thầu bám đuôi bảng — cố ý KHÔNG nhét
+vào `COT_PDD` vì cụm đó dùng chung với đường xuất Excel) · `HopThuThongBao.jsx` ·
+`TheoDoiCuonChieu.jsx`.
+
+### Bốn lỗi giao diện chỉ lộ ra khi bấm thật
+
+Chạy trọn vòng bằng Chrome, hai vai trò, dữ liệu staging thật:
+
+1. Cụm cột thầu bị bóp còn **16px** và bị ô bên cạnh đè — thiếu `<col>` trong
+   `colgroup`. Đo bằng `elementFromPoint`: điểm giữa nút trả về ô khác.
+2. Chốt Q xong dải giai đoạn vẫn nói "chưa chốt" — `doiChot()` không gọi
+   `taiLaiThau()`.
+3. Ô R1/R2/R3 là `<td onClick>`, không bắt được bàn phím → đổi thành `<button>`.
+4. `window.confirm` / `window.prompt` khoá cả trang → thay bằng hộp xác nhận
+   trong trang.
+
+### Vòng kiểm mới
+
+`scripts/kiem_moi_man.py` — quét mọi `.from()` / `.rpc()` của 36 màn, gọi thật
+bằng JWT hai vai trò, chia ba nhóm **lỗi · rỗng · có dữ liệu**. Đây là vòng bắt
+đúng lớp lỗi "hiện rỗng mà không báo lỗi" mà smoke không thấy.
+
+### Nghiệm thu
+
+`pytest` **150** · `smoke_workflow_v3_staging` **21/21** (thêm 6 bước vòng khép
+kín + 1 bước kiểm view hồi sinh) · 33 bảng về đúng số dòng ban đầu ·
+`kiem_moi_man` không lỗi · `kiem_truoc_deploy` Sạch · `test:formula` OK · `build` ✓.
+
+### Tài liệu sinh ra trong ngày
+
+| File | Nội dung |
+|---|---|
+| `.scratch/vong-khep-kin/KE_HOACH.md` | Chẩn đoán · 10 QĐ · luật bị đảo · 5 bước · giả định đang chạy |
+| `.scratch/tien-do-goi-thau/BRAINSTORM.md` | Thiết kế nhánh D6: số quyết định / số hợp đồng, 6 câu còn mở |
+| `.claude/agents/co-van-vtyt.md` | Agent cố vấn riêng cho chủ dự án — soạn prompt, soi câu trả lời |
+
+### Việc còn nợ sau ngày 23/08
+
+1. Miếng 1c (nới khoá cứng 2 ở **server**) và 1d (hai chế độ cột · phím tắt gõ
+   dọc · gỡ 2 tab Bàn điều hành) của bản một mặt bàn.
+2. Nhánh D6 — tiến độ gói thầu theo số quyết định / số hợp đồng.
+3. Test ở **quy mô thật**: hàng trăm mã × 62 khoa.

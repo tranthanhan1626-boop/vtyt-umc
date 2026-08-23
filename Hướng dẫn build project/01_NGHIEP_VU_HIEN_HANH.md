@@ -64,8 +64,16 @@ dòng còn lệch và không cho chốt.
 đợt bổ sung gần nhất của khoa, kèm số lượng, và đợt bổ sung theo lịch T1/T5/T9
 **tự** được tạo nếu chưa có (mục 6). Đây không phải cổng chặn quy trình — không
 ai bị khoá, khoa vẫn sửa và vẫn quyết — mà là **cuốn chiếu** để mã hàng không
-rơi ra ngoài giữa hai đợt. Ngoài chỗ này, nguyên tắc "web không tự chạy" giữ
-nguyên: không hạn nộp, không nhắc, không thông báo tự động.
+rơi ra ngoài giữa hai đợt.
+
+🆕 QĐ 23/08/2026 mở **ngoại lệ thứ hai: hộp thư thông báo hai chiều** (mục 12).
+Lý do đảo: luật V2 cho phép *ai sửa sau đè*, kể cả khoa đè lên PĐD — mà không có
+chỗ nào để phía kia nhìn thấy mình vừa bị đè. Hộp thư là **sổ ghi ngắn hạn**, có
+hai luật giữ cho nó không phình: chỉ ghi việc lớn, sửa vặt gộp một dòng mỗi ngày;
+và **xác nhận đã xem là xoá hẳn** — dấu vết thật vẫn nằm ở audit từng ô.
+
+Ngoài hai chỗ này, nguyên tắc "web không tự chạy" giữ nguyên: không hạn nộp,
+không nhắc theo lịch, không tự gửi gì ra ngoài.
 
 ---
 
@@ -358,8 +366,40 @@ phải một nút bật/tắt. Nhờ vậy một mã đã rớt ở chào giá v
 ở mở thầu và đánh giá — trước đây nút bập bênh "Tích rớt / Bỏ tích" làm mất
 đường nhập giai đoạn sau, dù database vẫn nhận đủ ba giai đoạn.
 
-Lý do rớt nhập trong ô nổi neo ngay dưới ô số, có sẵn vài lý do hay dùng để bấm
-chọn. Chọn nhiều dòng rồi áp **một lý do cho cả dải** được.
+Lý do rớt là **bắt buộc**, nhập cùng lúc với số trong hộp nhỏ mở ra từ chính ô.
+
+Ba ô R1/R2/R3 chỉ mở ở **giai đoạn đang thực hiện**; hai ô kia hiện số cũ dạng
+chỉ đọc. Dải giai đoạn nằm ngay trên bảng tổng hợp, bắt đầu và hoàn thành giai
+đoạn tại chỗ.
+
+#### 🆕 Hai nhịp — gõ nháp rồi mới bắn cò (QĐ D2, 23/08/2026)
+
+| Nhịp | Việc | Ai bị ảnh hưởng |
+|---|---|---|
+| 1 · gõ nháp | Gõ R1/R2/R3, chọn mã để đổ số rớt sang, sửa tới sửa lui | **Không ai** — khoa chưa biết gì |
+| 2 · bấm **"Xác nhận rớt"** | Phần đã chọn được đổ sang mã tương đương; phần **còn lại cuốn chiếu hết** về đợt bổ sung; khoa nhận thông báo đỏ | Khoa |
+
+Vì sao tách hai nhịp: nếu đẩy ngay lúc gõ, PĐD đổi ý đổ sang mã khác thì hệ phải
+rút mã ra khỏi đợt bổ sung — khoa nhìn thấy mã hiện lên rồi biến mất. Hai nhịp
+xoá hẳn cảnh đó.
+
+PĐD **tự canh thời điểm** bấm (QĐ D8): nhóm còn mã đang chờ giai đoạn sau thì
+chưa bấm; nhóm rớt sạch thì bấm ngay cho khoa biết sớm. Web không ép.
+
+#### 🆕 Đổ số rớt sang mã tương đương (QĐ D3 · D7 · D9, 23/08/2026)
+
+Mã rớt mà trong **cùng mã quản lý** còn mã khác trúng thì PĐD đổ số rớt sang mã
+đó, ngay trên dòng của bảng tổng hợp.
+
+| Luật | Nội dung |
+|---|---|
+| Cùng nhóm | Chỉ đổ được sang mã hàng **cùng mã quản lý**. Nhờ vậy tổng mã quản lý không đổi |
+| Giữ số theo khoa | Khoa A rớt bao nhiêu thì **nhận đúng bấy nhiêu** ở mã mới. PĐD chỉ chọn mã nhận, không chia lại |
+| **Lệch ĐVT thì CHẶN** | Đo thật 23/08/2026: **68/446** nhóm có nhiều mã hàng bị lệch ĐVT ngay trong nhóm (chủ yếu Bộ vs Cái). Hệ từ chối đổ và bắt PĐD nhập tay ở đợt bổ sung. Không dựng bảng hệ số quy đổi |
+| Khoa chưa từng dùng mã nhận | **Vẫn đổ**, và thông báo cho khoa phải nói rõ *"đây là mã khoa chưa từng đề xuất"* |
+| Không từ chối được | Bước này diễn ra **sau chốt Q** nên là quyền của PĐD. Khoa được báo, không được bác |
+
+Đổ nhiều lần được (mỗi lần một mã nhận). Bỏ đổ cũng được, kèm lý do.
 
 ### 5.4 Phân bổ số trúng về khoa
 
@@ -389,7 +429,9 @@ số ban đầu** nếu khoa đó đã đề xuất mã, tổng vẫn khớp s�
 do.
 
 **Chỉ PĐD phân bổ** (QĐ 17/08/2026). ĐVSD không còn tự đẩy số lượng từ mã rớt
-sang mã tương đương — cơ chế cũ đã bỏ, xem phụ lục.
+sang mã tương đương: việc đó nay là của PĐD và làm trên bảng tổng hợp (mục 5.3).
+Đường cũ ở màn khoa đã bị **chặn hẳn** ngày 23/08/2026 — nó gọi vào bảng của mô
+hình trước v3 nên khoa bấm là vào ngõ cụt.
 
 ---
 
@@ -405,12 +447,22 @@ thuộc việc ai đó nhớ đưa nó vào.
 
 ### 6.1 Tự cuốn chiếu vào đợt bổ sung gần nhất
 
-Ngay khi một mã hàng có số rớt, với **từng khoa** đã đề xuất mã đó:
+🆕 **Cò là nút "Xác nhận rớt"** (QĐ D2, 23/08/2026), không phải lúc gõ số. Khi
+PĐD bấm, với **từng khoa** đã đề xuất mã đó:
 
-1. Hệ tìm **đợt bổ sung gần nhất của khoa** theo lịch cố định T1 · T5 · T9.
-2. Chưa có bản ghi đợt đó thì **hệ tự tạo**.
-3. Đưa mã vào đợt đó cho khoa, **điền sẵn số lượng đúng bằng số khoa đó đã rớt**.
-4. Khoa sửa được ngay — nhiều hơn, ít hơn, hoặc về 0 / chọn không còn nhu cầu.
+1. Phần rớt **đã đổ sang mã tương đương** (mục 5.3) thì **bỏ qua** — đã có hàng thay.
+2. 🆕 **Phần còn lại — bất kể nhiều hay ít — cuốn chiếu hết** (QĐ D4).
+3. Hệ tìm **đợt bổ sung gần nhất** theo lịch cố định T1 · T5 · T9.
+   🆕 Đợt bổ sung **luôn mở sẵn** (QĐ D10): hệ tự tạo và tự mở, không đợi PĐD.
+   Đợt đích đã chốt Q rồi thì nhảy sang mốc kế tiếp.
+4. Đưa mã vào đợt đó cho khoa, **điền sẵn số lượng đúng bằng số khoa đó đã rớt**.
+5. Khoa nhận **thông báo đỏ**, sửa được ngay — nhiều hơn, ít hơn, hoặc về 0.
+
+> **Vì sao không phải "chỉ mã rớt 100% mới cuốn chiếu".** Phản ví dụ: mã X có
+> Q = 100.000, rớt 30.000, trúng 70.000, mà mã quản lý đó không còn mã nào trúng
+> để đổ 30.000 sang. Rớt 30% ≠ 100% nên nếu lấy mốc "rớt sạch" thì **30.000 biến
+> mất** — khoa thiếu hàng, không ai biết cho tới lúc kho báo hết. Đó đúng là chỗ
+> nguyên tắc "liên tục cuốn chiếu để không thiếu hàng" bị hở.
 
 Chọn đợt theo **thời điểm phát sinh số rớt**:
 
@@ -419,6 +471,9 @@ Chọn đợt theo **thời điểm phát sinh số rớt**:
 | 2 → 4 | T5 cùng năm |
 | 6 → 8 | T9 cùng năm |
 | 10 → 12, và tháng 1 | **T1 năm sau** |
+
+Quy tắc biên: luôn đổ vào **mốc gần nhất chưa chốt Q**. Mốc đích đã chốt Q rồi
+thì sang mốc kế — nếu không, số rớt rơi vào một đợt đã đóng sổ.
 
 Cùng một mã quản lý hoặc mã hàng **được phép** nằm ở nhiều đợt bổ sung (mục 1.3);
 hệ cảnh báo mã đang có ở đợt nào, không chặn.
@@ -430,14 +485,19 @@ Màn theo dõi trả lời đúng một câu hỏi, đọc theo **từng mã hà
 > *Mã này rớt. Những khoa nào đã đề xuất nó? Từng khoa đó đã có nó trong đợt bổ
 > sung gần nhất chưa?*
 
+Màn **"Theo dõi cuốn chiếu mã rớt"** (PĐD), dựng 23/08/2026:
+
 | Cột | Nội dung |
 |---|---|
-| Mã hàng · mã quản lý | Mã đã rớt |
-| Số rớt toàn viện | Tổng ba giai đoạn |
-| Khoa | Mỗi khoa đã đề xuất mã đó một dòng |
-| Số rớt của khoa | Phần rớt thuộc về khoa đó |
-| Đã vào đợt nào | Tên đợt bổ sung, hoặc **báo đỏ nếu chưa vào đợt nào** |
-| Khoa đã xác nhận chưa | Đã sửa/xác nhận số ở đợt bổ sung, hay còn để nguyên số hệ điền |
+| Mã hàng · mã quản lý | Mã đã rớt. Bấm để sổ ra danh sách khoa |
+| Tổng rớt | Tổng ba giai đoạn, kèm ĐVT |
+| Số khoa | Bao nhiêu khoa chịu ảnh hưởng |
+| Đợt bổ sung | Tên đợt, hoặc **— TRỐNG in đỏ** nếu chưa vào đợt nào |
+| Khoa đã sửa số | n/m khoa đã đổi số hệ điền sẵn |
+| Khoa đã xác nhận | n/m khoa đã xác nhận danh mục ở đợt bổ sung |
+| Trạng thái | Còn nợ xử lý · Đã đổ sang mã khác · **CUỐN CHIẾU HỎNG** · Đã vào đợt bổ sung |
+
+Có nút **"Chạy lại"** trên dòng nào còn nợ hoặc hỏng — gọi lại cò cho riêng mã đó.
 
 Cột "đã vào đợt nào" là **chỗ kiểm tra máy có làm đúng việc không**. Theo luật
 6.1 thì nó phải luôn có đợt; ô trống nghĩa là cuốn chiếu hỏng ở đâu đó, phải xem
@@ -589,6 +649,36 @@ trúc cùng revision và audit.
 **Bỏ hẳn mọi cột giá** khỏi biểu mẫu và bảng dữ liệu (QĐ 17/08/2026): giá dự
 kiến, giá hợp đồng cũ, tổng giá trị ước tính. Giá không thuộc phạm vi hệ thống
 này.
+
+---
+
+## 12. 🆕 Hộp thư thông báo hai chiều (QĐ D5, 23/08/2026)
+
+**Vấn đề nó giải:** luật V2 cho *ai sửa sau đè*, kể cả khoa đè lên PĐD. Trước
+đây phía bị đè không có chỗ nào nhìn thấy điều đó — chỉ có dấu vết nhỏ trên
+từng ô, phải mở đúng ô mới thấy.
+
+Hai hộp thư riêng, đọc bằng nút chuông trên thanh trên cùng:
+
+| Hộp | Ai đọc | Nhận gì |
+|---|---|---|
+| Hộp thư Phòng Điều dưỡng | PĐD · admin | Khoa vừa sửa số / sửa nội dung · tóm tắt mỗi lần đổ mã · tóm tắt mỗi lần cuốn chiếu |
+| Hộp thư của khoa | Đúng khoa đó | Mã rớt đã vào đợt bổ sung (**đỏ**) · số đã chuyển sang mã nào (**đỏ**) · PĐD vừa chỉnh gì trên danh mục |
+
+**Ba luật giữ hộp thư không phình:**
+
+1. **Chỉ việc lớn có dòng riêng** — rớt, đổ mã, cuốn chiếu.
+2. **Sửa vặt gộp theo ngày**: mỗi khoa mỗi ngày một dòng, đếm bằng `×n`. Không
+   gộp thì 62 khoa × hàng trăm mã × 30 cột sẽ đẻ ra hàng trăm dòng mỗi ngày và
+   hộp thư thành vô dụng — đúng cái bẫy đã buộc phải nới luật V2 ngày 20/08.
+3. **Xác nhận đã xem là XOÁ HẲN.** Hộp thư không phải sổ lưu trữ; dấu vết đầy đủ
+   nằm ở audit của từng ô và ở các sổ `chuyen_so_rot_v3` · `cuon_chieu_rot_v3`.
+
+Ngoài chuông, mục **Gói bổ sung** của khoa còn có **badge đỏ đếm số mã rớt** vừa
+được cuốn chiếu về, để khoa thấy ngay từ menu mà không phải mở hộp thư.
+
+Web **không gửi gì ra ngoài** — không email, không tin nhắn. Hộp thư nằm trong
+web, đúng nguyên tắc "Teams là nơi thương lượng".
 
 ---
 

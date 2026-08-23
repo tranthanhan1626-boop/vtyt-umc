@@ -1,6 +1,6 @@
 # Trạng thái hiện tại và việc tiếp theo
 
-Cập nhật **21/08/2026**. Nhánh `phase-a-luong-de-xuat`.
+Cập nhật **23/08/2026**. Nhánh `phase-a-luong-de-xuat`.
 
 > 🔴 **ĐỔI HƯỚNG 21/08/2026 — đọc trước mọi thứ khác trong file này.**
 >
@@ -24,27 +24,31 @@ Cập nhật **21/08/2026**. Nhánh `phase-a-luong-de-xuat`.
 > Kế hoạch chi tiết + hai tài liệu nền: `.scratch/mot-mat-ban/`
 > (`KE_HOACH.md` · `UX_MOT_MAT_BAN.md` · `DU_LIEU_SAU_THAU.md`).
 
-> 🔴🔴 **ĐỔI HƯỚNG LẦN HAI — 23/08/2026. Đọc trước cả khối 21/08 ở trên.**
+> ✅ **BẢN VÒNG KHÉP KÍN — chốt VÀ THI CÔNG XONG ngày 23/08/2026.**
 >
-> Chủ dự án mô tả lại workflow đầy đủ 2 vai trò và chốt **10 quyết định** mới,
-> gọi là bản **VÒNG KHÉP KÍN**. Chẩn đoán ra nguyên nhân "lệch hướng": các chức
-> năng rớt → đổ sang mã tương đương → giỏ bổ sung → báo khoa **đã được build đầy
-> đủ đầu tháng 8**, nhưng đọc ba bảng của mô hình **trước v3**
-> (`goi_thau_ket_qua_ma` · `goi_thau_tien_do` · `goi_thau_moc`) nên **chết** sau
-> khi thay xương sống. Việc tiếp theo là **nối lại**, không phải xây mới.
+> Chủ dự án mô tả lại workflow đầy đủ 2 vai trò vì thấy dự án lệch hướng. Rà mã
+> nguồn ra nguyên nhân: **không phải chưa build, mà đã build đầu tháng 8 rồi
+> chết** khi thay xương sống sang v3. Ba bảng `goi_thau_ket_qua_ma` ·
+> `goi_thau_tien_do` · `goi_thau_moc` không còn ai ghi vào, nên năm màn đọc
+> chúng chỉ hiện rỗng mà không báo lỗi.
+>
+> **10 quyết định (D1–D10)** và toàn bộ 5 bước thi công đã xong, đo thật bằng
+> trình duyệt hai vai trò. Chi tiết: `.scratch/vong-khep-kin/KE_HOACH.md`.
 >
 > | | |
 > |---|---|
-> | Đổi | PĐD nhập rớt thẳng trên Tổng hợp; hai nhịp, nút "Xác nhận rớt" là cò |
-> | Đổi | Cuốn chiếu **mọi phần rớt chưa đổ đi đâu**, không chỉ mã rớt 100% |
-> | Đổi | Đợt bổ sung T1/T5/T9 **luôn mở sẵn**, không đợi PĐD tạo |
-> | Thêm | Đổ số rớt sang mã tương đương cùng mã quản lý, giữ nguyên số theo khoa |
-> | Thêm | Hộp thư noti hai chiều, xem xong là xoá |
-> | Thêm | Lệch ĐVT (68/446 nhóm) thì chặn, bắt PĐD gõ tay |
-> | Hoãn | **Miếng 0 và miếng 3** của bản một mặt bàn — sang nhánh sau |
+> | Xong | Cụm cột **Q · R1 · R2 · R3 · Trúng · Xử lý rớt** ngay trên Danh mục tổng hợp, kèm dải giai đoạn thầu |
+> | Xong | **Hai nhịp**: gõ nháp → nút **"Xác nhận rớt"** là cò |
+> | Xong | **Đổ số rớt sang mã tương đương** cùng mã quản lý, giữ nguyên số theo khoa; lệch ĐVT thì chặn |
+> | Xong | **Cuốn chiếu mọi phần rớt chưa đổ** về đợt bổ sung T1/T5/T9 **luôn mở sẵn** |
+> | Xong | **Hộp thư hai chiều** + badge đỏ ở Gói bổ sung |
+> | Xong | Màn **Theo dõi cuốn chiếu mã rớt** cho PĐD |
+> | Xong | Hồi sinh 3 view chết lên nền v3 → 5 màn sống lại |
+> | Hoãn | **Miếng 0 và miếng 3** của bản một mặt bàn → nhánh sau (QĐ D6) |
 >
 > ⚠️ **Mục 3 bên dưới (bốn miếng của MỘT MẶT BÀN) đã lạc hậu ở miếng 0 và 3.**
-> Miếng 1 và 2 vẫn đúng. Kế hoạch hiện hành: `.scratch/vong-khep-kin/KE_HOACH.md`.
+> Miếng 1 còn nợ phần 1c (nới khoá cứng 2 ở server) và 1d (hai chế độ cột, phím
+> tắt gõ dọc, gỡ 2 tab Bàn điều hành). Miếng 2 **đã xong** trong bản này.
 
 > File này **chỉ nói hôm nay đang ở đâu**. Nhật ký đầy đủ theo ngày ở
 > `lich-su/NHAT_KY_TIEN_DO_2026.md`; tóm tắt thay đổi theo mốc ở
@@ -62,11 +66,32 @@ Cập nhật **21/08/2026**. Nhánh `phase-a-luong-de-xuat`.
 đảo (xem `06_DUNG_LAM_LAI.md`, khối 21/08). Chúng vẫn đang chạy đúng theo luật cũ
 — nhưng luật cũ không còn là đích nữa. Phải đo lại sau khi thi công một mặt bàn.
 
+🆕 **Ba bảng chết đã được chữa 23/08/2026.** Rà 34 màn cho ra đúng ba bảng của
+mô hình trước v3 (`goi_thau_ket_qua_ma` · `goi_thau_tien_do` · `goi_thau_moc`).
+Cách chữa: viết lại **nền của view** chứ không sửa từng màn — `patch_zzzzza` trỏ
+`v_ket_qua_thau_theo_khoa` · `v_ma_rot_theo_goi` · `v_tien_do_su_dung` sang bảng
+v3 mà giữ nguyên tên cột, nên 5 màn sống lại cùng lúc. Chỉ còn `TienDoGoiThau`
+đọc bảng cũ — đã gỡ khỏi menu, để nguyên cho nhánh D6 viết lại.
+
 **17/18 invariant** đo được và đúng. Cái còn lại (*một mã quản lý chỉ thuộc một
 gói con*) cần **quyết định nghiệp vụ**, không phải việc code — xem mục 4.
 
-Nghiệm thu ngày 20/08: `pytest` **115** · `smoke_workflow_v3_staging` **13/13**
-· `kiem_truoc_deploy` **Sạch** · `test:formula` OK · `build` ✓.
+Nghiệm thu ngày **23/08/2026**: `pytest` **150** · `smoke_workflow_v3_staging`
+**21/21** · 33 bảng về đúng số dòng ban đầu · `kiem_truoc_deploy` **Sạch** ·
+`test:formula` OK · `build` ✓.
+
+🆕 **Thêm một vòng kiểm mới**: `scripts/kiem_moi_man.py --xac-nhan-staging` quét
+mọi `.from()` / `.rpc()` của **36 màn** (63 bảng/view · 41 RPC), gọi thật bằng
+JWT hai vai trò. Kết quả 23/08: **không màn nào gọi ra lỗi**; không nguồn nào
+không tồn tại. Đây là vòng bắt đúng lớp lỗi "hiện rỗng mà không báo" mà smoke
+không thấy vì smoke chỉ đi một đường xuyên pipeline chính.
+
+🆕 **Đo bằng trình duyệt thật** (Chrome, hai vai trò, 23/08): chốt Q → chạy ba
+giai đoạn → rớt → đổ mã → xác nhận rớt → cuốn chiếu → khoa nhận thông báo và
+thấy mã trong đợt bổ sung với đúng số. Vòng này tìm ra **4 lỗi giao diện** mà
+pytest và smoke không thấy (cột bị bóp còn 16px và bị ô khác đè · dải giai đoạn
+không tải lại sau chốt Q · ô rớt không bắt được bàn phím · `window.confirm` khoá
+cả trang). Cả bốn đã vá.
 
 ## 2. Cái gì đã chạy được, cái gì chưa từng test
 

@@ -1,13 +1,22 @@
 # Đọc trước tiên — hệ thống dự trù & đấu thầu VTYT (UMC)
 
-Cập nhật **21/08/2026**. Nhánh làm việc: `phase-a-luong-de-xuat`.
+Cập nhật **23/08/2026**. Nhánh làm việc: `phase-a-luong-de-xuat`.
 
-> 🆕 **Ngày 21/08/2026 dự án đổi hướng.** Chủ dự án báo hướng cũ đi chệch; chốt
-> lại bằng 17 quyết định mới, gọi chung là bản **MỘT MẶT BÀN**. Ba thay đổi lớn:
-> mọi thao tác của PĐD dồn về Danh mục tổng hợp · mã rớt **cuốn chiếu** tự vào
-> đợt bổ sung gần nhất · mở thêm **bốn mảng sau đấu thầu**. Phần từ đầu tới danh
-> mục tổng hợp **giữ nguyên**. Luật mới đã vào `01`; **chưa thi công dòng code
-> nào** — kế hoạch ở `05`, chỗ nào là luật tương lai đều có nhãn 🆕.
+> 🆕 **Hai lần đổi hướng gần nhất, đọc theo thứ tự:**
+>
+> **21/08/2026 — bản MỘT MẶT BÀN.** Mọi thao tác sửa của PĐD dồn về Danh mục
+> tổng hợp; Bàn điều hành chỉ còn để xem.
+>
+> **23/08/2026 — bản VÒNG KHÉP KÍN, đã thi công xong.** Chủ dự án mô tả lại
+> workflow đầy đủ hai vai trò. Rà mã nguồn ra nguyên nhân thật của cảm giác lệch
+> hướng: **không phải chưa build, mà đã build đầu tháng 8 rồi chết** khi thay
+> xương sống sang v3 — ba bảng `goi_thau_ket_qua_ma` · `goi_thau_tien_do` ·
+> `goi_thau_moc` không còn ai ghi vào, nên năm màn đọc chúng chỉ hiện rỗng mà
+> **không báo lỗi**. 10 quyết định D1–D10, thi công trọn và đo bằng trình duyệt
+> hai vai trò. Bốn mảng sau đấu thầu **hoãn** sang nhánh sau (QĐ D6).
+>
+> Luật đang chạy nằm ở `01`. Cái gì đã bị đảo nằm ở `06` — **đọc trước khi dựng
+> bất cứ thứ gì bạn thấy "còn thiếu"**.
 
 **Thư mục này là bộ tài liệu DUY NHẤT của dự án.** Không có tài liệu nào khác
 ngoài đây. Nếu bạn tìm thấy file `.md` mô tả nghiệp vụ ở chỗ khác trong repo,
@@ -53,10 +62,15 @@ trình ký:
 Ngoài ba khoá đó, hệ **cảnh báo chứ không chặn** — trừ hai cổng cứng đã chốt:
 chốt số đi thầu và chốt trình ký (xem `01`, mục 4.6 và 8.2).
 
-🆕 **Một ngoại lệ của "web không tự chạy"** (QĐ 21/08/2026): mã rớt tự vào đợt bổ
+🆕 **Hai ngoại lệ của "web không tự chạy"**: (1) QĐ 21/08/2026 — mã rớt tự vào đợt bổ
 sung gần nhất, và đợt bổ sung T1/T5/T9 tự được tạo nếu chưa có. Đây là cuốn chiếu
 để mã hàng không rơi ra ngoài giữa hai đợt, không phải cổng chặn — khoa vẫn sửa
 số và vẫn quyết. Xem `01` mục 6.
+(2) QĐ 23/08/2026 — **hộp thư thông báo hai chiều** PĐD ↔ khoa, vì luật V2 cho
+*ai sửa sau đè* mà phía bị đè không có chỗ nào nhìn thấy. Hộp thư chỉ ghi việc
+lớn, sửa vặt gộp theo ngày, **xem xong là xoá hẳn**. Xem `01` mục 12.
+
+Ngoài hai chỗ đó: không hạn nộp, không nhắc theo lịch, không tự gửi gì ra ngoài.
 
 ---
 
