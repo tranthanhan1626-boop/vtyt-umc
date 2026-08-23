@@ -439,6 +439,23 @@ def main() -> int:
             "p_ly_do": "thử sửa sau trình ký"}).execute(), "sửa kết quả sau trình ký")
         ok("chốt từng khoa rồi tạo revision 1 bất biến; khóa sửa kết quả")
 
+        # Ba view từng chết trên mô hình trước v3, viết lại ở patch_zzzzza.
+        kq = pdd.table("v_ket_qua_thau_theo_khoa").select("*").eq("dot_goi_id", dg_id).execute().data
+        assert kq, "v_ket_qua_thau_theo_khoa phải sống lại trên nền v3"
+        assert {r["ket_qua"] for r in kq} & {"khong_trung", "trung_mot_phan", "trung"}
+        assert any(r["ma_moc_rot"] for r in kq), "phải suy được giai đoạn rớt từ ket_qua_rot_v3"
+        rot_goi = pdd.table("v_ma_rot_theo_goi").select("*").eq("dot_goi_id", dg_id).execute().data
+        assert rot_goi, "v_ma_rot_theo_goi phải sống lại"
+        td = pdd.table("v_tien_do_su_dung").select("*").eq("goi_id", "18t-dung-chung").execute().data
+        assert any(r["nguon_moc"] == "chot_trinh_ky" for r in td), \
+            "v_tien_do_su_dung phải đếm từ mốc chốt trình ký cho tới khi có nhánh hợp đồng"
+        tdcc = pdd.table("v_theo_doi_cuon_chieu_v3").select("*").eq("dot_goi_id", dg_id).execute().data
+        assert tdcc and all(r["trang_thai"] in
+            ("con_no_xu_ly", "da_do_sang_ma", "cuon_chieu_hong", "da_cuon_chieu") for r in tdcc), tdcc
+        assert not any(r["trang_thai"] == "cuon_chieu_hong" for r in tdcc), \
+            "sau khi xác nhận rớt không được còn dòng cuốn chiếu hỏng"
+        ok("ba view chết đã sống lại trên nền v3 + màn theo dõi cuốn chiếu có dữ liệu")
+
         limits = pdd.table("v_tuy_chon_mua_them_30_v3").select("*") \
             .eq("phien_trinh_ky_id", final1["id"]).execute().data
         limit_a = next(x for x in limits if x["khoa"] == units[0] and float(x["so_luong_trung"]) == 140)

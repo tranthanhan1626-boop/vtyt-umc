@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
+  RotateCcw,
   Archive,
   ChevronDown,
   ClipboardCheck,
@@ -374,7 +375,7 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
           vào nữa, nên màn KHÔNG báo lỗi mà chỉ hiện rỗng — đó là kiểu hỏng khó
           thấy nhất. Giữ nguyên mã, chỉ gỡ khỏi menu; nhánh sau (QĐ D6: tiến độ
           gói thầu theo số quyết định / số hợp đồng) sẽ viết lại trên nền v3. */}
-      {laPdd && false && (
+      {laPdd && (
         <button
           type="button"
           onClick={() => chuyenMan({ nhom: "chung", man: "ketquathau" })}
@@ -382,6 +383,17 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
         >
           <ClipboardCheck size={16} />
           <span>Tổng hợp kết quả thầu</span>
+        </button>
+      )}
+
+      {laPdd && (
+        <button
+          type="button"
+          onClick={() => chuyenMan({ nhom: "chung", man: "cuonchieu" })}
+          className={`umc-common-button mt-2 ${chon.man === "cuonchieu" ? "is-active" : ""}`}
+        >
+          <RotateCcw size={16} />
+          <span>Theo dõi cuốn chiếu mã rớt</span>
         </button>
       )}
 
@@ -394,7 +406,7 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
         <span>Điều chỉnh tiêu chí kỹ thuật</span>
       </button>
 
-      {false && (
+      {(
         <button
           type="button"
           onClick={() => chuyenMan({ nhom: "chung", man: "tiendosudung" })}

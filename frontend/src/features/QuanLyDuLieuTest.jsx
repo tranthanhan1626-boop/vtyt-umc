@@ -158,24 +158,12 @@ export default function QuanLyDuLieuTest({ profile }) {
           nhan: (r) => `${r.ten} · ${r.nam}`,
           phu: (r) => `${r.loai_mua_sam} · ${r.trang_thai}`,
         },
-        {
-          key: "goi_thau_tien_do",
-          ten: "Gói và tiến độ thầu",
-          query: () => fetchAllRows((f, t) => supabase.from("goi_thau_tien_do")
-            .select("id,ten_goi,loai_mua_sam,nam,dot_id,created_at")
-            .order("created_at", { ascending: false }).range(f, t), { order: "id" }),
-          nhan: (r) => `${r.ten_goi} · ${r.nam}`,
-          phu: (r) => `${r.loai_mua_sam} · đợt #${r.dot_id || "—"}`,
-        },
-        {
-          key: "ket_qua_thau",
-          ten: "Kết quả từng mã trong gói thầu",
-          query: () => fetchAllRows((f, t) => supabase.from("goi_thau_ket_qua_ma")
-            .select("id,goi_id,ma_hang,don_vi,ket_qua,cap_nhat_luc")
-            .order("cap_nhat_luc", { ascending: false }).range(f, t), { order: "id" }),
-          nhan: (r) => `${r.don_vi} · ${r.ma_hang}`,
-          phu: (r) => `${r.ket_qua} · gói #${r.goi_id}`,
-        },
+        // 23/08/2026 — bỏ hai mục "Gói và tiến độ thầu" và "Kết quả từng mã":
+        // chúng đọc `goi_thau_tien_do` / `goi_thau_ket_qua_ma`, bảng của mô
+        // hình TRƯỚC v3, luôn 0 dòng. Dữ liệu kiểm thử của nhánh thầu nay nằm
+        // ở `ket_qua_rot_v3` · `phan_bo_trung_v3` · `chuyen_so_rot_v3` ·
+        // `cuon_chieu_rot_v3`, và bị xoá theo khi xoá ĐỢT (cascade) nên không
+        // cần mục riêng ở đây.
         {
           key: "phien_tong_hop",
           ten: "Phiên tổng hợp PĐD",

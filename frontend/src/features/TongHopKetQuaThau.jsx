@@ -80,12 +80,13 @@ export default function TongHopKetQuaThau({ profile }) {
       ma_moc_rot: form.ket_qua === "khong_trung" ? form.ma_moc_rot || null : null,
       ly_do_khong_trung: form.ket_qua === "khong_trung" ? form.ly_do_khong_trung.trim() : null,
     };
-    // Kiểm count — thiếu policy thì UPDATE trả 204 nhưng 0 dòng (bẫy 5.5).
-    const { error, count } = await supabase.from("goi_thau_ket_qua_ma")
-      .update(p, { count: "exact" }).eq("id", r.id);
-    if (error) setLoi(error.message);
-    else if (!count) setLoi("Không lưu được — kiểm tra quyền.");
-    else { setSua(null); await tai(); }
+    // 23/08/2026 — đường SỬA ở đây ghi vào `goi_thau_ket_qua_ma`, bảng của mô
+    // hình TRƯỚC v3. Theo QĐ A2 (Bàn điều hành chỉ để xem) và D1 (mọi thao tác
+    // rớt làm trên bảng Tổng hợp), màn này chỉ còn để ĐỌC. Phần đọc đã sống
+    // lại nhờ `v_ket_qua_thau_theo_khoa` viết lại trên nền v3 (patch_zzzzza).
+    void p;
+    setLoi("Sửa kết quả thầu nay làm trên bảng Tổng hợp danh mục — cụm cột "
+      + "R1/R2/R3 và nút Xác nhận rớt. Màn này chỉ để xem.");
   };
 
   if (!laPdd) return <p className="text-sm text-slate-500">Màn hình này dành cho Phòng Điều dưỡng.</p>;
