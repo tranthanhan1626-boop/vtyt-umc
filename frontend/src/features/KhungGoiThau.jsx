@@ -170,6 +170,24 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
     setMenuMo(false);
   };
 
+  // Badge đỏ ở mục gói bổ sung (QĐ D5, 23/08/2026): khoa phải THẤY NGAY là có
+  // mã vừa rớt và vừa được cuốn chiếu về đợt bổ sung của mình. Đọc chính hộp
+  // thư — xem xong xoá noti thì badge tắt theo, không cần cờ riêng.
+  const [soMaRotMoi, setSoMaRotMoi] = useState(0);
+  useEffect(() => {
+    if (laPdd) { setSoMaRotMoi(0); return; }
+    let huy = false;
+    const dem = async () => {
+      const { count } = await supabase.from("thong_bao")
+        .select("id", { count: "exact", head: true })
+        .eq("pham_vi", "khoa").eq("loai", "ma_rot_ve_khoa");
+      if (!huy) setSoMaRotMoi(count || 0);
+    };
+    dem();
+    const t = setInterval(dem, 60000);
+    return () => { huy = true; clearInterval(t); };
+  }, [laPdd]);
+
   const nutGoi = (g) => {
     const dangChon = chon.nhom === "goi" && chon.goi === g.ma;
     const dsGoiCon = GOI_CON[g.ma] || [];
@@ -207,7 +225,15 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
         >
           <span className={`umc-package-icon ${dangChon ? "is-active" : ""}`}><Icon size={17} /></span>
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold leading-tight">{g.ten}</span>
+            <span className="block text-sm font-semibold leading-tight">
+              {g.ten}
+              {g.ma === "mua_sam_bo_sung" && soMaRotMoi > 0 && (
+                <span title="Có mã rớt vừa được đưa vào đợt bổ sung của khoa"
+                  className="ml-1.5 inline-flex items-center rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                  {soMaRotMoi} mã rớt
+                </span>
+              )}
+            </span>
             <span className="mt-1 block text-[11px] leading-tight opacity-70">{g.mo_ta}</span>
           </span>
           <ChevronDown size={14} className={`mt-0.5 shrink-0 transition-transform ${dangChon ? "rotate-180" : ""}`} />
@@ -342,7 +368,13 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
         {!laPdd && GOI.filter((g) => g.ma === "chi_dinh_thau").map(nutGoi)}
       </div>
 
-      {laPdd && (
+      {/* ẨN 23/08/2026 (bước 5 bản VÒNG KHÉP KÍN) — ba màn dưới đây đọc
+          `goi_thau_ket_qua_ma` / `goi_thau_tien_do` / `goi_thau_moc`, là bảng
+          của mô hình TRƯỚC v3. Cả ba đang 0 dòng và không có gì trong v3 ghi
+          vào nữa, nên màn KHÔNG báo lỗi mà chỉ hiện rỗng — đó là kiểu hỏng khó
+          thấy nhất. Giữ nguyên mã, chỉ gỡ khỏi menu; nhánh sau (QĐ D6: tiến độ
+          gói thầu theo số quyết định / số hợp đồng) sẽ viết lại trên nền v3. */}
+      {laPdd && false && (
         <button
           type="button"
           onClick={() => chuyenMan({ nhom: "chung", man: "ketquathau" })}
@@ -362,14 +394,16 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
         <span>Điều chỉnh tiêu chí kỹ thuật</span>
       </button>
 
-      <button
-        type="button"
-        onClick={() => chuyenMan({ nhom: "chung", man: "tiendosudung" })}
-        className={`umc-common-button mt-2 ${chon.man === "tiendosudung" ? "is-active" : ""}`}
-      >
-        <Gauge size={16} />
-        <span>Tiến độ sử dụng</span>
-      </button>
+      {false && (
+        <button
+          type="button"
+          onClick={() => chuyenMan({ nhom: "chung", man: "tiendosudung" })}
+          className={`umc-common-button mt-2 ${chon.man === "tiendosudung" ? "is-active" : ""}`}
+        >
+          <Gauge size={16} />
+          <span>Tiến độ sử dụng</span>
+        </button>
+      )}
 
       <button
         type="button"
@@ -380,14 +414,16 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
         <span>Lịch sử hồ sơ đề xuất</span>
       </button>
 
-      <button
-        type="button"
-        onClick={() => chuyenMan({ nhom: "chung", man: "tiendo" })}
-        className={`umc-common-button mt-2 ${chon.man === "tiendo" ? "is-active" : ""}`}
-      >
-        <ClipboardCheck size={16} />
-        <span>Tiến độ gói thầu</span>
-      </button>
+      {false && (
+        <button
+          type="button"
+          onClick={() => chuyenMan({ nhom: "chung", man: "tiendo" })}
+          className={`umc-common-button mt-2 ${chon.man === "tiendo" ? "is-active" : ""}`}
+        >
+          <ClipboardCheck size={16} />
+          <span>Tiến độ gói thầu</span>
+        </button>
+      )}
 
       <div className="umc-nav-label mt-7">Dùng chung</div>
       <button

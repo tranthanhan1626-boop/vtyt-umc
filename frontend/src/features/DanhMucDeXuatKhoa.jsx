@@ -532,9 +532,16 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
     try {
       const { bo, rows: rowsGoc, dsMaHang, dsNamCoDuLieu: dsNam, dotGoiId: dgId } =
         await taiDuLieuKhoa(goiId, khoaHienTai, dotId);
-      const ketQuaTheoMa = dsMaHang?.length
-        ? await taiKetQuaThau(bo.loai_mua_sam, khoaHienTai, dsMaHang, dotId)
-        : new Map();
+      // VÒNG KHÉP KÍN 23/08/2026 — TẮT nhánh rớt ở màn khoa.
+      // `taiKetQuaThau` đọc `goi_thau_ket_qua_ma`, bảng của mô hình TRƯỚC v3:
+      // 0 dòng và không có gì trong v3 ghi vào nữa, nên mọi thứ nó nuôi (dấu
+      // rớt trên dòng, nút "Đẩy SL") là cửa dẫn vào ngõ cụt — khoa bấm là ăn
+      // lỗi. Theo QĐ D1/D3, việc đổ số rớt sang mã tương đương nay là của PĐD
+      // và làm trên bảng Tổng hợp. Khoa nhận mã rớt qua ĐỢT BỔ SUNG (cuốn
+      // chiếu tự động) cộng thông báo trong hộp thư.
+      // Giữ `taiKetQuaThau` lại, chưa xoá: nhánh sau (tiến độ gói thầu theo số
+      // quyết định / số hợp đồng, QĐ D6) sẽ viết lại trên nền v3.
+      const ketQuaTheoMa = new Map();
       const [oDaLuu, suaDePdd] = await Promise.all([taiODaLuu(), taiSuaDeCuaPdd()]);
       // V2: giá trị chung là giá trị DUY NHẤT, nên áp thẳng lên dòng thay vì
       // giữ song song rồi chọn lúc vẽ. Nhờ vậy ô gõ được như mọi ô khác —
@@ -785,14 +792,16 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
     if (!soLuong || soLuong <= 0) { setThongBaoDay("Số lượng đẩy phải lớn hơn 0."); return; }
     setDangLuuDay(true);
     setThongBaoDay("");
-    const { error } = await supabase.rpc("day_so_luong_rot", {
-      p_goi_id: r.rot.goi_id,
-      p_ma_hang_rot: r.ma_hang,
-      p_ma_hang_nhan: formDay.maHangNhan,
-      p_so_luong: soLuong,
-    });
+    // Đường cũ gọi RPC `day_so_luong_rot` (patch_ze) — RPC đó đọc
+    // `goi_thau_ket_qua_ma` của mô hình trước v3 và không còn chạy được.
+    // Không gọi nữa: việc này đã chuyển sang PĐD trên bảng Tổng hợp (D3).
     setDangLuuDay(false);
-    if (error) { setThongBaoDay(error.message); return; }
+    setThongBaoDay(
+      "Chức năng này đã chuyển cho Phòng Điều dưỡng, làm trên bảng Tổng hợp "
+      + "danh mục. Mã rớt của khoa sẽ tự vào đợt bổ sung gần nhất — xem hộp thư "
+      + "thông báo."
+    );
+    return;
     setDangChonMaDay(null);
     await taiLai();
   };

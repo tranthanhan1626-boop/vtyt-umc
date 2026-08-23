@@ -37,6 +37,8 @@ BANG_V3 = (
     "chot_trinh_ky_khoa_v3_audit", "chot_trinh_ky_phien_v3",
     "chot_trinh_ky_dong_v3", "chot_trinh_ky_v3_audit",
     "tuy_chon_mua_them_30_v3",
+    # VÒNG KHÉP KÍN 23/08/2026 (patch_zzzzz)
+    "chuyen_so_rot_v3", "cuon_chieu_rot_v3", "thong_bao",
 )
 
 
@@ -103,6 +105,12 @@ def main() -> int:
 
     admin = create_client(url, service)
     truoc = {b: dem(admin, b) for b in (*BANG_NEN, *BANG_V3)}
+    # Trigger noti bắn suốt cả smoke (mỗi lần khoa/PĐD sửa số), không chỉ ở
+    # bước vòng khép kín. Ghi lại mốc id để dọn đúng phần smoke đẻ ra.
+    _tb = admin.table("thong_bao").select("id").order("id", desc=True).limit(1).execute().data
+    thong_bao_moc = int(_tb[0]["id"]) if _tb else 0
+    prop_bo_sung: list[int] = []
+    dot_bo_sung_id: int | None = None
     suffix = secrets.token_hex(5)
     units = [f"KHOA V3 A {suffix}", f"KHOA V3 B {suffix}", f"KHOA V3 KHONG NHU CAU {suffix}"]
     password = f"Codex-{secrets.token_urlsafe(18)}"
@@ -335,6 +343,87 @@ def main() -> int:
                    .select("so_luong_trung").eq("phien_q_id", q_id).eq("ma_hang", ma1).execute().data) == 150
         ok("phân bổ số trúng bắt tổng khớp và bắt lý do khi một khoa vượt Q")
 
+        # ── VÒNG KHÉP KÍN (patch_zzzzz, QĐ 23/08/2026) ────────────────────
+        chua = {(x["ma_hang"], x["khoa"]): float(x["con_lai"])
+                for x in pdd.table("v_rot_chua_xu_ly_v3").select("ma_hang,khoa,con_lai")
+                .eq("dot_goi_id", dg_id).execute().data}
+        assert chua, "v_rot_chua_xu_ly_v3 phải thấy phần rớt theo từng khoa"
+        assert sum(v for (m, _), v in chua.items() if m == ma2) > 0, "mã rớt sạch phải còn nợ xử lý"
+        ok("phần rớt chưa xử lý đọc được theo từng (mã hàng × khoa)")
+
+        phai_loi(lambda: pdd.rpc("day_so_luong_rot_v3", {
+            "p_dot_goi_id": dg_id, "p_ma_hang_rot": ma2,
+            "p_ma_hang_nhan": ma2, "p_ly_do": "trung ma"}).execute(),
+            "đổ sang chính nó")
+        # ma1 và ma2 của smoke nằm ở HAI mã quản lý khác nhau — dùng luôn để
+        # khẳng định khoá "chỉ đổ trong cùng mã quản lý".
+        phai_loi(lambda: pdd.rpc("day_so_luong_rot_v3", {
+            "p_dot_goi_id": dg_id, "p_ma_hang_rot": ma2,
+            "p_ma_hang_nhan": ma1, "p_ly_do": "khac ma quan ly"}).execute(),
+            "đổ sang mã khác mã quản lý")
+        ok("chặn đổ sang chính nó và sang mã khác mã quản lý")
+
+        # Mã anh em thật của ma2: cùng mã quản lý, khác chính nó. Khoa smoke
+        # chưa từng đề xuất mã này — đúng tình huống QĐ D9.
+        goc2 = admin.table("vat_tu").select("ma_quan_ly,dvt").eq("ma_hang", ma2) \
+            .single().execute().data
+        anh_em = [x for x in admin.table("vat_tu").select("ma_hang,dvt")
+                  .eq("ma_quan_ly", goc2["ma_quan_ly"]).limit(50).execute().data
+                  if x["ma_hang"] != ma2]
+        cung = [x for x in anh_em if (x["dvt"] or "").strip() == (goc2["dvt"] or "").strip()]
+        lech = [x for x in anh_em if (x["dvt"] or "").strip() != (goc2["dvt"] or "").strip()]
+        if lech:
+            phai_loi(lambda: pdd.rpc("day_so_luong_rot_v3", {
+                "p_dot_goi_id": dg_id, "p_ma_hang_rot": ma2,
+                "p_ma_hang_nhan": lech[0]["ma_hang"], "p_ly_do": "lech DVT"}).execute(),
+                "đổ khi lệch ĐVT")
+            ok("lệch ĐVT bị chặn, không đổ nguyên số (D7)")
+        if cung:
+            so_khoa = pdd.rpc("day_so_luong_rot_v3", {
+                "p_dot_goi_id": dg_id, "p_ma_hang_rot": ma2,
+                "p_ma_hang_nhan": cung[0]["ma_hang"],
+                "p_ly_do": "Smoke do sang ma tuong duong"}).execute().data
+            assert int(so_khoa) > 0
+            con = [float(x["con_lai"]) for x in pdd.table("v_rot_chua_xu_ly_v3")
+                   .select("con_lai").eq("dot_goi_id", dg_id).eq("ma_hang", ma2).execute().data]
+            assert all(v == 0 for v in con), f"đổ xong mà còn nợ: {con}"
+            cbao = admin.table("chuyen_so_rot_v3").select("khoa_chua_tung_dung") \
+                .eq("ma_hang_rot", ma2).eq("hieu_luc", True).execute().data
+            assert cbao and all(x["khoa_chua_tung_dung"] for x in cbao), \
+                "khoa chưa từng đề xuất mã nhận phải được đánh dấu để noti nói rõ (D9)"
+            ok("đổ số rớt sang mã tương đương cùng mã quản lý, giữ số theo khoa, cờ D9 bật")
+
+        day = pdd.rpc("xac_nhan_rot_v3", {"p_dot_goi_id": dg_id,
+            "p_giai_doan": "danh_gia", "p_ma_hang": None}).execute().data
+        assert day, "xác nhận rớt phải cuốn chiếu ít nhất một dòng"
+        dot_bo_sung_id = int(day[0]["r_dot_bo_sung"])
+        bs = admin.table("dot_goi").select("goi_id,trang_thai,dot_id") \
+            .eq("id", dot_bo_sung_id).single().execute().data
+        assert bs["goi_id"].startswith("bs-t"), bs
+        assert bs["trang_thai"] == "mo", "đợt bổ sung phải LUÔN MỞ SẴN (D10)"
+        prop_bo_sung = [int(x["id"]) for x in admin.table("proposals").select("id")
+                        .eq("dot_goi_id", dot_bo_sung_id).in_("don_vi", units).execute().data]
+        assert prop_bo_sung, "phải đẻ dòng đề xuất cho khoa ở đợt bổ sung"
+        pb = {(x["ma_hang"], x["khoa"]): float(x["so_luong_hien_hanh"])
+              for x in admin.table("phan_bo_khoa").select("ma_hang,khoa,so_luong_hien_hanh")
+              .eq("dot_goi_id", dot_bo_sung_id).in_("khoa", units).execute().data}
+        for d in day:
+            assert pb.get((d["r_ma_hang"], d["r_khoa"])) == float(d["r_so_luong"]), \
+                f"số ở đợt bổ sung phải bằng đúng số rớt: {d}"
+        ok("cuốn chiếu: phần rớt chưa đổ tự vào đợt bổ sung, số mặc định = số rớt (D4, D10)")
+
+        noti = admin.table("thong_bao").select("pham_vi,khoa,loai,mau") \
+            .gt("id", thong_bao_moc).eq("loai", "ma_rot_ve_khoa").execute().data
+        assert any(n["pham_vi"] == "khoa" and n["mau"] == "do" for n in noti), noti
+        assert any(n["pham_vi"] == "pdd" for n in noti), "PĐD cũng phải có dòng trong hộp thư"
+        ok("hộp thư hai chiều nhận thông báo đỏ khi mã rớt về khoa (D5)")
+
+        con_lai_sau = [float(x["con_lai"]) for x in pdd.table("v_rot_chua_xu_ly_v3")
+                       .select("con_lai").eq("dot_goi_id", dg_id).execute().data]
+        assert all(v == 0 for v in con_lai_sau), f"còn sót phần rớt chưa xử lý: {con_lai_sau}"
+        ok("sau xác nhận rớt không còn phần rớt nào rơi vào hư không")
+
+
         pdd.rpc("chot_trinh_ky_khoa_v3", {"p_dot_goi_id": dg_id, "p_khoa": units[0]}).execute()
         phai_loi(lambda: pdd.rpc("chot_trinh_ky_toan_bo_v3", {"p_dot_goi_id": dg_id}).execute(),
                  "chốt toàn bộ khi còn khoa chưa chốt cuối")
@@ -385,6 +474,25 @@ def main() -> int:
         failure = exc
     finally:
         print("--- dọn smoke V3 ---")
+        # Cuốn chiếu đẻ dòng ở ĐỢT BỔ SUNG THẬT (không phải đợt smoke), nên
+        # `xoa_dot_smoke_v3` không chạm tới. Dọn tay, nếu không mốc số dòng lệch.
+        if dot_bo_sung_id is not None:
+            try:
+                if prop_bo_sung:
+                    admin.table("phan_bo_khoa").delete() \
+                        .in_("proposal_id", prop_bo_sung).execute()
+                    admin.table("proposals").delete().in_("id", prop_bo_sung).execute()
+                admin.table("dot_goi_khoa").delete() \
+                    .eq("dot_goi_id", dot_bo_sung_id).in_("khoa", units).execute()
+                print("đã dọn dòng cuốn chiếu ở đợt bổ sung")
+            except Exception as exc:  # noqa: BLE001
+                print(f"LỖI DỌN ĐỢT BỔ SUNG: {exc}")
+                failure = failure or exc
+        try:
+            admin.table("thong_bao").delete().gt("id", thong_bao_moc).execute()
+        except Exception as exc:  # noqa: BLE001
+            print(f"LỖI DỌN HỘP THƯ: {exc}")
+            failure = failure or exc
         if dot_id is not None and pdd is not None:
             try:
                 pdd.rpc("xoa_dot_smoke_v3", {

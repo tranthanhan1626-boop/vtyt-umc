@@ -19,7 +19,7 @@ import QuanLyNguoiDung from "./features/QuanLyNguoiDung";
 import PhanGoiConMaQuanLy from "./features/PhanGoiConMaQuanLy";
 import GioRotCuaKhoa from "./features/GioRotCuaKhoa";
 import LichSuXuatHoSo from "./features/LichSuXuatHoSo";
-import ThongBaoRotThau from "./features/ThongBaoRotThau";
+import HopThuThongBao from "./features/HopThuThongBao";
 import TongHopKetQuaThau from "./features/TongHopKetQuaThau";
 import DieuChinhTieuChi from "./features/DieuChinhTieuChi";
 import TienDoSuDung from "./features/TienDoSuDung";
@@ -363,6 +363,7 @@ export default function App() {
               </div>
             </div>
 
+            <HopThuThongBao profile={profile} />
             <ChinhCoHienThi />
             <button type="button" onClick={signOut} className="umc-icon-button" title="Đăng xuất" aria-label="Đăng xuất">
               <LogOut size={17} />
@@ -432,10 +433,6 @@ export default function App() {
         {/* Hai thông báo góc phải xếp CHỒNG DỌC — trước đây mỗi cái tự `fixed`
             vào cùng một góc nên cái sau che mất cái trước. */}
         <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2">
-          <ThongBaoRotThau
-            profile={profile}
-            onXemChiTiet={() => setChon({ nhom: "chung", man: "tiendo" })}
-          />
           <ThongBaoChamTienDo
             profile={profile}
             onXemChiTiet={() => setChon({ nhom: "chung", man: "tiendosudung" })}

@@ -33,6 +33,13 @@ BANG_XOA = [
     "goi_thau_assignment",
     "goi_thau_assignment_log",
     "goi_thau",
+    # VÒNG KHÉP KÍN 23/08/2026 (patch_zzzzz). Ba bảng này KHÔNG cascade theo
+    # `proposals` — sổ chuyển mã và sổ cuốn chiếu neo vào chot_q_phien/dot_goi,
+    # hộp thư neo vào dot_goi. Bỏ sót thì dữ liệu kiểm thử ở lại sau khi dọn,
+    # đúng lớp lỗi mà `danh_muc_khoa_o` đã mắc ngày 20/08.
+    "chuyen_so_rot_v3",
+    "cuon_chieu_rot_v3",
+    "thong_bao",
 ]
 
 # Các bảng nền bắt buộc phải còn nguyên sau khi dọn.

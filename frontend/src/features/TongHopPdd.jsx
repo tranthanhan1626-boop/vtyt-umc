@@ -15,6 +15,9 @@ import { taiDotIdCuaGoi, locTheoDot } from "../lib/dotBoSung";
 import { StyleTable, StyleToolbar, formatCell, DauVetSuaCuoi } from "./DanhMucDeXuatKhoa";
 import { xuatExcelDong, tenFileAnToan } from "../lib/xuatExcelDong";
 import { daiP50P75, doDaiKyMacDinh } from "../lib/congThucSoLuong";
+import {
+  useDuLieuThau, ThanhGiaiDoanThau, OThauCuaDong, HopNhapRot, HopDoSangMa,
+} from "./CumThauTongHop";
 
 /*
  * TongHopPdd — Excel Tổng hợp Danh mục đề xuất cấp PĐD.
@@ -365,6 +368,12 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   const [khoaChuaXacNhan, setKhoaChuaXacNhan] = useState([]);
   const [dangChot, setDangChot] = useState(false);
   const [dotGoiId, setDotGoiId] = useState(null);
+  // VÒNG KHÉP KÍN (23/08/2026) — cụm thầu nằm ngay trên bảng này, PĐD không
+  // còn phải sang Bàn điều hành để tích rớt và gõ số trúng nữa.
+  const thau = useDuLieuThau(dotGoiId);
+  const [formRot, setFormRot] = useState(null);
+  const [formDoMa, setFormDoMa] = useState(null);
+  const [thongBaoThau, setThongBaoThau] = useState("");
 
   const taiLai = useCallback(async () => {
     setDangTai(true);
@@ -477,6 +486,19 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
     () => tinhSegmentsGroup(cotHienThi, NHOM_COT_PDD),
     [cotHienThi]
   );
+  // Mã "anh em" của mã đang mở hộp đổ: cùng mã quản lý, khác chính nó, và
+  // phải CÒN TRÚNG mới gánh thêm được — mã cũng rớt sạch thì đổ sang vô nghĩa.
+  const dsMaAnhEm = useMemo(() => {
+    if (!formDoMa) return [];
+    const mql = formDoMa.row.ma_nhom;
+    if (!mql) return [];
+    return rows.filter((x) => x.ma_nhom === mql && x.ma_hang !== formDoMa.row.ma_hang)
+      .filter((x) => {
+        const kq = thau.ketQua.get(x.ma_hang);
+        return !kq || Number(kq.so_luong_trung) > 0;
+      });
+  }, [formDoMa, rows, thau.ketQua]);
+
   const leftFreezeCell = (colKey) => 30 + tinhLeftFreeze(cotHienThi, colKey);
 
   // Ẩn cột giờ lưu SERVER (patch_zk) vì nó dùng chung cho mọi người PĐD và
@@ -895,10 +917,30 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
             <p className="text-xs text-slate-500 mt-0.5">
               30 cột chuẩn bệnh viện · Tổng hợp {tongMaHang} mã hàng từ {tongKhoaThamGia} khoa đã đề xuất · Cột "Khoa đề xuất" sổ xuống để xem breakdown
             </p>
+            <div className="mt-2">
+              <ThanhGiaiDoanThau
+                dotGoiId={dotGoiId}
+                giaiDoan={thau.giaiDoan}
+                giaiDoanDangChay={thau.giaiDoanDangChay}
+                tongChuaXuLy={thau.tongChuaXuLy}
+                onLoi={(m) => setLoi(m)}
+                onXong={async (m) => {
+                  setThongBaoThau(m || "");
+                  await thau.taiLaiThau();
+                  await taiLai();
+                }}
+              />
+              {thongBaoThau && (
+                <div className="mt-1.5 rounded bg-emerald-50 px-2.5 py-1 text-[11px] text-emerald-800">
+                  {thongBaoThau}
+                  <button type="button" onClick={() => setThongBaoThau("")}
+                    className="ml-2 text-emerald-600 hover:underline">ẩn</button>
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
             <button className="qtdx-tb" onClick={taiLai}><RefreshCw size={13} /> Tải lại</button>
-            <button className="qtdx-tb"><Users size={13} /> Xem theo khoa ▾</button>
             <div className="relative">
               <button className="qtdx-tb" onClick={() => setOpenMenuCot((v) => !v)}>
                 <EyeOff size={13} /> Cột hiển thị ({cotHienThi.length}/{cotDayDu.length})
@@ -1023,6 +1065,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                 );
               })}
               <th className="bg-emerald-800">Khoa đề xuất</th>
+              <th className="bg-red-900" colSpan={6}>Kết quả đấu thầu</th>
             </tr>
             <tr className="col-row">
               <th className="freeze" style={{ width: 30, left: 0 }}></th>
@@ -1053,6 +1096,12 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                 );
               })}
               <th style={{ minWidth: 160 }}>Số khoa · sổ chi tiết</th>
+              <th style={{ minWidth: 76 }} title="Số đã chốt đi thầu — bất biến">Q</th>
+              <th style={{ minWidth: 68 }} title="Rớt ở giai đoạn Chào giá">R1</th>
+              <th style={{ minWidth: 68 }} title="Rớt ở giai đoạn Mở thầu">R2</th>
+              <th style={{ minWidth: 68 }} title="Rớt ở giai đoạn Đánh giá">R3</th>
+              <th style={{ minWidth: 80 }} title="Q trừ R1 R2 R3">Trúng</th>
+              <th style={{ minWidth: 190 }}>Xử lý rớt</th>
             </tr>
           </thead>
           <tbody>
@@ -1230,6 +1279,14 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                       <span className="font-mono font-semibold">{fmt(r.tongToanVien)}</span>
                     </span>
                   </td>
+                  <OThauCuaDong
+                    row={r} ketQua={thau.ketQua} chuaXuLy={thau.chuaXuLy}
+                    daChuyen={thau.daChuyen} daCuonChieu={thau.daCuonChieu}
+                    giaiDoanDangChay={thau.giaiDoanDangChay}
+                    onSuaRot={(row, giaiDoan, giaTri) =>
+                      setFormRot({ row, giaiDoan, giaTri, dotGoiId })}
+                    onDoMa={(row, conLai) => setFormDoMa({ row, conLai, dotGoiId })}
+                  />
                 </tr>
                 <AnimatePresence initial={false}>
                   {hienChiTietKhoa && rowMoRong.has(r.ma_hang) && (
@@ -1241,7 +1298,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                       className="row-expand"
                     >
                       <td style={{ width: 30, background: "#f8fafc" }}></td>
-                      <td colSpan={cotHienThi.length + 1} className="qtdx-cell" style={{ background: "#f8fafc" }}>
+                      <td colSpan={cotHienThi.length + 7} className="qtdx-cell" style={{ background: "#f8fafc" }}>
                         <div className="pl-4 py-1">
                           <div className="text-[11px] text-slate-500 mb-1.5">
                             Số lượng đề xuất chi tiết từ {r.khoaDeXuat.length} khoa cho mã <b>{r.ma_hang}</b> · <em>{r.ten_vt_2627?.slice(0, 60)}...</em>
@@ -1404,6 +1461,11 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
           </motion.div>
         )}
       </AnimatePresence>
+
+      <HopNhapRot mo={formRot} onDong={() => setFormRot(null)}
+        onXong={async () => { await thau.taiLaiThau(); await taiLai(); }} />
+      <HopDoSangMa mo={formDoMa} dsAnhEm={dsMaAnhEm} onDong={() => setFormDoMa(null)}
+        onXong={async () => { await thau.taiLaiThau(); await taiLai(); }} />
     </div>
   );
 }

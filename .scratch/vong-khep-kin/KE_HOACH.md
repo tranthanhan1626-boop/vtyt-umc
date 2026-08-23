@@ -126,11 +126,11 @@ D3 nói về số **rớt** đổ sang mã khác. Hai việc khác nhau, cùng t
 
 | Bước | Nội dung | Đụng tới |
 |---|---|---|
-| **1** | Ba ô R1/R2/R3 + ô "đổ sang mã" ngay trong dòng Tổng hợp. **Vá luôn lỗi cũ**: mã đã có rớt thì mất đường nhập giai đoạn 2/3 (nút bập bênh `rot ? "Bỏ tích" : "Tích rớt"`) | `TongHopPdd.jsx` |
-| **2** | Viết `day_so_luong_rot_v3` — cùng luật RPC cũ nhưng đọc nền v3: `ket_qua_rot_v3` · `phan_bo_trung_v3` · `phan_bo_khoa` · `vat_tu.ma_quan_ly`. Giữ chặn cứng "tổng mã quản lý không đổi". Giữ số theo khoa (D3). Chặn khi lệch ĐVT (D7). Tạo dòng mới nếu khoa chưa có mã nhận (D9) | SQL patch mới |
-| **3** | Nút "Xác nhận rớt" (D2, D8) + cò: đổ số đã chọn → phần còn lại vào đợt bổ sung theo bảng D10, neo `dot_goi_id` | SQL + `TongHopPdd.jsx` |
-| **4** | Bảng `thong_bao` + hộp thư hai vai trò + badge đỏ mục gói bổ sung. Gộp theo phiên, chỉ việc lớn, xem xong là xoá (D5) | SQL + màn mới + `App.jsx` |
-| **5** | Dọn xác: gỡ nút chết `DanhMucDeXuatKhoa.jsx:788`; **ẩn** (không xoá) 4 màn đọc bảng chết — `TienDoGoiThau` · `TongHopKetQuaThau` · `ThongBaoRotThau` · nhánh test trong `QuanLyDuLieuTest`. Nhánh sau dùng lại ý tưởng của `TienDoGoiThau` | frontend |
+| **1** ✅ | Cụm cột thầu Q · R1 · R2 · R3 · Trúng · Xử lý rớt bám đuôi bảng Tổng hợp, cộng thanh giai đoạn. *(Ghi chú 23/08: lỗi "mã đã rớt mất đường nhập giai đoạn 2/3" **đã được vá từ 20/08** trong `928cab6` — nút "Rớt thêm" ở `BanDieuHanhPdd.jsx:1016`. Bước 1 không phải đi vá lỗi, chỉ là dời thao tác về một mặt bàn.)* | `TongHopPdd.jsx`, `CumThauTongHop.jsx` |
+| **2** ✅ | Viết `day_so_luong_rot_v3` — cùng luật RPC cũ nhưng đọc nền v3: `ket_qua_rot_v3` · `phan_bo_trung_v3` · `phan_bo_khoa` · `vat_tu.ma_quan_ly`. Giữ chặn cứng "tổng mã quản lý không đổi". Giữ số theo khoa (D3). Chặn khi lệch ĐVT (D7). Tạo dòng mới nếu khoa chưa có mã nhận (D9) | SQL patch mới |
+| **3** ✅ | Nút "Xác nhận rớt" (D2, D8) + cò: đổ số đã chọn → phần còn lại vào đợt bổ sung theo bảng D10, neo `dot_goi_id` | SQL + `TongHopPdd.jsx` |
+| **4** ✅ | Bảng `thong_bao` + hộp thư hai vai trò + badge đỏ mục gói bổ sung. Gộp theo phiên, chỉ việc lớn, xem xong là xoá (D5) | SQL + màn mới + `App.jsx` |
+| **5** ✅ | Dọn xác: gỡ nút chết `DanhMucDeXuatKhoa.jsx:788`; **ẩn** (không xoá) 4 màn đọc bảng chết — `TienDoGoiThau` · `TongHopKetQuaThau` · `ThongBaoRotThau` · nhánh test trong `QuanLyDuLieuTest`. Nhánh sau dùng lại ý tưởng của `TienDoGoiThau` | frontend |
 
 Bước 1 phải xong trước — không nhập được rớt thì không có gì để đẩy.
 
@@ -145,3 +145,43 @@ Bước 1 phải xong trước — không nhập được rớt thì không có 
 3. Đổ vào đợt gần nhất **chưa chốt Q** (mục 3).
 4. Hộp thư của PĐD và của khoa là **hai hộp riêng**; khoa xoá noti của khoa không
    ảnh hưởng dấu vết — số đã đẩy nằm ở đợt bổ sung, không nằm ở noti.
+
+---
+
+## 7. Đã thi công 23/08/2026
+
+Patch `backend/sql/patch_zzzzz_vong_khep_kin.sql` (576 dòng), đã chạy lên staging.
+
+| Đối tượng mới | Vai trò |
+|---|---|
+| `chuyen_so_rot_v3` | sổ đổ số rớt sang mã tương đương |
+| `cuon_chieu_rot_v3` | sổ phần rớt đã đẩy về đợt bổ sung |
+| `thong_bao` | hộp thư hai chiều, gộp theo ngày, xem xong xoá |
+| `v_rot_chua_xu_ly_v3` | phần rớt còn nợ xử lý theo (mã hàng × khoa) |
+| `v_theo_doi_cuon_chieu_v3` | màn theo dõi của PĐD, đọc theo từng mã rớt |
+| `day_so_luong_rot_v3` · `bo_chuyen_so_rot_v3` | đổ / bỏ đổ |
+| `xac_nhan_rot_v3` | **cò** — nhịp 2 |
+| `fn_dot_bo_sung_gan_nhat` | đợt T1/T5/T9 luôn mở sẵn |
+| `danh_dau_da_xem_thong_bao` | xem xong là xoá |
+
+**Nguyên tắc giữ được:** patch chỉ GHI THÊM sổ, không `insert`/`update` vào
+`phan_bo_trung_v3` · `ket_qua_rot_v3` · `chot_q_dong`. Ba khoá cứng toán học và
+mọi trigger cũ còn nguyên hiệu lực. Có test khẳng định điều này
+(`tests/test_patch_zzzzz_contract.py::test_khong_dung_vao_phan_bo_trung`).
+
+**Nghiệm thu 23/08/2026:** pytest **143** · smoke v3 **20/20** (thêm 6 bước cho
+vòng khép kín) · 33 bảng về đúng mốc · `kiem_truoc_deploy` **Sạch** ·
+`test:formula` OK · `build` ✓.
+
+**Sửa trong lúc làm:** bốn khoá ngoại của hai sổ mới ban đầu chặn cả việc xoá
+đợt kiểm thử — đã đổi sang `on delete cascade` / `set null`. Ba bảng mới đã thêm
+vào `scripts/don_du_lieu_test_staging.py`.
+
+## 8. Còn nợ sau bước 5
+
+- `01_NGHIEP_VU_HIEN_HANH.md`, `06_DUNG_LAM_LAI.md`, docx và sơ đồ **chưa nuốt**
+  10 QĐ ngày 23/08 (chủ dự án chốt: cook xong mới cập nhật tài liệu một lần).
+- Màn theo dõi cuốn chiếu của PĐD: view `v_theo_doi_cuon_chieu_v3` đã có, **chưa
+  dựng giao diện**.
+- `xoa_du_lieu_kiem_thu` không cần sửa: ba bảng mới cascade theo
+  `chot_q_phien` / `dot_goi` nên xoá đợt là sạch theo.
