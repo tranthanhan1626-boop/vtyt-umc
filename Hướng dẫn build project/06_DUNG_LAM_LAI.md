@@ -1,7 +1,7 @@
 # ĐỪNG LÀM LẠI — những quyết định đã bị đảo
 
 > Đọc file này **trước khi** dựng bất kỳ cơ chế nào bạn thấy "còn thiếu".
-> Dự án đã đảo luật **22 lần**. Phần lớn thứ trông như thiếu sót là thứ đã bị
+> Dự án đã đảo luật **29 lần**. Phần lớn thứ trông như thiếu sót là thứ đã bị
 > cố ý bỏ đi, có lý do.
 
 Đây **không** phải tài liệu nghiệp vụ. Luật đang chạy nằm ở
@@ -35,8 +35,15 @@
 | **Khoa chốt danh mục của mình (khoá dữ liệu)** | Vòng xác nhận lần N — không khoá gì, huỷ khi dữ liệu đổi | 19/08/2026 |
 | **Số lượng khoa chỉ sửa được ở màn Nhập đề xuất** | Khoa sửa ngay trên Danh mục đề xuất; tổng đi thầu là tổng của các khoa | 19/08/2026 |
 | Không có mốc so sánh số đề xuất trên hai bảng danh mục | Thêm cột dải P50–P75 ở cả hai bảng; vượt P75 chỉ tô nổi bật, không chặn | 19/08/2026 |
+| **PĐD mở bảng của từng khoa để hiệu chỉnh; tích rớt và phân bổ số trúng ở màn Bàn điều hành** | **Một mặt bàn** — mọi thao tác sửa của PĐD nằm trên Danh mục tổng hợp. Bàn điều hành chỉ còn để xem | 21/08/2026 |
+| **Hệ chia sẵn số trúng theo tỉ lệ Q rồi PĐD sửa đè** | Ô để trống, **PĐD gõ tay**; chia theo tỉ lệ thành **nút bấm khi cần** | 21/08/2026 |
+| **Khoá cứng 2 chặn ngay mỗi lần ghi** | Cho lưu nháp lệch, tô đỏ dòng chưa khớp, **chỉ chặn ở cổng chốt trình ký** | 21/08/2026 |
+| **Chốt dữ liệu trình ký bấm từng bảng khoa** (49 nút) | Bỏ hẳn — chỉ còn **một nút chốt toàn bộ** DOT_GOI | 21/08/2026 |
+| **Sửa số sau chốt Q phải mở chốt cả gói con** | **Gõ đè tại chỗ kèm lý do**, Q vẫn giữ làm snapshot | 21/08/2026 |
+| **Mã rớt: "không tự tạo đề xuất, không tự điền số lượng", khoa tự chọn có đề xuất lại không** | **Cuốn chiếu** — hệ tự đưa mã rớt vào đợt bổ sung gần nhất của khoa, tự điền số = số rớt; khoa sửa và quyết cuối | 21/08/2026 |
+| **Đợt bổ sung do PĐD tạo tay khi cần** | Lịch cố định T1/T5/T9; thiếu thì **hệ tự tạo** | 21/08/2026 |
 
-## Ba cái bẫy hay khiến người ta code lại đồ đã bỏ
+## Bốn cái bẫy hay khiến người ta code lại đồ đã bỏ
 
 **1. "Web thiếu bước duyệt."** Đúng, và là cố ý. Nguyên tắc nền: *web là sổ ghi,
 máy tính và dấu vết; Teams là nơi thương lượng*. Không hạn nộp, không nhắc tự
@@ -49,6 +56,12 @@ thuộc tính của **mã hàng**, không phải của khoa — hai khoa mua cù
 không thể có hai bộ tiêu chí kỹ thuật. Cột chữ là **một giá trị chung toàn
 viện**, ai sửa sau đè. Ngoại lệ duy nhất: `giai_trinh_2627`.
 
+**4. "Chỗ này nên có màn riêng cho gọn."** Sai từ 21/08/2026. PĐD có **đúng một
+mặt bàn** là Danh mục tổng hợp. Thấy một thao tác của PĐD chật chội trên grid thì
+làm cho grid rộng ra (chế độ cột, dòng sổ, ô nổi, phím tắt), **không** tách ra
+màn mới. Lý do: cùng một con số sửa được ở hai chỗ là nguồn gốc của phần lớn lỗi
+dữ liệu dự án đã gặp.
+
 **3. "PĐD duyệt xong nên khoá ô lại."** Dựng sáng 19/08, đảo ngay chiều 19/08.
 Lý do: nó gộp *gõ để soạn* với *chốt để đóng* vào một thao tác, nên PĐD gõ nửa
 chừng là khoa hết đường sửa. Việc đóng băng do **chốt Q** (cột số) và **chốt
@@ -60,3 +73,7 @@ trình ký** (cột chữ) lo, cả hai đều chặn ở server.
 `phan_bo_khoa`; Danh mục tổng hợp là **view cộng lên**, không lưu số riêng.
 Ai đó "tối ưu" bằng cách cho tổng hợp lưu số của chính nó là phá bất biến
 quan trọng nhất của v3.
+
+⚠️ Quyết định "một mặt bàn" ngày 21/08/2026 **không** đảo điều này. PĐD gõ số
+**trên** Danh mục tổng hợp, nhưng con số vẫn được ghi xuống `phan_bo_khoa` của
+đúng khoa đó. Mặt bàn đổi, kho số không đổi.

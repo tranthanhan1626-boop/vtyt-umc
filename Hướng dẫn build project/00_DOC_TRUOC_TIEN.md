@@ -1,6 +1,13 @@
 # Đọc trước tiên — hệ thống dự trù & đấu thầu VTYT (UMC)
 
-Cập nhật **20/08/2026**. Nhánh làm việc: `phase-a-luong-de-xuat`.
+Cập nhật **21/08/2026**. Nhánh làm việc: `phase-a-luong-de-xuat`.
+
+> 🆕 **Ngày 21/08/2026 dự án đổi hướng.** Chủ dự án báo hướng cũ đi chệch; chốt
+> lại bằng 17 quyết định mới, gọi chung là bản **MỘT MẶT BÀN**. Ba thay đổi lớn:
+> mọi thao tác của PĐD dồn về Danh mục tổng hợp · mã rớt **cuốn chiếu** tự vào
+> đợt bổ sung gần nhất · mở thêm **bốn mảng sau đấu thầu**. Phần từ đầu tới danh
+> mục tổng hợp **giữ nguyên**. Luật mới đã vào `01`; **chưa thi công dòng code
+> nào** — kế hoạch ở `05`, chỗ nào là luật tương lai đều có nhãn 🆕.
 
 **Thư mục này là bộ tài liệu DUY NHẤT của dự án.** Không có tài liệu nào khác
 ngoài đây. Nếu bạn tìm thấy file `.md` mô tả nghiệp vụ ở chỗ khác trong repo,
@@ -17,7 +24,8 @@ vật tư y tế và chạy quy trình đấu thầu**. Hai bên dùng:
   xử lý mã rớt thầu, theo dõi kết quả.
 - **PĐD (Phòng Điều dưỡng)** — đơn vị chấm thầu, cũng chính là admin. Hiệu chỉnh
   và phân bổ số về các khoa, chốt số đi thầu, nhập kết quả rớt, phân bổ số
-  trúng, chốt dữ liệu trình ký.
+  trúng, chốt dữ liệu trình ký. 🆕 Từ 21/08/2026 làm **toàn bộ** việc đó trên
+  đúng một màn: Danh mục tổng hợp.
 
 `admin` và `dieu_duong` **cùng quyền**, không có vai trò nghiệp vụ thứ ba.
 
@@ -39,11 +47,16 @@ trình ký:
 | # | Khoá cứng | Chặn ở đâu |
 |---|---|---|
 | 1 | Tổng mã hàng sau quy đổi = tổng mã quản lý | Lúc khoa phân bổ xuống mã hàng |
-| 2 | Tổng phân bổ về các khoa = số trúng của mã | Lúc PĐD phân bổ kết quả |
-| 3 | Tổng số rớt ba giai đoạn ≤ số tham gia thầu | Lúc PĐD nhập ngoại lệ rớt |
+| 2 | Tổng phân bổ về các khoa = số trúng của mã | 🆕 Ở **cổng chốt trình ký**, không chặn lúc gõ |
+| 3 | Tổng số rớt ba giai đoạn ≤ số tham gia thầu | Lúc PĐD nhập ngoại lệ rớt — **chặn ngay** |
 
 Ngoài ba khoá đó, hệ **cảnh báo chứ không chặn** — trừ hai cổng cứng đã chốt:
 chốt số đi thầu và chốt trình ký (xem `01`, mục 4.6 và 8.2).
+
+🆕 **Một ngoại lệ của "web không tự chạy"** (QĐ 21/08/2026): mã rớt tự vào đợt bổ
+sung gần nhất, và đợt bổ sung T1/T5/T9 tự được tạo nếu chưa có. Đây là cuốn chiếu
+để mã hàng không rơi ra ngoài giữa hai đợt, không phải cổng chặn — khoa vẫn sửa
+số và vẫn quyết. Xem `01` mục 6.
 
 ---
 
@@ -57,7 +70,7 @@ chốt số đi thầu và chốt trình ký (xem `01`, mục 4.6 và 8.2).
 | 03 | `03_DU_LIEU_VA_BIEU_MAU.md` | Dữ liệu đã có, còn thiếu, và năm biểu mẫu |
 | 04 | `04_VAN_HANH_KY_THUAT.md` | **Đọc trước khi gõ lệnh.** Chạy local, staging, patch, backup, deploy, và các bẫy đã mắc |
 | 05 | `05_TRANG_THAI_VA_VIEC_TIEP_THEO.md` | Hôm nay đang ở đâu, còn nợ gì, làm gì tiếp |
-| 06 | `06_DUNG_LAM_LAI.md` | **Đọc trước khi dựng cái gì thấy "còn thiếu".** 22 quyết định đã bị đảo |
+| 06 | `06_DUNG_LAM_LAI.md` | **Đọc trước khi dựng cái gì thấy "còn thiếu".** 29 quyết định đã bị đảo |
 | 07 | `07_NHAT_KY_THAY_DOI.md` | Toàn bộ lịch sử thay đổi, vì sao code ra nông nỗi này |
 
 **Đường tắt theo việc bạn định làm:**
@@ -88,9 +101,14 @@ phan_bo_khoa       Số HIỆN HÀNH theo (DOT_GOI × mã hàng × khoa).
 Danh mục tổng hợp  VIEW cộng lên, KHÔNG lưu số riêng.
 ```
 
-Hệ quả: cột **số lượng** trên Danh mục tổng hợp không sửa trực tiếp được. Cột
-**chữ** là một giá trị chung toàn viện, ai sửa sau đè. Bất biến "tổng PĐD =
+Hệ quả: ô **tổng** của một mã hàng là phép cộng, nó không lưu số của riêng nó.
+Cột **chữ** là một giá trị chung toàn viện, ai sửa sau đè. Bất biến "tổng PĐD =
 tổng phân bổ về các khoa" đúng **theo cấu trúc**, không cần code canh.
+
+🆕 **Một mặt bàn không đảo kiến trúc này.** PĐD gõ số *trên* Danh mục tổng hợp,
+ở dòng sổ của từng khoa, nhưng con số vẫn ghi xuống `phan_bo_khoa` của đúng khoa
+đó. **Mặt bàn đổi, kho số không đổi.** Ai "tối ưu" bằng cách cho bảng tổng hợp
+lưu số của chính nó là phá bất biến quan trọng nhất của v3.
 
 Đơn vị workflow là **`DOT_GOI = Đợt × Gói con`**. Gói 18 tháng sinh 5 gói con;
 mỗi đợt bổ sung là 1 gói phẳng. Chốt/mở/sửa một gói con **không** được tác động
@@ -106,6 +124,8 @@ bốn gói con còn lại.
    liệu có cấu trúc cùng revision và audit.
 5. Tồn và khả dụng là số toàn viện; không tự trừ lặp vào đề xuất từng khoa.
 6. LLM chỉ hỗ trợ chữ/phân loại. **Số lượng phải do công thức tái lập được.**
+6b. 🆕 PĐD chỉ có **một mặt bàn**. Thấy thao tác nào của PĐD chật trên grid thì
+    làm grid rộng ra, **không tách màn mới** (QĐ 21/08/2026).
 7. Test trên staging trước. Không chạy patch hay dọn dữ liệu trên production
    khi chưa xem trước phạm vi.
 8. Không đưa service-role key, dữ liệu bệnh viện hay file backup lên Git.

@@ -4,7 +4,7 @@ Dựng lại từ **68 commit** trên nhánh `phase-a-luong-de-xuat`, từ
 `6f33fa3` (22/07/2026) tới `928cab6` (20/08/2026).
 
 **File này trả lời câu hỏi: "sao code lại ra nông nỗi này?"** Dự án đã đảo luật
-nghiệp vụ 22 lần trong một tháng. Nhiều chỗ trong code trông kỳ quặc vì nó là
+nghiệp vụ **29 lần** trong một tháng. Nhiều chỗ trong code trông kỳ quặc vì nó là
 tàn dư của một quyết định đã bị thay. Đọc file này trước khi kết luận một đoạn
 code là sai.
 
@@ -32,6 +32,7 @@ Ký hiệu: **[C]** còn hiệu lực · **[X]** đã bị đảo, xem `06_DUNG_
 | 19/08 sáng | PĐD duyệt ô là khoá ô bên khoa | **[X]** đảo ngay chiều cùng ngày |
 | 19/08 chiều | **Luật V2 — một giá trị chung, ai sửa sau đè** | Luật đang chạy |
 | 20/08 | Test full qua trình duyệt: **tìm và vá 3 lỗi** | Bản vá gần nhất |
+| **21/08** | **ĐỔI HƯỚNG — bản MỘT MẶT BÀN, 17 quyết định, 7 luật bị đảo** | Chưa đọng gì trong code: mới chốt luật, **chưa thi công** |
 
 ---
 
@@ -259,3 +260,88 @@ mà PNG lại là thứ người ta hay mở. Cách xuất PNG đã ghi vào
 ## Việc còn nợ
 
 Xem `05_TRANG_THAI_VA_VIEC_TIEP_THEO.md`, mục 3 và 4.
+
+---
+
+## 21/08/2026 — Đổi hướng: bản MỘT MẶT BÀN
+
+Chủ dự án báo hướng cũ **đi chệch**: workflow cần mở rộng nhiều hơn hẳn, và mọi
+thay đổi phải sửa **trực tiếp trên bảng Tổng hợp danh mục PĐD**, không sửa ở nơi
+khác nữa. Chốt lại bằng 4 vòng hỏi, ra **17 quyết định**.
+
+**Không code gì trong ngày này.** Chỉ chốt luật và viết tài liệu — đúng yêu cầu
+của chủ dự án: *"tập trung lên plan brainstorm cho clarify rồi mới code để không
+bị đi sai hướng nữa"*.
+
+### Bảy luật bị đảo
+
+| Luật cũ | Thay bằng |
+|---|---|
+| PĐD mở bảng từng khoa; tích rớt và phân bổ ở Bàn điều hành | **Một mặt bàn** — tất cả trên Danh mục tổng hợp **[X]** |
+| Hệ chia sẵn số trúng theo tỉ lệ Q, PĐD sửa đè | Ô trống, **PĐD gõ tay**; chia theo tỉ lệ thành nút **[X]** |
+| Khoá cứng 2 chặn ngay mỗi lần ghi | Chặn ở **cổng chốt trình ký**, lúc gõ chỉ tô đỏ **[X]** |
+| Chốt trình ký bấm từng bảng khoa (49 nút) | Một nút chốt toàn bộ **[X]** |
+| Sửa số sau chốt Q phải mở chốt cả gói con | Gõ đè tại chỗ kèm lý do **[X]** |
+| Mã rớt: không tự tạo, không tự điền; khoa tự chọn | **Cuốn chiếu** tự vào đợt bổ sung gần nhất **[X]** |
+| Đợt bổ sung do PĐD tạo tay | Lịch T1/T5/T9, hệ tự tạo nếu thiếu **[X]** |
+
+### Ba thứ mở rộng phạm vi
+
+1. **Bốn mảng sau đấu thầu** vào phạm vi: hợp đồng · giao hàng từng lần · cam kết
+   20/50/80 · mua thêm 30%. Trước đây `01` mục 12 ghi là "tách khỏi pipeline này".
+2. **Vẫn không có cột giá** — QĐ 17/08 giữ nguyên, kể cả cho hợp đồng.
+3. **Ngoại lệ đầu tiên của "web không tự chạy"**: cuốn chiếu mã rớt + tự tạo đợt.
+
+### Ba thứ bị hoãn hoặc bỏ
+
+- **Chỉ định thầu** — là gói riêng biệt ngang hàng gói 18T và gói bổ sung, flow
+  khác hẳn. Tạm không build.
+- **Bốn màn ngoài pipeline** (sổ thiếu hàng · điều chỉnh TSKT · duyệt mã kỹ thuật
+  · tiến độ sử dụng) — chưa ai xài, tạm dừng.
+- **Dán kết quả thầu từ Excel** — bỏ, vì kết quả thầu về dạng **bản giấy**. Đầu
+  tư vào gõ tay nhanh thay vào đó.
+
+### Hai điều tra kèm theo, kết quả khác giả thiết
+
+**a. "Import dữ liệu sau thầu sẽ quá nặng" — đo và bác bỏ.** `pg_database_size`
+ngày 21/08 = **136/500 MB**. Bốn mảng sau thầu tốn **≈5–6 MB/năm**. Chỗ nặng thật
+là lịch sử HIS: `usage_history_current` 63,67 MB + `usage_history_changelog`
+48,23 MB = **82% cả database**. `patch_zn` chỉ nén bảng current, không đụng
+changelog.
+
+**b. Tiến độ sử dụng theo cam kết đang hỏng ngầm.** Màn đã dựng (`patch_o`),
+nhưng `v_tien_do_su_dung` phụ thuộc `goi_thau_ket_qua_ma` · `goi_thau_moc` ·
+`goi_thau_tien_do` — cả ba là mô hình **trước v3**, cả ba **0 dòng**, không code
+nào ghi vào nữa. Truy bằng `pg_depend`, không phải suy đoán. Nó **không báo lỗi**,
+chỉ hiện rỗng — nên trước nay không ai phát hiện.
+
+**c. Workbook `database web.xlsx` trỏ vào bảng đã chết.** Lập 03/08 theo mô hình
+cũ; bốn sheet sau thầu đều 0 dòng. Chủ dự án điền vào là dữ liệu rơi vào hư
+không. Phải dựng lại mẫu theo v3 **trước khi** bắt đầu gom dữ liệu.
+
+### Đo hiện trạng giao diện (đếm từ code)
+
+- Tích rớt một mã + gõ số trúng cho khoa: **~11–14 click, 3 lần đổi ngữ cảnh**.
+  Sau khi làm một mặt bàn: **~3 click, 0 đổi màn**.
+- Rớt cả mã quản lý: 5–9 → 2 click. Rớt 50 mã cùng lý do: 50×(5–8) → chọn dải + 3.
+- Hoàn tất một gói con: **2 màn · 3 tab → 1 màn**.
+- `TongHopPdd.jsx` và `DanhMucDeXuatKhoa.jsx` **không có phím tắt nào**
+  (`grep onKeyDown` = 0 kết quả).
+
+Số đổi màn/tab đếm chắc từ code; số click từng bước có bước là **ước lượng**, ghi
+rõ trong `.scratch/mot-mat-ban/UX_MOT_MAT_BAN.md`.
+
+### Tài liệu sinh ra trong ngày
+
+| File | Nội dung |
+|---|---|
+| `.scratch/mot-mat-ban/KE_HOACH.md` | 17 quyết định · 7 luật bị đảo · 4 miếng thi công · câu còn mở |
+| `.scratch/mot-mat-ban/UX_MOT_MAT_BAN.md` | Thiết kế grid, ASCII mockup, bảng đếm click |
+| `.scratch/mot-mat-ban/DU_LIEU_SAU_THAU.md` | Khảo sát dữ liệu, schema đề xuất, 17 câu hỏi cho chủ dự án |
+
+### Việc còn nợ sau ngày 21/08
+
+1. `Full workflow vtyt web.docx` chưa đồng bộ — thiếu cả QĐ 20/08 (mục 8.2) lẫn
+   toàn bộ bản MỘT MẶT BÀN.
+2. `so-do-workflow/` vẽ lại 20/08 theo v3+V2, **chưa có 21/08**.
+3. Chưa thi công miếng nào.

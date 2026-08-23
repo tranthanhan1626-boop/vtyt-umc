@@ -1,5 +1,11 @@
 # BÀN GIAO — dự án VTYT, chốt cuối phiên 20/08/2026
 
+> 🔴 **HẾT HIỆU LỰC MỘT PHẦN TỪ 21/08/2026.** Dự án đổi hướng sang bản
+> **MỘT MẶT BÀN**; 7 luật mô tả trong file này đã bị đảo. Vào phiên mới thì đọc
+> `Hướng dẫn build project/05_TRANG_THAI_VA_VIEC_TIEP_THEO.md` TRƯỚC, rồi
+> `.scratch/mot-mat-ban/KE_HOACH.md`. File này chỉ còn giá trị tra cứu trạng
+> thái kỹ thuật (staging, nghiệm thu, nợ cũ).
+
 > **CẬP NHẬT 20/08/2026 — đọc mục này trước, phần dưới là bàn giao 19/08.**
 >
 > Đã chạy trọn vòng test workflow qua Chrome (2 vai trò, JWT thật). Tìm **3 lỗi**,

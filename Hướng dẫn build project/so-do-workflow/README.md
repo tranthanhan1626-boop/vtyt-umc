@@ -1,7 +1,23 @@
 # Sơ đồ workflow Khoa ↔ Phòng Điều dưỡng
 
-> **Vẽ lại ngày 20/08/2026** theo workflow v3 (17/08) + luật V2 (19/08) + QĐ 20/08
-> (cổng chốt trình ký chỉ tính khoa đã gửi đề xuất).
+> 🔴 **LẠC HẬU TỪ 21/08/2026 — đừng lấy quyết định từ bộ sơ đồ này.**
+>
+> Vẽ lại ngày 20/08/2026 theo workflow v3 (17/08) + luật V2 (19/08) + QĐ 20/08.
+> Ngày 21/08/2026 dự án đổi hướng sang bản **MỘT MẶT BÀN** và **7 luật trong sơ
+> đồ đã bị đảo**. Chưa vẽ lại vì luật mới **chưa thi công** — vẽ lại sau khi
+> build xong miếng 1 và 2 (`../05_TRANG_THAI_VA_VIEC_TIEP_THEO.md`, mục 3).
+>
+> **Chỗ sơ đồ đang vẽ sai so với luật hôm nay:**
+>
+> | Sơ đồ vẽ | Luật từ 21/08/2026 |
+> |---|---|
+> | PĐD hiệu chỉnh trên bảng của từng khoa; tích rớt và phân bổ ở Bàn điều hành | Tất cả trên Danh mục tổng hợp — một mặt bàn |
+> | Hệ chia sẵn số trúng theo tỉ lệ Q | Ô để trống, PĐD gõ tay; chia theo tỉ lệ là nút bấm |
+> | Khoá cứng 2 chặn ngay lúc phân bổ | Chặn ở cổng chốt trình ký, lúc gõ chỉ tô đỏ |
+> | Chốt trình ký từng bảng khoa rồi mới chốt tổng hợp | Một nút chốt toàn bộ |
+> | Giỏ rớt: CHỜ KHOA XỬ LÝ → khoa tự chọn đề xuất lại | Cuốn chiếu — mã rớt tự vào đợt bổ sung gần nhất, tự điền số |
+> | Đợt bổ sung do PĐD tạo tay | Lịch T1/T5/T9, hệ tự tạo nếu thiếu |
+> | Sau chốt Q muốn sửa phải mở chốt gói con | Gõ đè tại chỗ kèm lý do |
 >
 > Sơ đồ là **bản tóm tắt hình ảnh**, không phải nguồn luật. Khi sơ đồ và
 > `../01_NGHIEP_VU_HIEN_HANH.md` khác nhau thì **tài liệu đúng, sơ đồ sai** —

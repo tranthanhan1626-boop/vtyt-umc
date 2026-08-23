@@ -40,6 +40,40 @@ thì lịch sử xuất kho có thể thấp hơn nhu cầu thật.
   nhưng chỉ lấy hiệu lực/nhà cung cấp/lịch giao.
 - **Bỏ nhóm "Sự kiện nhu cầu"** — chức năng đã gỡ khỏi hệ thống.
 
+**🆕 Cập nhật 21/08/2026 — bốn mảng sau đấu thầu vào phạm vi:**
+
+⚠️ **Đọc trước khi bắt đầu gom dữ liệu.** Workbook `database web.xlsx` lập
+03/08/2026 đang trỏ vào các bảng của mô hình **trước v3**; bốn sheet sau thầu
+(`HOP_DONG` · `TON_KHO_HANG_VE` · `KET_QUA_THAU` · `GOI_THAU_TIMELINE`) đều **0
+dòng** và không code nào đọc chúng nữa. **Điền vào đó là dữ liệu rơi vào hư
+không.** Phải dựng lại mẫu theo v3 trước (miếng 0 ở `05`, mục 3).
+
+| Mảng | Cần gì | Trạng thái nguồn |
+|---|---|---|
+| **Hợp đồng** | số HĐ · ngày ký · thời hạn · nhà thầu trúng theo mã hàng. **Không đơn giá, không giá trị HĐ** | `kha_dung_hop_dong_ma_hang` đã có 2.661 dòng nhưng khoá theo dòng file Excel, **không neo `dot_goi`**. Thiếu số HĐ/ngày ký/thời hạn |
+| **Giao hàng** | **từng lần giao**: ngày · mã hàng · **khoa** · số lượng | **Chưa có nguồn, chưa có bảng.** Sheet `TON_KHO_HANG_VE` đã thiết kế 20 cột nhưng rỗng |
+| **Cam kết 20/50/80** | không cần dữ liệu mới — tính bằng view từ số trúng + số đã giao | View hiện tại đọc 3 bảng chết trước v3. Phải viết lại |
+| **Mua thêm 30%** | không cần gì thêm | ✅ Đã đúng theo v3 |
+
+Ba quyết định về mức chi tiết (QĐ 21/08/2026):
+
+- Giao hàng lưu **sự kiện từng lần giao** (≈12.000 dòng/đợt ≈ **3,2 MB/năm**),
+  **không** lưu ảnh chụp tồn kho theo kỳ (≈48.000 dòng/năm ≈ 33 MB/năm — nặng gấp
+  10 lần mà không biết được từng lần giao).
+- "Đã giao bao nhiêu" ở cấp **mã hàng × từng khoa** — cần mức này mới chỉ được
+  đích danh khoa nào chậm cam kết.
+- "Đã giao / còn lại" và "% cam kết" là **VIEW, không lưu**.
+
+**Dung lượng không phải vấn đề** (đo `pg_database_size` ngày 21/08/2026): database
+**136/500 MB**, bốn mảng trên chỉ tốn **≈5–6 MB/năm**. Chỗ nặng là lịch sử HIS —
+`usage_history_current` 63,67 MB + `usage_history_changelog` 48,23 MB = 82% database.
+
+Mọi bảng mới phải neo `dot_goi_id` bằng **khoá ngoại thật**, không nhét vào chuỗi
+— dự án đã dính đúng lớp lỗi này bốn lần.
+
+Chi tiết khảo sát + schema đề xuất + **17 câu hỏi cần chủ dự án trả lời**:
+`.scratch/mot-mat-ban/DU_LIEU_SAU_THAU.md`.
+
 ## 3. Năm biểu mẫu chính thức
 
 Folder nguồn: `Form biểu mẫu/`.
@@ -123,4 +157,6 @@ nguồn và chờ người phụ trách xác nhận.
 3. Đề xuất, gói, timeline và kết quả thầu.
 4. Hồ sơ Word/Excel cũ kèm manifest.
 5. Tồn, hàng về, hợp đồng và lead time (không cần giá).
+5b. 🆕 **Giao hàng từng lần** (ngày · mã hàng · khoa · số lượng) — nạp theo mẫu
+    v3 mới, không dùng sheet `TON_KHO_HANG_VE` cũ.
 6. Thiếu hàng, VEN, quy đổi ĐVT và mã thay thế.

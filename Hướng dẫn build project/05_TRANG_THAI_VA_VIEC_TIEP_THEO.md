@@ -1,7 +1,50 @@
 # Trạng thái hiện tại và việc tiếp theo
 
-Cập nhật **20/08/2026**. Nhánh `phase-a-luong-de-xuat`, commit gần nhất
-`928cab6`.
+Cập nhật **21/08/2026**. Nhánh `phase-a-luong-de-xuat`.
+
+> 🔴 **ĐỔI HƯỚNG 21/08/2026 — đọc trước mọi thứ khác trong file này.**
+>
+> Chủ dự án báo hướng cũ **đi chệch**. Chốt lại bằng 17 quyết định, gọi chung là
+> bản **MỘT MẶT BÀN**. Luật mới đã vào `01_NGHIEP_VU_HIEN_HANH.md` và
+> `06_DUNG_LAM_LAI.md`; **chưa thi công dòng code nào**.
+>
+> | | |
+> |---|---|
+> | Giữ nguyên | Toàn bộ flow từ đầu tới Danh mục tổng hợp |
+> | Đổi | Mọi thao tác sửa của PĐD dồn về Danh mục tổng hợp; các màn khác chỉ để xem |
+> | Đổi | Sau tích rớt, ô số để trống — **PĐD gõ tay**, có nút "chia theo tỉ lệ Q" |
+> | Đổi | Khoá tổng phân bổ **chỉ chặn ở cổng chốt trình ký**, lúc gõ chỉ tô đỏ |
+> | Đổi | Chốt trình ký còn **một nút toàn bộ**; bỏ 49 nút chốt từng khoa |
+> | Đổi | Sửa số sau chốt Q: **gõ đè tại chỗ kèm lý do**, không mở chốt cả gói |
+> | Thêm | **Cuốn chiếu** mã rớt vào đợt bổ sung gần nhất, hệ tự tạo đợt T1/T5/T9 |
+> | Thêm | **Bốn mảng sau đấu thầu**: hợp đồng · giao hàng · cam kết 20/50/80 · 30% |
+> | Bỏ | Dán kết quả thầu từ Excel (kết quả về bản giấy) |
+> | Hoãn | Chỉ định thầu (gói riêng, flow khác) · 4 màn ngoài pipeline |
+>
+> Kế hoạch chi tiết + hai tài liệu nền: `.scratch/mot-mat-ban/`
+> (`KE_HOACH.md` · `UX_MOT_MAT_BAN.md` · `DU_LIEU_SAU_THAU.md`).
+
+> 🔴🔴 **ĐỔI HƯỚNG LẦN HAI — 23/08/2026. Đọc trước cả khối 21/08 ở trên.**
+>
+> Chủ dự án mô tả lại workflow đầy đủ 2 vai trò và chốt **10 quyết định** mới,
+> gọi là bản **VÒNG KHÉP KÍN**. Chẩn đoán ra nguyên nhân "lệch hướng": các chức
+> năng rớt → đổ sang mã tương đương → giỏ bổ sung → báo khoa **đã được build đầy
+> đủ đầu tháng 8**, nhưng đọc ba bảng của mô hình **trước v3**
+> (`goi_thau_ket_qua_ma` · `goi_thau_tien_do` · `goi_thau_moc`) nên **chết** sau
+> khi thay xương sống. Việc tiếp theo là **nối lại**, không phải xây mới.
+>
+> | | |
+> |---|---|
+> | Đổi | PĐD nhập rớt thẳng trên Tổng hợp; hai nhịp, nút "Xác nhận rớt" là cò |
+> | Đổi | Cuốn chiếu **mọi phần rớt chưa đổ đi đâu**, không chỉ mã rớt 100% |
+> | Đổi | Đợt bổ sung T1/T5/T9 **luôn mở sẵn**, không đợi PĐD tạo |
+> | Thêm | Đổ số rớt sang mã tương đương cùng mã quản lý, giữ nguyên số theo khoa |
+> | Thêm | Hộp thư noti hai chiều, xem xong là xoá |
+> | Thêm | Lệch ĐVT (68/446 nhóm) thì chặn, bắt PĐD gõ tay |
+> | Hoãn | **Miếng 0 và miếng 3** của bản một mặt bàn — sang nhánh sau |
+>
+> ⚠️ **Mục 3 bên dưới (bốn miếng của MỘT MẶT BÀN) đã lạc hậu ở miếng 0 và 3.**
+> Miếng 1 và 2 vẫn đúng. Kế hoạch hiện hành: `.scratch/vong-khep-kin/KE_HOACH.md`.
 
 > File này **chỉ nói hôm nay đang ở đâu**. Nhật ký đầy đủ theo ngày ở
 > `lich-su/NHAT_KY_TIEN_DO_2026.md`; tóm tắt thay đổi theo mốc ở
@@ -14,6 +57,10 @@ Cập nhật **20/08/2026**. Nhánh `phase-a-luong-de-xuat`, commit gần nhất
 **43/43 điều khoản kiểm được của workflow v3** — đã bấm thật trên giao diện ở
 đúng vai trò và đối chiếu số ở database (vòng test 18–19/08/2026). Cộng thêm
 3 điều khoản V2 (19, 20, 21) thi công và đo ngày 19/08.
+
+⚠️ **Con số 43/43 đo theo luật TRƯỚC 21/08/2026.** Bảy điều khoản trong đó vừa bị
+đảo (xem `06_DUNG_LAM_LAI.md`, khối 21/08). Chúng vẫn đang chạy đúng theo luật cũ
+— nhưng luật cũ không còn là đích nữa. Phải đo lại sau khi thi công một mặt bàn.
 
 **17/18 invariant** đo được và đúng. Cái còn lại (*một mã quản lý chỉ thuộc một
 gói con*) cần **quyết định nghiệp vụ**, không phải việc code — xem mục 4.
@@ -28,119 +75,176 @@ vòng xác nhận lần N → PĐD hiệu chỉnh → danh mục tổng hợp �
 đoạn thầu → ngoại lệ rớt → phân bổ số trúng → giỏ rớt → chốt trình ký →
 revision → Excel chính thức → tuỳ chọn 30%. Cả pipeline bổ sung.
 
-**Chưa test lần nào** — bốn màn ngoài pipeline (mục 11 của `01`):
+**Chưa test lần nào** — bốn màn ngoài pipeline (mục 11 của `01`). 🆕 **QĐ
+21/08/2026: cả bốn TẠM DỪNG, không build tiếp** — chưa ai xài lần nào, ưu tiên
+dồn cho một mặt bàn và bốn mảng sau thầu:
 
 | Màn | Vì sao vẫn quan trọng |
 |---|---|
 | Sổ thiếu hàng | **Nguồn duy nhất** đo nhu cầu thật; HIS chỉ có lượng đã cấp khi còn hàng. Cần để hiệu chuẩn công thức 2027 |
 | Điều chỉnh tiêu chí kỹ thuật | Khoa đề nghị sửa TSKT, PĐD duyệt |
 | Duyệt mã kỹ thuật khoa đề nghị | Việc duy nhất còn lại của tab Chờ duyệt |
-| Tiến độ sử dụng theo cam kết | Module sau khi hàng về, theo dõi 20/50/80 |
+| Tiến độ sử dụng theo cam kết | Module sau khi hàng về, theo dõi 20/50/80. ⚠️ **Đang hỏng ngầm** — view đọc 3 bảng của mô hình trước v3, cả ba 0 dòng, không ai ghi vào nữa. Không báo lỗi, chỉ hiện rỗng. Đây là việc **viết lại**, đã chuyển vào miếng 3 |
 
 **Chưa test ở quy mô thật.** Vòng test dùng 1 mã quản lý · 11–14 mã hàng ·
 2–3 khoa. Gói 18T thật có **hàng trăm mã và 62 khoa**. Luật V2 đổi hành vi đúng
 chỗ đông người dùng nhất (ai cũng sửa được cột chữ), nên vòng test quy mô thật
 càng cần.
 
-## 3. Việc còn nợ, theo thứ tự đề nghị
+## 3. Việc tiếp theo — bốn miếng của bản MỘT MẶT BÀN
+
+Xếp theo nguyên tắc: **thứ nào chặn việc của người thì làm trước.**
+
+### Miếng 0 — Dựng lại mẫu Excel gom dữ liệu (nhỏ, làm ngay)
+
+Workbook `database web.xlsx` lập 03/08 đang trỏ vào các bảng của mô hình **trước
+v3**; bốn sheet sau thầu (`HOP_DONG`, `TON_KHO_HANG_VE`, `KET_QUA_THAU`,
+`GOI_THAU_TIMELINE`) đều **0 dòng**. Chủ dự án điền vào đó thì dữ liệu **rơi vào
+hư không**.
+
+Dựng lại 2 sheet theo v3: **HỢP ĐỒNG** (số HĐ · ngày ký · thời hạn · nhà thầu ·
+mã hàng — **không cột giá**) và **GIAO HÀNG TỪNG LẦN** (ngày · mã hàng · khoa ·
+số lượng).
+
+→ Xong miếng này chủ dự án gom dữ liệu **song song** với lúc build. Đây là lý do
+nó đứng trước miếng grid dù nhỏ hơn nhiều.
+
+### Miếng 1 — Grid một mặt bàn (lớn nhất)
+
+Thiết kế chi tiết + ASCII mockup ở `.scratch/mot-mat-ban/UX_MOT_MAT_BAN.md`.
+
+| | Nội dung | Đụng tới |
+|---|---|---|
+| 1a | R1/R2/R3 thành **ba ô gõ riêng** trong dòng | `TongHopPdd.jsx` — vá luôn lỗi "mã đã rớt mất đường nhập giai đoạn 2/3" |
+| 1b | Cụm ô nhập số trúng theo khoa trong dòng sổ + nút "Chia theo tỉ lệ Q" | `TongHopPdd.jsx` + RPC phân bổ |
+| 1c | **Nới khoá cứng 2**: cho lưu nháp lệch, chặn ở cổng chốt | **Phải sửa server** — RPC đang chặn cứng, không phải việc của giao diện |
+| 1d | Hai chế độ cột · phím tắt gõ dọc · ô nổi nhập lý do · gỡ 2 tab Bàn điều hành | `TongHopPdd.jsx`, `BanDieuHanhPdd.jsx` |
+
+**Rủi ro cao nhất là 1c** — nới một trong ba khoá cứng toán học của hệ. Phải viết
+test khẳng định cổng chốt trình ký vẫn chặn được **trước** khi nới.
+
+Số đo hiện trạng (đếm từ code, một số bước là ước lượng — ghi rõ trong tài liệu
+UX): tích rớt một mã + gõ số trúng cho khoa hiện tốn **~11–14 click, 3 lần đổi
+ngữ cảnh**; sau khi làm còn **~3 click, 0 đổi màn**. Hoàn tất một gói con: **2
+màn/3 tab → 1 màn**. Hôm nay hai màn danh mục **không có phím tắt nào**
+(`grep onKeyDown` = 0 kết quả).
+
+### Miếng 2 — Cuốn chiếu mã rớt
+
+Lịch đợt bổ sung T1/T5/T9 · tự sinh đợt khi thiếu · tự đưa mã rớt vào đợt gần
+nhất của từng khoa kèm số · màn theo dõi của PĐD (`01` mục 6.2).
+Phụ thuộc miếng 1 — số rớt phải nhập được đã.
+
+### Miếng 3 — Bốn mảng sau đấu thầu
+
+Bảng hợp đồng + bảng giao hàng từng lần (neo `dot_goi_id` bằng **khoá ngoại
+thật**). Rồi **viết lại** view cam kết 20/50/80. Mua thêm 30% đã đúng v3, không
+đụng. Phụ thuộc miếng 0 — cần dữ liệu thật để thử.
+
+Khảo sát + thiết kế + **17 câu hỏi dữ liệu** cho chủ dự án:
+`.scratch/mot-mat-ban/DU_LIEU_SAU_THAU.md`.
+
+---
+
+## 3b. Nợ cũ — gộp vào lúc tiện tay
 
 **a. `danh_muc_khoa_o` — ĐÃ NEO ĐỢT 20/08/2026 (`patch_zzzzw`).** Thêm cột
-`dot_goi_id` khoá ngoại `ON DELETE CASCADE`, đưa vào khoá duy nhất, bắt mọi
-đường ghi/đọc phải có đợt. Đo thật sau khi vá: hai đợt bổ sung 2027 cùng ghi
-`goi_id='bo-sung'` + cùng khoa + cùng mã hàng giữ được **hai dòng riêng**; xoá
-một đợt thì dòng của đợt kia còn nguyên. Trước đó khoá cũ chỉ cho một dòng —
-đợt sau đè đợt trước.
+`dot_goi_id` khoá ngoại `ON DELETE CASCADE`, đưa vào khoá duy nhất. Đo thật sau
+khi vá: hai đợt bổ sung 2027 cùng ghi `goi_id='bo-sung'` giữ được **hai dòng
+riêng**; xoá một đợt thì dòng của đợt kia còn nguyên.
 
-**a2. Ba bảng cùng loại vẫn CHƯA neo đợt** — cùng lớp lỗi, chưa vá:
+**b. Ba bảng cùng lớp lỗi vẫn CHƯA neo đợt:**
 
-| Bảng | Hiện trạng |
+| Bảng | Hiện trạng | Gộp vào |
+|---|---|---|
+| `danh_muc_tong_hop_o` | có đợt nhưng nhét trong **CHUỖI** `'<goi>:dot:<id>'`, không phải khoá ngoại — nguồn của Lỗi 24 | **Miếng 1** đụng đúng bảng này |
+| `danh_muc_khoa_cot_cau_hinh` | cấu hình khoá/ẩn cột theo (goi_id, nam, khoa); cấu hình kỳ trước lẫn sang kỳ sau | Miếng 1d |
+| `dem_du_lieu_lam_viec` · `don_du_lieu_lam_viec` | nút "Kết thúc đợt & dọn" nhận (goi_id, nam) nên quét **cả 3 đợt bổ sung cùng năm** | Miếng 2 |
+
+**c. `.docx` chưa đồng bộ.** `Full workflow vtyt web.docx` còn thiếu QĐ 20/08
+(mục 8.2) **và toàn bộ bản MỘT MẶT BÀN 21/08**. Theo quy ước hai file phải khớp.
+
+**d. Sơ đồ `so-do-workflow/` lại lạc hậu** — vẽ lại 20/08 theo v3+V2, chưa có
+21/08. Lưu ý `generate-diagrams.mjs` **không sinh `.png`**, phải xuất tay theo
+`so-do-workflow/README.md`.
+
+**e. Cờ `da_di_thau` — kịch bản C còn hở.** `fn_chan_o_da_lock` +
+`fn_chan_xoa_o_da_chot` chặn mọi sửa ô tổng hợp khi có dòng
+`danh_muc_tong_hop_chot`, mà **không có nút nào trên giao diện mở lại**. Hiện vô
+hại vì không code frontend nào ghi bảng đó — nhưng **miếng 1 sẽ ghi vào bảng tổng
+hợp rất nhiều**, phải kiểm lại trước khi làm 1b.
+
+**f. Bổ sung smoke đường THÀNH CÔNG** cho các RPC hiện chỉ có `phai_loi`. Lỗ hổng
+đã chứng minh được: `cap_nhat_tong_phan_bo_khoa` từng hỏng hoàn toàn mà smoke vẫn
+xanh, vì phép thử duy nhất gọi nó là `phai_loi(...)` — nó ném lỗi thật nhưng vì
+lý do sai. **Miếng 1c nới khoá nên càng cần đường test này.**
+
+**g. Nhánh chết `su_kien_nhu_cau`** trong `xoa_du_lieu_kiem_thu` (bảng đã bỏ theo
+QĐ 17/08, gọi tới là `42P01`). Không nút nào gọi tới; gỡ phải viết lại nguyên hàm
+14KB.
+
+**h. Nút chết:** "Xem theo khoa ▾" ở `TongHopPdd.jsx:901` không có `onClick`.
+
+**i. Comment trỏ đường dẫn cũ** — sáu chỗ còn ghi `Tổng quan/...`. Tất cả là
+comment/docstring, không chỗ nào đọc file:
+
+| File | Dòng |
 |---|---|
-| `danh_muc_khoa_cot_cau_hinh` | cấu hình khoá/ẩn cột theo (goi_id, nam, khoa). Cấu hình kỳ trước lẫn sang kỳ sau |
-| `danh_muc_tong_hop_o` | có đợt nhưng nhét trong CHUỖI `'<goi>:dot:<id>'`, không phải khoá ngoại — chính là nguồn của Lỗi 24 |
-| `dem_du_lieu_lam_viec` · `don_du_lieu_lam_viec` | nút "Kết thúc đợt & dọn" nhận (goi_id, nam) nên vẫn quét **cả 3 đợt bổ sung cùng năm** |
+| `netlify.toml` | 2 |
+| `frontend/src/features/BanDieuHanhPdd.jsx` | 16 · 125 |
+| `frontend/src/lib/congThucSoLuong.js` | 3 |
+| `frontend/src/features/DeXuatTongHop.jsx` | 24 · 196 |
+| `backend/scripts/smoke_pipeline_hien_tai.py` | 7 · 10 |
 
-**b. `.docx` chưa đồng bộ mục 8.2.** Quyết định 20/08 (cổng chốt trình ký chỉ
-tính khoa đã gửi đề xuất) đã vào `01_NGHIEP_VU_HIEN_HANH.md` nhưng chưa vào
-`Full workflow vtyt web.docx`. Hai file theo quy ước phải luôn khớp.
-
-**c. Cờ `da_di_thau` — ĐÃ RÀ VÀ ĐÃ ĐÓNG 20/08/2026 (`patch_zzzzy`).**
-Kết quả rà khác giả thiết ban đầu: cờ **vẫn đang được bật**, không phải "v3
-không bật nữa". Đường bật là trigger `trg_chot_tong_hop_tra_ma_ve_khoa` trên
-bảng `danh_muc_tong_hop_chot` — cơ chế chốt **trước v3**, khoá theo
-(goi_id, nam_de_xuat), đơn vị mà v3 đã bỏ.
-
-Ba kịch bản hỏng tìm được, hai cái đã đóng:
-
-| | Kịch bản | Trạng thái |
-|---|---|---|
-| A | Một dòng insert vào `danh_muc_tong_hop_chot` (RLS cho PĐD insert thẳng qua PostgREST) bật cờ cho MỌI proposal khớp (gói, năm) → khoa thấy lại mã **ngay trong đợt đang chạy**, gửi lại, và **hiệu chỉnh của PĐD bị ghi đè im lặng**. Phá bất biến số 1 của v3 | ✅ đã đóng |
-| B | `goi_id='bo-sung'` lật cờ cho **cả ba** đợt bổ sung cùng lúc | ✅ đã đóng |
-| C | `fn_chan_o_da_lock` + `fn_chan_xoa_o_da_chot` chặn mọi sửa ô tổng hợp khi có dòng `danh_muc_tong_hop_chot`, mà **không có nút nào trên giao diện mở lại** | ⚠️ còn — hiện vô hại vì không code frontend nào ghi bảng đó |
-
-Điều tra cũng bác một giả thiết: màn "Hồ sơ trực tuyến" **không** có nút gọi
-`chot_danh_muc_da_di_thau` — đó là mã chết, đã gỡ.
-
-Còn lại: `.eq("da_di_thau", false)` ở `Function1.jsx:495` giờ là **no-op** (không
-ai bật cờ nữa). Để nguyên, vô hại. Việc "mã trở lại danh sách khoa cho kỳ sau"
-do **cấu trúc** lo: tập ẩn mã neo theo `dot_id`, kỳ sau là đợt mới nên tập ẩn rỗng.
-
-> **Một câu hỏi nghiệp vụ mới lộ ra, cần chủ dự án quyết:** hôm nay mã trở lại
-> danh sách khoa **ngay khi PĐD mở đợt mới**, bất kể đợt trước đã chốt trình ký
-> hay chưa. Mục 8.2 viết là "*sau khi* chốt trình ký". Cổng đó **chưa hề tồn
-> tại** ở đâu cả.
-
-**d. Bổ sung smoke đường THÀNH CÔNG** cho các RPC hiện chỉ có `phai_loi`. Đây
-là lỗ hổng **đã chứng minh được**, không phải phòng xa: `cap_nhat_tong_phan_bo_khoa`
-từng hỏng hoàn toàn mà smoke vẫn xanh, vì phép thử duy nhất gọi nó là
-`phai_loi(...)` — nó ném lỗi thật nhưng vì lý do sai.
-
-**e. Gỡ nhánh chết `su_kien_nhu_cau`** trong `xoa_du_lieu_kiem_thu` (trỏ vào
-bảng đã bỏ theo QĐ 17/08, gọi tới là `42P01`). Hiện **không nút nào gọi tới**
-nên vô hại; gỡ phải viết lại nguyên hàm 14KB.
-
-**f. Comment trong code còn trỏ đường dẫn/tên file cũ.** Sau khi gom tài liệu
-ngày 20/08, sáu chỗ còn ghi `Tổng quan/...` hoặc tên file cũ. **Tất cả đều là
-comment hoặc docstring — không chỗ nào đọc file, nên không ảnh hưởng chạy** (đã
-kiểm: `pytest` 115 đạt sau khi chuyển).
-
-| File | Dòng | Trỏ tới |
-|---|---|---|
-| `netlify.toml` | 2 | `Tổng quan/04_VAN_HANH_KY_THUAT.md` |
-| `frontend/src/features/BanDieuHanhPdd.jsx` | 16 · 125 | `05_TIEN_DO...` · `04_VAN_HANH...` |
-| `frontend/src/lib/congThucSoLuong.js` | 3 | `Tổng quan/02_CONG_THUC_SO_LUONG.md` |
-| `frontend/src/features/DeXuatTongHop.jsx` | 24 · 196 | phụ lục `01_NGHIEP_VU_VA_QUYET_DINH.md` (nay là `06_DUNG_LAM_LAI.md`) |
-| `backend/scripts/smoke_pipeline_hien_tai.py` | 7 · 10 | như trên |
-
-**g. Sơ đồ workflow — ĐÃ VẼ LẠI 20/08/2026.** `so-do-workflow/` nay khớp v3 + V2
-+ QĐ 20/08. Lưu ý: script `generate-diagrams.mjs` **không sinh `.png`** — đó
-chính là lý do bộ sơ đồ từng lệch. Sau khi chạy script phải xuất lại PNG theo
-hướng dẫn trong `so-do-workflow/README.md`.
+---
 
 ## 4. Đang chờ quyết định của chủ dự án
 
+### Đã trả lời 21/08/2026
+
+| Câu | Trả lời |
+|---|---|
+| Cột `giai_trinh_2627` nằm ở dòng nào trên grid | **Dòng sổ của khoa** |
+| Khoá cứng 3 (`R1+R2+R3 ≤ Q`) có nới như khoá 2 không | **Không — giữ chặn cứng ngay** |
+| Mã rớt tháng 4 → đợt T5, tháng 10 → đợt T1 năm sau | **Đúng** |
+| Màn theo dõi mã rớt hiển thị gì | Theo **từng mã hàng rớt**: khoa nào đã đề xuất mã đó, từng khoa đã có mã đó trong đợt bổ sung gần nhất chưa |
+| Hợp đồng có cột giá không | **Không** — giữ QĐ 17/08 |
+| Dữ liệu giao hàng dạng gì | **Từng lần giao** |
+| "Đã giao" ở mức nào | **Mã hàng × từng khoa** |
+
+### Còn mở
+
 | Việc | Nội dung |
 |---|---|
-| **3 mã quản lý vắt ngang gói con** | `N03.03.050.07` · `N05.02.030.14` · `N07.03.020.01`. Đây là invariant 2 chưa đạt. Để nguyên theo ý chủ dự án — tự phân trên web |
-| **Ai quyết cột chữ cuối cùng** | Luật hiện tại: một giá trị chung, **ai sửa sau đè — kể cả khoa đè lên PĐD**. Đã đo và xác nhận 20/08. Nếu muốn PĐD có quyền quyết cuối thì đó là đổi luật, phải làm miếng riêng |
-| **Khoa A sửa TSKT làm khoa B mất xác nhận** | Đã đo 20/08: đúng là vậy, mọi khoa cùng đề xuất mã đó đều mất xác nhận. Cần xác nhận đây là ý muốn |
+| **`usage_history_changelog` 48 MB** | Dọn giữ 12 tháng (thu ~45 MB), dọn sạch, hay để nguyên? Chưa gấp — 136/500 MB vẫn còn chỗ. Xoá = mất khả năng **hoàn tác mẻ nạp nhầm**, không mất số hiện hành |
+| **14 câu hỏi dữ liệu còn lại** | Mục 8 của `.scratch/mot-mat-ban/DU_LIEU_SAU_THAU.md` — nhóm hợp đồng, giao hàng, cam kết, nạp dữ liệu. Trả lời khi làm miếng 0 |
+| **PĐD sửa tổng mã hàng trước thầu** | Một mặt bàn chốt "gõ tay" cho phần **sau** rớt. Phần **trước** thầu vẫn giữ đường "gõ vào ô tổng → hệ chia theo tỉ lệ", chỉ thêm đường gõ thẳng ô từng khoa. Đây là **suy ra**, chưa hỏi — xem `01` mục 3 |
+| **3 mã quản lý vắt ngang gói con** | `N03.03.050.07` · `N05.02.030.14` · `N07.03.020.01`. Invariant 2 chưa đạt. Để nguyên theo ý chủ dự án — tự phân trên web |
+| **Khoa A sửa TSKT làm khoa B mất xác nhận** | Đã đo 20/08: đúng là vậy. Cần xác nhận đây là ý muốn |
+
+---
 
 ## 5. Lộ trình tới go-live
 
-| Chặng | Nội dung | Mốc |
+| Chặng | Nội dung | Trạng thái |
 |---|---|---|
-| 1. Nền | `dot_goi`, schema v2, migrate khoá | T9/2026 |
-| 2. Số theo khoa | `phan_bo_khoa`, tổng hợp thành view | T9/2026 |
-| 3. Chốt Q | Snapshot bất biến, nhánh "không phát sinh nhu cầu" | T10/2026 |
-| 4. Sau đấu thầu | Rớt 3 GĐ → số trúng → phân bổ → giỏ rớt → 30% | T10–11/2026 |
-| 5. Chốt & xuất | Revision 2 tầng, Excel chính thức | T11/2026 |
+| 1. Nền | `dot_goi`, schema v2, migrate khoá | ✅ chạy được, đo trên staging |
+| 2. Số theo khoa | `phan_bo_khoa`, tổng hợp thành view | ✅ |
+| 3. Chốt Q | Snapshot bất biến, nhánh "không phát sinh nhu cầu" | ✅ |
+| 4. Sau đấu thầu | Rớt 3 GĐ → số trúng → phân bổ → giỏ rớt → 30% | ✅ theo luật cũ; **miếng 1+2 viết lại phần lớn** |
+| 5. Chốt & xuất | Revision 2 tầng, Excel chính thức | ✅ theo luật cũ; **miếng 1d đụng tới** |
+| **6. Một mặt bàn** | Miếng 0 · 1 · 2 | 🆕 **chưa bắt đầu** |
+| **7. Sau đấu thầu mở rộng** | Miếng 3: hợp đồng · giao hàng · cam kết 20/50/80 | 🆕 **chưa bắt đầu** |
+| Test quy mô thật | Hàng trăm mã × 62 khoa | chưa làm |
 | Pilot 3–5 khoa | | T12/2026 |
 | Chuyển production | Theo thứ tự bắt buộc ở `04`, mục 4b | T12/2026 |
 | **Go-live** | | **01/01/2027** |
 
-> Năm chặng trên là kế hoạch lập ngày 17/08/2026. **Thực tế đã chạy nhanh hơn
-> kế hoạch rất nhiều** — tới 20/08/2026, cả năm chặng đều đã có đường đi chạy
-> được và đo được trên staging. Các mốc T9–T11 giờ là **thời gian đệm để test
-> ở quy mô thật và hiệu chỉnh**, không phải thời gian còn phải xây.
+> Năm chặng đầu lập ngày 17/08/2026 và đã chạy nhanh hơn kế hoạch rất nhiều — tới
+> 20/08 cả năm đều có đường đi chạy được trên staging. Thời gian đệm T9–T11 giờ
+> dùng cho **chặng 6 và 7**, cộng với test ở quy mô thật.
+
+---
 
 ## 6. Năm việc bắt buộc trước go-live
 
@@ -165,6 +269,20 @@ users 8 · vat_tu 3.327 · nhom_ky_thuat 1.369
 usage_history_current 141.623 · usage_history_changelog 291.622
 dot_de_xuat 0 · proposals 0 · phan_bo_khoa 0 · chot_q_phien 0
 ```
+
+**Dung lượng — đo thật 21/08/2026** (`pg_database_size`, không phải ước lượng):
+
+| | |
+|---|---|
+| Cả database | **136 / 500 MB** gói free |
+| `usage_history_current` | 63,67 MB |
+| `usage_history_changelog` | 48,23 MB |
+| Hai bảng đó cộng lại | **111,9 MB = 82% database** |
+| Bốn mảng sau đấu thầu sẽ tốn | **≈5–6 MB/năm** |
+
+Giả định "import dữ liệu sau thầu vào sẽ quá nặng" đã được **đo và bác bỏ**. Chỗ
+nặng là lịch sử HIS (~55 MB/năm), không phải dữ liệu nghiệp vụ. `patch_zn` chỉ
+nén `usage_history_current`, **không đụng** changelog.
 
 Tài khoản test — **mật khẩu tất cả là `111111`**:
 
