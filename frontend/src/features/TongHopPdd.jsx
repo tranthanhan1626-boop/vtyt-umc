@@ -17,6 +17,10 @@ import { xuatExcelDong, tenFileAnToan } from "../lib/xuatExcelDong";
 import { daiP50P75, doDaiKyMacDinh } from "../lib/congThucSoLuong";
 import {
   useDuLieuThau, ThanhGiaiDoanThau, OThauCuaDong, HopNhapRot, HopDoSangMa,
+  // 24/08/2026 — THIẾU TỪ LÚC THÊM (QĐ D15): dùng ở dòng sổ mà không import,
+  // nên sổ một dòng ở đợt đã chốt Q là trắng cả màn. Build không bắt được
+  // (ReferenceError lúc chạy), chỉ lộ ra khi bấm thật trên trình duyệt.
+  BangSoTrungTheoKhoa,
 } from "./CumThauTongHop";
 
 /*
@@ -489,6 +493,20 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   const rows = useMemo(
     () => apOverride(rowsGoc, overrideTheoMa, cotDayDu),
     [rowsGoc, overrideTheoMa, cotDayDu]
+  );
+
+  // MIẾNG 1C (24/08/2026): nháp chia còn thiếu nay LƯU ĐƯỢC, nên phải có chỗ
+  // đếm ra không thì nó nằm im giữa hàng trăm mã. Bấm băng đếm là lọc bảng
+  // còn đúng những dòng đó — không tách màn mới (luật một mặt bàn).
+  const [locChuaChiaDu, setLocChuaChiaDu] = useState(false);
+
+  const maChuaChiaDu = useMemo(
+    () => new Set([...thau.phanBo.values()].filter((p) => !p.da_khop).map((p) => p.ma_hang)),
+    [thau.phanBo]
+  );
+  const rowsHien = useMemo(
+    () => (locChuaChiaDu ? rows.filter((r) => maChuaChiaDu.has(r.ma_hang)) : rows),
+    [rows, locChuaChiaDu, maChuaChiaDu]
   );
 
   // Bản GỐC (chưa áp override) để đối chiếu — dùng cho việc đánh dấu ô đã bị
@@ -965,6 +983,27 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                   await taiLai();
                 }}
               />
+              {/* Băng đếm mã chưa chia đủ số trúng — đường vào duy nhất để dọn
+                  nốt các bản nháp còn thiếu (miếng 1c). */}
+              {thau.coPhienQ && maChuaChiaDu.size > 0 && (
+                <button type="button" onClick={() => setLocChuaChiaDu((v) => !v)}
+                  className={`mt-1.5 inline-flex items-center gap-1.5 rounded border px-2.5 py-1 text-[11px] font-medium ${
+                    locChuaChiaDu
+                      ? "border-amber-500 bg-amber-500 text-white"
+                      : "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"}`}>
+                  <AlertTriangle size={12} />
+                  Còn <b>{maChuaChiaDu.size}</b> mã chưa chia đủ số trúng về khoa
+                  <span className={locChuaChiaDu ? "opacity-90" : "opacity-60"}>
+                    · {locChuaChiaDu ? "bấm để xem lại tất cả" : "bấm để lọc ra"}
+                  </span>
+                </button>
+              )}
+              {locChuaChiaDu && maChuaChiaDu.size === 0 && (
+                <button type="button" onClick={() => setLocChuaChiaDu(false)}
+                  className="mt-1.5 inline-flex items-center gap-1.5 rounded border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-[11px] text-emerald-800">
+                  Đã chia đủ hết — bấm để xem lại tất cả
+                </button>
+              )}
               {thongBaoThau && (
                 <div className="mt-1.5 rounded bg-emerald-50 px-2.5 py-1 text-[11px] text-emerald-800">
                   {thongBaoThau}
@@ -1159,7 +1198,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => {
+            {rowsHien.map((r) => {
               const dongKhoa = dongLocked.has(r.ma_hang);
               return (
               <FragmentRow key={r.ma_hang}>
@@ -1460,7 +1499,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       </div>
 
       <div className="bg-slate-800 text-slate-300 text-xs px-4 py-1.5 flex items-center justify-between shrink-0">
-        <div>{tongMaHang} mã hàng · {rowMoRong.size} dòng đang mở · {cotLocked.size} cột lock · {dongLocked.size} dòng lock</div>
+        <div>{locChuaChiaDu ? `Đang lọc ${rowsHien.length}/${tongMaHang} mã chưa chia đủ` : `${tongMaHang} mã hàng`} · {rowMoRong.size} dòng đang mở · {cotLocked.size} cột lock · {dongLocked.size} dòng lock</div>
         <div>Số liệu + sửa ô/khoá đều lưu thật (Supabase) · audit theo ô · Cột theo "Tổng hợp danh mục đề xuất chuẩn pdd.xlsx"</div>
       </div>
 

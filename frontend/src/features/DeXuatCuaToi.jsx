@@ -7,6 +7,7 @@ import { NHAN_TRANG_THAI, fmtNgayGio, khoaNhom } from "./DeXuatTongHop";
 import { NHAN_GOI_THAU } from "./Function1";
 import { GOI_ID_MAP } from "../lib/cotChuan";
 import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
+import { moDanhMucDeXuat } from "../lib/moManExcel";
 
 // Tra ngược nhãn gói con (r.goi, vd "GMHS") -> khoá goiId dùng cho route
 // #danh-muc-de-xuat/<goiId>/<khoa> (khớp GOI_ID_MAP trong cotChuan.js).
@@ -153,11 +154,13 @@ export default function DeXuatCuaToi({ profile, goi, onMoHoSo }) {
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-umc-200 bg-umc-50 px-3 py-2.5">
           <span className="text-xs font-medium text-umc-900">Danh mục đề xuất của khoa (gộp mọi giỏ cùng gói con):</span>
           {danhMucTheoGoi.map((d) => (
-            <a key={d.goiId} href={`#danh-muc-de-xuat/${d.goiId}/${encodeURIComponent(d.donVi)}`}
+            <button key={d.goiId} type="button"
+              onClick={() => moDanhMucDeXuat(d.goiId, d.donVi)}
+              title="Mở trong tab trình duyệt mới"
               className="inline-flex items-center gap-1 rounded-md border border-umc-300 bg-white px-2.5 py-1.5 text-xs font-medium text-umc-800 hover:bg-umc-100">
               <ExternalLink size={13} /> {GOI_ID_MAP[d.goiId]?.nhan || d.goiId}
               {d.soGio > 1 && <span className="text-umc-500">({d.soGio} giỏ)</span>}
-            </a>
+            </button>
           ))}
         </div>
       )}
@@ -208,10 +211,12 @@ export default function DeXuatCuaToi({ profile, goi, onMoHoSo }) {
                         gói con. Nút này chỉ điều hướng sang đó; bấm "Mở phiếu
                         Excel" kiểu cũ sẽ mở một hồ sơ không bao giờ tồn tại. */}
                     {g.goiId && (
-                      <a href={`#danh-muc-de-xuat/${g.goiId}/${encodeURIComponent(g.don_vi)}`}
+                      <button type="button"
+                        onClick={() => moDanhMucDeXuat(g.goiId, g.don_vi)}
+                        title="Mở trong tab trình duyệt mới"
                         className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-white px-2.5 py-1.5 font-medium text-emerald-700 hover:bg-emerald-50">
                         <Sheet size={13} /> Mở Excel danh mục đề xuất
-                      </a>
+                      </button>
                     )}
                   </div>
                 )}

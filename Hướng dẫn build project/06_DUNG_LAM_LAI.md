@@ -108,6 +108,32 @@ sang bảng v3 mà **giữ nguyên tên cột** — năm màn sống lại cùng
 **Đừng dựng lại ba bảng đó.** Nếu thấy màn nào còn đọc chúng, việc đúng là trỏ
 sang nền v3, không phải bơm dữ liệu vào bảng cũ.
 
+### 🔴 Đuôi của bẫy này, gặp ngày 24/08/2026
+
+Câu **"giữ nguyên tên cột"** ở trên **không đúng hoàn toàn**.
+`v_ket_qua_thau_theo_khoa` viết lại hôm 23/08 đã **rớt mất ba cột** mà bốn màn
+còn đọc: `da_xu_ly` · `ket_qua_id` · `dot_id`. Ba màn vỡ hẳn với mã `42703`,
+trong đó có **Danh mục đề xuất của ĐVSD** — không phải hiện rỗng mà báo thẳng
+"Không tải được". Đã vá bằng `patch_zzzzzi`.
+
+Và `kiem_moi_man.py` **báo xanh suốt một ngày** trong lúc ba màn đã chết, vì nó
+dò bằng `select("*")` — chỉ chứng minh cái view TỒN TẠI. Nay nó đọc đúng danh
+sách cột trong từng `.select(...)` và khoá trong `.order(...)` rồi gọi thật bằng
+chính chúng.
+
+**Luật rút ra:** viết lại một view thì phải đối chiếu **từng cột** với mọi màn
+đang đọc nó, và chạy `kiem_moi_man.py` **sau mỗi lần viết lại view** — không chỉ
+khi thêm/bớt bảng.
+
+### 🔴 Bẫy anh em: component dùng mà không import
+
+Cùng ngày, `BangSoTrungTheoKhoa` được dùng ở `TongHopPdd.jsx:1427` nhưng **không
+có trong câu import** — sổ một dòng ở đợt đã chốt Q là **trắng cả màn**.
+`npm run build` cho qua vì đó là `ReferenceError` lúc chạy.
+
+**Đừng tin `build ✓` là màn hình chạy được.** Phải bấm thật ít nhất một lần trên
+đường mà thay đổi đi qua.
+
 ---
 
 ## Một thứ KHÔNG nằm trong bảng nhưng cũng đừng đụng

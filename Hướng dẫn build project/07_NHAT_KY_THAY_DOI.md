@@ -642,3 +642,100 @@ vì smoke dựng đợt với hai mã thuộc HAI nhóm khác nhau nên không c
 `pytest` **180** · `smoke_workflow_v3_staging` **24/24** ·
 `kiem_do_ma_tuong_duong` **8/8** · `kiem_moi_man` không lỗi ·
 `test:formula` OK · `build` ✓.
+
+---
+
+## 24/08/2026 (3) — Miếng 1c · 1d · tab riêng, và hai lỗi có sẵn lộ ra
+
+Chủ dự án yêu cầu làm nốt hai miếng còn nợ của bản MỘT MẶT BÀN, kèm một việc
+mới: hai màn dạng Excel phải mở sang tab trình duyệt riêng.
+
+### Miếng 1c — nới khoá cứng 2 ở đường ghi (QĐ A4 thi công)
+
+`patch_zzzzzh_noi_khoa_cung_2.sql`. Đổi **đúng một câu** trong
+`cap_nhat_phan_bo_trung_v3`: `tổng <> phải chia` → `tổng > phải chia`.
+
+| | Trước | Sau |
+|---|---|---|
+| Gõ 300/520 rồi lưu | chặn | **lưu được**, dòng đỏ "còn thiếu 220" |
+| Gõ 600/520 | chặn | **vẫn chặn** — làm dở luôn là THIẾU, không bao giờ là DƯ |
+| Xác nhận rớt / chốt trình ký khi còn lệch | chặn | **vẫn chặn** |
+
+Quyết định của chủ dự án 24/08: chỉ nới phía thiếu. Luật "khoa nào vượt phần
+của khoa đó thì phải nhập lý do" **giữ nguyên chặn ngay** — chỉ một ô, gõ một
+lần cho cả mã, không phải gánh nặng như khoá tổng trải trên 62 dòng khoa.
+
+Nới được là vì hai cổng dựa trên `da_khop` vẫn sống: `xac_nhan_rot_v3` (D14) và
+`chot_trinh_ky_toan_bo_v3` (zzzzzg). `test_patch_zzzzzh_contract.py` đọc thẳng
+hai patch đó, nên ai gỡ cổng sẽ làm đỏ test chứ không im lặng đi qua.
+
+Giao diện: nút đổi thành **"Lưu tạm (còn thiếu N)"** màu hổ phách khi thiếu, tắt
+khi dư. Thêm **băng đếm** đầu bảng Tổng hợp — "Còn N mã chưa chia đủ số trúng về
+khoa", bấm vào lọc bảng còn đúng N dòng đó; chia đủ hết trong lúc đang lọc thì
+hiện nút xanh thoát lọc, không kẹt bảng rỗng.
+
+### Miếng 1d — phím tắt gõ dọc (xong miếng 1)
+
+Trong bảng "Chia số trúng về khoa": **Enter** xuống khoa kế (tự bôi đen ô),
+**Shift+Enter** lên, **Esc** trả ô về số đã lưu, **Ctrl/⌘+Enter** lưu cả cụm.
+Phạm vi chỉ bảng này (QĐ 24/08) — grid Tổng hợp có ô khoá, cột ẩn và dòng mở
+rộng, cần vòng test riêng nên để lại.
+
+Ba phần còn lại của 1d đã xong sáng cùng ngày. **Miếng 1 khép lại.**
+
+### Hai màn Excel mở tab riêng
+
+`lib/moManExcel.js` — một chỗ duy nhất cho cả năm đường vào. Cửa sổ có đặt tên
+nên bấm lại cùng khoa/gói thì dùng đúng tab cũ. Tên kèm mã băm của chuỗi gốc:
+bỏ dấu tiếng Việt xong "Khoa Nội soi" và "Khoa Noi soi" ra cùng một tên, hai
+khoa sẽ giành nhau một tab.
+
+### Hai lỗi CÓ SẴN, tìm ra khi bấm thật
+
+**1. `BangSoTrungTheoKhoa` chưa bao giờ được import** vào `TongHopPdd.jsx` dù
+dùng ở dòng 1427. Cả cụm "Chia số trúng về khoa" của QĐ D15 **làm trắng màn**
+ngay khi PĐD sổ một dòng ở đợt đã chốt Q. `npm run build` cho qua vì đây là
+`ReferenceError` lúc chạy, không phải lỗi biên dịch.
+
+**2. `v_ket_qua_thau_theo_khoa` mất ba cột.** `patch_zzzzza` (23/08) viết lại
+nền của view sang v3, tài liệu ghi "giữ nguyên tên cột" nhưng thực tế rớt
+`da_xu_ly` · `ket_qua_id` · `dot_id`. Chạy đúng câu truy vấn của từng màn lên
+staging: **ba màn vỡ hẳn** với mã `42703` —
+
+```
+DanhMucDeXuatKhoa (Danh mục đề xuất của ĐVSD)  → da_xu_ly does not exist
+DanhMucDeXuatLinks                             → dot_id does not exist
+TongHopKetQuaThau                              → ket_qua_id does not exist
+```
+
+Vá bằng `patch_zzzzzi_tra_lai_cot_view_ket_qua.sql`. **Ý nghĩa `da_xu_ly` chốt
+24/08:** một mã rớt của khoa là ĐÃ XỬ LÝ khi phần rớt không còn tồn — đã đổ sang
+mã tương đương hoặc đã chuyển tiếp về đợt bổ sung (nguồn: `v_rot_chua_xu_ly_v3`).
+**Không** dùng cờ "khoa đã xem thông báo": xem thông báo không làm mã hết cần xử
+lý. `ket_qua_id` chỉ đóng vai khoá sắp xếp khi phân trang, dựng từ khoá ghép
+`phien_q_id:ma_hang:khoa` vì bảng nền không có cột id.
+
+### Vì sao vòng kiểm cũ không thấy
+
+`kiem_moi_man.py` dò mọi nguồn bằng `select("*")` — chỉ chứng minh cái view TỒN
+TẠI, không bao giờ kiểm những cột màn hình thật sự xin. Nay đọc đúng danh sách
+cột trong từng `.select(...)` và khoá sắp xếp trong `.order(...)` rồi gọi thật
+bằng chính chúng: **289 cột trên 60 bảng/view**. Hỏng thì tách ra dò từng cột để
+chỉ tên cột thiếu.
+
+Lưu ý khi đọc `.select`: phải bỏ phần trong ngoặc của bảng nhúng
+(`dot_de_xuat!inner(ten, thang_moc, …)`), nếu không sẽ gán cột của bảng NHÚNG
+cho bảng CHA — đúng cảnh báo giả `proposals.thang_moc` gặp lúc dựng vòng kiểm.
+
+Smoke cũng đo `da_xu_ly` **cả hai chiều**: còn phần rớt tồn thì phải `false`,
+xử lý xong thì phải `true`.
+
+### Nghiệm thu cuối ngày 24/08/2026 (3)
+
+`pytest` **187** · `smoke_workflow_v3_staging` **29/29** · `kiem_moi_man`
+không lỗi, 289 cột đều tồn tại · `test:formula` OK · `build` ✓ · 33 bảng về
+đúng số dòng ban đầu · đo trực tiếp trên Chrome hai màn với đợt #118.
+
+Một chỗ **chưa đo được**: phím tắt kiểm bằng sự kiện bàn phím dựng trong trang
+(ô 0 → ô 1, có bôi đen). Phím thật gõ từ hệ điều hành thì công cụ không đẩy tới
+được vì cửa sổ Chrome không giữ focus — chủ dự án cần gõ thử một lượt.

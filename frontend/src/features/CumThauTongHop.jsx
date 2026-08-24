@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, ArrowRightLeft, Check, Play, X } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
@@ -596,6 +596,9 @@ export function BangSoTrungTheoKhoa({ dotGoiId, maHang, phaiChia, onLuuXong }) {
   const [lyDo, setLyDo] = useState("");
   const [loi, setLoi] = useState("");
   const [dangLuu, setDangLuu] = useState(false);
+  // Miếng 1d (24/08/2026): gõ dọc 62 dòng khoa mà phải bấm chuột từng ô. Giữ
+  // ref theo THỨ TỰ HIỂN THỊ để Enter nhảy đúng ô kế tiếp.
+  const oRef = useRef([]);
 
   const tai = useCallback(async () => {
     const { data: phien } = await supabase.from("chot_q_phien")
@@ -619,10 +622,7 @@ export function BangSoTrungTheoKhoa({ dotGoiId, maHang, phaiChia, onLuuXong }) {
     () => Object.values(go).reduce((s, v) => s + (Number(v) || 0), 0), [go]);
   const lech = Number(phaiChia) - tongGo;
 
-  if (rows === null) return <p className="px-3 py-2 text-[11px] text-slate-400">Đang tải số trúng…</p>;
-  if (rows.length === 0) return null;
-
-  const luu = async () => {
+  const luu = useCallback(async () => {
     setDangLuu(true); setLoi("");
     const { error } = await supabase.rpc("cap_nhat_phan_bo_trung_v3", {
       p_dot_goi_id: dotGoiId, p_ma_hang: maHang,
@@ -633,7 +633,29 @@ export function BangSoTrungTheoKhoa({ dotGoiId, maHang, phaiChia, onLuuXong }) {
     if (error) { setLoi(error.message); return; }
     await tai();
     await onLuuXong?.();
+  }, [dotGoiId, maHang, go, lyDo, tai, onLuuXong]);
+
+  // Miếng 1d — phím tắt gõ dọc. Chỉ áp trong bảng này (QĐ 24/08/2026), KHÔNG
+  // áp cho grid Tổng hợp: grid đó có ô khoá, cột ẩn và dòng mở rộng, phạm vi
+  // rộng hơn hẳn và cần vòng test riêng.
+  //   Enter        xuống khoa kế tiếp        Shift+Enter  lên khoa trước
+  //   Esc          trả ô về số đã lưu        Ctrl/⌘+Enter lưu cả cụm
+  const phimTat = (e, i, khoa) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      setGo((p) => ({ ...p, [khoa]: String(rows[i].so_luong_trung) }));
+      return;
+    }
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    if (e.ctrlKey || e.metaKey) { if (lech >= 0 && !dangLuu) luu(); return; }
+    // Cuối bảng thì đứng yên — nhảy vòng về đầu làm người gõ tưởng còn dòng.
+    const ke = oRef.current[e.shiftKey ? i - 1 : i + 1];
+    if (ke) { ke.focus(); ke.select?.(); }
   };
+
+  if (rows === null) return <p className="px-3 py-2 text-[11px] text-slate-400">Đang tải số trúng…</p>;
+  if (rows.length === 0) return null;
 
   return (
     <div className="mt-2 rounded border border-umc-200 bg-white p-2">
@@ -642,7 +664,11 @@ export function BangSoTrungTheoKhoa({ dotGoiId, maHang, phaiChia, onLuuXong }) {
         <span className="text-slate-600">
           phải chia <b className="font-mono">{fmt(phaiChia)}</b> · đã gõ{" "}
           <b className={`font-mono ${lech === 0 ? "text-emerald-700" : "text-red-700"}`}>{fmt(tongGo)}</b>
-          {lech !== 0 && <span className="text-red-700"> · lệch {fmt(lech)}</span>}
+          {lech > 0 && <span className="text-amber-700"> · còn thiếu {fmt(lech)}</span>}
+          {lech < 0 && <span className="text-red-700"> · dư {fmt(-lech)}</span>}
+        </span>
+        <span className="ml-auto text-[10px] text-slate-400">
+          Enter xuống khoa kế · Shift+Enter lên · Esc trả về số cũ · Ctrl+Enter lưu
         </span>
       </div>
       <table className="w-auto">
@@ -655,7 +681,7 @@ export function BangSoTrungTheoKhoa({ dotGoiId, maHang, phaiChia, onLuuXong }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
+          {rows.map((r, i) => (
             <tr key={r.khoa}>
               <td className="px-3 py-1 text-xs">{r.khoa}</td>
               <td className="px-3 py-1 text-right font-mono text-xs text-slate-500">{fmt(r.q_khoa)}</td>
@@ -664,6 +690,9 @@ export function BangSoTrungTheoKhoa({ dotGoiId, maHang, phaiChia, onLuuXong }) {
               </td>
               <td className="px-3 py-1 text-right">
                 <input type="number" min="0" step="1" value={go[r.khoa] ?? ""}
+                  ref={(el) => { oRef.current[i] = el; }}
+                  onFocus={(e) => e.target.select()}
+                  onKeyDown={(e) => phimTat(e, i, r.khoa)}
                   onChange={(e) => setGo((p) => ({ ...p, [r.khoa]: e.target.value }))}
                   className="w-28 rounded border border-slate-300 px-1.5 py-1 text-right font-mono text-xs" />
               </td>
@@ -675,11 +704,22 @@ export function BangSoTrungTheoKhoa({ dotGoiId, maHang, phaiChia, onLuuXong }) {
         <input value={lyDo} onChange={(e) => setLyDo(e.target.value)}
           placeholder="Lý do (bắt buộc nếu có khoa vượt Q + phần nhận)"
           className="w-80 rounded border border-slate-300 px-2 py-1 text-xs" />
-        <button type="button" onClick={luu} disabled={dangLuu || lech !== 0}
-          title={lech !== 0 ? `Còn lệch ${fmt(lech)} — tổng phải bằng đúng ${fmt(phaiChia)}` : "Lưu và ghi về danh mục của khoa"}
-          className="rounded bg-umc-700 px-3 py-1 text-xs font-semibold text-white hover:bg-umc-800 disabled:opacity-40">
-          {dangLuu ? "Đang lưu…" : "Xác nhận chia"}
+        {/* MIẾNG 1C (QĐ A4, 24/08/2026): cho lưu bản còn THIẾU để mai gõ tiếp;
+            chỉ chặn khi DƯ. Server chặn cùng một luật (patch_zzzzzh), còn hai
+            cổng "xác nhận rớt" và "chốt trình ký" vẫn đòi chia đủ. */}
+        <button type="button" onClick={luu} disabled={dangLuu || lech < 0}
+          title={lech < 0 ? `Đang dư ${fmt(-lech)} — tổng không được vượt ${fmt(phaiChia)}`
+            : lech > 0 ? `Lưu bản còn thiếu ${fmt(lech)} để làm tiếp sau; chưa xác nhận rớt và chưa chốt trình ký được`
+            : "Lưu và ghi về danh mục của khoa"}
+          className={`rounded px-3 py-1 text-xs font-semibold text-white disabled:opacity-40 ${
+            lech > 0 ? "bg-amber-600 hover:bg-amber-700" : "bg-umc-700 hover:bg-umc-800"}`}>
+          {dangLuu ? "Đang lưu…" : lech > 0 ? `Lưu tạm (còn thiếu ${fmt(lech)})` : "Xác nhận chia"}
         </button>
+        {lech > 0 && (
+          <span className="text-[11px] text-amber-700">
+            Bản còn thiếu vẫn lưu được — dòng này giữ nguyên cảnh báo cho tới khi chia đủ.
+          </span>
+        )}
         {loi && <span className="text-[11px] text-red-700">{loi}</span>}
       </div>
     </div>

@@ -21,6 +21,14 @@ Hướng dẫn cho người và cho agent khi làm việc trong repo này.
 > `goi_thau_tien_do` · `goi_thau_moc` (mô hình trước v3). Màn đọc chúng **hiện
 > rỗng mà không báo lỗi** — đó là lớp lỗi khó thấy nhất của dự án này. Nghi ngờ
 > thì chạy `backend/scripts/kiem_moi_man.py --xac-nhan-staging`.
+>
+> 🔴 **24/08/2026 — lớp lỗi đó tái diễn hai lần trong một ngày.** Viết lại một
+> view mà rớt cột (`v_ket_qua_thau_theo_khoa` mất `da_xu_ly` · `ket_qua_id` ·
+> `dot_id`) làm vỡ hẳn ba màn; và một component dùng mà quên import làm trắng
+> màn Tổng hợp. **`build ✓` và `pytest` xanh KHÔNG chứng minh màn hình chạy.**
+> Chạy `kiem_moi_man.py` sau **mỗi** lần viết lại view — nay nó dò đúng từng cột
+> các màn xin, không còn dò `select("*")` — và bấm thật một lượt trên đường mà
+> thay đổi đi qua.
 
 Tối thiểu phải đọc trước khi sửa bất cứ thứ gì:
 

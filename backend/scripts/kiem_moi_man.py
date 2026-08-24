@@ -36,13 +36,88 @@ DA_KHAI_TU = {"goi_thau_ket_qua_ma", "goi_thau_tien_do", "goi_thau_moc"}
 def nguon_theo_man() -> dict[str, set[str]]:
     ra: dict[str, set[str]] = {}
     for f in sorted(FE.rglob("*.jsx")):
-        noi_dung = f.read_text(encoding="utf-8")
-        # bỏ dòng đã comment
-        song = "\n".join(d for d in noi_dung.splitlines() if not d.strip().startswith("//"))
+        song = bo_comment(f.read_text(encoding="utf-8"))
         bang = set(re.findall(r'\.from\("([a-z_0-9]+)"\)', song))
         if bang:
             ra[f.stem] = bang
     return ra
+
+
+def bo_comment(noi_dung: str) -> str:
+    return "\n".join(d for d in noi_dung.splitlines() if not d.strip().startswith("//"))
+
+
+# Cột hợp lệ để dò: chữ thường, số, gạch dưới. Bỏ "*", bỏ cột nhúng quan hệ
+# dạng `bang(cot)`, bỏ chuỗi dựng động (`${...}`) vì không đọc tĩnh được.
+COT_HOP_LE = re.compile(r"^[a-z_][a-z_0-9]*$")
+
+
+def bo_bang_nhung(sel: str) -> str:
+    """Bỏ phần trong ngoặc của bảng nhúng, ví dụ `vat_tu!inner(ma_quan_ly)`.
+
+    Không bỏ thì tách dấu phẩy sẽ gán cột của bảng NHÚNG cho bảng CHA — đúng
+    cảnh báo giả `proposals.thang_moc` gặp lúc dựng vòng kiểm này (thang_moc là
+    cột của `dot_de_xuat`, không phải của `proposals`). Chỉ giữ ký tự ở ngoài
+    mọi cặp ngoặc; phần còn lại như `dot_de_xuat!inner` có dấu `!` nên tự bị
+    COT_HOP_LE loại.
+    """
+    ra, sau = [], 0
+    for ch in sel:
+        if ch == "(":
+            sau += 1
+        elif ch == ")":
+            sau = max(0, sau - 1)
+        elif sau == 0:
+            ra.append(ch)
+    return "".join(ra)
+
+
+def cot_theo_nguon() -> dict[str, dict[str, set[str]]]:
+    """Cột mà từng màn THẬT SỰ xin ở từng bảng/view.
+
+    Vì sao cần: bản trước dò bằng `select("*")`, chỉ chứng minh cái view TỒN TẠI.
+    Ngày 24/08/2026 ba màn vỡ hẳn vì `v_ket_qua_thau_theo_khoa` bị viết lại và
+    rớt mất `da_xu_ly` · `ket_qua_id` · `dot_id` — mà vòng kiểm này vẫn báo xanh.
+    Đọc đúng danh sách cột trong `.select(...)` và khoá sắp xếp trong `.order(...)`
+    rồi gọi thật bằng chính chúng thì lớp lỗi đó không lọt được nữa.
+
+    Trả về {bảng: {cột: {màn, ...}}}.
+    """
+    ra: dict[str, dict[str, set[str]]] = {}
+    for f in sorted(FE.rglob("*.jsx")):
+        song = bo_comment(f.read_text(encoding="utf-8"))
+        for m in re.finditer(r'\.from\("([a-z_0-9]+)"\)', song):
+            bang = m.group(1)
+            # Cắt cửa sổ tại lần `.from(` kế tiếp để không lấn sang chuỗi gọi khác.
+            ke = song.find('.from("', m.end())
+            cua_so = song[m.end(): ke if ke != -1 else m.end() + 700]
+            cot: set[str] = set()
+            sel = re.search(r'\.select\(\s*"([^"]*)"', cua_so)
+            if sel:
+                cot |= {c.strip() for c in bo_bang_nhung(sel.group(1)).split(",")}
+            cot |= {o for o in re.findall(r'\.order\(\s*"([^"]*)"', cua_so)}
+            cot = {c for c in cot if COT_HOP_LE.match(c)}
+            if cot:
+                ra.setdefault(bang, {})
+                for c in cot:
+                    ra[bang].setdefault(c, set()).add(f.stem)
+    return ra
+
+
+def thu_cot(client: Client, bang: str, cot: list[str]) -> str | None:
+    """None nếu gọi được; chuỗi lỗi nếu không. Hỏng thì tách ra dò từng cột."""
+    try:
+        client.table(bang).select(",".join(sorted(cot))).limit(1).execute()
+        return None
+    except Exception:  # noqa: BLE001
+        pass
+    thieu = []
+    for c in sorted(cot):
+        try:
+            client.table(bang).select(c).limit(1).execute()
+        except Exception as exc:  # noqa: BLE001
+            thieu.append(f"{c} ({str(exc)[:60]})" if "does not exist" not in str(exc) else c)
+    return ", ".join(thieu) if thieu else None
 
 
 def dang_nhap(url: str, anon: str, email: str, mat_khau: str) -> Client:
@@ -105,6 +180,28 @@ def main() -> int:
                 if v[vai][0] == "LOI":
                     print(f"    {b:32s} [{vai}] {v[vai][1]}")
         return 1
+
+    # ── Vòng hai: dò ĐÚNG CỘT mà từng màn xin (thêm 24/08/2026) ──────────
+    theo_cot = cot_theo_nguon()
+    tong_cot = sum(len(v) for v in theo_cot.values())
+    print(f"\n🔎 Dò cột thật: {tong_cot} cột trên {len(theo_cot)} bảng/view")
+    cot_hong: dict[str, str] = {}
+    for bang, cot_map in sorted(theo_cot.items()):
+        if bang in DA_KHAI_TU or bang not in ket:
+            continue
+        # Vai nào đọc được bảng thì dò bằng vai đó.
+        vai = pdd if ket[bang]["pdd"][0] != "LOI" else khoa
+        loi_cot = thu_cot(vai, bang, list(cot_map))
+        if loi_cot:
+            cot_hong[bang] = loi_cot
+    if cot_hong:
+        print(f"\n❌ CỘT KHÔNG TỒN TẠI: {len(cot_hong)} bảng/view")
+        for bang, thieu in sorted(cot_hong.items()):
+            man = sorted({m for c in theo_cot[bang] for m in theo_cot[bang][c]})
+            print(f"    {bang:32s} thiếu: {thieu}")
+            print(f"    {'':32s}   ← {', '.join(man)}")
+        return 1
+    print("✅ Mọi cột các màn xin đều tồn tại")
 
     con_song_doc_bang_chet = {
         b: sorted(m for m, v in theo_man.items() if b in v)

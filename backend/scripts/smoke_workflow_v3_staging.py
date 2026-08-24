@@ -388,6 +388,43 @@ def main() -> int:
                    .select("so_luong_trung").eq("phien_q_id", q_id).eq("ma_hang", ma1).execute().data) == 150
         ok("phân bổ số trúng bắt tổng khớp và bắt lý do khi một khoa vượt Q")
 
+        # ── MIẾNG 1C (patch_zzzzzh, 24/08/2026): nới khoá cứng 2 ở đường ghi ──
+        # Cho lưu bản chia còn THIẾU (đang làm dở), vẫn chặn bản DƯ, và cổng
+        # xác nhận rớt vẫn phải chặn. Phép đầu đi ĐƯỜNG THÀNH CÔNG rồi ĐỌC LẠI số
+        # ở database chứ không chỉ `phai_loi` — đúng món nợ (f) trong 05_TRANG_THAI:
+        # một RPC từng hỏng hoàn toàn mà smoke vẫn xanh vì phép thử duy nhất là
+        # phai_loi (nó ném lỗi thật, nhưng vì lý do sai).
+        pdd.rpc("cap_nhat_phan_bo_trung_v3", {"p_dot_goi_id": dg_id, "p_ma_hang": ma1,
+            "p_phan_bo": {units[0]: 100, units[1]: 10},
+            "p_ly_do": "Lưu tạm bản chia còn dở (kiểm 1c)"}).execute()
+        con_thieu = admin.table("v_phan_bo_trung_theo_ma_v3") \
+            .select("da_chia,phai_chia,lech,da_khop") \
+            .eq("dot_goi_id", dg_id).eq("ma_hang", ma1).single().execute().data
+        assert float(con_thieu["da_chia"]) == 110 and not con_thieu["da_khop"], \
+            f"bản nháp còn thiếu phải LƯU ĐƯỢC và giữ nguyên cảnh báo: {con_thieu}"
+        assert float(con_thieu["lech"]) == 40
+        ok("1c: lưu được bản chia còn thiếu (110/150), dòng vẫn báo lệch 40")
+
+        phai_loi(lambda: pdd.rpc("cap_nhat_phan_bo_trung_v3", {
+            "p_dot_goi_id": dg_id, "p_ma_hang": ma1,
+            "p_phan_bo": {units[0]: 140, units[1]: 60},
+            "p_ly_do": "thử gõ dư"}).execute(), "phân bổ DƯ so với số phải chia")
+        ok("1c: gõ dư vẫn bị chặn ngay — chỉ nới phía thiếu")
+
+        # Cổng 1 vẫn chặn khi đang còn thiếu.
+        phai_loi(lambda: pdd.rpc("xac_nhan_rot_v3", {"p_dot_goi_id": dg_id,
+            "p_giai_doan": "chao_gia", "p_ma_hang": None}).execute(),
+            "xác nhận rớt khi bản chia mới lưu còn thiếu")
+        ok("1c: nới đường ghi nhưng cổng xác nhận rớt vẫn chặn khi còn thiếu")
+        # Cổng chốt trình ký KHÔNG đo ở đây: lúc này nó còn hỏng vì ba giai đoạn
+        # chưa hoàn thành và khoa chưa chốt, nên phép thử sẽ xanh vì lý do sai.
+        # Nó được đo ở đúng chỗ của nó phía dưới, sau khi mọi điều kiện kia đủ.
+
+        # Trả về bộ số đủ để các bước sau chạy trên cùng nền như trước.
+        pdd.rpc("cap_nhat_phan_bo_trung_v3", {"p_dot_goi_id": dg_id, "p_ma_hang": ma1,
+            "p_phan_bo": {units[0]: 140, units[1]: 10},
+            "p_ly_do": "Đặt lại sau bước kiểm 1c"}).execute()
+
         # ── VÒNG KHÉP KÍN (patch_zzzzz, QĐ 23/08/2026) ────────────────────
         chua = {(x["ma_hang"], x["khoa"]): float(x["con_lai"])
                 for x in pdd.table("v_rot_chua_xu_ly_v3").select("ma_hang,khoa,con_lai")
@@ -395,6 +432,22 @@ def main() -> int:
         assert chua, "v_rot_chua_xu_ly_v3 phải thấy phần rớt theo từng khoa"
         assert sum(v for (m, _), v in chua.items() if m == ma2) > 0, "mã rớt sạch phải còn nợ xử lý"
         ok("phần rớt chưa xử lý đọc được theo từng (mã hàng × khoa)")
+
+        # patch_zzzzzi (24/08/2026) — `da_xu_ly` của view kết quả phải NÓI THẬT.
+        # Cột này biến mất khi viết lại view hôm 23/08 và làm vỡ hẳn ba màn, trong
+        # đó có Danh mục đề xuất của ĐVSD. Đo cả HAI CHIỀU: lúc còn tồn phải false,
+        # sau khi xác nhận rớt xong phải true (phép còn lại ở dưới).
+        kq_khi_con_ton = admin.table("v_ket_qua_thau_theo_khoa") \
+            .select("ma_hang,don_vi,da_xu_ly,ket_qua_id,dot_id") \
+            .eq("dot_goi_id", dg_id).eq("ma_hang", ma2).execute().data
+        assert kq_khi_con_ton, "view kết quả phải thấy dòng của mã rớt sạch"
+        assert all(not x["da_xu_ly"] for x in kq_khi_con_ton), \
+            f"còn phần rớt tồn mà da_xu_ly đã true: {kq_khi_con_ton}"
+        assert all(x["ket_qua_id"] and x["dot_id"] for x in kq_khi_con_ton), \
+            "ket_qua_id và dot_id là khoá phân trang/lọc của bốn màn, không được rỗng"
+        assert len({x["ket_qua_id"] for x in kq_khi_con_ton}) == len(kq_khi_con_ton), \
+            "ket_qua_id phải duy nhất từng dòng, nếu không phân trang sẽ mất dòng"
+        ok("view kết quả: còn phần rớt tồn thì da_xu_ly = false; ket_qua_id duy nhất")
 
         phai_loi(lambda: pdd.rpc("day_so_luong_rot_v3", {
             "p_dot_goi_id": dg_id, "p_ma_hang_rot": ma2,
@@ -487,6 +540,13 @@ def main() -> int:
                        .select("con_lai").eq("dot_goi_id", dg_id).execute().data]
         assert all(v == 0 for v in con_lai_sau), f"còn sót phần rớt chưa xử lý: {con_lai_sau}"
         ok("sau xác nhận rớt không còn phần rớt nào rơi vào hư không")
+
+        kq_sau = admin.table("v_ket_qua_thau_theo_khoa").select("ma_hang,don_vi,da_xu_ly") \
+            .eq("dot_goi_id", dg_id).execute().data
+        assert kq_sau and all(x["da_xu_ly"] for x in kq_sau), \
+            f"xử lý hết rồi mà da_xu_ly còn false — mã sẽ nằm lại danh mục của khoa: " \
+            f"{[x for x in kq_sau if not x['da_xu_ly']][:5]}"
+        ok("view kết quả: xử lý xong thì da_xu_ly = true (mã rời danh mục làm việc của khoa)")
 
         # QĐ D11 (24/08/2026) — CHUYỂN TIẾP LẦN HAI PHẢI CỘNG DỒN, KHÔNG ĐÈ.
         # Trước 24/08 bước này VỠ hoàn toàn: proposals có UNIQUE

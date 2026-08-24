@@ -17,6 +17,7 @@ import {
   saiSoPhanBo,
   tongPhanBoQuyDoi,
 } from "../lib/deXuatMaQuanLy";
+import { moDanhMucDeXuat } from "../lib/moManExcel";
 
 const LY_DO_OPTIONS = [
   { value: "theo_lich_su", label: "Theo lịch sử sử dụng" },
@@ -1581,11 +1582,13 @@ export default function Function1({
         )}
 
         {!toanVien && khoaHienTai && goiIdDanhMuc && (
-          <a href={`#danh-muc-de-xuat/${goiIdDanhMuc}/${encodeURIComponent(khoaHienTai)}`}
-            className="flex items-center gap-2 rounded-lg border border-umc-200 bg-umc-50 px-3 py-2.5 text-sm font-medium text-umc-800 hover:bg-umc-100">
+          <button type="button"
+            onClick={() => moDanhMucDeXuat(goiIdDanhMuc, khoaHienTai)}
+            title="Mở trong tab trình duyệt mới"
+            className="flex w-full items-center gap-2 rounded-lg border border-umc-200 bg-umc-50 px-3 py-2.5 text-sm font-medium text-umc-800 hover:bg-umc-100">
             <ExternalLink size={15} />
             Xem Danh mục đề xuất của khoa
-          </a>
+          </button>
         )}
 
         <div className="bg-white border border-slate-200 rounded-lg p-3">

@@ -10,6 +10,7 @@ import { GOI_ID_MAP } from "../lib/cotChuan";
 import { gomTheoMaQuanLy, tinhTinhHinhKhoa, tinhTongQuan } from "../lib/tongHopDeXuat";
 import HoSoTrucTuyen from "./HoSoTrucTuyen";
 import GioRotToanVien from "./GioRotToanVien";
+import { moDanhMucDeXuat, moTongHopPdd } from "../lib/moManExcel";
 
 /*
  * BanDieuHanhPdd — màn hình làm việc chính của Phòng Điều dưỡng
@@ -519,7 +520,9 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   const moDanhMucKhoa = (khoa) => {
     const ds = goiConCuaKhoa(khoa);
     if (ds.length === 1) {
-      window.location.hash = `#danh-muc-de-xuat/${ds[0]}/${encodeURIComponent(khoa)}/${dot.id}`;
+      // Tab riêng như bảng Tổng hợp — PĐD phải giữ được Bàn điều hành để đối
+      // chiếu chứ không phải bấm qua bấm lại (yêu cầu 24/08/2026).
+      moDanhMucDeXuat(ds[0], khoa, dot.id);
       return;
     }
     setLoi(ds.length === 0
@@ -593,8 +596,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
                 // Mở TAB TRÌNH DUYỆT MỚI (yêu cầu 24/08/2026): bảng Tổng hợp là
                 // mặt bàn làm việc lâu, PĐD cần giữ Bàn điều hành ở tab cũ để
                 // đối chiếu chứ không phải bấm qua bấm lại.
-                window.open(`${window.location.pathname}#tong-hop-pdd/${g.goiId}/${dot.id}`,
-                  `tong-hop-${g.goiId}-${dot.id}`);
+                moTongHopPdd(g.goiId, dot.id);
               }}
               className="inline-flex items-center gap-1 rounded bg-umc-700 px-2.5 py-1 text-xs font-semibold text-white hover:bg-umc-800">
               <Layers3 size={13} /> {g.goi}

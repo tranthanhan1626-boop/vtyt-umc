@@ -5,6 +5,7 @@ import { fmt } from "../components/ChartDongBo";
 import { NHAN_GOI_THAU } from "./Function1";
 import { GOI_ID_MAP } from "../lib/cotChuan";
 import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
+import { moDanhMucDeXuat } from "../lib/moManExcel";
 
 // Tra ngược nhãn gói con (r.goi, vd "GMHS") -> khoá goiId dùng cho route
 // #danh-muc-de-xuat/<goiId>/<khoa>. Giống hệt DeXuatCuaToi.jsx.
@@ -361,10 +362,12 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
                           gói con. Gọi onMoHoSo("danh_muc_dvsd") như trước sẽ mở
                           một hồ sơ không bao giờ tồn tại. */}
                       {g.goiId && (
-                        <a href={`#danh-muc-de-xuat/${g.goiId}/${encodeURIComponent(g.don_vi)}`}
+                        <button type="button"
+                          onClick={() => moDanhMucDeXuat(g.goiId, g.don_vi)}
+                          title="Mở trong tab trình duyệt mới"
                           className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-white px-2.5 py-1.5 font-medium text-emerald-700 hover:bg-emerald-50">
                           <Sheet size={13} /> Mở Excel danh mục
-                        </a>
+                        </button>
                       )}
                     </div>
                   )}

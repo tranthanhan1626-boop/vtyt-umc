@@ -46,7 +46,7 @@ trình ký:
 | # | Khóa cứng | Chặn ở đâu |
 |---|---|---|
 | 1 | Tổng mã hàng sau quy đổi = tổng mã quản lý | Lúc khoa phân bổ xuống mã hàng |
-| 2 | Tổng phân bổ về các khoa = số trúng của mã | 🆕 **Ở cổng chốt trình ký**, không chặn lúc gõ |
+| 2 | Tổng phân bổ về các khoa = số trúng của mã | ✅ **Ở cổng chốt trình ký** (và cổng xác nhận rớt), không chặn lúc gõ — thi công 24/08 |
 | 3 | Tổng số rớt ba giai đoạn ≤ số tham gia thầu | Lúc PĐD nhập ngoại lệ rớt — **chặn ngay** |
 
 Ngoài ba khóa đó, hệ thống cảnh báo chứ không chặn.
@@ -57,6 +57,21 @@ dở hợp lệ mà tổng chưa khớp — chặn ngay thì không gõ được
 trên cùng một dòng, không có tình huống gõ dở hợp lệ nào làm tổng rớt vượt Q.
 Trong lúc gõ, dòng lệch khóa 2 bị **tô đỏ**; cổng chốt trình ký liệt kê mọi
 dòng còn lệch và không cho chốt.
+
+✅ **Thi công 24/08/2026 (`patch_zzzzzh`).** Nới đúng phía THIẾU:
+
+| Tình huống | Xử |
+|---|---|
+| Tổng gõ **< số phải chia** | **Lưu được** — đang làm dở, dòng đỏ "còn thiếu N" |
+| Tổng gõ **> số phải chia** | **Chặn ngay** — làm dở luôn là thiếu, dư nghĩa là gõ nhầm |
+| Xác nhận rớt · chốt trình ký khi còn lệch | **Chặn**, liệt kê mã còn lệch |
+
+Bản nháp còn thiếu nằm lại trong database, nên đầu bảng Tổng hợp có **băng đếm**
+"Còn N mã chưa chia đủ số trúng về khoa" — bấm vào lọc bảng còn đúng N dòng đó.
+
+Luật **"khoa nào vượt phần của khoa đó thì phải nhập lý do" giữ nguyên chặn
+ngay**: chỉ một ô, gõ một lần cho cả mã, không phải gánh nặng như khoá tổng trải
+trên 62 dòng khoa.
 
 ### Một ngoại lệ của "web không tự chạy"
 

@@ -82,8 +82,22 @@ Cập nhật **24/08/2026**. Nhánh `phase-a-luong-de-xuat`.
 > | Hoãn | **Miếng 0 và miếng 3** của bản một mặt bàn → nhánh sau (QĐ D6) |
 >
 > ⚠️ **Mục 3 bên dưới (bốn miếng của MỘT MẶT BÀN) đã lạc hậu ở miếng 0 và 3.**
-> Miếng 1 còn nợ phần 1c (nới khoá cứng 2 ở server) và 1d (hai chế độ cột, phím
-> tắt gõ dọc, gỡ 2 tab Bàn điều hành). Miếng 2 **đã xong** trong bản này.
+> **Miếng 1 và miếng 2 đã XONG HẲN** (1c và 1d khép lại cuối ngày 24/08).
+
+> 🔴 **24/08/2026 cuối ngày — HAI LỖI CÓ SẴN, cùng một lớp: màn chết mà không
+> ai biết.** Cả hai chỉ lộ ra khi bấm thật trên trình duyệt, `build` và
+> `pytest` đều cho qua.
+>
+> 1. `BangSoTrungTheoKhoa` dùng ở `TongHopPdd.jsx` mà **không có trong câu
+>    import** — sổ một dòng ở đợt đã chốt Q là **trắng cả màn**. Đã vá.
+> 2. `v_ket_qua_thau_theo_khoa` **mất ba cột** khi viết lại nền hôm 23/08
+>    (`da_xu_ly` · `ket_qua_id` · `dot_id`), làm **vỡ hẳn ba màn** — trong đó có
+>    Danh mục đề xuất của ĐVSD. Đã vá bằng `patch_zzzzzi`.
+>
+> **Bài học đã thành công cụ:** `kiem_moi_man.py` trước chỉ dò `select("*")` nên
+> báo xanh cả khi ba màn đã chết. Nay nó đọc **đúng danh sách cột** trong từng
+> `.select(...)` và `.order(...)` rồi gọi thật bằng chính chúng. Chạy nó sau
+> **mọi** lần viết lại view, không chỉ khi đổi bảng.
 
 > File này **chỉ nói hôm nay đang ở đâu**. Nhật ký đầy đủ theo ngày ở
 > `lich-su/NHAT_KY_TIEN_DO_2026.md`; tóm tắt thay đổi theo mốc ở
@@ -111,9 +125,10 @@ v3 mà giữ nguyên tên cột, nên 5 màn sống lại cùng lúc. Chỉ còn
 **17/18 invariant** đo được và đúng. Cái còn lại (*một mã quản lý chỉ thuộc một
 gói con*) cần **quyết định nghiệp vụ**, không phải việc code — xem mục 4.
 
-Nghiệm thu ngày **24/08/2026**: `pytest` **180** · `smoke_workflow_v3_staging`
-**24/24** · `kiem_do_ma_tuong_duong` **8/8** · 33 bảng về đúng số dòng ban đầu ·
-`kiem_moi_man` không lỗi · `test:formula` OK · `build` ✓.
+Nghiệm thu ngày **24/08/2026 (cuối ngày)**: `pytest` **187** ·
+`smoke_workflow_v3_staging` **29/29** · `kiem_do_ma_tuong_duong` **8/8** ·
+33 bảng về đúng số dòng ban đầu · `kiem_moi_man` không lỗi và **289 cột các màn
+xin đều tồn tại** · `test:formula` OK · `build` ✓.
 
 🆕 **Thêm một vòng kiểm mới**: `scripts/kiem_moi_man.py --xac-nhan-staging` quét
 mọi `.from()` / `.rpc()` của **36 màn** (63 bảng/view · 41 RPC), gọi thật bằng
@@ -177,11 +192,14 @@ Thiết kế chi tiết + ASCII mockup ở `.scratch/mot-mat-ban/UX_MOT_MAT_BAN.
 |---|---|---|
 | 1a | R1/R2/R3 thành **ba ô gõ riêng** trong dòng | `TongHopPdd.jsx` — vá luôn lỗi "mã đã rớt mất đường nhập giai đoạn 2/3" |
 | 1b | Cụm ô nhập số trúng theo khoa trong dòng sổ + nút "Chia theo tỉ lệ Q" | `TongHopPdd.jsx` + RPC phân bổ |
-| 1c | **Nới khoá cứng 2**: cho lưu nháp lệch, chặn ở cổng chốt | **Phải sửa server** — RPC đang chặn cứng, không phải việc của giao diện |
-| 1d | Hai chế độ cột · phím tắt gõ dọc · ô nổi nhập lý do · gỡ 2 tab Bàn điều hành | `TongHopPdd.jsx`, `BanDieuHanhPdd.jsx` |
+| 1c | ✅ **XONG 24/08** — nới khoá cứng 2: cho lưu bản còn THIẾU, vẫn chặn bản DƯ | `patch_zzzzzh` + `CumThauTongHop.jsx` |
+| 1d | ✅ **XONG 24/08** — hai chế độ cột · phím tắt gõ dọc · ô nhập lý do · gỡ 2 tab | `TongHopPdd.jsx`, `CumThauTongHop.jsx`, `BanDieuHanhPdd.jsx` |
 
-**Rủi ro cao nhất là 1c** — nới một trong ba khoá cứng toán học của hệ. Phải viết
-test khẳng định cổng chốt trình ký vẫn chặn được **trước** khi nới.
+**Miếng 1 đã khép lại.** Cách nới 1c: đổi đúng một câu trong
+`cap_nhat_phan_bo_trung_v3` (`tổng <> phải chia` → `tổng > phải chia`). Nới được
+là vì **hai cổng dựa trên `da_khop` vẫn sống** — `xac_nhan_rot_v3` (D14) và
+`chot_trinh_ky_toan_bo_v3`. `test_patch_zzzzzh_contract.py` đọc thẳng hai patch
+đó, ai gỡ cổng sẽ làm đỏ test. Đừng gỡ.
 
 Số đo hiện trạng (đếm từ code, một số bước là ước lượng — ghi rõ trong tài liệu
 UX): tích rớt một mã + gõ số trúng cho khoa hiện tốn **~11–14 click, 3 lần đổi
@@ -234,10 +252,12 @@ riêng**; xoá một đợt thì dòng của đợt kia còn nguyên.
 hại vì không code frontend nào ghi bảng đó — nhưng **miếng 1 sẽ ghi vào bảng tổng
 hợp rất nhiều**, phải kiểm lại trước khi làm 1b.
 
-**f. Bổ sung smoke đường THÀNH CÔNG** cho các RPC hiện chỉ có `phai_loi`. Lỗ hổng
-đã chứng minh được: `cap_nhat_tong_phan_bo_khoa` từng hỏng hoàn toàn mà smoke vẫn
-xanh, vì phép thử duy nhất gọi nó là `phai_loi(...)` — nó ném lỗi thật nhưng vì
-lý do sai. **Miếng 1c nới khoá nên càng cần đường test này.**
+**f. Bổ sung smoke đường THÀNH CÔNG** — 🆕 **đã trả một phần 24/08** cho đường
+phân bổ số trúng (3 phép mới: lưu bản thiếu rồi ĐỌC LẠI số ở database · gõ dư bị
+chặn · cổng xác nhận rớt vẫn chặn). Các RPC khác vẫn còn chỉ có `phai_loi`. Lỗ
+hổng đã chứng minh được: `cap_nhat_tong_phan_bo_khoa` từng hỏng hoàn toàn mà
+smoke vẫn xanh, vì phép thử duy nhất gọi nó là `phai_loi(...)` — nó ném lỗi thật
+nhưng vì lý do sai.
 
 **g. Nhánh chết `su_kien_nhu_cau`** trong `xoa_du_lieu_kiem_thu` (bảng đã bỏ theo
 QĐ 17/08, gọi tới là `42P01`). Không nút nào gọi tới; gỡ phải viết lại nguyên hàm
@@ -264,11 +284,13 @@ Xếp theo thứ tự nên làm:
 
 | # | Việc | Ghi chú |
 |---|---|---|
-| 1 | **Chủ dự án bàn với cấp trên** rồi chốt hướng | Đang dừng ở đây theo yêu cầu 24/08 |
-| 2 | Miếng **1c** — nới khoá cứng 2 ở **server** | Cho lưu nháp lệch, chỉ chặn ở cổng chốt trình ký (QĐ A4). Hiện `cap_nhat_phan_bo_trung_v3` vẫn chặn ngay lúc ghi |
-| 3 | Miếng **1d** còn lại — phím tắt gõ dọc | Chế độ hai cột đã xong 24/08; `grep onKeyDown` vẫn = 0 |
-| 4 | Nhánh **D6** — tiến độ gói thầu theo số quyết định / số hợp đồng | Thiết kế + 6 câu hỏi ở `.scratch/tien-do-goi-thau/BRAINSTORM.md` |
-| 5 | Vẽ lại sơ đồ theo D11–D15 | Sơ đồ đang ở mốc 23/08 |
+| ~~1~~ | ~~Miếng **1c**~~ | ✅ xong 24/08 — `patch_zzzzzh` |
+| ~~2~~ | ~~Miếng **1d**~~ | ✅ xong 24/08 — Enter/Shift+Enter/Esc/Ctrl+Enter trong bảng chia số trúng |
+| 1 | **Miếng 0** — dựng lại mẫu Excel gom dữ liệu | Nhỏ, và mở khoá cho chủ dự án gom dữ liệu SONG SONG với lúc build |
+| 2 | Nhánh **D6** — tiến độ gói thầu theo số quyết định / số hợp đồng | Thiết kế + 6 câu hỏi ở `.scratch/tien-do-goi-thau/BRAINSTORM.md` |
+| 3 | **Miếng 3** — bốn mảng sau đấu thầu | Phụ thuộc miếng 0 (cần dữ liệu thật để thử) |
+| 4 | Vẽ lại sơ đồ theo D11–D15 | Sơ đồ đang ở mốc 23/08 |
+| 5 | Nợ cũ mục 3b — neo đợt cho 3 bảng còn lại | Cùng lớp lỗi với `danh_muc_khoa_o` đã neo 20/08 |
 
 **Script mới thêm trong hai ngày 23–24/08:**
 
