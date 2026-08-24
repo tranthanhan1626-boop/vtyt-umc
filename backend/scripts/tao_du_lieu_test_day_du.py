@@ -40,6 +40,14 @@ GOI_CON = {
 }
 MOC_BO_SUNG = [(2026, 9), (2027, 1), (2027, 5), (2027, 9)]
 
+# SỐ TRÒN để dễ trình bày với lãnh đạo. Mọi số lượng là bội của 1.000, và mỗi mã
+# hàng chỉ dùng một hoặc hai mức — nhờ vậy:
+#   · tổng toàn viện của một mã = số khoa × mức, luôn tròn;
+#   · bấm "Chia theo tỉ lệ Q" ra số chia hết, không có phần dư lẻ;
+#   · số rớt gõ vào (5.000 · 10.000 …) trừ ra vẫn tròn.
+MUC_SO_LUONG = [1_000, 2_000, 5_000, 10_000, 20_000, 50_000]
+SO_KHOA_MOI_MA = [5, 10, 20, 25, 40]
+
 
 def xoa(cur) -> None:
     cur.execute("set session_replication_role = replica")
@@ -149,9 +157,18 @@ def main() -> int:
 
         dong = []
         for i, m in enumerate(ds_ma):
-            ds_khoa = khoa if i < 5 else random.sample(khoa, random.randint(4, 30))
-            for k in ds_khoa:
-                dong.append((m, k, NAM, random.randint(300, 80000), nhan_goi, dot_id, dot_goi_id))
+            # 5 mã đầu mỗi gói cho ĐỦ 50 khoa — dòng nặng nhất để xem grid.
+            ds_khoa = khoa if i < 5 else random.sample(khoa, random.choice(SO_KHOA_MOI_MA))
+            muc = random.choice(MUC_SO_LUONG)
+            if i % 3 == 2:
+                # cứ 3 mã thì 1 mã có hai mức (một nửa khoa gấp đôi) — vẫn tròn,
+                # nhưng cho thấy tỉ lệ giữa các khoa không đều nhau.
+                for j, k in enumerate(ds_khoa):
+                    dong.append((m, k, NAM, muc if j % 2 == 0 else muc * 2,
+                                 nhan_goi, dot_id, dot_goi_id))
+            else:
+                for k in ds_khoa:
+                    dong.append((m, k, NAM, muc, nhan_goi, dot_id, dot_goi_id))
         cur.executemany("""insert into proposals
             (ma_hang, don_vi, nam_de_xuat, so_luong, loai_mua_sam, goi,
              dot_id, dot_goi_id, created_by, is_current)
@@ -162,7 +179,11 @@ def main() -> int:
             [(goi_id, NAM, k, dot_goi_id) for k in khoa])
         cn.commit()
         tong_ma += len(ds_ma); tong_dong += len(dong)
-        print(f"  {nhan_goi:16s} {len(ds_ma):>3} mã · {len(dong):>5} dòng đề xuất")
+        cur.execute("""select sum(so_luong_hien_hanh) from phan_bo_khoa
+                       where dot_goi_id = %s""", (dot_goi_id,))
+        tong_sl = cur.fetchone()[0] or 0
+        print(f"  {nhan_goi:16s} {len(ds_ma):>3} mã · {len(dong):>5} dòng · "
+              f"tổng {int(tong_sl):,} đơn vị")
 
     # Chốt Q + mở giai đoạn Chào giá, bằng JWT thật của PĐD
     pdd = create_client(url, anon)
