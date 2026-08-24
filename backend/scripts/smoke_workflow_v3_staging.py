@@ -332,6 +332,27 @@ def main() -> int:
         assert float(results[ma2]["so_luong_trung"]) == 0
         ok("ba giai đoạn đúng thứ tự; rớt một phần và toàn bộ cho số trúng Q−R1−R2−R3")
 
+        # QĐ D14 (24/08/2026) — hệ KHÔNG tự chia số trúng nữa. Ghi rớt xong là ô
+        # của từng khoa về TRỐNG, PĐD gõ tay hoặc bấm "Chia theo tỉ lệ Q".
+        chua = admin.table("v_phan_bo_trung_theo_ma_v3") \
+            .select("ma_hang,trung,da_chia,da_khop") \
+            .eq("dot_goi_id", dg_id).eq("ma_hang", ma1).single().execute().data
+        assert float(chua["da_chia"]) == 0, \
+            f"ghi rớt xong ô số trúng theo khoa phải về TRỐNG, không chia lại: {chua}"
+        assert not chua["da_khop"]
+        # Cò phải BỊ CHẶN. Không có cổng này thì con_lai = q_khoa − 0 = cả Q,
+        # và hệ sẽ chuyển tiếp TOÀN BỘ Q sang đợt bổ sung.
+        phai_loi(lambda: pdd.rpc("xac_nhan_rot_v3", {"p_dot_goi_id": dg_id,
+            "p_giai_doan": "chao_gia", "p_ma_hang": None}).execute(),
+            "xác nhận rớt khi còn mã chưa chia hết số trúng")
+        ok("bỏ tự chia: ghi rớt là ô về trống, cò bị chặn cho tới khi chia xong (D14)")
+
+        tong_chia = pdd.rpc("chia_theo_ti_le_q_v3", {"p_dot_goi_id": dg_id,
+            "p_ma_hang": ma1}).execute().data
+        assert float(tong_chia) == float(chua["trung"]), \
+            f"chia theo tỉ lệ Q phải khớp số trúng: {tong_chia} ≠ {chua['trung']}"
+        ok("nút Chia theo tỉ lệ Q chia đúng bằng số trúng của mã")
+
         phai_loi(lambda: pdd.rpc("cap_nhat_phan_bo_trung_v3", {
             "p_dot_goi_id": dg_id, "p_ma_hang": ma1,
             "p_phan_bo": {units[0]: 140, units[1]: 10}, "p_ly_do": None,
@@ -457,6 +478,9 @@ def main() -> int:
             pdd.rpc("ghi_ngoai_le_rot_v3", {"p_dot_goi_id": dg_id, "p_ma_hang": ma_lan2,
                 "p_giai_doan": "danh_gia", "p_so_luong_rot": them_rot,
                 "p_rot_toan_bo": False, "p_ly_do": "Smoke rớt thêm lần hai"}).execute()
+            # rớt thêm → ô lại về trống → phải chia lại trước khi xác nhận
+            pdd.rpc("chia_theo_ti_le_q_v3", {"p_dot_goi_id": dg_id,
+                "p_ma_hang": ma_lan2}).execute()
             lan2 = pdd.rpc("xac_nhan_rot_v3", {"p_dot_goi_id": dg_id,
                 "p_giai_doan": "danh_gia", "p_ma_hang": ma_lan2}).execute().data
             assert lan2["so_dong"] > 0, f"chuyển tiếp lần hai không được rỗng: {lan2}"

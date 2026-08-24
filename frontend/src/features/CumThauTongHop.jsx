@@ -37,13 +37,14 @@ export function useDuLieuThau(dotGoiId) {
   const [chuaXuLy, setChuaXuLy] = useState(new Map());
   const [daChuyen, setDaChuyen] = useState(new Map());
   const [daChuyenTiep, setDaChuyenTiep] = useState(new Map());
+  const [phanBo, setPhanBo] = useState(new Map());
   const [dangTai, setDangTai] = useState(false);
   const [coPhienQ, setCoPhienQ] = useState(false);
 
   const tai = useCallback(async () => {
     if (!dotGoiId) {
       setKetQua(new Map()); setGiaiDoan([]); setChuaXuLy(new Map());
-      setDaChuyen(new Map()); setDaChuyenTiep(new Map()); setCoPhienQ(false);
+      setDaChuyen(new Map()); setDaChuyenTiep(new Map()); setPhanBo(new Map()); setCoPhienQ(false);
       return;
     }
     setDangTai(true);
@@ -56,7 +57,7 @@ export function useDuLieuThau(dotGoiId) {
     // server. Bản cũ tải ba nguồn cấp (mã × khoa): ở quy mô 250 mã × 60 khoa đó
     // là 1.608 dòng, hai lượt phân trang, 3,4 s — chiếm quá nửa thời gian mở
     // bảng (đo thật 24/08/2026). Cấp mã × khoa nay chỉ màn Theo dõi mới cần.
-    const [gd, kq, rot] = await Promise.all([
+    const [gd, kq, rot, pb] = await Promise.all([
       supabase.from("giai_doan_thau_v3").select("giai_doan, thu_tu, trang_thai")
         .eq("dot_goi_id", dotGoiId).order("thu_tu"),
       phienId
@@ -69,8 +70,16 @@ export function useDuLieuThau(dotGoiId) {
           .select("ma_hang, con_lai, da_chuyen, da_chuyen_tiep, ma_hang_nhan, co_khoa_chua_tung_dung")
           .eq("phien_q_id", phienId).range(f, t), { order: "ma_hang" })
         : Promise.resolve({ data: [] }),
+      // QĐ D14 (24/08/2026): bỏ tự chia số trúng, PĐD gõ tay. Cột "Đã chia"
+      // là chỗ duy nhất thấy dòng nào còn phải gõ (khoá cứng 2).
+      phienId
+        ? fetchAllRows((f, t) => supabase.from("v_phan_bo_trung_theo_ma_v3")
+          .select("ma_hang, trung, da_chia, lech, da_khop, so_khoa")
+          .eq("phien_q_id", phienId).range(f, t), { order: "ma_hang" })
+        : Promise.resolve({ data: [] }),
     ]);
 
+    setPhanBo(new Map((pb.data || []).map((r) => [r.ma_hang, r])));
     setGiaiDoan(gd.data || []);
     setKetQua(new Map((kq.data || []).map((r) => [r.ma_hang, r])));
 
@@ -103,15 +112,22 @@ export function useDuLieuThau(dotGoiId) {
     [chuaXuLy]
   );
 
+  // Dòng còn phải gõ số trúng — cò "Xác nhận rớt" bị server chặn khi còn dòng này.
+  const soChuaChia = useMemo(
+    () => [...phanBo.values()].filter((p) => !p.da_khop && chuaXuLy.has(p.ma_hang)).length,
+    [phanBo, chuaXuLy]
+  );
+
   return {
     ketQua, giaiDoan, giaiDoanDangChay, chuaXuLy, daChuyen, daChuyenTiep,
-    tongChuaXuLy, dangTai, coPhienQ, taiLaiThau: tai,
+    phanBo, soChuaChia, tongChuaXuLy, dangTai, coPhienQ, taiLaiThau: tai,
   };
 }
 
 /** Thanh giai đoạn + nút xác nhận rớt, đặt trên thanh công cụ của Tổng hợp. */
 export function ThanhGiaiDoanThau({
-  dotGoiId, giaiDoan, giaiDoanDangChay, tongChuaXuLy, coPhienQ, onXong, onLoi,
+  dotGoiId, giaiDoan, giaiDoanDangChay, tongChuaXuLy, coPhienQ, soChuaChia = 0,
+  onXong, onLoi,
 }) {
   const [dangChay, setDangChay] = useState("");
   // Không dùng window.confirm/prompt: hộp thoại của trình duyệt khoá cả trang,
@@ -210,7 +226,14 @@ export function ThanhGiaiDoanThau({
           </span>
         );
       })}
-      {tongChuaXuLy > 0 && !hoiXacNhan && (
+      {tongChuaXuLy > 0 && soChuaChia > 0 && (
+        <span className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] text-amber-900"
+          title='Từ 24/08/2026 hệ không tự chia số trúng nữa. Gõ số cho từng khoa, hoặc bấm "Chia theo tỉ lệ Q" trên dòng.'>
+          <AlertTriangle size={12} />
+          Còn <b>{soChuaChia}</b> mã chưa chia hết số trúng về khoa — chưa xác nhận rớt được
+        </span>
+      )}
+      {tongChuaXuLy > 0 && soChuaChia === 0 && !hoiXacNhan && (
         <button type="button" onClick={() => setHoiXacNhan(true)} disabled={!!dangChay}
           title="Đưa phần rớt chưa đổ đi đâu vào đợt bổ sung của từng khoa"
           className="ml-1 inline-flex items-center gap-1 rounded bg-red-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-red-700 disabled:opacity-50">
@@ -260,7 +283,8 @@ export function ThanhGiaiDoanThau({
 
 /** Sáu ô đuôi dòng: Q · R1 · R2 · R3 · Trúng · Xử lý rớt. */
 export function OThauCuaDong({
-  row, ketQua, chuaXuLy, daChuyen, daChuyenTiep, giaiDoanDangChay, onSuaRot, onDoMa,
+  row, ketQua, chuaXuLy, daChuyen, daChuyenTiep, phanBo, giaiDoanDangChay,
+  onSuaRot, onDoMa, onChiaTiLe, dangChia,
 }) {
   const kq = ketQua.get(row.ma_hang);
   const oSo = "px-2 py-1 text-right font-mono text-[12px] tabular-nums";
@@ -268,7 +292,7 @@ export function OThauCuaDong({
   if (!kq) {
     return (
       <>
-        {[0, 1, 2, 3, 4, 5].map((i) => (
+        {[0, 1, 2, 3, 4, 5, 6].map((i) => (
           <td key={i} className={`${oSo} text-slate-300`} style={{ background: "#fafafa" }}>—</td>
         ))}
       </>
@@ -276,6 +300,7 @@ export function OThauCuaDong({
   }
 
   const conLai = chuaXuLy.get(row.ma_hang) || 0;
+  const pb = phanBo?.get(row.ma_hang) || null;
   const chuyen = daChuyen.get(row.ma_hang);
   const cuon = daChuyenTiep.get(row.ma_hang) || 0;
 
@@ -314,6 +339,24 @@ export function OThauCuaDong({
       {oRot("r3", "danh_gia")}
       <td className={`${oSo} font-semibold text-emerald-700`} style={{ background: "#f0fdf4" }}>
         {fmt(kq.so_luong_trung)}
+      </td>
+      {/* QĐ D14 (24/08/2026): hệ không tự chia số trúng về khoa nữa. Cột này là
+          chỗ duy nhất thấy dòng nào PĐD còn phải gõ — khoá cứng 2. */}
+      <td className="px-2 py-1 text-right text-[12px]" style={{ background: pb && !pb.da_khop ? "#fef2f2" : "#fff" }}>
+        {!pb ? <span className="text-slate-300">—</span>
+          : pb.da_khop
+            ? <span className="font-mono tabular-nums text-slate-600">{fmt(pb.da_chia)}</span>
+            : (
+              <span className="inline-flex items-center gap-1">
+                <span className="font-mono tabular-nums font-semibold text-red-700">{fmt(pb.da_chia)}</span>
+                <button type="button" disabled={dangChia === row.ma_hang}
+                  onClick={() => onChiaTiLe(row)}
+                  title={`Còn lệch ${fmt(pb.lech)} — bấm để chia ${fmt(kq.so_luong_trung)} về ${pb.so_khoa} khoa theo tỉ lệ Q`}
+                  className="rounded border border-umc-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-umc-700 hover:bg-umc-50 disabled:opacity-50">
+                  {dangChia === row.ma_hang ? "…" : "Chia"}
+                </button>
+              </span>
+            )}
       </td>
       <td className="px-2 py-1 text-[11px]" style={{ minWidth: 190 }}>
         {conLai > 0 && (

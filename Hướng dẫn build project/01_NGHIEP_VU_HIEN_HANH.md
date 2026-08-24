@@ -409,10 +409,26 @@ Mã rớt mà trong **cùng mã quản lý** còn mã khác trúng thì PĐD đ�
 | Rớt toàn bộ | Phân bổ cho mọi khoa = 0 |
 | Trúng một phần | 🆕 Ô của từng khoa **để trống, PĐD gõ tay** |
 
-🆕 **PĐD gõ tay, hệ không tự chia** (QĐ 21/08/2026). Trước đây hệ điền sẵn theo
-tỉ lệ Q rồi PĐD sửa đè; giờ ô để trống và PĐD tự quyết từng khoa. Vẫn có **nút
-"Chia theo tỉ lệ Q"** trên dòng để bấm khi mã có nhiều khoa và không muốn gõ
-từng dòng — bấm là điền sẵn, sau đó sửa tiếp bình thường.
+🆕 **PĐD gõ tay, hệ không tự chia** (QĐ A3 21/08/2026 · **thi công 24/08/2026,
+QĐ D14**). Trước đây hệ điền sẵn theo tỉ lệ Q rồi PĐD sửa đè; giờ ô để trống và
+PĐD tự quyết từng khoa. Vẫn có **nút "Chia theo tỉ lệ Q"** trên dòng để bấm khi
+mã có nhiều khoa và không muốn gõ từng dòng — bấm là điền sẵn, sau đó sửa tiếp.
+
+**Ba mảnh của luật này phải đi cùng nhau, thiếu một là hỏng nặng:**
+
+| | Mảnh | Nếu thiếu |
+|---|---|---|
+| 1 | Ghi hoặc bỏ ngoại lệ rớt → ô số trúng của mọi khoa **về trống** | hệ chia lại theo tỉ lệ Q và **xoá mất phân bổ PĐD đã gõ** |
+| 2 | Nút **"Chia theo tỉ lệ Q"** — cùng phép chia cũ, chỉ chạy khi bấm | PĐD phải gõ tay cả trăm dòng |
+| 3 | Cổng **"Xác nhận rớt" chặn khi còn dòng chưa chia** | thảm hoạ: ô trống nghĩa là số trúng = 0, mà phần rớt của khoa tính bằng *Q của khoa trừ số trúng*, nên hệ tưởng khoa rớt **toàn bộ Q** và chuyển tiếp cả Q sang đợt bổ sung |
+
+**Vì sao phải bỏ tự chia** — đo thật 24/08/2026: hệ chia lại số trúng theo tỉ lệ
+Q **mỗi lần** ghi hoặc bỏ ngoại lệ rớt. Hai hậu quả: xoá mất phân bổ PĐD đã
+chỉnh tay; và tỉ lệ giữa các khoa **không đứng yên** qua ba giai đoạn, nên phần
+đã chuyển tiếp theo tỉ lệ cũ bị vênh — khoa B từng thừa 23 đơn vị (mục 6).
+
+Cột **"Đã chia"** trên bảng Tổng hợp là chỗ duy nhất thấy dòng nào còn phải gõ:
+lệch thì ô nền đỏ và có nút **Chia** ngay tại chỗ.
 
 Dòng sổ của khoa hiện sẵn **Q của khoa đó** và **số trúng của mã** để PĐD đối
 chiếu trong lúc gõ. Số gõ vào là **cột riêng, không đè lên Q** — Q là snapshot

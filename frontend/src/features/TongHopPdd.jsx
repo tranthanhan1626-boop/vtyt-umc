@@ -374,6 +374,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   const [formRot, setFormRot] = useState(null);
   const [formDoMa, setFormDoMa] = useState(null);
   const [thongBaoThau, setThongBaoThau] = useState("");
+  const [dangChiaTiLe, setDangChiaTiLe] = useState("");
 
   const taiLai = useCallback(async () => {
     setDangTai(true);
@@ -927,6 +928,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                 giaiDoanDangChay={thau.giaiDoanDangChay}
                 tongChuaXuLy={thau.tongChuaXuLy}
                 coPhienQ={thau.coPhienQ}
+                soChuaChia={thau.soChuaChia}
                 onLoi={(m) => setLoi(m)}
                 onXong={async (m) => {
                   setThongBaoThau(m || "");
@@ -1052,6 +1054,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
             <col style={{ width: 76 }} />
             <col style={{ width: 76 }} />
             <col style={{ width: 88 }} />
+            <col style={{ width: 104 }} />
             <col style={{ width: 200 }} />
           </colgroup>
           <thead>
@@ -1078,7 +1081,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                 );
               })}
               <th className="bg-emerald-800">Khoa đề xuất</th>
-              <th className="bg-red-900" colSpan={6}>Kết quả đấu thầu</th>
+              <th className="bg-red-900" colSpan={7}>Kết quả đấu thầu</th>
             </tr>
             <tr className="col-row">
               <th className="freeze" style={{ width: 30, left: 0 }}></th>
@@ -1114,6 +1117,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
               <th style={{ minWidth: 68 }} title="Rớt ở giai đoạn Mở thầu">R2</th>
               <th style={{ minWidth: 68 }} title="Rớt ở giai đoạn Đánh giá">R3</th>
               <th style={{ minWidth: 80 }} title="Q trừ R1 R2 R3">Trúng</th>
+              <th style={{ minWidth: 96 }} title="Tổng đã chia về các khoa — phải bằng Trúng thì mới xác nhận rớt được">Đã chia</th>
               <th style={{ minWidth: 190 }}>Xử lý rớt</th>
             </tr>
           </thead>
@@ -1295,7 +1299,20 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                   <OThauCuaDong
                     row={r} ketQua={thau.ketQua} chuaXuLy={thau.chuaXuLy}
                     daChuyen={thau.daChuyen} daChuyenTiep={thau.daChuyenTiep}
+                    phanBo={thau.phanBo}
                     giaiDoanDangChay={thau.giaiDoanDangChay}
+                    dangChia={dangChiaTiLe}
+                    onChiaTiLe={async (r) => {
+                      // QĐ D14: hệ không tự chia nữa; đây là nút bấm khi PĐD
+                      // không muốn gõ từng khoa.
+                      setDangChiaTiLe(r.ma_hang);
+                      const { error } = await supabase.rpc("chia_theo_ti_le_q_v3", {
+                        p_dot_goi_id: dotGoiId, p_ma_hang: r.ma_hang,
+                      });
+                      setDangChiaTiLe("");
+                      if (error) { setLoi(error.message); return; }
+                      await thau.taiLaiThau();
+                    }}
                     onSuaRot={(row, giaiDoan, giaTri) =>
                       setFormRot({ row, giaiDoan, giaTri, dotGoiId })}
                     onDoMa={(row, conLai) => setFormDoMa({ row, conLai, dotGoiId })}
@@ -1311,7 +1328,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                       className="row-expand"
                     >
                       <td style={{ width: 30, background: "#f8fafc" }}></td>
-                      <td colSpan={cotHienThi.length + 7} className="qtdx-cell" style={{ background: "#f8fafc" }}>
+                      <td colSpan={cotHienThi.length + 8} className="qtdx-cell" style={{ background: "#f8fafc" }}>
                         <div className="pl-4 py-1">
                           <div className="text-[11px] text-slate-500 mb-1.5">
                             Số lượng đề xuất chi tiết từ {r.khoaDeXuat.length} khoa cho mã <b>{r.ma_hang}</b> · <em>{r.ten_vt_2627?.slice(0, 60)}...</em>

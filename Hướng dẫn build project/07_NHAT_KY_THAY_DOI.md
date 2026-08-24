@@ -529,3 +529,32 @@ pytest **160** · smoke v3 **23/23** · `kiem_moi_man` không lỗi ·
    trúng PĐD đã chỉnh tay** mỗi lần thêm/bớt ngoại lệ rớt. Chưa quyết cách xử.
 2. Miếng 1c (nới khoá cứng 2 ở server) · 1d (hai chế độ cột, phím tắt gõ dọc).
 3. Nhánh D6 — tiến độ gói thầu theo số quyết định / số hợp đồng.
+
+### Bổ sung cuối ngày 24/08 — QĐ D14: bỏ tự chia số trúng
+
+Chủ dự án chốt sau khi đọc phần "việc còn nợ": *"không cần đồng bộ phân bổ số
+trúng nữa, PĐD gõ tay hết"*. Đây thực ra là thi công **QĐ A3 ngày 21/08** —
+chốt từ lâu nhưng chưa làm, và chính chỗ chưa làm đó đẻ ra hai lỗi hôm nay.
+
+`patch_zzzzze` — ba mảnh đi cùng nhau:
+
+1. `fn_dong_bo_phan_bo_trung_v3` nay **XOÁ TRẮNG** ô số trúng theo khoa thay vì
+   chia lại. Giữ nguyên tên hàm để không phải dựng lại bốn hàm đang gọi nó; tên
+   mang nghĩa lịch sử, đã ghi `comment on function` cảnh báo.
+2. `fn_chia_theo_ti_le_q_v3` + RPC `chia_theo_ti_le_q_v3` — phép chia cũ nguyên
+   vẹn, nhưng chỉ chạy khi PĐD bấm nút **Chia** trên dòng.
+3. `xac_nhan_rot_v3` thêm **cổng chặn** đứng TRƯỚC vòng lặp ghi: còn mã chưa
+   chia hết số trúng thì từ chối, kèm tên mã. Thiếu cổng này là thảm hoạ — ô
+   trống nghĩa là số trúng 0, mà `con_lai = q_khoa − so_luong_trung`, nên hệ sẽ
+   chuyển tiếp **toàn bộ Q** sang đợt bổ sung.
+
+View mới `v_phan_bo_trung_theo_ma_v3` (`da_chia` · `lech` · `da_khop`) là nguồn
+của cột **"Đã chia"** trên bảng Tổng hợp — nền đỏ và nút **Chia** khi còn lệch.
+Thanh giai đoạn báo *"Còn N mã chưa chia hết số trúng về khoa"* và **ẩn** nút
+Xác nhận rớt cho tới khi hết.
+
+Đo trên trình duyệt với bộ dữ liệu 350 mã: gõ rớt 500 → ô Đã chia về 0, nút Chia
+hiện, nút Xác nhận rớt biến mất; bấm Chia → hết cảnh báo, nút Xác nhận rớt (500)
+hiện lại.
+
+Nghiệm thu: pytest **166** · smoke v3 **25/25** (thêm 2 bước cho D14) · build ✓.
