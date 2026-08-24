@@ -199,29 +199,57 @@ export function ThanhGiaiDoanThau({
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <span className="text-[11px] font-medium text-slate-500">Giai đoạn thầu:</span>
-      {GIAI_DOAN.map((g) => {
+      <span className="text-[11px] font-medium text-slate-500"
+        title="Ba giai đoạn chạy tuần tự. Gõ số rớt của giai đoạn đang chạy, xong bấm Hoàn thành để mở giai đoạn kế tiếp.">
+        Giai đoạn thầu:
+      </span>
+      {GIAI_DOAN.map((g, idx) => {
         const row = giaiDoan.find((x) => x.giai_doan === g.ma);
         const tt = row?.trang_thai || "chua_bat_dau";
+        // Chỉ mở được giai đoạn kế TIẾP LIỀN — server cũng chặn như vậy. Hiện
+        // rõ ra để PĐD không phải đoán tại sao bấm không được.
+        const truoc = idx === 0 ? null
+          : giaiDoan.find((x) => x.giai_doan === GIAI_DOAN[idx - 1].ma)?.trang_thai;
+        const moDuoc = idx === 0 || truoc === "hoan_thanh";
         const mau = tt === "dang_thuc_hien" ? "border-umc-600 bg-umc-50 text-umc-800"
           : tt === "hoan_thanh" ? "border-emerald-200 bg-emerald-50 text-emerald-700"
             : "border-slate-200 bg-white text-slate-400";
         return (
-          <span key={g.ma} className={`inline-flex items-center gap-1 rounded border px-2 py-1 text-[11px] ${mau}`}>
+          <span key={g.ma} className={`inline-flex items-center gap-1.5 rounded border px-2 py-1 text-[11px] ${mau}`}>
             {tt === "dang_thuc_hien" && <span className="h-1.5 w-1.5 rounded-full bg-umc-600" />}
             {tt === "hoan_thanh" && <Check size={11} />}
-            {g.nhan}
-            {tt === "chua_bat_dau" && (
+            <b className="font-semibold">{g.nhan}</b>
+
+            {/* Nút phải CÓ CHỮ. Bản đầu chỉ có biểu tượng 11px lọt trong thẻ nên
+                không ai thấy đường đi sang giai đoạn sau (phản hồi 24/08/2026). */}
+            {tt === "chua_bat_dau" && moDuoc && (
               <button type="button" disabled={!!dangChay}
                 onClick={() => doiTrangThai(g.ma, "dang_thuc_hien")}
-                title="Bắt đầu giai đoạn này"
-                className="ml-0.5 text-umc-700 hover:text-umc-900"><Play size={11} /></button>
+                title={`Bắt đầu giai đoạn ${g.nhan}`}
+                className="inline-flex items-center gap-1 rounded bg-umc-700 px-1.5 py-0.5 font-medium text-white hover:bg-umc-800 disabled:opacity-50">
+                <Play size={10} /> Bắt đầu
+              </button>
+            )}
+            {tt === "chua_bat_dau" && !moDuoc && (
+              <span className="text-slate-400" title="Phải hoàn thành giai đoạn trước đã">
+                chờ giai đoạn trước
+              </span>
             )}
             {tt === "dang_thuc_hien" && (
               <button type="button" disabled={!!dangChay}
                 onClick={() => doiTrangThai(g.ma, "hoan_thanh")}
-                title="Hoàn thành giai đoạn này"
-                className="ml-0.5 text-emerald-700 hover:text-emerald-900"><Check size={11} /></button>
+                title={`Hoàn thành ${g.nhan} để mở giai đoạn kế tiếp`}
+                className="inline-flex items-center gap-1 rounded bg-emerald-600 px-1.5 py-0.5 font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
+                <Check size={10} /> Hoàn thành
+              </button>
+            )}
+            {tt === "hoan_thanh" && (
+              <button type="button" disabled={!!dangChay}
+                onClick={() => doiTrangThai(g.ma, "dang_thuc_hien")}
+                title="Mở lại giai đoạn này — kết quả từ đây trở đi sẽ hết hiệu lực"
+                className="text-emerald-700 underline decoration-dotted hover:text-emerald-900">
+                mở lại
+              </button>
             )}
           </span>
         );

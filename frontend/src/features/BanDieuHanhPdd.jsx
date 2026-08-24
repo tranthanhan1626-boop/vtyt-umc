@@ -528,10 +528,13 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   };
 
   // ---- Render -------------------------------------------------------------
+  // QĐ A2 (21/08/2026) + phản hồi 24/08: Bàn điều hành CHỈ CÒN ĐỂ XEM. Mọi thao
+  // tác sửa của PĐD — tích rớt, gõ số trúng, chia về khoa, xác nhận rớt — làm
+  // trên bảng Tổng hợp danh mục đề xuất. Gỡ hai tab "Danh mục tổng hợp" và
+  // "Kết quả thầu & giỏ rớt" để không còn hai đường làm cùng một việc.
+  // Mã của hai tab đó giữ nguyên bên dưới, chỉ không vào menu nữa.
   const TAB = [
     { ma: "khoa", ten: "Theo dõi khoa", Icon: Building2 },
-    { ma: "tong_hop", ten: "Danh mục tổng hợp", Icon: Layers3 },
-    { ma: "ket_qua", ten: "Kết quả thầu & giỏ rớt", Icon: XCircle },
     { ma: "ho_so", ten: "Phiếu đề nghị mua thầu", Icon: FileSignature },
   ];
 
@@ -577,6 +580,24 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
             ))}
           </div>
         )}
+
+        {/* Đường vào MẶT BÀN DUY NHẤT của PĐD. Bàn điều hành chỉ để xem; mọi
+            thao tác sửa nằm ở bảng Tổng hợp (QĐ A2 21/08 + phản hồi 24/08). */}
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-umc-200 bg-umc-50 px-3 py-2">
+          <span className="text-xs font-medium text-umc-900">
+            Sửa số, tích rớt, chia số trúng, xác nhận rớt — làm trên bảng Tổng hợp:
+          </span>
+          {dsGoiCon.map((g) => (
+            <button key={g.goiId} type="button"
+              onClick={() => { window.location.hash = `#tong-hop-pdd/${g.goiId}/${dot.id}`; }}
+              className="inline-flex items-center gap-1 rounded bg-umc-700 px-2.5 py-1 text-xs font-semibold text-white hover:bg-umc-800">
+              <Layers3 size={13} /> {g.goi}
+            </button>
+          ))}
+          {dsGoiCon.length === 0 && (
+            <span className="text-xs text-slate-500">Đợt này chưa có gói con nào.</span>
+          )}
+        </div>
 
         {/* Thanh tổng quan */}
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">

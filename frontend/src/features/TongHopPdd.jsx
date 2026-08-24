@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Lock, Unlock, RefreshCw, Download, ChevronLeft, ChevronRight, ChevronDown, History, Users, EyeOff, AlertTriangle, AlignLeft } from "lucide-react";
+import { Lock, Unlock, RefreshCw, Download, ChevronLeft, ChevronRight, ChevronDown, History, Users, EyeOff, AlertTriangle, AlignLeft, Columns3 } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import { tinhTuyChonMuaThem30 } from "../lib/tuyChonMuaThem";
@@ -57,6 +57,23 @@ const NGUON_KHONG_CO = new Set([
 // lại ô sửa đè bị đánh dấu rõ + có audit theo ô. Xem `oCoTheSua`.)
 
 const NAM_DE_XUAT = new Date().getFullYear() + 1;
+
+// CHẾ ĐỘ GÕ RỚT (miếng 1d của bản MỘT MẶT BÀN, làm 24/08/2026).
+//
+// Vấn đề: cụm cột thầu (Q · R1 · R2 · R3 · Trúng · Đã chia · Xử lý rớt) bám đuôi
+// bảng, tức nằm sau 30 cột chuẩn bệnh viện. PĐD phải cuộn ngang rất xa mới tới
+// — phản hồi của chủ dự án 24/08: "tối ưu click, dễ dàng thao tác".
+//
+// Chế độ này chỉ là MỘT LĂNG KÍNH XEM: nó KHÔNG đụng `cotAn` (cấu hình ẩn cột
+// lưu ở server) và KHÔNG đổi file Excel xuất ra. Luật "ẩn cột trên web thì Excel
+// cũng không có cột đó" vẫn chỉ áp cho menu "Cột hiển thị".
+// Bỏ cả `ma_nhom` — mã quản lý đã hiện sẵn trong hộp "Đổ sang mã tương đương",
+// giữ trên bảng chỉ tốn 160px mà cụm cột thầu thì hụt chỗ.
+// Bỏ luôn `his_1599`: cột đó nằm trong NGUON_KHONG_CO, chưa có nguồn dữ liệu
+// nên luôn trống — giữ 100px cho một cột rỗng là phí đúng chỗ đang thiếu.
+const COT_CHE_DO_GO_ROT = new Set([
+  "stt", "ten_vt_2627", "dvt", "sl_de_xuat_2627", "dai_p50_p75",
+]);
 
 function monthId(nam, thang) { return nam * 12 + thang - 1; }
 
@@ -375,6 +392,8 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   const [formDoMa, setFormDoMa] = useState(null);
   const [thongBaoThau, setThongBaoThau] = useState("");
   const [dangChiaTiLe, setDangChiaTiLe] = useState("");
+  const [cheDoGoRot, setCheDoGoRot] = useState(false);
+  const [daTuBat, setDaTuBat] = useState(false);
 
   const taiLai = useCallback(async () => {
     setDangTai(true);
@@ -479,9 +498,16 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
     [rowsGoc]
   );
 
+  // Đã chốt Q nghĩa là đang ở khúc làm việc với cụm cột thầu — tự bật chế độ
+  // gõ rớt MỘT LẦN, sau đó tôn trọng lựa chọn của người dùng.
+  useEffect(() => {
+    if (thau.coPhienQ && !daTuBat) { setCheDoGoRot(true); setDaTuBat(true); }
+  }, [thau.coPhienQ, daTuBat]);
+
   const cotHienThi = useMemo(
-    () => sapXepFreezeTruoc(cotDayDu.filter((c) => !cotAn.has(c.key))),
-    [cotAn, cotDayDu]
+    () => sapXepFreezeTruoc(cotDayDu.filter((c) => !cotAn.has(c.key)
+      && (!cheDoGoRot || COT_CHE_DO_GO_ROT.has(c.key)))),
+    [cotAn, cotDayDu, cheDoGoRot]
   );
   const groupSegments = useMemo(
     () => tinhSegmentsGroup(cotHienThi, NHOM_COT_PDD),
@@ -616,8 +642,11 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
         return dong;
       });
 
+      // Excel bám cấu hình ẩn cột (`cotAn`) chứ KHÔNG bám chế độ gõ rớt — chế
+      // độ đó chỉ là lăng kính xem trên màn, bật/tắt không được đổi file xuất ra.
+      const cotChoExcel = sapXepFreezeTruoc(cotDayDu.filter((c) => !cotAn.has(c.key)));
       const cotXuat = [
-        ...cotHienThi.map((c) => ({ key: c.key, nhan: c.nhan, nhanMau: c.nhanMau, width: c.width })),
+        ...cotChoExcel.map((c) => ({ key: c.key, nhan: c.nhan, nhanMau: c.nhanMau, width: c.width })),
         ...(hienChiTietKhoa
           ? [{ key: "khoa::__tong", nhan: "TỔNG TOÀN VIỆN", width: 110 }]
           : []),
@@ -947,6 +976,14 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
             <button className="qtdx-tb" onClick={taiLai}><RefreshCw size={13} /> Tải lại</button>
+            <button type="button"
+              className={`qtdx-tb ${cheDoGoRot ? "!bg-umc-700 !text-white !border-umc-700" : ""}`}
+              onClick={() => { setCheDoGoRot((v) => !v); setDaTuBat(true); }}
+              title={cheDoGoRot
+                ? "Đang ẩn các nhóm cột lịch sử · phân nhóm · thương mại để cụm cột thầu lọt màn hình. Bấm để hiện lại đủ 30 cột. Không ảnh hưởng file Excel xuất ra."
+                : "Ẩn bớt cột để Q · R1 · R2 · R3 · Trúng · Đã chia · Xử lý rớt lọt màn hình, khỏi cuộn ngang"}>
+              <Columns3 size={13} /> {cheDoGoRot ? "Chế độ gõ rớt: BẬT" : "Chế độ gõ rớt"}
+            </button>
             <div className="relative">
               <button className="qtdx-tb" onClick={() => setOpenMenuCot((v) => !v)}>
                 <EyeOff size={13} /> Cột hiển thị ({cotHienThi.length}/{cotDayDu.length})
@@ -1045,7 +1082,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
           <colgroup>
             <col style={{ width: 30 }} />
             {cotHienThi.map((c) => <col key={c.key} style={{ width: c.width }} />)}
-            <col style={{ width: 160 }} />
+            <col style={{ width: cheDoGoRot ? 104 : 160 }} />
             {/* Sáu cột cụm thầu. Thiếu <col> ở đây thì bảng `w-max` bóp chúng
                 còn ~16px và ô bên cạnh đè lên — đo thật bằng trình duyệt
                 23/08/2026 (elementFromPoint trả về ô khác, không phải nút). */}
@@ -1055,7 +1092,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
             <col style={{ width: 76 }} />
             <col style={{ width: 88 }} />
             <col style={{ width: 104 }} />
-            <col style={{ width: 200 }} />
+            <col style={{ width: cheDoGoRot ? 176 : 200 }} />
           </colgroup>
           <thead>
             <tr className="group-row">
@@ -1111,14 +1148,14 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                   </th>
                 );
               })}
-              <th style={{ minWidth: 160 }}>Số khoa · sổ chi tiết</th>
+              <th style={{ minWidth: cheDoGoRot ? 104 : 160 }}>{cheDoGoRot ? "Khoa" : "Số khoa · sổ chi tiết"}</th>
               <th style={{ minWidth: 76 }} title="Số đã chốt đi thầu — bất biến">Q</th>
               <th style={{ minWidth: 68 }} title="Rớt ở giai đoạn Chào giá">R1</th>
               <th style={{ minWidth: 68 }} title="Rớt ở giai đoạn Mở thầu">R2</th>
               <th style={{ minWidth: 68 }} title="Rớt ở giai đoạn Đánh giá">R3</th>
               <th style={{ minWidth: 80 }} title="Q trừ R1 R2 R3">Trúng</th>
               <th style={{ minWidth: 96 }} title="Tổng đã chia về các khoa — phải bằng Trúng thì mới xác nhận rớt được">Đã chia</th>
-              <th style={{ minWidth: 190 }}>Xử lý rớt</th>
+              <th style={{ minWidth: cheDoGoRot ? 176 : 190 }}>Xử lý rớt</th>
             </tr>
           </thead>
           <tbody>
@@ -1289,7 +1326,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                       </td>
                     );
                   })}
-                  <td className="qtdx-cell readonly" style={{ minWidth: 160 }}>
+                  <td className="qtdx-cell readonly" style={{ minWidth: cheDoGoRot ? 104 : 160 }}>
                     <span className="inline-flex items-center gap-1.5">
                       <span className="font-mono text-emerald-800 font-semibold">{r.khoaDeXuat.length}</span>
                       <span className="text-slate-500">khoa · tổng</span>
