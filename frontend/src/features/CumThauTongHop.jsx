@@ -75,7 +75,7 @@ export function useDuLieuThau(dotGoiId) {
       // là chỗ duy nhất thấy dòng nào còn phải gõ (khoá cứng 2).
       phienId
         ? fetchAllRows((f, t) => supabase.from("v_phan_bo_trung_theo_ma_v3")
-          .select("ma_hang, trung, da_chia, lech, da_khop, so_khoa")
+          .select("ma_hang, trung, da_nhan, phai_chia, da_chia, lech, da_khop, so_khoa")
           .eq("phien_q_id", phienId).range(f, t), { order: "ma_hang" })
         : Promise.resolve({ data: [] }),
       // Dòng của mã NHẬN phải thấy phần được đổ sang. Thiếu chỗ này thì PĐD đổ
@@ -395,7 +395,10 @@ export function OThauCuaDong({
                 <span className="font-mono tabular-nums font-semibold text-red-700">{fmt(pb.da_chia)}</span>
                 <button type="button" disabled={dangChia === row.ma_hang}
                   onClick={() => onChiaTiLe(row)}
-                  title={`Còn lệch ${fmt(pb.lech)} — bấm để chia ${fmt(kq.so_luong_trung)} về ${pb.so_khoa} khoa theo tỉ lệ Q`}
+                  title={`Còn lệch ${fmt(pb.lech)} — bấm để chia ${fmt(pb.phai_chia)} về ${pb.so_khoa} khoa theo tỉ lệ Q`
+                    + (Number(pb.da_nhan) > 0
+                       ? ` (gồm ${fmt(pb.da_nhan)} nhận từ mã rớt). Muốn tự chia thì sổ dòng ra.`
+                       : ". Muốn tự chia thì sổ dòng ra.")}
                   className="rounded border border-umc-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-umc-700 hover:bg-umc-50 disabled:opacity-50">
                   {dangChia === row.ma_hang ? "…" : "Chia"}
                 </button>
@@ -573,6 +576,111 @@ export function HopDoSangMa({ mo, dsAnhEm, onDong, onXong }) {
             {dangLuu ? "Đang đổ…" : "Đổ sang mã này"}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** Bảng gõ tay số trúng theo khoa, nằm trong dòng sổ của mã trên bảng Tổng hợp.
+ *
+ *  QĐ D15 (24/08/2026): số phải chia = số trúng + phần nhận từ mã rớt cùng
+ *  nhóm. Trước đó PĐD không có đường nào vào chia phần nhận — phải sang Bàn
+ *  điều hành, mà tab đó đã gỡ theo QĐ A2.
+ *
+ *  Tải theo YÊU CẦU (chỉ khi sổ dòng ra): ở quy mô 250 mã × 60 khoa thì bảng
+ *  phân bổ có 5.470 dòng, tải hết cho mọi dòng là vô ích.
+ */
+export function BangSoTrungTheoKhoa({ dotGoiId, maHang, phaiChia, onLuuXong }) {
+  const [rows, setRows] = useState(null);
+  const [go, setGo] = useState({});
+  const [lyDo, setLyDo] = useState("");
+  const [loi, setLoi] = useState("");
+  const [dangLuu, setDangLuu] = useState(false);
+
+  const tai = useCallback(async () => {
+    const { data: phien } = await supabase.from("chot_q_phien")
+      .select("id").eq("dot_goi_id", dotGoiId).eq("hieu_luc", true).maybeSingle();
+    if (!phien) { setRows([]); return; }
+    const [pb, nh] = await Promise.all([
+      supabase.from("phan_bo_trung_v3").select("khoa, q_khoa, so_luong_trung")
+        .eq("phien_q_id", phien.id).eq("ma_hang", maHang).order("khoa"),
+      supabase.from("v_nhan_chuyen_rot_theo_khoa_v3").select("khoa, da_nhan")
+        .eq("phien_q_id", phien.id).eq("ma_hang", maHang),
+    ]);
+    const nhan = new Map((nh.data || []).map((r) => [r.khoa, Number(r.da_nhan)]));
+    const ds = (pb.data || []).map((r) => ({ ...r, da_nhan: nhan.get(r.khoa) || 0 }));
+    setRows(ds);
+    setGo(Object.fromEntries(ds.map((r) => [r.khoa, String(r.so_luong_trung)])));
+  }, [dotGoiId, maHang]);
+
+  useEffect(() => { tai(); }, [tai]);
+
+  const tongGo = useMemo(
+    () => Object.values(go).reduce((s, v) => s + (Number(v) || 0), 0), [go]);
+  const lech = Number(phaiChia) - tongGo;
+
+  if (rows === null) return <p className="px-3 py-2 text-[11px] text-slate-400">Đang tải số trúng…</p>;
+  if (rows.length === 0) return null;
+
+  const luu = async () => {
+    setDangLuu(true); setLoi("");
+    const { error } = await supabase.rpc("cap_nhat_phan_bo_trung_v3", {
+      p_dot_goi_id: dotGoiId, p_ma_hang: maHang,
+      p_phan_bo: Object.fromEntries(Object.entries(go).map(([k, v]) => [k, String(Number(v) || 0)])),
+      p_ly_do: lyDo.trim() || null,
+    });
+    setDangLuu(false);
+    if (error) { setLoi(error.message); return; }
+    await tai();
+    await onLuuXong?.();
+  };
+
+  return (
+    <div className="mt-2 rounded border border-umc-200 bg-white p-2">
+      <div className="mb-1.5 flex flex-wrap items-center gap-2 text-[11px]">
+        <b className="text-umc-900">Chia số trúng về khoa</b>
+        <span className="text-slate-600">
+          phải chia <b className="font-mono">{fmt(phaiChia)}</b> · đã gõ{" "}
+          <b className={`font-mono ${lech === 0 ? "text-emerald-700" : "text-red-700"}`}>{fmt(tongGo)}</b>
+          {lech !== 0 && <span className="text-red-700"> · lệch {fmt(lech)}</span>}
+        </span>
+      </div>
+      <table className="w-auto">
+        <thead>
+          <tr className="text-[10.5px] text-slate-500">
+            <th className="px-3 py-1 text-left" style={{ background: "transparent", color: "#64748b", position: "static" }}>Khoa</th>
+            <th className="px-3 py-1 text-right" style={{ background: "transparent", color: "#64748b", position: "static" }}>Q của khoa</th>
+            <th className="px-3 py-1 text-right" style={{ background: "transparent", color: "#64748b", position: "static" }}>Nhận từ mã rớt</th>
+            <th className="px-3 py-1 text-right" style={{ background: "transparent", color: "#64748b", position: "static" }}>Số trúng chia cho khoa</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.khoa}>
+              <td className="px-3 py-1 text-xs">{r.khoa}</td>
+              <td className="px-3 py-1 text-right font-mono text-xs text-slate-500">{fmt(r.q_khoa)}</td>
+              <td className="px-3 py-1 text-right font-mono text-xs">
+                {r.da_nhan > 0 ? <span className="text-sky-700">+{fmt(r.da_nhan)}</span> : "—"}
+              </td>
+              <td className="px-3 py-1 text-right">
+                <input type="number" min="0" step="1" value={go[r.khoa] ?? ""}
+                  onChange={(e) => setGo((p) => ({ ...p, [r.khoa]: e.target.value }))}
+                  className="w-28 rounded border border-slate-300 px-1.5 py-1 text-right font-mono text-xs" />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <input value={lyDo} onChange={(e) => setLyDo(e.target.value)}
+          placeholder="Lý do (bắt buộc nếu có khoa vượt Q + phần nhận)"
+          className="w-80 rounded border border-slate-300 px-2 py-1 text-xs" />
+        <button type="button" onClick={luu} disabled={dangLuu || lech !== 0}
+          title={lech !== 0 ? `Còn lệch ${fmt(lech)} — tổng phải bằng đúng ${fmt(phaiChia)}` : "Lưu và ghi về danh mục của khoa"}
+          className="rounded bg-umc-700 px-3 py-1 text-xs font-semibold text-white hover:bg-umc-800 disabled:opacity-40">
+          {dangLuu ? "Đang lưu…" : "Xác nhận chia"}
+        </button>
+        {loi && <span className="text-[11px] text-red-700">{loi}</span>}
       </div>
     </div>
   );

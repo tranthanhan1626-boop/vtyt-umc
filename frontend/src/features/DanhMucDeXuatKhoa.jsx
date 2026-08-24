@@ -532,7 +532,12 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
     try {
       const { bo, rows: rowsGoc, dsMaHang, dsNamCoDuLieu: dsNam, dotGoiId: dgId } =
         await taiDuLieuKhoa(goiId, khoaHienTai, dotId);
-      // VÒNG KHÉP KÍN 23/08/2026 — TẮT nhánh rớt ở màn khoa.
+      // 24/08/2026 — BẬT LẠI phần HIỂN THỊ kết quả thầu cho khoa.
+      // `v_ket_qua_thau_theo_khoa` đã được viết lại trên nền v3 (patch_zzzzza)
+      // nên đọc được thật. Chủ dự án yêu cầu: mọi thứ PĐD chỉnh trên Danh mục
+      // tổng hợp đều phải thấy được ở Danh mục đề xuất của khoa.
+      // Chỉ bật phần XEM. Nút "Đẩy SL" vẫn tắt — việc đó là của PĐD (QĐ D1/D3).
+      // Ghi chú cũ (23/08) giữ lại để hiểu vì sao từng tắt:
       // `taiKetQuaThau` đọc `goi_thau_ket_qua_ma`, bảng của mô hình TRƯỚC v3:
       // 0 dòng và không có gì trong v3 ghi vào nữa, nên mọi thứ nó nuôi (dấu
       // rớt trên dòng, nút "Đẩy SL") là cửa dẫn vào ngõ cụt — khoa bấm là ăn
@@ -541,7 +546,9 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
       // chiếu tự động) cộng thông báo trong hộp thư.
       // Giữ `taiKetQuaThau` lại, chưa xoá: nhánh sau (tiến độ gói thầu theo số
       // quyết định / số hợp đồng, QĐ D6) sẽ viết lại trên nền v3.
-      const ketQuaTheoMa = new Map();
+      const ketQuaTheoMa = dsMaHang?.length
+        ? await taiKetQuaThau(bo.loai_mua_sam, khoaHienTai, dsMaHang, dotId)
+        : new Map();
       const [oDaLuu, suaDePdd] = await Promise.all([taiODaLuu(), taiSuaDeCuaPdd()]);
       // V2: giá trị chung là giá trị DUY NHẤT, nên áp thẳng lên dòng thay vì
       // giữ song song rồi chọn lúc vẽ. Nhờ vậy ô gõ được như mọi ô khác —
@@ -1304,10 +1311,19 @@ function RowKhoa({
                 <span>
                   {formatCell(value, c.kieu)}
                   {c.key === "ten_vt_2627" && dangRot && (
-                    <button onClick={(e) => { e.stopPropagation(); dangMoForm ? setDangChonMaDay(null) : moFormDay(r); }}
-                      className="ml-1.5 inline-flex items-center gap-1 rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-medium text-white align-middle">
-                      <XCircle size={10} /> Rớt ở {NHAN_GIAI_DOAN[r.rot.ma_moc_rot] || r.rot.ma_moc_rot} — Đẩy SL
-                    </button>
+                    // CHỈ ĐỂ XEM. Việc đổ số rớt sang mã tương đương là của
+                    // Phòng Điều dưỡng, làm trên Danh mục tổng hợp (QĐ D1/D3).
+                    <span title={`Kết quả thầu: mang đi thầu ${fmt(r.rot.so_luong_de_xuat)}, `
+                        + `trúng ${fmt(r.rot.so_luong_trung)}, thiếu ${fmt(r.rot.so_luong_thieu)}`
+                        + (r.rot.ly_do_khong_trung ? ` · ${r.rot.ly_do_khong_trung}` : "")}
+                      className={`ml-1.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium align-middle ${
+                        Number(r.rot.so_luong_trung) > 0
+                          ? "bg-amber-100 text-amber-900" : "bg-red-600 text-white"}`}>
+                      <XCircle size={10} />
+                      {Number(r.rot.so_luong_trung) > 0
+                        ? `Rớt ${fmt(r.rot.so_luong_thieu)} ở ${NHAN_GIAI_DOAN[r.rot.ma_moc_rot] || r.rot.ma_moc_rot} · trúng ${fmt(r.rot.so_luong_trung)}`
+                        : `Rớt toàn bộ ở ${NHAN_GIAI_DOAN[r.rot.ma_moc_rot] || r.rot.ma_moc_rot}`}
+                    </span>
                   )}
                   {/* Lịch sử sửa ô — hiện ở MỌI ô như bên Tổng hợp PĐD, kể cả
                       ô chưa từng sửa (bấm vào thì panel báo "chưa có lần sửa

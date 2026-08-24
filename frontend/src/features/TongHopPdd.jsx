@@ -1420,6 +1420,18 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                               </tr>
                             </tbody>
                           </table>
+
+                          {/* QĐ D15 (24/08/2026): PĐD chia số trúng về khoa NGAY
+                              TẠI ĐÂY. Trước đó phải sang Bàn điều hành, mà tab
+                              đó đã gỡ theo QĐ A2 — thành ra không còn đường nào. */}
+                          {thau.coPhienQ && thau.phanBo.get(r.ma_hang) && (
+                            <BangSoTrungTheoKhoa
+                              dotGoiId={dotGoiId} maHang={r.ma_hang}
+                              phaiChia={thau.phanBo.get(r.ma_hang).phai_chia}
+                              onLuuXong={async () => { await thau.taiLaiThau(); await taiLai(); }}
+                            />
+                          )}
+
                           {phanBoDangSua?.maHang === r.ma_hang && (
                             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                               <span>Tổng phải giữ: <b>{fmt(phanBoDangSua.tongMoi)}</b></span>

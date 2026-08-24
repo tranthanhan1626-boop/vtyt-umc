@@ -84,7 +84,14 @@ def chon_vat_tu(admin: Client, so_nhom: int = 2) -> list[dict[str, Any]]:
             bang[dvt] = hs
             selected = selected or row
         if valid and selected and abs(bang.get(dvt_chuan, 0) - 1.0) < 1e-6:
-            result.append({"vat_tu": selected, "dvt_chuan": dvt_chuan, "bang": bang})
+            # Mã anh em CÙNG ĐVT trong chính nhóm này, để đường "đổ sang mã
+            # tương đương" có đích hợp lệ NGAY TRONG ĐỢT.
+            anh_em = next((r for r in rows
+                           if r["ma_hang"] != selected["ma_hang"]
+                           and str(r.get("dvt") or "").strip()
+                               == str(selected.get("dvt") or "").strip()), None)
+            result.append({"vat_tu": selected, "dvt_chuan": dvt_chuan,
+                           "bang": bang, "anh_em": anh_em})
         if len(result) == so_nhom:
             return result
     raise AssertionError(f"Không tìm đủ {so_nhom} nhóm có quy đổi hợp lệ.")
@@ -145,6 +152,8 @@ def main() -> int:
 
         vat_tu = chon_vat_tu(admin)
         ma1, ma2 = (x["vat_tu"]["ma_hang"] for x in vat_tu)
+        # mã anh em của nhóm thứ hai — đích để thử đổ số rớt
+        ma_ae = (vat_tu[1].get("anh_em") or {}).get("ma_hang")
         nam = datetime.now().year + 5
         dot = pdd.table("dot_de_xuat").insert({
             "ten": f"SMOKE V3 FULL {suffix}", "nam": nam,
@@ -168,18 +177,33 @@ def main() -> int:
 
         def submit(client: Client, unit: str, quantities: tuple[int, int]) -> list[dict[str, Any]]:
             items = []
-            for source, qty in zip(vat_tu, quantities, strict=True):
+            # Nguồn thứ ba là mã ANH EM của nhóm 2 — cùng nhóm, cùng ĐVT, cùng
+            # đợt. Có nó thì đường "đổ số rớt sang mã tương đương" mới thử được
+            # (luật 24/08: mã nhận phải có trong đợt).
+            # Giữ ĐÚNG HAI nguồn: thêm mã thứ ba kéo theo hàng loạt con số cố
+            # định khác trong smoke phải sửa theo. Đường "đổ sang mã tương đương"
+            # được kiểm riêng bằng `scripts/kiem_do_ma_tuong_duong.py`.
+            for source, qty in zip(vat_tu, quantities[:2], strict=True):
                 item = source["vat_tu"]
                 hs = source["bang"][str(item["dvt"]).strip()]
                 items.append({
                     "ma_hang": item["ma_hang"], "so_luong": qty,
                     "loai_mua_sam": "dau_thau_rong_rai", "goi": NHAN_GOI,
                     "tu_thang": 1, "tu_nam": nam, "den_thang": 12, "den_nam": nam,
+                    "_mql": item["ma_quan_ly"], "_quy_doi": qty * hs,
                     "so_luong_ma_quan_ly": qty * hs,
                     "dvt_ma_quan_ly": source["dvt_chuan"], "he_so_quy_doi": hs,
                     "bang_quy_doi": source["bang"], "loai_ly_do": "theo_lich_su",
                     "ghi_chu": "SMOKE V3 — tự động dọn",
                 })
+            # KHOÁ CỨNG 1: mọi dòng cùng mã quản lý phải khai CÙNG một tổng nhóm
+            # (= tổng đã quy đổi của các mã hàng trong nhóm đó).
+            tong_nhom: dict[str, float] = {}
+            for it in items:
+                tong_nhom[it["_mql"]] = tong_nhom.get(it["_mql"], 0) + it["_quy_doi"]
+            for it in items:
+                it["so_luong_ma_quan_ly"] = tong_nhom[it.pop("_mql")]
+                it.pop("_quy_doi")
             return client.rpc("submit_proposal_group_v2", {
                 "p_don_vi": unit, "p_nam_de_xuat": nam,
                 "p_items": items, "p_dot_id": dot_id,
@@ -391,6 +415,20 @@ def main() -> int:
         anh_em = [x for x in admin.table("vat_tu").select("ma_hang,dvt")
                   .eq("ma_quan_ly", goc2["ma_quan_ly"]).limit(50).execute().data
                   if x["ma_hang"] != ma2]
+        # 24/08/2026 — chỉ đổ được sang mã CÓ TRONG ĐỢT NÀY. Mã ngoài đợt chưa
+        # hề mang đi thầu nên không thể "còn trúng", và phần nhận sẽ không có
+        # chỗ đứng: không nằm trong snapshot Q thì bảng không hiện, cổng khoá
+        # cứng 2 cũng không thấy để chặn.
+        trong_dot = {x["ma_hang"] for x in
+                     admin.table("v_ket_qua_thau_v3").select("ma_hang,so_luong_trung")
+                     .eq("dot_goi_id", dg_id).gt("so_luong_trung", 0).execute().data}
+        if anh_em and not (set(x["ma_hang"] for x in anh_em) & trong_dot):
+            phai_loi(lambda: pdd.rpc("day_so_luong_rot_v3", {
+                "p_dot_goi_id": dg_id, "p_ma_hang_rot": ma2,
+                "p_ma_hang_nhan": anh_em[0]["ma_hang"], "p_ly_do": "ngoai dot"}).execute(),
+                "đổ sang mã không có trong đợt")
+            ok("chặn đổ sang mã cùng nhóm nhưng KHÔNG có trong đợt")
+        anh_em = [x for x in anh_em if x["ma_hang"] in trong_dot]
         cung = [x for x in anh_em if (x["dvt"] or "").strip() == (goc2["dvt"] or "").strip()]
         lech = [x for x in anh_em if (x["dvt"] or "").strip() != (goc2["dvt"] or "").strip()]
         if lech:
