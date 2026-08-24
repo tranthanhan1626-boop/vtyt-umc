@@ -19,9 +19,13 @@ Xoá sạch bộ này:
 from __future__ import annotations
 
 import argparse
+import json
+import math
 import os
 import random
+import subprocess
 import sys
+from pathlib import Path
 
 import psycopg
 from supabase import create_client
@@ -40,13 +44,68 @@ GOI_CON = {
 }
 MOC_BO_SUNG = [(2026, 9), (2027, 1), (2027, 5), (2027, 9)]
 
-# SỐ TRÒN để dễ trình bày với lãnh đạo. Mọi số lượng là bội của 1.000, và mỗi mã
-# hàng chỉ dùng một hoặc hai mức — nhờ vậy:
-#   · tổng toàn viện của một mã = số khoa × mức, luôn tròn;
-#   · bấm "Chia theo tỉ lệ Q" ra số chia hết, không có phần dư lẻ;
-#   · số rớt gõ vào (5.000 · 10.000 …) trừ ra vẫn tròn.
-MUC_SO_LUONG = [1_000, 2_000, 5_000, 10_000, 20_000, 50_000]
-SO_KHOA_MOI_MA = [5, 10, 20, 25, 40]
+# Số lượng phải VỪA THỰC TẾ VỪA TRÒN.
+#
+# Thực tế: tổng toàn viện của mỗi mã phải nằm trong dải **P50–P75** tính từ
+# chính lịch sử xuất kho của mã đó — đúng dải mà web hiện trên cột "Dải thường".
+# Gieo số bừa thì demo sẽ có mã stent đề xuất 500.000 cái trong khi 18 tháng qua
+# toàn viện chỉ dùng ~55 cái, lãnh đạo nhìn là biết ngay số giả.
+#
+# Tròn: trong dải đó chọn mức chia hết cho số khoa, làm tròn tới bước lớn nhất
+# còn lọt dải (10.000 → 5.000 → … → 1). Nhờ vậy "Chia theo tỉ lệ Q" chia hết.
+#
+# Công thức dải KHÔNG viết lại bằng Python — gọi thẳng `src/lib/congThucSoLuong.js`
+# qua `frontend/tools/tinh-dai-p50-p75.mjs`. Một công thức, một bản.
+BUOC_LAM_TRON = [10_000, 5_000, 2_000, 1_000, 500, 200, 100, 50, 20, 10, 5, 2, 1]
+
+# SỐ KHOA TỈ LỆ VỚI SẢN LƯỢNG — đây cũng là thực tế: gạc và găng tay thì gần cả
+# viện dùng, còn stent hay điện cực não sâu chỉ vài khoa dùng. Gán số khoa theo
+# độ lớn của dải P75, thử từ nhiều xuống ít.
+def so_khoa_theo_san_luong(p75: float) -> list[int]:
+    if p75 >= 500_000:  return [50, 45, 40, 30]
+    if p75 >= 100_000:  return [40, 30, 25, 20]
+    if p75 >= 10_000:   return [25, 20, 15, 10]
+    if p75 >= 1_000:    return [15, 10, 8, 5]
+    if p75 >= 200:      return [8, 5, 4, 3]
+    return [4, 3, 2, 1]
+CAU_NOI_JS = "../frontend/tools/tinh-dai-p50-p75.mjs"
+
+
+def tinh_dai(cur, ds_ma: list[str]) -> dict[str, dict | None]:
+    """Dải P50–P75 của từng mã hàng, tính bằng ĐÚNG công thức của web."""
+    cur.execute("""select ma_hang, nam, thang, so_luong from v_usage_thang_toan_vien
+                   where ma_hang = any(%s)""", (ds_ma,))
+    lich_su: dict[str, list] = {}
+    for ma, nam, thang, sl in cur.fetchall():
+        lich_su.setdefault(ma, []).append([nam * 12 + thang - 1, float(sl or 0)])
+    cur.execute("select max(nam * 12 + thang - 1) from v_usage_thang_toan_vien")
+    thang_cuoi = cur.fetchone()[0]
+    vao = json.dumps({"thangCuoiHIS": thang_cuoi, "soThangKy": 18, "lichSu": lich_su})
+    cau_noi = (Path(__file__).resolve().parents[2] / "frontend"
+               / "tools" / "tinh-dai-p50-p75.mjs")
+    kq = subprocess.run(["node", str(cau_noi)], input=vao, capture_output=True, text=True)
+    if kq.returncode != 0:
+        raise RuntimeError(f"Cầu nối công thức lỗi: {kq.stderr[:300]}")
+    return {m: json.loads(kq.stdout).get(m) for m in ds_ma}
+
+
+def chon_so(dai: dict | None, ds_khoa_co_the: list[int] | None) -> tuple[int, int] | None:
+    """Chọn (số khoa, số lượng mỗi khoa) sao cho tổng nằm TRONG dải P50–P75 và
+    mỗi khoa là số tròn nhất có thể. Trả None khi dải quá hẹp để chia."""
+    if not dai:
+        return None
+    lo, hi = float(dai["p50"]), float(dai["p75"])
+    if hi < 1:
+        return None
+    for n in ds_khoa_co_the or so_khoa_theo_san_luong(hi):
+        for buoc in BUOC_LAM_TRON:
+            don_vi = n * buoc
+            k_min = math.ceil(lo / don_vi)
+            k_max = math.floor(hi / don_vi)
+            if k_max >= k_min >= 1:
+                k = random.randint(k_min, k_max)
+                return n, k * buoc
+    return None
 
 
 def xoa(cur) -> None:
@@ -147,28 +206,31 @@ def main() -> int:
             select v.ma_hang from vat_tu v
             join nhom_nhieu n on n.ma_quan_ly=v.ma_quan_ly and n.dvt=v.dvt
             where v.goi = %s
+              -- phải CÓ lịch sử xuất kho, nếu không thì không tính được dải P50–P75
+              and exists (select 1 from v_usage_thang_toan_vien u where u.ma_hang = v.ma_hang)
             order by v.ma_quan_ly, v.ma_hang limit %s""", (nhan_goi, nhan_goi, SO_MA_MOI_GOI))
         ds_ma = [r[0] for r in cur.fetchall()]
         if len(ds_ma) < SO_MA_MOI_GOI:
-            cur.execute("""select ma_hang from vat_tu where goi=%s and ma_quan_ly is not null
-                           and ma_hang <> all(%s) order by ma_hang limit %s""",
+            cur.execute("""select ma_hang from vat_tu v where goi=%s and ma_quan_ly is not null
+                           and ma_hang <> all(%s)
+                           and exists (select 1 from v_usage_thang_toan_vien u
+                                       where u.ma_hang = v.ma_hang)
+                           order by ma_hang limit %s""",
                         (nhan_goi, ds_ma, SO_MA_MOI_GOI - len(ds_ma)))
             ds_ma += [r[0] for r in cur.fetchall()]
 
+        dai = tinh_dai(cur, ds_ma)
         dong = []
-        for i, m in enumerate(ds_ma):
-            # 5 mã đầu mỗi gói cho ĐỦ 50 khoa — dòng nặng nhất để xem grid.
-            ds_khoa = khoa if i < 5 else random.sample(khoa, random.choice(SO_KHOA_MOI_MA))
-            muc = random.choice(MUC_SO_LUONG)
-            if i % 3 == 2:
-                # cứ 3 mã thì 1 mã có hai mức (một nửa khoa gấp đôi) — vẫn tròn,
-                # nhưng cho thấy tỉ lệ giữa các khoa không đều nhau.
-                for j, k in enumerate(ds_khoa):
-                    dong.append((m, k, NAM, muc if j % 2 == 0 else muc * 2,
-                                 nhan_goi, dot_id, dot_goi_id))
-            else:
-                for k in ds_khoa:
-                    dong.append((m, k, NAM, muc, nhan_goi, dot_id, dot_goi_id))
+        bo_qua = 0
+        for m in ds_ma:
+            chon = chon_so(dai.get(m), None)
+            if not chon:
+                # dải quá hẹp (mã dùng vài đơn vị mỗi năm) — bỏ, không bịa số
+                bo_qua += 1
+                continue
+            n, muc = chon
+            for k in random.sample(khoa, n):
+                dong.append((m, k, NAM, muc, nhan_goi, dot_id, dot_goi_id))
         cur.executemany("""insert into proposals
             (ma_hang, don_vi, nam_de_xuat, so_luong, loai_mua_sam, goi,
              dot_id, dot_goi_id, created_by, is_current)
@@ -178,12 +240,14 @@ def main() -> int:
             values (%s,%s,%s,'test-day-du@umc.edu.vn',%s) on conflict do nothing""",
             [(goi_id, NAM, k, dot_goi_id) for k in khoa])
         cn.commit()
-        tong_ma += len(ds_ma); tong_dong += len(dong)
+        tong_ma += len({d[0] for d in dong}); tong_dong += len(dong)
         cur.execute("""select sum(so_luong_hien_hanh) from phan_bo_khoa
                        where dot_goi_id = %s""", (dot_goi_id,))
         tong_sl = cur.fetchone()[0] or 0
-        print(f"  {nhan_goi:16s} {len(ds_ma):>3} mã · {len(dong):>5} dòng · "
-              f"tổng {int(tong_sl):,} đơn vị")
+        so_ma_that = len({d[0] for d in dong})
+        print(f"  {nhan_goi:16s} {so_ma_that:>3} mã · {len(dong):>5} dòng · "
+              f"tổng {int(tong_sl):,} đơn vị"
+              + (f"  (bỏ {bo_qua} mã dải quá hẹp)" if bo_qua else ""))
 
     # Chốt Q + mở giai đoạn Chào giá, bằng JWT thật của PĐD
     pdd = create_client(url, anon)
