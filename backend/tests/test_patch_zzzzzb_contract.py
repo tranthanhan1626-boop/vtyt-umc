@@ -81,3 +81,32 @@ def test_giao_dien_dung_view_gop_va_phan_trang() -> None:
     td = (FE / "TheoDoiCuonChieu.jsx").read_text(encoding="utf-8")
     assert "fetchAllRows" in td, \
         "màn theo dõi đọc cấp (mã × khoa) — 1.608 dòng, thiếu phân trang là mất 38%"
+
+
+# --- QĐ D11 + D12 (24/08/2026) -------------------------------------------
+
+def test_cuon_chieu_lan_hai_cong_don_khong_de(sql: str) -> None:
+    than = sql.split("create or replace function xac_nhan_rot_v3")[-1].split("$$;")[0]
+    assert "v_dang_co" in than, "phải đọc số hiện hành của khoa trước khi ghi"
+    assert "coalesce(v_dang_co, 0) + r.con_lai" in than, \
+        "QĐ D11: cộng thêm vào số khoa đang có, không đè"
+    assert "v_so_cong_don" in than, "phải đếm và báo số dòng cộng dồn"
+
+
+def test_hien_phan_cuon_chieu_thua(sql: str) -> None:
+    than = sql.split("create view v_theo_doi_cuon_chieu_v3")[-1] \
+        .split("grant select on v_theo_doi_cuon_chieu_v3")[0]
+    assert "thua_so_voi_rot" in than
+    assert "cuon_chieu_thua" in than, \
+        "QĐ D12: hệ không tự trừ lại, nhưng phải HIỆN phần thừa ra"
+    # và không được có đường tự trừ
+    cuoi = sql.split("create or replace function xac_nhan_rot_v3")[-1].split("$$;")[0]
+    assert "update phan_bo_khoa" not in cuoi.lower(), \
+        "QĐ D12: cuốn chiếu chỉ CỘNG THÊM, không bao giờ trừ đi"
+    assert "- r.con_lai" not in cuoi and "-r.con_lai" not in cuoi, "không được trừ"
+
+
+def test_man_theo_doi_hien_trang_thai_thua() -> None:
+    td = (FE / "TheoDoiCuonChieu.jsx").read_text(encoding="utf-8")
+    assert "cuon_chieu_thua" in td
+    assert "thua_so_voi_rot" in td

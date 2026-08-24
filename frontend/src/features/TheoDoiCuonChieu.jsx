@@ -24,6 +24,10 @@ const NHAN_TRANG_THAI = {
   da_do_sang_ma: { nhan: "Đã đổ sang mã khác", mau: "bg-sky-100 text-sky-800", icon: ArrowRightLeft },
   cuon_chieu_hong: { nhan: "CUỐN CHIẾU HỎNG", mau: "bg-red-600 text-white", icon: AlertTriangle },
   da_cuon_chieu: { nhan: "Đã vào đợt bổ sung", mau: "bg-emerald-100 text-emerald-800", icon: Check },
+  // QĐ D12 (24/08/2026): rớt thêm ở giai đoạn sau làm hệ chia lại số trúng theo
+  // tỉ lệ Q, nên phần rớt của một khoa có thể TỤT xuống dưới số đã cuốn chiếu.
+  // Hệ KHÔNG tự trừ lại — khoa quyết số cuối. Việc của màn này là hiện ra.
+  cuon_chieu_thua: { nhan: "Đã đưa nhiều hơn số rớt", mau: "bg-amber-100 text-amber-900", icon: AlertTriangle },
 };
 
 export default function TheoDoiCuonChieu({ profile, dotGoiId = null }) {
@@ -67,15 +71,17 @@ export default function TheoDoiCuonChieu({ profile, dotGoiId = null }) {
     return [...m.values()].map((g) => {
       const hong = g.khoa.filter((k) => k.trang_thai === "cuon_chieu_hong").length;
       const no = g.khoa.filter((k) => k.trang_thai === "con_no_xu_ly").length;
+      const thua = g.khoa.reduce((s, k) => s + (Number(k.thua_so_voi_rot) || 0), 0);
       const doMa = g.khoa.filter((k) => k.trang_thai === "da_do_sang_ma").length;
       const xong = g.khoa.filter((k) => k.trang_thai === "da_cuon_chieu").length;
       return {
-        ...g, hong, no, doMa, xong,
+        ...g, hong, no, doMa, xong, thua,
         tongRot: g.khoa.reduce((s, k) => s + (Number(k.so_rot) || 0), 0),
         daXacNhan: g.khoa.filter((k) => k.khoa_da_xac_nhan).length,
         daSuaSo: g.khoa.filter((k) => k.khoa_da_sua_so).length,
         trangThai: hong > 0 ? "cuon_chieu_hong" : no > 0 ? "con_no_xu_ly"
-          : xong > 0 ? "da_cuon_chieu" : "da_do_sang_ma",
+          : thua > 0 ? "cuon_chieu_thua"
+            : xong > 0 ? "da_cuon_chieu" : "da_do_sang_ma",
       };
     }).sort((a, b) => (b.hong + b.no) - (a.hong + a.no)
       || a.ma_hang.localeCompare(b.ma_hang));
@@ -94,6 +100,7 @@ export default function TheoDoiCuonChieu({ profile, dotGoiId = null }) {
     ma: theoMa.length,
     hong: theoMa.filter((g) => g.hong > 0).length,
     no: theoMa.filter((g) => g.no > 0).length,
+    thua: theoMa.filter((g) => g.thua > 0).length,
   }), [theoMa]);
 
   const chayLaiCuonChieu = async (maHang) => {
@@ -144,6 +151,12 @@ export default function TheoDoiCuonChieu({ profile, dotGoiId = null }) {
               {tong.no} mã còn nợ xử lý
             </span>
           )}
+          {tong.thua > 0 && (
+            <span className="rounded bg-amber-100 px-2 py-1 text-[11px] font-medium text-amber-900"
+              title="Rớt thêm ở giai đoạn sau làm hệ chia lại số trúng theo tỉ lệ Q. Hệ không tự trừ lại — khoa tự cân nhắc giảm.">
+              {tong.thua} mã đã đưa nhiều hơn số rớt
+            </span>
+          )}
           <div className="relative">
             <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
             <input value={tim} onChange={(e) => setTim(e.target.value)}
@@ -156,6 +169,7 @@ export default function TheoDoiCuonChieu({ profile, dotGoiId = null }) {
             <option value="cuon_chieu_hong">Cuốn chiếu hỏng</option>
             <option value="con_no_xu_ly">Còn nợ xử lý</option>
             <option value="da_do_sang_ma">Đã đổ sang mã khác</option>
+            <option value="cuon_chieu_thua">Đã đưa nhiều hơn số rớt</option>
             <option value="da_cuon_chieu">Đã vào đợt bổ sung</option>
           </select>
           <button type="button" onClick={tai} className="qtdx-tb"><RefreshCw size={13} /> Tải lại</button>
@@ -247,7 +261,11 @@ export default function TheoDoiCuonChieu({ profile, dotGoiId = null }) {
                           <td className="py-1.5 pl-8 pr-3 text-slate-600">{k.khoa}</td>
                           <td className="px-3 py-1.5 text-right font-mono">{fmt(k.so_rot)}</td>
                           <td className="px-3 py-1.5 text-right font-mono text-slate-400">
-                            {Number(k.con_lai) > 0 ? `còn ${fmt(k.con_lai)}` : "—"}
+                            {Number(k.con_lai) > 0
+                              ? `còn ${fmt(k.con_lai)}`
+                              : Number(k.thua_so_voi_rot) > 0
+                                ? <span className="text-amber-700">thừa {fmt(k.thua_so_voi_rot)}</span>
+                                : "—"}
                           </td>
                           <td className="px-3 py-1.5">
                             {k.goi_bo_sung

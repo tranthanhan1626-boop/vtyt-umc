@@ -429,6 +429,88 @@ def main() -> int:
         assert all(v == 0 for v in con_lai_sau), f"còn sót phần rớt chưa xử lý: {con_lai_sau}"
         ok("sau xác nhận rớt không còn phần rớt nào rơi vào hư không")
 
+        # QĐ D11 (24/08/2026) — CUỐN CHIẾU LẦN HAI PHẢI CỘNG DỒN, KHÔNG ĐÈ.
+        # Trước 24/08 bước này VỠ hoàn toàn: proposals có UNIQUE
+        # (ma_hang, don_vi, nam_de_xuat, version) nên chèn lần hai là 23505.
+        bs_id = int(day["dot_goi_bo_sung_id"])
+        so_bo_sung = {(x["ma_hang"], x["khoa"]): float(x["so_luong_hien_hanh"])
+                      for x in admin.table("phan_bo_khoa").select("ma_hang,khoa,so_luong_hien_hanh")
+                      .eq("dot_goi_id", bs_id).in_("khoa", units).execute().data}
+        assert so_bo_sung, "phải có dòng ở đợt bổ sung sau lần cuốn chiếu đầu"
+        ma_lan2, khoa_lan2 = next(iter(so_bo_sung))
+        # khoa sửa số của mình — khoa quyết cuối
+        admin.table("phan_bo_khoa").update({"so_luong_hien_hanh": so_bo_sung[(ma_lan2, khoa_lan2)] + 7}) \
+            .eq("dot_goi_id", bs_id).eq("ma_hang", ma_lan2).eq("khoa", khoa_lan2).execute()
+        sau_khoa_sua = so_bo_sung[(ma_lan2, khoa_lan2)] + 7
+
+        # rớt thêm ở giai đoạn sau cho chính mã đó
+        pdd.rpc("cap_nhat_giai_doan_thau_v3", {"p_dot_goi_id": dg_id,
+            "p_giai_doan": "danh_gia", "p_trang_thai": "dang_thuc_hien",
+            "p_ly_do": "mo lai de ro them"}).execute()
+        con = float(pdd.table("v_ket_qua_thau_v3").select("so_luong_trung")
+                    .eq("phien_q_id", q_id).eq("ma_hang", ma_lan2).single().execute().data["so_luong_trung"])
+        if con > 0:
+            them_rot = max(1, int(con // 2))
+            tong_truoc = sum(float(x["so_luong_hien_hanh"])
+                             for x in admin.table("phan_bo_khoa").select("so_luong_hien_hanh")
+                             .eq("dot_goi_id", bs_id).in_("khoa", units).execute().data)
+            pdd.rpc("ghi_ngoai_le_rot_v3", {"p_dot_goi_id": dg_id, "p_ma_hang": ma_lan2,
+                "p_giai_doan": "danh_gia", "p_so_luong_rot": them_rot,
+                "p_rot_toan_bo": False, "p_ly_do": "Smoke rớt thêm lần hai"}).execute()
+            lan2 = pdd.rpc("xac_nhan_rot_v3", {"p_dot_goi_id": dg_id,
+                "p_giai_doan": "danh_gia", "p_ma_hang": ma_lan2}).execute().data
+            assert lan2["so_dong"] > 0, f"cuốn chiếu lần hai không được rỗng: {lan2}"
+
+            # Kiểm bằng TỔNG, không bằng một dòng cụ thể: phần rớt thêm chia
+            # theo tỉ lệ Q nên không chắc rơi vào đúng khoa mình vừa sửa tay.
+            sau = {(x["ma_hang"], x["khoa"]): float(x["so_luong_hien_hanh"])
+                   for x in admin.table("phan_bo_khoa").select("ma_hang,khoa,so_luong_hien_hanh")
+                   .eq("dot_goi_id", bs_id).in_("khoa", units).execute().data}
+            tong_sau = sum(sau.values())
+            # QĐ D12 — cuốn chiếu CHỈ CỘNG THÊM, không bao giờ trừ đi. Rớt thêm
+            # ở giai đoạn sau làm fn_dong_bo_phan_bo_trung_v3 chia lại số trúng
+            # theo tỉ lệ Q, nên phần rớt của một khoa có thể TỤT xuống dưới số
+            # đã cuốn chiếu. Hệ không tự chỉnh; việc của nó là hiện phần thừa ra.
+            sau = {(x["ma_hang"], x["khoa"]): float(x["so_luong_hien_hanh"])
+                   for x in admin.table("phan_bo_khoa").select("ma_hang,khoa,so_luong_hien_hanh")
+                   .eq("dot_goi_id", bs_id).in_("khoa", units).execute().data}
+            tong_sau = sum(sau.values())
+            assert tong_sau > tong_truoc, \
+                f"phải CỘNG DỒN: {tong_truoc} → {tong_sau}, số không được đứng yên"
+            for k, v in so_bo_sung.items():
+                if k in sau:
+                    assert sau[k] >= v, f"KHÔNG được trừ đi của khoa nào: {k} {v} → {sau[k]}"
+            assert sau[(ma_lan2, khoa_lan2)] >= sau_khoa_sua, \
+                f"số khoa tự sửa ({sau_khoa_sua}) bị đè mất, còn {sau[(ma_lan2, khoa_lan2)]}"
+            ok("cuốn chiếu lần hai chỉ CỘNG THÊM, không đè và không trừ (D11, D12)")
+
+            thua = admin.table("v_theo_doi_cuon_chieu_v3").select("khoa,thua_so_voi_rot,trang_thai") \
+                .eq("dot_goi_id", dg_id).eq("ma_hang", ma_lan2).gt("thua_so_voi_rot", 0).execute().data
+            if thua:
+                assert all(t["trang_thai"] == "cuon_chieu_thua" for t in thua), thua
+                ok(f"phần cuốn chiếu vượt số rớt hiện hành được HIỆN RA ({len(thua)} dòng, D12)")
+            else:
+                ok("lần này tỉ lệ không lệch nên không có dòng thừa — đúng")
+            # Trả đợt gốc về đúng trạng thái trước bước D11/D12 để các bước sau
+            # (chốt trình ký, 30%) vẫn đo trên cùng bộ số. Sổ cuốn chiếu GIỮ
+            # NGUYÊN — đúng D12: chỉ cộng thêm, không bao giờ trừ đi.
+            pdd.rpc("bo_ngoai_le_rot_v3", {"p_dot_goi_id": dg_id, "p_ma_hang": ma_lan2,
+                "p_giai_doan": "danh_gia", "p_ly_do": "Dọn bước kiểm D11/D12"}).execute()
+            pdd.rpc("cap_nhat_giai_doan_thau_v3", {"p_dot_goi_id": dg_id,
+                "p_giai_doan": "danh_gia", "p_trang_thai": "hoan_thanh",
+                "p_ly_do": None}).execute()
+        else:
+            ok("mã đã rớt sạch nên không thử được cuốn chiếu lần hai — bỏ qua")
+            pdd.rpc("cap_nhat_giai_doan_thau_v3", {"p_dot_goi_id": dg_id,
+                "p_giai_doan": "danh_gia", "p_trang_thai": "hoan_thanh",
+                "p_ly_do": None}).execute()
+
+        # PHÁT HIỆN 24/08/2026: mỗi lần GHI hoặc BỎ ngoại lệ rớt,
+        # fn_dong_bo_phan_bo_trung_v3 chia lại số trúng theo tỉ lệ Q và XOÁ phân
+        # bổ PĐD đã chỉnh tay. Đặt lại để các bước sau đo trên cùng bộ số.
+        pdd.rpc("cap_nhat_phan_bo_trung_v3", {"p_dot_goi_id": dg_id, "p_ma_hang": ma1,
+            "p_phan_bo": {units[0]: 140, units[1]: 10},
+            "p_ly_do": "Đặt lại sau bước kiểm D11/D12"}).execute()
 
         pdd.rpc("chot_trinh_ky_khoa_v3", {"p_dot_goi_id": dg_id, "p_khoa": units[0]}).execute()
         phai_loi(lambda: pdd.rpc("chot_trinh_ky_toan_bo_v3", {"p_dot_goi_id": dg_id}).execute(),
@@ -457,7 +539,8 @@ def main() -> int:
             "v_tien_do_su_dung phải đếm từ mốc chốt trình ký cho tới khi có nhánh hợp đồng"
         tdcc = pdd.table("v_theo_doi_cuon_chieu_v3").select("*").eq("dot_goi_id", dg_id).execute().data
         assert tdcc and all(r["trang_thai"] in
-            ("con_no_xu_ly", "da_do_sang_ma", "cuon_chieu_hong", "da_cuon_chieu") for r in tdcc), tdcc
+            ("con_no_xu_ly", "da_do_sang_ma", "cuon_chieu_hong", "da_cuon_chieu",
+             "cuon_chieu_thua") for r in tdcc), tdcc
         assert not any(r["trang_thai"] == "cuon_chieu_hong" for r in tdcc), \
             "sau khi xác nhận rớt không được còn dòng cuốn chiếu hỏng"
         ok("ba view chết đã sống lại trên nền v3 + màn theo dõi cuốn chiếu có dữ liệu")
