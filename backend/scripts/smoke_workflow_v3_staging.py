@@ -395,8 +395,10 @@ def main() -> int:
 
         day = pdd.rpc("xac_nhan_rot_v3", {"p_dot_goi_id": dg_id,
             "p_giai_doan": "danh_gia", "p_ma_hang": None}).execute().data
-        assert day, "xác nhận rớt phải cuốn chiếu ít nhất một dòng"
-        dot_bo_sung_id = int(day[0]["r_dot_bo_sung"])
+        # RPC trả TÓM TẮT từ 24/08/2026 (bản cũ trả một dòng mỗi (mã × khoa) nên
+        # PostgREST cắt ở 1.000 — đo thật ở quy mô 250×60: cần 1.608, báo 1.000).
+        assert day and day.get("so_dong"), f"xác nhận rớt phải cuốn chiếu ít nhất một dòng: {day}"
+        dot_bo_sung_id = int(day["dot_goi_bo_sung_id"])
         bs = admin.table("dot_goi").select("goi_id,trang_thai,dot_id") \
             .eq("id", dot_bo_sung_id).single().execute().data
         assert bs["goi_id"].startswith("bs-t"), bs
@@ -407,9 +409,13 @@ def main() -> int:
         pb = {(x["ma_hang"], x["khoa"]): float(x["so_luong_hien_hanh"])
               for x in admin.table("phan_bo_khoa").select("ma_hang,khoa,so_luong_hien_hanh")
               .eq("dot_goi_id", dot_bo_sung_id).in_("khoa", units).execute().data}
-        for d in day:
-            assert pb.get((d["r_ma_hang"], d["r_khoa"])) == float(d["r_so_luong"]), \
-                f"số ở đợt bổ sung phải bằng đúng số rớt: {d}"
+        cc = {(x["ma_hang"], x["khoa"]): float(x["so_luong"])
+              for x in admin.table("cuon_chieu_rot_v3").select("ma_hang,khoa,so_luong")
+              .eq("dot_goi_id_goc", dg_id).execute().data}
+        assert cc, "sổ cuốn chiếu phải có dòng"
+        assert len(cc) == day["so_dong"], f"RPC báo {day['so_dong']} nhưng sổ có {len(cc)}"
+        for k, v in cc.items():
+            assert pb.get(k) == v, f"số ở đợt bổ sung phải bằng đúng số rớt: {k} {pb.get(k)} ≠ {v}"
         ok("cuốn chiếu: phần rớt chưa đổ tự vào đợt bổ sung, số mặc định = số rớt (D4, D10)")
 
         noti = admin.table("thong_bao").select("pham_vi,khoa,loai,mau") \
@@ -501,6 +507,11 @@ def main() -> int:
                     admin.table("proposals").delete().in_("id", prop_bo_sung).execute()
                 admin.table("dot_goi_khoa").delete() \
                     .eq("dot_goi_id", dot_bo_sung_id).in_("khoa", units).execute()
+                # phòng hờ: dòng nào còn sót ở đợt bổ sung mang tên khoa smoke
+                admin.table("phan_bo_khoa").delete() \
+                    .eq("dot_goi_id", dot_bo_sung_id).in_("khoa", units).execute()
+                admin.table("proposals").delete() \
+                    .eq("dot_goi_id", dot_bo_sung_id).in_("don_vi", units).execute()
                 print("đã dọn dòng cuốn chiếu ở đợt bổ sung")
             except Exception as exc:  # noqa: BLE001
                 print(f"LỖI DỌN ĐỢT BỔ SUNG: {exc}")

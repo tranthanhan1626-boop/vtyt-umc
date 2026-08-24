@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ArrowRightLeft, Check, Play, X } from "lucide-react";
-import { supabase } from "../supabaseClient";
+import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 
 /*
@@ -17,7 +17,9 @@ import { fmt } from "../components/ChartDongBo";
  *
  * Nền dữ liệu (patch_zzzzz):
  *   v_ket_qua_thau_v3    — Q · R1 · R2 · R3 · số trúng theo mã hàng
- *   v_rot_chua_xu_ly_v3  — phần rớt của (mã hàng × khoa) chưa đổ, chưa cuốn chiếu
+ *   v_rot_theo_ma_v3     — phần rớt đã GỘP theo mã hàng (cấp mã × khoa chỉ
+ *                          màn Theo dõi cuốn chiếu mới cần — 1.608 dòng ở
+ *                          quy mô 250 mã × 60 khoa, đo thật 24/08/2026)
  *   chuyen_so_rot_v3     — sổ đổ số rớt sang mã tương đương
  *   cuon_chieu_rot_v3    — sổ phần rớt đã đẩy về đợt bổ sung
  */
@@ -50,51 +52,42 @@ export function useDuLieuThau(dotGoiId) {
     const phienId = phien?.id || null;
     setCoPhienQ(!!phienId);
 
-    const [gd, kq, chua, chuyen, cuon] = await Promise.all([
+    // Cụm cột thầu chỉ hiện MỘT con số cho mỗi mã hàng, nên đọc bản đã gộp ở
+    // server. Bản cũ tải ba nguồn cấp (mã × khoa): ở quy mô 250 mã × 60 khoa đó
+    // là 1.608 dòng, hai lượt phân trang, 3,4 s — chiếm quá nửa thời gian mở
+    // bảng (đo thật 24/08/2026). Cấp mã × khoa nay chỉ màn Theo dõi mới cần.
+    const [gd, kq, rot] = await Promise.all([
       supabase.from("giai_doan_thau_v3").select("giai_doan, thu_tu, trang_thai")
         .eq("dot_goi_id", dotGoiId).order("thu_tu"),
       phienId
-        ? supabase.from("v_ket_qua_thau_v3")
+        ? fetchAllRows((f, t) => supabase.from("v_ket_qua_thau_v3")
           .select("ma_hang, q, r1, r2, r3, so_luong_trung, co_rot, rot_toan_bo")
-          .eq("phien_q_id", phienId)
+          .eq("phien_q_id", phienId).range(f, t), { order: "ma_hang" })
         : Promise.resolve({ data: [] }),
       phienId
-        ? supabase.from("v_rot_chua_xu_ly_v3").select("ma_hang, khoa, con_lai, so_rot")
-          .eq("phien_q_id", phienId)
-        : Promise.resolve({ data: [] }),
-      phienId
-        ? supabase.from("chuyen_so_rot_v3")
-          .select("ma_hang_rot, ma_hang_nhan, khoa, so_luong, khoa_chua_tung_dung")
-          .eq("phien_q_id", phienId).eq("hieu_luc", true)
-        : Promise.resolve({ data: [] }),
-      phienId
-        ? supabase.from("cuon_chieu_rot_v3")
-          .select("ma_hang, khoa, so_luong, dot_goi_bo_sung_id").eq("phien_q_id", phienId)
+        ? fetchAllRows((f, t) => supabase.from("v_rot_theo_ma_v3")
+          .select("ma_hang, con_lai, da_chuyen, da_cuon_chieu, ma_hang_nhan, co_khoa_chua_tung_dung")
+          .eq("phien_q_id", phienId).range(f, t), { order: "ma_hang" })
         : Promise.resolve({ data: [] }),
     ]);
 
     setGiaiDoan(gd.data || []);
     setKetQua(new Map((kq.data || []).map((r) => [r.ma_hang, r])));
 
-    const gom = (rows, keyFn, valFn) => {
-      const m = new Map();
-      (rows || []).forEach((r) => {
-        const k = keyFn(r);
-        m.set(k, (m.get(k) || 0) + (Number(valFn(r)) || 0));
-      });
-      return m;
-    };
-    setChuaXuLy(gom(chua.data, (r) => r.ma_hang, (r) => r.con_lai));
-    setDaCuonChieu(gom(cuon.data, (r) => r.ma_hang, (r) => r.so_luong));
-
-    const mChuyen = new Map();
-    (chuyen.data || []).forEach((r) => {
-      const cu = mChuyen.get(r.ma_hang_rot) || { tong: 0, nhan: new Set(), canhBao: false };
-      cu.tong += Number(r.so_luong) || 0;
-      cu.nhan.add(r.ma_hang_nhan);
-      if (r.khoa_chua_tung_dung) cu.canhBao = true;
-      mChuyen.set(r.ma_hang_rot, cu);
+    const mChua = new Map(); const mCuon = new Map(); const mChuyen = new Map();
+    (rot.data || []).forEach((r) => {
+      if (Number(r.con_lai) > 0) mChua.set(r.ma_hang, Number(r.con_lai));
+      if (Number(r.da_cuon_chieu) > 0) mCuon.set(r.ma_hang, Number(r.da_cuon_chieu));
+      if (Number(r.da_chuyen) > 0) {
+        mChuyen.set(r.ma_hang, {
+          tong: Number(r.da_chuyen),
+          nhan: new Set((r.ma_hang_nhan || "").split(", ").filter(Boolean)),
+          canhBao: !!r.co_khoa_chua_tung_dung,
+        });
+      }
     });
+    setChuaXuLy(mChua);
+    setDaCuonChieu(mCuon);
     setDaChuyen(mChuyen);
     setDangTai(false);
   }, [dotGoiId]);
@@ -152,7 +145,14 @@ export function ThanhGiaiDoanThau({
     });
     setDangChay("");
     if (error) { onLoi?.(error.message); return; }
-    await onXong?.(`Đã cuốn chiếu ${(data || []).length} dòng rớt về đợt bổ sung.`);
+    // RPC nay trả TÓM TẮT, không phải một dòng cho mỗi (mã × khoa): bản cũ trả
+    // bảng dài nên PostgREST cắt ở 1.000 và màn báo hụt (đo thật 24/08: cần
+    // 1.608, báo 1.000).
+    const d = data || {};
+    await onXong?.(d.so_dong
+      ? `Đã cuốn chiếu ${d.so_dong} dòng (${d.so_ma} mã × ${d.so_khoa} khoa) về `
+        + `${d.ten_dot || "đợt bổ sung"} tháng ${d.thang}/${d.nam}.`
+      : "Không còn phần rớt nào cần cuốn chiếu.");
   };
 
   // Cụm cột thầu rỗng thì phải NÓI VÌ SAO. Bài học 23/08/2026: ba màn nằm chết

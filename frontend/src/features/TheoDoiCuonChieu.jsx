@@ -3,7 +3,7 @@ import {
   AlertTriangle, ArrowRightLeft, Check, ChevronDown, ChevronRight,
   RefreshCw, RotateCcw, Search,
 } from "lucide-react";
-import { supabase } from "../supabaseClient";
+import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 
 /*
@@ -39,9 +39,12 @@ export default function TheoDoiCuonChieu({ profile, dotGoiId = null }) {
 
   const tai = useCallback(async () => {
     setDangTai(true); setLoi("");
-    let q = supabase.from("v_theo_doi_cuon_chieu_v3").select("*");
-    if (dotGoiId) q = q.eq("dot_goi_id", dotGoiId);
-    const { data, error } = await q;
+    // Cấp (mã hàng × khoa) — 1.608 dòng ở quy mô 250×60, phải phân trang.
+    const { data, error } = await fetchAllRows((f, t) => {
+      let q = supabase.from("v_theo_doi_cuon_chieu_v3").select("*").range(f, t);
+      if (dotGoiId) q = q.eq("dot_goi_id", dotGoiId);
+      return q;
+    }, { order: "ma_hang" });
     if (error) setLoi(error.message);
     setRows(data || []);
     setDangTai(false);
@@ -97,11 +100,14 @@ export default function TheoDoiCuonChieu({ profile, dotGoiId = null }) {
     const dgId = rows.find((r) => r.ma_hang === maHang)?.dot_goi_id;
     if (!dgId) return;
     setDangChay(maHang); setLoi("");
-    const { error } = await supabase.rpc("xac_nhan_rot_v3", {
+    const { data, error } = await supabase.rpc("xac_nhan_rot_v3", {
       p_dot_goi_id: dgId, p_giai_doan: null, p_ma_hang: maHang,
     });
     setDangChay("");
     if (error) { setLoi(error.message); return; }
+    if (!data?.so_dong) {
+      setLoi(`Mã ${maHang} không còn phần rớt nào chưa xử lý — không có gì để chạy lại.`);
+    }
     await tai();
   };
 
