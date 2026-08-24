@@ -1,9 +1,9 @@
 """Khẳng định patch_zzzzz — bản VÒNG KHÉP KÍN, QĐ 23/08/2026.
 
-Nhánh rớt → đổ sang mã tương đương → cuốn chiếu về đợt bổ sung → báo khoa đã
+Nhánh rớt → đổ sang mã tương đương → chuyển tiếp về đợt bổ sung → báo khoa đã
 từng được xây đầu tháng 8 trên mô hình TRƯỚC v3 rồi chết khi thay xương sống.
 Test này giữ cho bản viết lại không bị viết lùi về nền cũ, và giữ đúng 4 quyết
-định dễ bị bào mòn nhất: D4 (cuốn chiếu MỌI phần rớt chưa xử lý), D7 (lệch ĐVT
+định dễ bị bào mòn nhất: D4 (chuyển tiếp MỌI phần rớt chưa xử lý), D7 (lệch ĐVT
 thì chặn), D9 (khoa chưa từng dùng mã nhận vẫn ghi + noti), D10 (đợt bổ sung
 luôn mở sẵn theo lịch T1/T5/T9).
 """
@@ -77,14 +77,14 @@ def test_khoa_chua_tung_dung_van_ghi_va_noti(sql: str) -> None:
     assert "CHƯA TỪNG" in than, "noti phải nói rõ đây là mã khoa chưa từng đề xuất"
 
 
-# --- D4: cuốn chiếu MỌI phần rớt chưa xử lý --------------------------------
+# --- D4: chuyển tiếp MỌI phần rớt chưa xử lý --------------------------------
 
-def test_cuon_chieu_theo_con_lai_khong_phai_rot_100(sql: str) -> None:
+def test_chuyen_tiep_theo_con_lai_khong_phai_rot_100(sql: str) -> None:
     than = sql.split("function xac_nhan_rot_v3")[1].split("$$;")[0]
     assert "con_lai > 0" in than, "cò phải bắn theo phần còn lại, không theo rớt toàn bộ"
     assert "rot_toan_bo" not in than, "không được quay lại điều kiện rớt 100%"
     assert "insert into proposals" in than, "phải đẻ dòng đề xuất ở đợt bổ sung"
-    assert "cuon_chieu_rot_v3" in than
+    assert "chuyen_tiep_rot_v3" in than
 
 
 def test_so_mac_dinh_bang_so_rot(sql: str) -> None:

@@ -43,7 +43,7 @@ mới. Luật nghiệp vụ đã có sẵn, kể cả khoá "tổng mã quản l
 | **D1** | PĐD nhập rớt **trực tiếp trên Tổng hợp danh mục đề xuất**. Ba ô R1/R2/R3 (**giữ đủ 3 giai đoạn** chào giá · mở thầu · đánh giá) + ô "đổ sang mã ___" ngay trong dòng |
 | **D2** | **Hai nhịp.** Nhịp 1 gõ nháp, sửa thoải mái, chưa ai bị làm phiền. Nhịp 2 bấm **"Xác nhận rớt"** — đây là cò |
 | **D3** | Đổ số rớt sang mã tương đương **cùng mã quản lý**: **giữ nguyên số theo từng khoa**. PĐD chỉ chọn mã nhận. Tổng mã quản lý không đổi |
-| **D4** | **Phần rớt nào chưa đổ đi đâu thì cuốn chiếu hết** — không phải chỉ mã rớt 100% |
+| **D4** | **Phần rớt nào chưa đổ đi đâu thì chuyển tiếp hết** — không phải chỉ mã rớt 100% |
 | **D5** | **Hộp thư thông báo hai chiều**, cả PĐD lẫn khoa. Chỉ ghi **việc lớn**, sửa vặt **gộp theo phiên**. Badge đỏ ở mục gói bổ sung. **Xác nhận đã xem là xoá luôn** — hộp thư không phình |
 | **D6** | Tiến độ gói thầu · số quyết định · số hợp đồng · nạp dữ liệu 2 lần/tuần → **nhánh sau**, không làm đợt này |
 | **D7** | **ĐVT lệch thì chặn.** Cùng ĐVT: đổ thẳng một cú bấm. Lệch ĐVT: hiện rõ *"mã rớt: Cái · mã nhận: Bộ"* và **bắt PĐD gõ số tay**. Không dựng bảng quy đổi |
@@ -55,10 +55,10 @@ mới. Luật nghiệp vụ đã có sẵn, kể cả khoá "tổng mã quản l
 Chủ dự án ban đầu chọn cò = mã rớt 100% số lượng. Phản ví dụ:
 
 > Mã X, Q = 100.000. Rớt 30.000, trúng 70.000. Mã quản lý đó không còn mã nào
-> trúng để đổ 30.000 sang. Rớt 30% ≠ 100% → không cuốn chiếu → **30.000 biến
+> trúng để đổ 30.000 sang. Rớt 30% ≠ 100% → không chuyển tiếp → **30.000 biến
 > mất**, khoa thiếu hàng, không ai biết cho tới lúc kho báo hết.
 
-Hở đúng giữa nguyên tắc "liên tục cuốn chiếu để không thiếu hàng". Nên cò là
+Hở đúng giữa nguyên tắc "liên tục chuyển tiếp để không thiếu hàng". Nên cò là
 **phần rớt chưa đổ đi đâu**, bao trọn cả rớt sạch lẫn rớt một phần.
 
 ### Vì sao hai nhịp (D2)
@@ -111,7 +111,7 @@ mang đi thầu đúng kỳ. Số đợt/năm cố định **3**, không phình 
 | Luật cũ | Thay bằng |
 |---|---|
 | **B4 (21/08)**: đợt bổ sung do hệ tạo khi thiếu | Đợt **luôn mở sẵn**, không đợi ai tạo (D10). Lịch T1/T5/T9 và bảng ánh xạ B7 **giữ nguyên** |
-| **B1 (21/08)**: mã rớt tự vào đợt bổ sung | Chỉ **phần chưa đổ sang mã tương đương** mới cuốn chiếu (D4) |
+| **B1 (21/08)**: mã rớt tự vào đợt bổ sung | Chỉ **phần chưa đổ sang mã tương đương** mới chuyển tiếp (D4) |
 | **Triết lý 17/08**: web là sổ ghi, *không nhắc, không thông báo tự động* | Có **hộp thư noti hai chiều** (D5). Ngoại lệ thứ hai, sau ngoại lệ "hệ tự tạo đợt" |
 | **Miếng 0 (21/08)**: dựng lại mẫu Excel gom dữ liệu sau thầu | **Hoãn** sang nhánh sau cùng với D6 |
 | **Miếng 3 (21/08)**: 4 mảng sau đấu thầu làm trong đợt này | **Hoãn** (D6) |
@@ -155,10 +155,10 @@ Patch `backend/sql/patch_zzzzz_vong_khep_kin.sql` (576 dòng), đã chạy lên 
 | Đối tượng mới | Vai trò |
 |---|---|
 | `chuyen_so_rot_v3` | sổ đổ số rớt sang mã tương đương |
-| `cuon_chieu_rot_v3` | sổ phần rớt đã đẩy về đợt bổ sung |
+| `chuyen_tiep_rot_v3` | sổ phần rớt đã đẩy về đợt bổ sung |
 | `thong_bao` | hộp thư hai chiều, gộp theo ngày, xem xong xoá |
 | `v_rot_chua_xu_ly_v3` | phần rớt còn nợ xử lý theo (mã hàng × khoa) |
-| `v_theo_doi_cuon_chieu_v3` | màn theo dõi của PĐD, đọc theo từng mã rớt |
+| `v_theo_doi_chuyen_tiep_v3` | màn theo dõi của PĐD, đọc theo từng mã rớt |
 | `day_so_luong_rot_v3` · `bo_chuyen_so_rot_v3` | đổ / bỏ đổ |
 | `xac_nhan_rot_v3` | **cò** — nhịp 2 |
 | `fn_dot_bo_sung_gan_nhat` | đợt T1/T5/T9 luôn mở sẵn |
@@ -181,7 +181,7 @@ vào `scripts/don_du_lieu_test_staging.py`.
 
 - `01_NGHIEP_VU_HIEN_HANH.md`, `06_DUNG_LAM_LAI.md`, docx và sơ đồ **chưa nuốt**
   10 QĐ ngày 23/08 (chủ dự án chốt: cook xong mới cập nhật tài liệu một lần).
-- Màn theo dõi cuốn chiếu của PĐD: view `v_theo_doi_cuon_chieu_v3` đã có, **chưa
+- Màn theo dõi chuyển tiếp của PĐD: view `v_theo_doi_chuyen_tiep_v3` đã có, **chưa
   dựng giao diện**.
 - `xoa_du_lieu_kiem_thu` không cần sửa: ba bảng mới cascade theo
   `chot_q_phien` / `dot_goi` nên xoá đợt là sạch theo.

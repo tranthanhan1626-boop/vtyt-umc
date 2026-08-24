@@ -145,17 +145,17 @@ left join nhom_ky_thuat nk on nk.ma_quan_ly = v.ma_quan_ly;
 grant select on v_tien_do_su_dung to authenticated;
 
 -- ───────────────────────────────────────────────────────────────────────────
--- 4. Màn theo dõi cuốn chiếu — thêm cột trạng thái khoa (QĐ B3, B8)
+-- 4. Màn theo dõi chuyển tiếp — thêm cột trạng thái khoa (QĐ B3, B8)
 --    Đọc theo TỪNG MÃ HÀNG RỚT: khoa nào rớt mã đó, đã vào đợt bổ sung nào,
 --    khoa đã sửa số chưa, khoa đã xác nhận danh mục ở đợt bổ sung chưa.
---    Ô TRỐNG ở `dot_goi_bo_sung_id` = CUỐN CHIẾU HỎNG, không phải chờ khoa.
+--    Ô TRỐNG ở `dot_goi_bo_sung_id` = CHUYỂN TIẾP HỎNG, không phải chờ khoa.
 -- ───────────────────────────────────────────────────────────────────────────
-drop view if exists v_theo_doi_cuon_chieu_v3 cascade;
-create view v_theo_doi_cuon_chieu_v3
+drop view if exists v_theo_doi_chuyen_tiep_v3 cascade;
+create view v_theo_doi_chuyen_tiep_v3
 with (security_invoker = true) as
 select r.phien_q_id, r.dot_goi_id, r.ma_hang, r.ten_vat_tu, r.dvt,
        r.ma_quan_ly, r.khoa,
-       r.so_rot, r.da_chuyen, r.da_cuon_chieu, r.con_lai,
+       r.so_rot, r.da_chuyen, r.da_chuyen_tiep, r.con_lai,
        ch.ma_hang_nhan,
        ch.khoa_chua_tung_dung,
        cc.dot_goi_bo_sung_id,
@@ -171,11 +171,11 @@ select r.phien_q_id, r.dot_goi_id, r.ma_hang, r.ten_vat_tu, r.dvt,
          when r.con_lai > 0                     then 'con_no_xu_ly'
          when ch.ma_hang_nhan is not null
               and cc.dot_goi_bo_sung_id is null then 'da_do_sang_ma'
-         when cc.dot_goi_bo_sung_id is null     then 'cuon_chieu_hong'
-         else 'da_cuon_chieu'
+         when cc.dot_goi_bo_sung_id is null     then 'chuyen_tiep_hong'
+         else 'da_chuyen_tiep'
        end                as trang_thai
 from v_rot_chua_xu_ly_v3 r
-left join cuon_chieu_rot_v3 cc
+left join chuyen_tiep_rot_v3 cc
        on cc.phien_q_id = r.phien_q_id and cc.ma_hang = r.ma_hang and cc.khoa = r.khoa
 left join chuyen_so_rot_v3 ch
        on ch.phien_q_id = r.phien_q_id and ch.ma_hang_rot = r.ma_hang
@@ -186,7 +186,7 @@ left join dot_de_xuat dd on dd.id = dg.dot_id
 left join phan_bo_khoa pb
        on pb.dot_goi_id = cc.dot_goi_bo_sung_id and pb.ma_hang = r.ma_hang and pb.khoa = r.khoa;
 
-grant select on v_theo_doi_cuon_chieu_v3 to authenticated;
+grant select on v_theo_doi_chuyen_tiep_v3 to authenticated;
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- 5. Vá v_rot_chua_xu_ly_v3 — phải bám PHIÊN Q CÒN HIỆU LỰC
@@ -200,10 +200,10 @@ select t.phien_q_id, t.dot_goi_id, t.ma_hang, t.khoa,
        t.q_khoa, t.so_luong_trung,
        (t.q_khoa - t.so_luong_trung)                    as so_rot,
        coalesce(c.da_chuyen, 0)                         as da_chuyen,
-       coalesce(cc.da_cuon_chieu, 0)                    as da_cuon_chieu,
+       coalesce(cc.da_chuyen_tiep, 0)                    as da_chuyen_tiep,
        (t.q_khoa - t.so_luong_trung
          - coalesce(c.da_chuyen, 0)
-         - coalesce(cc.da_cuon_chieu, 0))               as con_lai
+         - coalesce(cc.da_chuyen_tiep, 0))               as con_lai
 from phan_bo_trung_v3 t
 join chot_q_phien q on q.id = t.phien_q_id and q.hieu_luc
 join vat_tu v on v.ma_hang = t.ma_hang
@@ -212,8 +212,8 @@ left join (
     from chuyen_so_rot_v3 where hieu_luc group by 1,2,3
 ) c on c.phien_q_id = t.phien_q_id and c.ma_hang_rot = t.ma_hang and c.khoa = t.khoa
 left join (
-    select phien_q_id, ma_hang, khoa, sum(so_luong) da_cuon_chieu
-    from cuon_chieu_rot_v3 group by 1,2,3
+    select phien_q_id, ma_hang, khoa, sum(so_luong) da_chuyen_tiep
+    from chuyen_tiep_rot_v3 group by 1,2,3
 ) cc on cc.phien_q_id = t.phien_q_id and cc.ma_hang = t.ma_hang and cc.khoa = t.khoa
 where t.q_khoa > t.so_luong_trung;
 

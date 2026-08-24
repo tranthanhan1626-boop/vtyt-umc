@@ -1,14 +1,14 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 -- patch_zzzzz — VÒNG KHÉP KÍN (chốt 23/08/2026)
 --
--- Nối lại nhánh rớt → đổ sang mã tương đương → cuốn chiếu vào đợt bổ sung →
+-- Nối lại nhánh rớt → đổ sang mã tương đương → chuyển tiếp vào đợt bổ sung →
 -- báo khoa, vào xương sống v3. Nhánh này đã được xây đầu tháng 8 trên mô hình
 -- TRƯỚC v3 (goi_thau_ket_qua_ma / goi_thau_tien_do / goi_thau_moc) và chết khi
 -- thay xương sống; đây là bản viết lại, không phải tính năng mới.
 --
 -- Quyết định nền: .scratch/vong-khep-kin/KE_HOACH.md
 --   D3  đổ số rớt sang mã tương đương CÙNG mã quản lý, GIỮ NGUYÊN số theo khoa
---   D4  phần rớt nào chưa đổ đi đâu thì cuốn chiếu hết (không chỉ mã rớt 100%)
+--   D4  phần rớt nào chưa đổ đi đâu thì chuyển tiếp hết (không chỉ mã rớt 100%)
 --   D5  hộp thư noti hai chiều, gộp theo phiên, xem xong là xoá
 --   D7  lệch ĐVT thì CHẶN (đo thật: 68/446 nhóm nhiều mã lệch ĐVT)
 --   D9  khoa chưa từng đề xuất mã nhận → vẫn ghi, noti nói rõ
@@ -57,9 +57,9 @@ comment on table chuyen_so_rot_v3 is
     'Sổ ghi: số rớt của (mã hàng × khoa) được PĐD đổ sang mã tương đương cùng mã quản lý. Ghi thêm, KHÔNG sửa phan_bo_trung_v3.';
 
 -- ───────────────────────────────────────────────────────────────────────────
--- 2. SỔ CUỐN CHIẾU — phần rớt đã đẩy về đợt bổ sung (D4)
+-- 2. SỔ CHUYỂN TIẾP — phần rớt đã đẩy về đợt bổ sung (D4)
 -- ───────────────────────────────────────────────────────────────────────────
-create table if not exists cuon_chieu_rot_v3 (
+create table if not exists chuyen_tiep_rot_v3 (
     id                 bigserial primary key,
     phien_q_id         bigint not null references chot_q_phien(id),
     dot_goi_id_goc     bigint not null references dot_goi(id) on delete cascade,
@@ -72,23 +72,23 @@ create table if not exists cuon_chieu_rot_v3 (
     created_by         text not null,
     created_at         timestamptz not null default now()
 );
-create unique index if not exists cuon_chieu_rot_v3_uidx
-    on cuon_chieu_rot_v3 (phien_q_id, ma_hang, khoa);
-create index if not exists cuon_chieu_rot_v3_bo_sung_idx
-    on cuon_chieu_rot_v3 (dot_goi_bo_sung_id);
+create unique index if not exists chuyen_tiep_rot_v3_uidx
+    on chuyen_tiep_rot_v3 (phien_q_id, ma_hang, khoa);
+create index if not exists chuyen_tiep_rot_v3_bo_sung_idx
+    on chuyen_tiep_rot_v3 (dot_goi_bo_sung_id);
 
-alter table cuon_chieu_rot_v3 drop constraint if exists cuon_chieu_rot_v3_phien_q_id_fkey;
-alter table cuon_chieu_rot_v3 add constraint cuon_chieu_rot_v3_phien_q_id_fkey
+alter table chuyen_tiep_rot_v3 drop constraint if exists chuyen_tiep_rot_v3_phien_q_id_fkey;
+alter table chuyen_tiep_rot_v3 add constraint chuyen_tiep_rot_v3_phien_q_id_fkey
     foreign key (phien_q_id) references chot_q_phien(id) on delete cascade;
-alter table cuon_chieu_rot_v3 drop constraint if exists cuon_chieu_rot_v3_proposal_id_fkey;
-alter table cuon_chieu_rot_v3 add constraint cuon_chieu_rot_v3_proposal_id_fkey
+alter table chuyen_tiep_rot_v3 drop constraint if exists chuyen_tiep_rot_v3_proposal_id_fkey;
+alter table chuyen_tiep_rot_v3 add constraint chuyen_tiep_rot_v3_proposal_id_fkey
     foreign key (proposal_id) references proposals(id) on delete set null;
-alter table cuon_chieu_rot_v3 drop constraint if exists cuon_chieu_rot_v3_dot_goi_bo_sung_id_fkey;
-alter table cuon_chieu_rot_v3 add constraint cuon_chieu_rot_v3_dot_goi_bo_sung_id_fkey
+alter table chuyen_tiep_rot_v3 drop constraint if exists chuyen_tiep_rot_v3_dot_goi_bo_sung_id_fkey;
+alter table chuyen_tiep_rot_v3 add constraint chuyen_tiep_rot_v3_dot_goi_bo_sung_id_fkey
     foreign key (dot_goi_bo_sung_id) references dot_goi(id) on delete cascade;
 
-comment on table cuon_chieu_rot_v3 is
-    'Sổ ghi: phần rớt chưa đổ đi đâu đã được đẩy sang đợt bổ sung nào. Ô trống ở màn theo dõi = cuốn chiếu hỏng.';
+comment on table chuyen_tiep_rot_v3 is
+    'Sổ ghi: phần rớt chưa đổ đi đâu đã được đẩy sang đợt bổ sung nào. Ô trống ở màn theo dõi = chuyển tiếp hỏng.';
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- 3. HỘP THƯ THÔNG BÁO HAI CHIỀU (D5)
@@ -182,15 +182,15 @@ drop policy if exists "ai cung xem chuyen so rot" on chuyen_so_rot_v3;
 create policy "ai cung xem chuyen so rot" on chuyen_so_rot_v3
     for select using ((select auth.role()) = 'authenticated');
 
-alter table cuon_chieu_rot_v3 enable row level security;
-drop policy if exists "ai cung xem cuon chieu" on cuon_chieu_rot_v3;
-create policy "ai cung xem cuon chieu" on cuon_chieu_rot_v3
+alter table chuyen_tiep_rot_v3 enable row level security;
+drop policy if exists "ai cung xem cuon chieu" on chuyen_tiep_rot_v3;
+create policy "ai cung xem cuon chieu" on chuyen_tiep_rot_v3
     for select using ((select auth.role()) = 'authenticated');
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- 4. PHẦN RỚT CHƯA XỬ LÝ — theo (mã hàng × khoa)
 --    Rớt của một khoa = Q của khoa trừ số trúng của khoa. Trừ tiếp phần đã đổ
---    sang mã tương đương và phần đã cuốn chiếu.
+--    sang mã tương đương và phần đã chuyển tiếp.
 -- ───────────────────────────────────────────────────────────────────────────
 create or replace view v_rot_chua_xu_ly_v3 as
 select t.phien_q_id, t.dot_goi_id, t.ma_hang, t.khoa,
@@ -198,10 +198,10 @@ select t.phien_q_id, t.dot_goi_id, t.ma_hang, t.khoa,
        t.q_khoa, t.so_luong_trung,
        (t.q_khoa - t.so_luong_trung)                    as so_rot,
        coalesce(c.da_chuyen, 0)                         as da_chuyen,
-       coalesce(cc.da_cuon_chieu, 0)                    as da_cuon_chieu,
+       coalesce(cc.da_chuyen_tiep, 0)                    as da_chuyen_tiep,
        (t.q_khoa - t.so_luong_trung
          - coalesce(c.da_chuyen, 0)
-         - coalesce(cc.da_cuon_chieu, 0))               as con_lai
+         - coalesce(cc.da_chuyen_tiep, 0))               as con_lai
 from phan_bo_trung_v3 t
 join vat_tu v on v.ma_hang = t.ma_hang
 left join (
@@ -209,18 +209,18 @@ left join (
     from chuyen_so_rot_v3 where hieu_luc group by 1,2,3
 ) c on c.phien_q_id = t.phien_q_id and c.ma_hang_rot = t.ma_hang and c.khoa = t.khoa
 left join (
-    select phien_q_id, ma_hang, khoa, sum(so_luong) da_cuon_chieu
-    from cuon_chieu_rot_v3 group by 1,2,3
+    select phien_q_id, ma_hang, khoa, sum(so_luong) da_chuyen_tiep
+    from chuyen_tiep_rot_v3 group by 1,2,3
 ) cc on cc.phien_q_id = t.phien_q_id and cc.ma_hang = t.ma_hang and cc.khoa = t.khoa
 where t.q_khoa > t.so_luong_trung;
 
 comment on view v_rot_chua_xu_ly_v3 is
-    'Phần rớt của từng (mã hàng × khoa) còn chưa đổ sang mã tương đương và chưa cuốn chiếu. con_lai > 0 = còn nợ xử lý.';
+    'Phần rớt của từng (mã hàng × khoa) còn chưa đổ sang mã tương đương và chưa chuyển tiếp. con_lai > 0 = còn nợ xử lý.';
 
 -- Màn theo dõi của PĐD (QĐ B8): đọc theo TỪNG MÃ HÀNG RỚT.
-create or replace view v_theo_doi_cuon_chieu_v3 as
+create or replace view v_theo_doi_chuyen_tiep_v3 as
 select r.phien_q_id, r.dot_goi_id, r.ma_hang, r.ten_vat_tu, r.ma_quan_ly, r.khoa,
-       r.so_rot, r.da_chuyen, r.da_cuon_chieu, r.con_lai,
+       r.so_rot, r.da_chuyen, r.da_chuyen_tiep, r.con_lai,
        cc.dot_goi_bo_sung_id,
        dbs.nhan          as goi_bo_sung,
        dd.nam            as nam_bo_sung,
@@ -228,7 +228,7 @@ select r.phien_q_id, r.dot_goi_id, r.ma_hang, r.ten_vat_tu, r.ma_quan_ly, r.khoa
        ch.ma_hang_nhan,
        pb.so_luong_hien_hanh as so_khoa_dang_de_xuat_o_bo_sung
 from v_rot_chua_xu_ly_v3 r
-left join cuon_chieu_rot_v3 cc
+left join chuyen_tiep_rot_v3 cc
        on cc.phien_q_id = r.phien_q_id and cc.ma_hang = r.ma_hang and cc.khoa = r.khoa
 left join dot_goi dg  on dg.id = cc.dot_goi_bo_sung_id
 left join goi_con dbs on dbs.goi_id = dg.goi_id
@@ -415,7 +415,7 @@ $$;
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- 7. XÁC NHẬN RỚT — NHỊP 2, LÀ CÒ (D2, D4, D8)
---    Đổ xong thì phần còn lại cuốn chiếu HẾT về đợt bổ sung của khoa.
+--    Đổ xong thì phần còn lại chuyển tiếp HẾT về đợt bổ sung của khoa.
 -- ───────────────────────────────────────────────────────────────────────────
 create or replace function xac_nhan_rot_v3(
     p_dot_goi_id bigint, p_giai_doan text default null, p_ma_hang text default null)
@@ -454,13 +454,13 @@ begin
         from dot_goi dg where dg.id = v_bs
         returning id into v_prop;
 
-        insert into cuon_chieu_rot_v3
+        insert into chuyen_tiep_rot_v3
             (phien_q_id, dot_goi_id_goc, ma_hang, khoa, so_luong,
              giai_doan_phat_sinh, dot_goi_bo_sung_id, proposal_id, created_by)
         values (v_phien, p_dot_goi_id, r.ma_hang, r.khoa, r.con_lai,
                 p_giai_doan, v_bs, v_prop, coalesce(auth.email(),'system'))
         on conflict (phien_q_id, ma_hang, khoa) do update set
-            so_luong = cuon_chieu_rot_v3.so_luong + excluded.so_luong,
+            so_luong = chuyen_tiep_rot_v3.so_luong + excluded.so_luong,
             dot_goi_bo_sung_id = excluded.dot_goi_bo_sung_id,
             proposal_id = excluded.proposal_id;
 
@@ -484,7 +484,7 @@ begin
 
     if v_so_dong > 0 then
         perform fn_ghi_thong_bao('pdd', null, 'ma_rot_ve_khoa',
-            format('Đã cuốn chiếu %s dòng rớt về đợt bổ sung cho %s khoa',
+            format('Đã chuyển tiếp %s dòng rớt về đợt bổ sung cho %s khoa',
                    v_so_dong, array_length(v_khoa_set,1)),
             null, p_dot_goi_id,
             jsonb_build_object('so_dong', v_so_dong, 'khoa', v_khoa_set,
@@ -573,4 +573,4 @@ grant execute on function xac_nhan_rot_v3(bigint, text, text) to authenticated;
 grant execute on function danh_dau_da_xem_thong_bao(bigint[]) to authenticated;
 grant execute on function fn_dot_bo_sung_gan_nhat(date) to authenticated;
 grant select on v_rot_chua_xu_ly_v3 to authenticated;
-grant select on v_theo_doi_cuon_chieu_v3 to authenticated;
+grant select on v_theo_doi_chuyen_tiep_v3 to authenticated;

@@ -282,7 +282,7 @@ bị đi sai hướng nữa"*.
 | Khoá cứng 2 chặn ngay mỗi lần ghi | Chặn ở **cổng chốt trình ký**, lúc gõ chỉ tô đỏ **[X]** |
 | Chốt trình ký bấm từng bảng khoa (49 nút) | Một nút chốt toàn bộ **[X]** |
 | Sửa số sau chốt Q phải mở chốt cả gói con | Gõ đè tại chỗ kèm lý do **[X]** |
-| Mã rớt: không tự tạo, không tự điền; khoa tự chọn | **Cuốn chiếu** tự vào đợt bổ sung gần nhất **[X]** |
+| Mã rớt: không tự tạo, không tự điền; khoa tự chọn | **Chuyển tiếp** tự vào đợt bổ sung gần nhất **[X]** |
 | Đợt bổ sung do PĐD tạo tay | Lịch T1/T5/T9, hệ tự tạo nếu thiếu **[X]** |
 
 ### Ba thứ mở rộng phạm vi
@@ -290,7 +290,7 @@ bị đi sai hướng nữa"*.
 1. **Bốn mảng sau đấu thầu** vào phạm vi: hợp đồng · giao hàng từng lần · cam kết
    20/50/80 · mua thêm 30%. Trước đây `01` mục 12 ghi là "tách khỏi pipeline này".
 2. **Vẫn không có cột giá** — QĐ 17/08 giữ nguyên, kể cả cho hợp đồng.
-3. **Ngoại lệ đầu tiên của "web không tự chạy"**: cuốn chiếu mã rớt + tự tạo đợt.
+3. **Ngoại lệ đầu tiên của "web không tự chạy"**: chuyển tiếp mã rớt + tự tạo đợt.
 
 ### Ba thứ bị hoãn hoặc bỏ
 
@@ -383,7 +383,7 @@ gọi `day_so_luong_rot`, bảng nguồn 0 dòng, khoa bấm là vào ngõ cụt
 | D1 | PĐD nhập rớt **thẳng trên Danh mục tổng hợp** — ba ô R1/R2/R3, giữ đủ 3 giai đoạn |
 | D2 | **Hai nhịp**: gõ nháp → nút **"Xác nhận rớt"** là cò |
 | D3 | Đổ số rớt sang mã tương đương **cùng mã quản lý**, **giữ nguyên số theo từng khoa** |
-| D4 | **Mọi phần rớt chưa đổ đi đâu** đều cuốn chiếu, không chỉ mã rớt 100% |
+| D4 | **Mọi phần rớt chưa đổ đi đâu** đều chuyển tiếp, không chỉ mã rớt 100% |
 | D5 | **Hộp thư hai chiều**, chỉ việc lớn, sửa vặt gộp theo ngày, xem xong xoá hẳn |
 | D6 | Tiến độ gói thầu · số quyết định · số hợp đồng · nạp 2 lần/tuần → **nhánh sau** |
 | D7 | **Lệch ĐVT thì CHẶN**, bắt gõ tay. Không dựng bảng hệ số quy đổi |
@@ -408,8 +408,8 @@ lớn 1 Bộ = 1 Cái — chặn và gõ tay rẻ hơn nhiều.
 
 ### Đã thi công
 
-`patch_zzzzz_vong_khep_kin.sql` — bảng `chuyen_so_rot_v3` · `cuon_chieu_rot_v3` ·
-`thong_bao`; view `v_rot_chua_xu_ly_v3` · `v_theo_doi_cuon_chieu_v3`; RPC
+`patch_zzzzz_vong_khep_kin.sql` — bảng `chuyen_so_rot_v3` · `chuyen_tiep_rot_v3` ·
+`thong_bao`; view `v_rot_chua_xu_ly_v3` · `v_theo_doi_chuyen_tiep_v3`; RPC
 `day_so_luong_rot_v3` · `bo_chuyen_so_rot_v3` · `xac_nhan_rot_v3` ·
 `fn_dot_bo_sung_gan_nhat` · `danh_dau_da_xem_thong_bao`.
 
@@ -422,7 +422,7 @@ nguyên tên cột** nên 5 màn sống lại mà không phải sửa dòng giao
 
 Giao diện: `CumThauTongHop.jsx` (cụm cột thầu bám đuôi bảng — cố ý KHÔNG nhét
 vào `COT_PDD` vì cụm đó dùng chung với đường xuất Excel) · `HopThuThongBao.jsx` ·
-`TheoDoiCuonChieu.jsx`.
+`TheoDoiChuyenTiep.jsx`.
 
 ### Bốn lỗi giao diện chỉ lộ ra khi bấm thật
 

@@ -16,7 +16,7 @@
 ## 1. Câu một dòng
 
 Bảng Tổng hợp danh mục PĐD trở thành **nơi duy nhất PĐD làm việc**; mọi mã rớt
-**tự cuốn chiếu** vào đợt bổ sung gần nhất của khoa; hệ mở thêm bốn mảng
+**tự chuyển tiếp** vào đợt bổ sung gần nhất của khoa; hệ mở thêm bốn mảng
 **sau đấu thầu**.
 
 Phần từ đầu tới danh mục tổng hợp **giữ nguyên, không đụng**.
@@ -40,7 +40,7 @@ Phần từ đầu tới danh mục tổng hợp **giữ nguyên, không đụng
 | A9 | Cột `giai_trinh_2627` (ngoại lệ riêng từng khoa) nằm ở **dòng sổ của khoa** |
 | A10 | **Khoá cứng 3** (`R1+R2+R3 ≤ Q`) **giữ chặn cứng ngay** — khác khoá 2. Ba ô trên một dòng, không có tình huống gõ dở hợp lệ nào làm tổng vượt Q |
 
-### B. Cuốn chiếu mã rớt
+### B. Chuyển tiếp mã rớt
 
 | # | Quyết định |
 |---|---|
@@ -51,7 +51,7 @@ Phần từ đầu tới danh mục tổng hợp **giữ nguyên, không đụng
 | B5 | Trong đợt bổ sung, khoa làm **y như gói gốc** (sửa số, vòng xác nhận, tới chốt Q) |
 | B6 | **Chỉ định thầu = gói riêng biệt**, ngang hàng gói 18T và gói bổ sung, flow khác — **TẠM KHÔNG BUILD** |
 | B7 | Chọn đợt theo tháng phát sinh rớt: T2–4 → đợt T5 · T6–8 → đợt T9 · T10–12 và T1 → **đợt T1 năm sau** |
-| B8 | Màn theo dõi đọc theo **từng mã hàng rớt**: khoa nào đã đề xuất mã đó, từng khoa đã có mã đó trong đợt bổ sung gần nhất chưa. Ô trống ở cột "đã vào đợt nào" = **cuốn chiếu hỏng**, không phải chờ khoa |
+| B8 | Màn theo dõi đọc theo **từng mã hàng rớt**: khoa nào đã đề xuất mã đó, từng khoa đã có mã đó trong đợt bổ sung gần nhất chưa. Ô trống ở cột "đã vào đợt nào" = **chuyển tiếp hỏng**, không phải chờ khoa |
 
 ### C. Dữ liệu sau thầu
 
@@ -106,7 +106,7 @@ Theo `UX_MOT_MAT_BAN.md`. Bốn phần, làm được tách nhỏ:
 Rủi ro cao nhất ở 1c: nới một khoá cứng toán học. Phải có test khẳng định cổng
 chốt trình ký vẫn chặn được, trước khi nới.
 
-### Miếng 2 — Cuốn chiếu mã rớt
+### Miếng 2 — Chuyển tiếp mã rớt
 Lịch đợt bổ sung T1/T5/T9 · tự sinh đợt · tự đổ mã rớt kèm số · màn theo dõi
 của PĐD. Phụ thuộc miếng 1 (số rớt phải nhập được đã).
 

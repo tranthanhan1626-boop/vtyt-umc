@@ -7,30 +7,30 @@ import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 
 /*
- * TheoDoiCuonChieu — màn theo dõi của PĐD sau khi xác nhận rớt (QĐ B3/B8).
+ * TheoDoiChuyenTiep — màn theo dõi của PĐD sau khi xác nhận rớt (QĐ B3/B8).
  *
  * Đọc theo TỪNG MÃ HÀNG RỚT, không theo khoa: một mã rớt thì cả loạt khoa
  * cùng chịu, nên câu hỏi thật của PĐD là "mã này đã về tay đủ các khoa chưa",
  * chứ không phải "khoa này còn nợ gì".
  *
  * Luật đọc quan trọng nhất — chép nguyên từ QĐ B8:
- *   Ô TRỐNG ở cột "Đợt bổ sung" = CUỐN CHIẾU HỎNG, không phải đang chờ khoa.
- * Vì cuốn chiếu là việc của hệ, không phải việc của người. Trống nghĩa là hệ
+ *   Ô TRỐNG ở cột "Đợt bổ sung" = CHUYỂN TIẾP HỎNG, không phải đang chờ khoa.
+ * Vì chuyển tiếp là việc của hệ, không phải việc của người. Trống nghĩa là hệ
  * chưa làm được, phải bấm lại "Xác nhận rớt".
  */
 
 const NHAN_TRANG_THAI = {
   con_no_xu_ly: { nhan: "Còn nợ xử lý", mau: "bg-amber-100 text-amber-800", icon: AlertTriangle },
   da_do_sang_ma: { nhan: "Đã đổ sang mã khác", mau: "bg-sky-100 text-sky-800", icon: ArrowRightLeft },
-  cuon_chieu_hong: { nhan: "CUỐN CHIẾU HỎNG", mau: "bg-red-600 text-white", icon: AlertTriangle },
-  da_cuon_chieu: { nhan: "Đã vào đợt bổ sung", mau: "bg-emerald-100 text-emerald-800", icon: Check },
+  chuyen_tiep_hong: { nhan: "CHUYỂN TIẾP HỎNG", mau: "bg-red-600 text-white", icon: AlertTriangle },
+  da_chuyen_tiep: { nhan: "Đã vào đợt bổ sung", mau: "bg-emerald-100 text-emerald-800", icon: Check },
   // QĐ D12 (24/08/2026): rớt thêm ở giai đoạn sau làm hệ chia lại số trúng theo
-  // tỉ lệ Q, nên phần rớt của một khoa có thể TỤT xuống dưới số đã cuốn chiếu.
+  // tỉ lệ Q, nên phần rớt của một khoa có thể TỤT xuống dưới số đã chuyển tiếp.
   // Hệ KHÔNG tự trừ lại — khoa quyết số cuối. Việc của màn này là hiện ra.
-  cuon_chieu_thua: { nhan: "Đã đưa nhiều hơn số rớt", mau: "bg-amber-100 text-amber-900", icon: AlertTriangle },
+  chuyen_tiep_thua: { nhan: "Đã đưa nhiều hơn số rớt", mau: "bg-amber-100 text-amber-900", icon: AlertTriangle },
 };
 
-export default function TheoDoiCuonChieu({ profile, dotGoiId = null }) {
+export default function TheoDoiChuyenTiep({ profile, dotGoiId = null }) {
   const [rows, setRows] = useState([]);
   const [dangTai, setDangTai] = useState(true);
   const [loi, setLoi] = useState("");
@@ -45,7 +45,7 @@ export default function TheoDoiCuonChieu({ profile, dotGoiId = null }) {
     setDangTai(true); setLoi("");
     // Cấp (mã hàng × khoa) — 1.608 dòng ở quy mô 250×60, phải phân trang.
     const { data, error } = await fetchAllRows((f, t) => {
-      let q = supabase.from("v_theo_doi_cuon_chieu_v3").select("*").range(f, t);
+      let q = supabase.from("v_theo_doi_chuyen_tiep_v3").select("*").range(f, t);
       if (dotGoiId) q = q.eq("dot_goi_id", dotGoiId);
       return q;
     }, { order: "ma_hang" });
@@ -69,19 +69,19 @@ export default function TheoDoiCuonChieu({ profile, dotGoiId = null }) {
       m.get(r.ma_hang).khoa.push(r);
     });
     return [...m.values()].map((g) => {
-      const hong = g.khoa.filter((k) => k.trang_thai === "cuon_chieu_hong").length;
+      const hong = g.khoa.filter((k) => k.trang_thai === "chuyen_tiep_hong").length;
       const no = g.khoa.filter((k) => k.trang_thai === "con_no_xu_ly").length;
       const thua = g.khoa.reduce((s, k) => s + (Number(k.thua_so_voi_rot) || 0), 0);
       const doMa = g.khoa.filter((k) => k.trang_thai === "da_do_sang_ma").length;
-      const xong = g.khoa.filter((k) => k.trang_thai === "da_cuon_chieu").length;
+      const xong = g.khoa.filter((k) => k.trang_thai === "da_chuyen_tiep").length;
       return {
         ...g, hong, no, doMa, xong, thua,
         tongRot: g.khoa.reduce((s, k) => s + (Number(k.so_rot) || 0), 0),
         daXacNhan: g.khoa.filter((k) => k.khoa_da_xac_nhan).length,
         daSuaSo: g.khoa.filter((k) => k.khoa_da_sua_so).length,
-        trangThai: hong > 0 ? "cuon_chieu_hong" : no > 0 ? "con_no_xu_ly"
-          : thua > 0 ? "cuon_chieu_thua"
-            : xong > 0 ? "da_cuon_chieu" : "da_do_sang_ma",
+        trangThai: hong > 0 ? "chuyen_tiep_hong" : no > 0 ? "con_no_xu_ly"
+          : thua > 0 ? "chuyen_tiep_thua"
+            : xong > 0 ? "da_chuyen_tiep" : "da_do_sang_ma",
       };
     }).sort((a, b) => (b.hong + b.no) - (a.hong + a.no)
       || a.ma_hang.localeCompare(b.ma_hang));
@@ -103,7 +103,7 @@ export default function TheoDoiCuonChieu({ profile, dotGoiId = null }) {
     thua: theoMa.filter((g) => g.thua > 0).length,
   }), [theoMa]);
 
-  const chayLaiCuonChieu = async (maHang) => {
+  const chayLaiChuyenTiep = async (maHang) => {
     const dgId = rows.find((r) => r.ma_hang === maHang)?.dot_goi_id;
     if (!dgId) return;
     setDangChay(maHang); setLoi("");
@@ -131,10 +131,10 @@ export default function TheoDoiCuonChieu({ profile, dotGoiId = null }) {
   return (
     <div className="flex h-full flex-col">
       <div className="shrink-0 border-b border-slate-200 bg-white px-4 py-3">
-        <h1 className="text-lg font-semibold text-slate-900">Theo dõi cuốn chiếu mã rớt</h1>
+        <h1 className="text-lg font-semibold text-slate-900">Theo dõi chuyển tiếp mã rớt</h1>
         <p className="mt-0.5 text-xs text-slate-500">
           Đọc theo từng mã hàng rớt. <b className="text-red-700">Ô trống ở cột “Đợt bổ sung”
-          nghĩa là cuốn chiếu hỏng</b> — không phải đang chờ khoa. Bấm “Chạy lại” để hệ đẩy lại.
+          nghĩa là chuyển tiếp hỏng</b> — không phải đang chờ khoa. Bấm “Chạy lại” để hệ đẩy lại.
         </p>
 
         <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -143,7 +143,7 @@ export default function TheoDoiCuonChieu({ profile, dotGoiId = null }) {
           </span>
           {tong.hong > 0 && (
             <span className="rounded bg-red-600 px-2 py-1 text-[11px] font-semibold text-white">
-              {tong.hong} mã cuốn chiếu hỏng
+              {tong.hong} mã chuyển tiếp hỏng
             </span>
           )}
           {tong.no > 0 && (
@@ -166,11 +166,11 @@ export default function TheoDoiCuonChieu({ profile, dotGoiId = null }) {
           <select value={locTrangThai} onChange={(e) => setLocTrangThai(e.target.value)}
             className="rounded border border-slate-300 px-2 py-1 text-xs">
             <option value="tat_ca">Mọi trạng thái</option>
-            <option value="cuon_chieu_hong">Cuốn chiếu hỏng</option>
+            <option value="chuyen_tiep_hong">Chuyển tiếp hỏng</option>
             <option value="con_no_xu_ly">Còn nợ xử lý</option>
             <option value="da_do_sang_ma">Đã đổ sang mã khác</option>
-            <option value="cuon_chieu_thua">Đã đưa nhiều hơn số rớt</option>
-            <option value="da_cuon_chieu">Đã vào đợt bổ sung</option>
+            <option value="chuyen_tiep_thua">Đã đưa nhiều hơn số rớt</option>
+            <option value="da_chuyen_tiep">Đã vào đợt bổ sung</option>
           </select>
           <button type="button" onClick={tai} className="qtdx-tb"><RefreshCw size={13} /> Tải lại</button>
         </div>
@@ -246,7 +246,7 @@ export default function TheoDoiCuonChieu({ profile, dotGoiId = null }) {
                       <td className="px-3 py-2 text-right">
                         {(g.hong > 0 || g.no > 0) && (
                           <button type="button" disabled={dangChay === g.ma_hang}
-                            onClick={() => chayLaiCuonChieu(g.ma_hang)}
+                            onClick={() => chayLaiChuyenTiep(g.ma_hang)}
                             className="inline-flex items-center gap-1 rounded border border-red-300 bg-white px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-50 disabled:opacity-50">
                             <RotateCcw size={11} />
                             {dangChay === g.ma_hang ? "Đang chạy…" : "Chạy lại"}
@@ -269,7 +269,7 @@ export default function TheoDoiCuonChieu({ profile, dotGoiId = null }) {
                           </td>
                           <td className="px-3 py-1.5">
                             {k.goi_bo_sung
-                              ? <span>{k.goi_bo_sung} · số {fmt(k.so_khoa_dang_de_xuat ?? k.da_cuon_chieu)}</span>
+                              ? <span>{k.goi_bo_sung} · số {fmt(k.so_khoa_dang_de_xuat ?? k.da_chuyen_tiep)}</span>
                               : k.ma_hang_nhan
                                 ? <span className="text-sky-700">→ {k.ma_hang_nhan}
                                     {k.khoa_chua_tung_dung && <b className="text-amber-700"> (khoa chưa từng dùng)</b>}

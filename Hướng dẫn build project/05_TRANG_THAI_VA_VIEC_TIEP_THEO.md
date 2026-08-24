@@ -16,7 +16,7 @@ Cập nhật **23/08/2026**. Nhánh `phase-a-luong-de-xuat`.
 > | Đổi | Khoá tổng phân bổ **chỉ chặn ở cổng chốt trình ký**, lúc gõ chỉ tô đỏ |
 > | Đổi | Chốt trình ký còn **một nút toàn bộ**; bỏ 49 nút chốt từng khoa |
 > | Đổi | Sửa số sau chốt Q: **gõ đè tại chỗ kèm lý do**, không mở chốt cả gói |
-> | Thêm | **Cuốn chiếu** mã rớt vào đợt bổ sung gần nhất, hệ tự tạo đợt T1/T5/T9 |
+> | Thêm | **Chuyển tiếp** mã rớt vào đợt bổ sung gần nhất, hệ tự tạo đợt T1/T5/T9 |
 > | Thêm | **Bốn mảng sau đấu thầu**: hợp đồng · giao hàng · cam kết 20/50/80 · 30% |
 > | Bỏ | Dán kết quả thầu từ Excel (kết quả về bản giấy) |
 > | Hoãn | Chỉ định thầu (gói riêng, flow khác) · 4 màn ngoài pipeline |
@@ -40,9 +40,9 @@ Cập nhật **23/08/2026**. Nhánh `phase-a-luong-de-xuat`.
 > | Xong | Cụm cột **Q · R1 · R2 · R3 · Trúng · Xử lý rớt** ngay trên Danh mục tổng hợp, kèm dải giai đoạn thầu |
 > | Xong | **Hai nhịp**: gõ nháp → nút **"Xác nhận rớt"** là cò |
 > | Xong | **Đổ số rớt sang mã tương đương** cùng mã quản lý, giữ nguyên số theo khoa; lệch ĐVT thì chặn |
-> | Xong | **Cuốn chiếu mọi phần rớt chưa đổ** về đợt bổ sung T1/T5/T9 **luôn mở sẵn** |
+> | Xong | **Chuyển tiếp mọi phần rớt chưa đổ** về đợt bổ sung T1/T5/T9 **luôn mở sẵn** |
 > | Xong | **Hộp thư hai chiều** + badge đỏ ở Gói bổ sung |
-> | Xong | Màn **Theo dõi cuốn chiếu mã rớt** cho PĐD |
+> | Xong | Màn **Theo dõi chuyển tiếp mã rớt** cho PĐD |
 > | Xong | Hồi sinh 3 view chết lên nền v3 → 5 màn sống lại |
 > | Hoãn | **Miếng 0 và miếng 3** của bản một mặt bàn → nhánh sau (QĐ D6) |
 >
@@ -87,7 +87,7 @@ không tồn tại. Đây là vòng bắt đúng lớp lỗi "hiện rỗng mà 
 không thấy vì smoke chỉ đi một đường xuyên pipeline chính.
 
 🆕 **Đo bằng trình duyệt thật** (Chrome, hai vai trò, 23/08): chốt Q → chạy ba
-giai đoạn → rớt → đổ mã → xác nhận rớt → cuốn chiếu → khoa nhận thông báo và
+giai đoạn → rớt → đổ mã → xác nhận rớt → chuyển tiếp → khoa nhận thông báo và
 thấy mã trong đợt bổ sung với đúng số. Vòng này tìm ra **4 lỗi giao diện** mà
 pytest và smoke không thấy (cột bị bóp còn 16px và bị ô khác đè · dải giai đoạn
 không tải lại sau chốt Q · ô rớt không bắt được bàn phím · `window.confirm` khoá
@@ -154,7 +154,7 @@ ngữ cảnh**; sau khi làm còn **~3 click, 0 đổi màn**. Hoàn tất một
 màn/3 tab → 1 màn**. Hôm nay hai màn danh mục **không có phím tắt nào**
 (`grep onKeyDown` = 0 kết quả).
 
-### Miếng 2 — Cuốn chiếu mã rớt
+### Miếng 2 — Chuyển tiếp mã rớt
 
 Lịch đợt bổ sung T1/T5/T9 · tự sinh đợt khi thiếu · tự đưa mã rớt vào đợt gần
 nhất của từng khoa kèm số · màn theo dõi của PĐD (`01` mục 6.2).

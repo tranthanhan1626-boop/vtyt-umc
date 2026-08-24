@@ -36,12 +36,12 @@ for each row execute function fn_phan_bo_danh_dau_ai_sua();
 -- ───────────────────────────────────────────────────────────────────────────
 -- LỖI 2 — Cò trả về MỘT DÒNG cho mỗi (mã × khoa), PostgREST cắt ở 1.000
 --
--- Đo thật: 1.608 dòng cần cuốn chiếu, DB ghi đủ 1.608, nhưng RPC chỉ TRẢ VỀ
--- 1.000 nên giao diện báo "Đã cuốn chiếu 1.000 dòng". Số liệu không mất, nhưng
+-- Đo thật: 1.608 dòng cần chuyển tiếp, DB ghi đủ 1.608, nhưng RPC chỉ TRẢ VỀ
+-- 1.000 nên giao diện báo "Đã chuyển tiếp 1.000 dòng". Số liệu không mất, nhưng
 -- người dùng đọc thấy hụt 608 dòng và sẽ tưởng cò chạy sót.
 --
 -- Sửa: trả về TÓM TẮT (mấy dòng, mấy mã, mấy khoa, đợt nào) thay vì bảng dài.
--- Cần chi tiết thì đã có màn Theo dõi cuốn chiếu đọc v_theo_doi_cuon_chieu_v3.
+-- Cần chi tiết thì đã có màn Theo dõi chuyển tiếp đọc v_theo_doi_chuyen_tiep_v3.
 -- ───────────────────────────────────────────────────────────────────────────
 drop function if exists xac_nhan_rot_v3(bigint, text, text);
 
@@ -82,7 +82,7 @@ begin
         -- xuất mã đó trong năm ấy — xảy ra ở hai tình huống RẤT THƯỜNG:
         --   · mã rớt thêm ở giai đoạn sau, PĐD bấm Xác nhận rớt lần hai;
         --   · khoa đã tự đề xuất mã đó trong đợt bổ sung trước khi nó rớt.
-        -- Đo thật ở quy mô 250×60: cò vỡ hoàn toàn, KHÔNG cuốn chiếu được dòng nào.
+        -- Đo thật ở quy mô 250×60: cò vỡ hoàn toàn, KHÔNG chuyển tiếp được dòng nào.
         -- Sửa: lên version mới, hạ cờ is_current của bản cũ.
         select coalesce(max(version), 0) + 1 into v_ver
         from proposals where ma_hang = r.ma_hang and don_vi = r.khoa and nam_de_xuat = v_nam;
@@ -97,13 +97,13 @@ begin
         from dot_goi dg where dg.id = v_bs
         returning id into v_prop;
 
-        insert into cuon_chieu_rot_v3
+        insert into chuyen_tiep_rot_v3
             (phien_q_id, dot_goi_id_goc, ma_hang, khoa, so_luong,
              giai_doan_phat_sinh, dot_goi_bo_sung_id, proposal_id, created_by)
         values (v_phien, p_dot_goi_id, r.ma_hang, r.khoa, r.con_lai,
                 p_giai_doan, v_bs, v_prop, coalesce(auth.email(),'system'))
         on conflict (phien_q_id, ma_hang, khoa) do update set
-            so_luong = cuon_chieu_rot_v3.so_luong + excluded.so_luong,
+            so_luong = chuyen_tiep_rot_v3.so_luong + excluded.so_luong,
             dot_goi_bo_sung_id = excluded.dot_goi_bo_sung_id,
             proposal_id = excluded.proposal_id;
 
@@ -128,13 +128,13 @@ begin
         from (
             select khoa, count(*) so_ma, sum(so_luong) tong,
                    array_agg(ma_hang order by ma_hang) ds
-            from cuon_chieu_rot_v3
+            from chuyen_tiep_rot_v3
             where phien_q_id = v_phien and dot_goi_bo_sung_id = v_bs and khoa = any(v_khoa_set)
             group by khoa
         ) k;
 
         perform fn_ghi_thong_bao('pdd', null, 'ma_rot_ve_khoa',
-            format('Đã cuốn chiếu %s dòng rớt (%s mã × %s khoa) về %s',
+            format('Đã chuyển tiếp %s dòng rớt (%s mã × %s khoa) về %s',
                    v_so_dong, array_length(v_ma_set,1), array_length(v_khoa_set,1),
                    coalesce(v_nhan,'đợt bổ sung')),
             null, p_dot_goi_id,
@@ -196,15 +196,15 @@ $$;
 -- ───────────────────────────────────────────────────────────────────────────
 create index if not exists chuyen_so_rot_v3_phien_idx
     on chuyen_so_rot_v3 (phien_q_id, ma_hang_rot) where hieu_luc;
-create index if not exists cuon_chieu_rot_v3_phien_idx
-    on cuon_chieu_rot_v3 (phien_q_id, ma_hang);
+create index if not exists chuyen_tiep_rot_v3_phien_idx
+    on chuyen_tiep_rot_v3 (phien_q_id, ma_hang);
 
 create or replace view v_rot_theo_ma_v3 as
 select
     r.phien_q_id, r.dot_goi_id, r.ma_hang,
     sum(r.so_rot)         as so_rot,
     sum(r.da_chuyen)      as da_chuyen,
-    sum(r.da_cuon_chieu)  as da_cuon_chieu,
+    sum(r.da_chuyen_tiep)  as da_chuyen_tiep,
     sum(r.con_lai)        as con_lai,
     count(*)              as so_khoa,
     (select string_agg(distinct c.ma_hang_nhan, ', ')
@@ -224,7 +224,7 @@ comment on view v_rot_theo_ma_v3 is
 grant select on v_rot_theo_ma_v3 to authenticated;
 
 -- ───────────────────────────────────────────────────────────────────────────
--- QĐ D11 (24/08/2026) — CUỐN CHIẾU LẦN HAI THÌ CỘNG DỒN, KHÔNG ĐÈ
+-- QĐ D11 (24/08/2026) — CHUYỂN TIẾP LẦN HAI THÌ CỘNG DỒN, KHÔNG ĐÈ
 --
 -- Tình huống: mã X rớt ở chào giá 44.210 → về đợt bổ sung. Khoa vào sửa thành
 -- 50.000 (khoa quyết cuối). Sau đó mã X rớt thêm 10.000 ở mở thầu, PĐD bấm
@@ -288,13 +288,13 @@ begin
         from dot_goi dg where dg.id = v_bs
         returning id into v_prop;
 
-        insert into cuon_chieu_rot_v3
+        insert into chuyen_tiep_rot_v3
             (phien_q_id, dot_goi_id_goc, ma_hang, khoa, so_luong,
              giai_doan_phat_sinh, dot_goi_bo_sung_id, proposal_id, created_by)
         values (v_phien, p_dot_goi_id, r.ma_hang, r.khoa, r.con_lai,
                 p_giai_doan, v_bs, v_prop, coalesce(auth.email(),'system'))
         on conflict (phien_q_id, ma_hang, khoa) do update set
-            so_luong = cuon_chieu_rot_v3.so_luong + excluded.so_luong,
+            so_luong = chuyen_tiep_rot_v3.so_luong + excluded.so_luong,
             dot_goi_bo_sung_id = excluded.dot_goi_bo_sung_id,
             proposal_id = excluded.proposal_id;
 
@@ -316,13 +316,13 @@ begin
         from (
             select khoa, count(*) so_ma, sum(so_luong) tong,
                    array_agg(ma_hang order by ma_hang) ds
-            from cuon_chieu_rot_v3
+            from chuyen_tiep_rot_v3
             where phien_q_id = v_phien and dot_goi_bo_sung_id = v_bs and khoa = any(v_khoa_set)
             group by khoa
         ) k;
 
         perform fn_ghi_thong_bao('pdd', null, 'ma_rot_ve_khoa',
-            format('Đã cuốn chiếu %s dòng rớt (%s mã × %s khoa) về %s%s',
+            format('Đã chuyển tiếp %s dòng rớt (%s mã × %s khoa) về %s%s',
                    v_so_dong, array_length(v_ma_set,1), array_length(v_khoa_set,1),
                    coalesce(v_nhan,'đợt bổ sung'),
                    case when v_so_cong_don > 0
@@ -347,14 +347,14 @@ $$;
 grant execute on function xac_nhan_rot_v3(bigint, text, text) to authenticated;
 
 -- ───────────────────────────────────────────────────────────────────────────
--- QĐ D12 (24/08/2026) — CUỐN CHIẾU CHỈ CỘNG THÊM, KHÔNG BAO GIỜ TRỪ ĐI
+-- QĐ D12 (24/08/2026) — CHUYỂN TIẾP CHỈ CỘNG THÊM, KHÔNG BAO GIỜ TRỪ ĐI
 --
--- Tình huống đo thật ở smoke: mã 74960 rớt ở chào giá, khoa B được cuốn chiếu
+-- Tình huống đo thật ở smoke: mã 74960 rớt ở chào giá, khoa B được chuyển tiếp
 -- 70. Rớt thêm ở đánh giá → `fn_dong_bo_phan_bo_trung_v3` CHIA LẠI số trúng
 -- theo tỉ lệ Q cho mọi khoa, phần rớt của khoa B tụt còn 47. Nhưng 70 đã nằm
 -- sẵn ở đợt bổ sung.
 --
---   Khoa B  q=80  trúng=33  rớt=47  đã cuốn chiếu 70  →  con_lai = −23
+--   Khoa B  q=80  trúng=33  rớt=47  đã chuyển tiếp 70  →  con_lai = −23
 --
 -- Chủ dự án chốt: **giữ nguyên**. Mã rớt vào gói bổ sung gần nhất ngay; giai
 -- đoạn sau rớt tiếp thì CỘNG THÊM vào chính gói đó; gói đó đã chốt Q rồi thì
@@ -363,16 +363,16 @@ grant execute on function xac_nhan_rot_v3(bigint, text, text) to authenticated;
 --
 -- Việc của hệ là **HIỆN PHẦN THỪA RA**, không phải im lặng tự chỉnh.
 -- ───────────────────────────────────────────────────────────────────────────
-drop view if exists v_theo_doi_cuon_chieu_v3 cascade;
-create view v_theo_doi_cuon_chieu_v3
+drop view if exists v_theo_doi_chuyen_tiep_v3 cascade;
+create view v_theo_doi_chuyen_tiep_v3
 with (security_invoker = true) as
 select r.phien_q_id, r.dot_goi_id, r.ma_hang, r.ten_vat_tu, r.dvt,
        r.ma_quan_ly, r.khoa,
-       r.so_rot, r.da_chuyen, r.da_cuon_chieu, r.con_lai,
+       r.so_rot, r.da_chuyen, r.da_chuyen_tiep, r.con_lai,
        -- > 0 nghĩa là đã đưa vào đợt bổ sung NHIỀU HƠN số rớt hiện hành, do tỉ
        -- lệ chia giữa các khoa đổi sau khi rớt thêm ở giai đoạn sau. Không phải
        -- lỗi — theo QĐ D12 hệ không trừ lại; nhưng phải cho PĐD và khoa nhìn thấy.
-       greatest(r.da_chuyen + r.da_cuon_chieu - r.so_rot, 0) as thua_so_voi_rot,
+       greatest(r.da_chuyen + r.da_chuyen_tiep - r.so_rot, 0) as thua_so_voi_rot,
        ch.ma_hang_nhan,
        ch.khoa_chua_tung_dung,
        cc.dot_goi_bo_sung_id,
@@ -385,15 +385,15 @@ select r.phien_q_id, r.dot_goi_id, r.ma_hang, r.ten_vat_tu, r.dvt,
                where dk.dot_goi_id = cc.dot_goi_bo_sung_id and dk.khoa = r.khoa)
                           as khoa_da_xac_nhan,
        case
-         when r.da_chuyen + r.da_cuon_chieu - r.so_rot > 0 then 'cuon_chieu_thua'
+         when r.da_chuyen + r.da_chuyen_tiep - r.so_rot > 0 then 'chuyen_tiep_thua'
          when r.con_lai > 0                     then 'con_no_xu_ly'
          when ch.ma_hang_nhan is not null
               and cc.dot_goi_bo_sung_id is null then 'da_do_sang_ma'
-         when cc.dot_goi_bo_sung_id is null     then 'cuon_chieu_hong'
-         else 'da_cuon_chieu'
+         when cc.dot_goi_bo_sung_id is null     then 'chuyen_tiep_hong'
+         else 'da_chuyen_tiep'
        end                as trang_thai
 from v_rot_chua_xu_ly_v3 r
-left join cuon_chieu_rot_v3 cc
+left join chuyen_tiep_rot_v3 cc
        on cc.phien_q_id = r.phien_q_id and cc.ma_hang = r.ma_hang and cc.khoa = r.khoa
 left join chuyen_so_rot_v3 ch
        on ch.phien_q_id = r.phien_q_id and ch.ma_hang_rot = r.ma_hang
@@ -404,4 +404,4 @@ left join dot_de_xuat dd on dd.id = dg.dot_id
 left join phan_bo_khoa pb
        on pb.dot_goi_id = cc.dot_goi_bo_sung_id and pb.ma_hang = r.ma_hang and pb.khoa = r.khoa;
 
-grant select on v_theo_doi_cuon_chieu_v3 to authenticated;
+grant select on v_theo_doi_chuyen_tiep_v3 to authenticated;

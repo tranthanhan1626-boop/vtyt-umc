@@ -172,7 +172,7 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
   };
 
   // Badge đỏ ở mục gói bổ sung (QĐ D5, 23/08/2026): khoa phải THẤY NGAY là có
-  // mã vừa rớt và vừa được cuốn chiếu về đợt bổ sung của mình. Đọc chính hộp
+  // mã vừa rớt và vừa được chuyển tiếp về đợt bổ sung của mình. Đọc chính hộp
   // thư — xem xong xoá noti thì badge tắt theo, không cần cờ riêng.
   const [soMaRotMoi, setSoMaRotMoi] = useState(0);
   useEffect(() => {
@@ -389,11 +389,11 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
       {laPdd && (
         <button
           type="button"
-          onClick={() => chuyenMan({ nhom: "chung", man: "cuonchieu" })}
-          className={`umc-common-button mt-2 ${chon.man === "cuonchieu" ? "is-active" : ""}`}
+          onClick={() => chuyenMan({ nhom: "chung", man: "chuyentiep" })}
+          className={`umc-common-button mt-2 ${chon.man === "chuyentiep" ? "is-active" : ""}`}
         >
           <RotateCcw size={16} />
-          <span>Theo dõi cuốn chiếu mã rớt</span>
+          <span>Theo dõi chuyển tiếp mã rớt</span>
         </button>
       )}
 

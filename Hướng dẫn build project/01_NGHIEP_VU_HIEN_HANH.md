@@ -4,7 +4,7 @@ Viết lại **17/08/2026** theo bản chốt workflow v3, cập nhật **19/08/
 bản V2 (một giá trị chung · ai sửa sau đè · vòng xác nhận lần N · cột dải
 P50–P75), cập nhật **20/08/2026** mục 8.2 (cổng chốt trình ký chỉ tính khoa đã
 gửi đề xuất), viết lại **21/08/2026** theo bản **MỘT MẶT BÀN** (mọi thao tác
-PĐD dồn về Danh mục tổng hợp · cuốn chiếu mã rớt · mở bốn mảng sau đấu thầu).
+PĐD dồn về Danh mục tổng hợp · chuyển tiếp mã rớt · mở bốn mảng sau đấu thầu).
 
 Nguồn gốc là `Full workflow vtyt web.docx` cùng thư mục — bản chốt nghiệp vụ do
 chủ dự án viết. File này là **bản thi hành**: cùng nội dung nhưng nói rõ tới
@@ -63,7 +63,7 @@ dòng còn lệch và không cho chốt.
 🆕 QĐ 21/08/2026 mở **ngoại lệ đầu tiên**: mã hàng rớt thầu **tự** được đưa vào
 đợt bổ sung gần nhất của khoa, kèm số lượng, và đợt bổ sung theo lịch T1/T5/T9
 **tự** được tạo nếu chưa có (mục 6). Đây không phải cổng chặn quy trình — không
-ai bị khoá, khoa vẫn sửa và vẫn quyết — mà là **cuốn chiếu** để mã hàng không
+ai bị khoá, khoa vẫn sửa và vẫn quyết — mà là **chuyển tiếp** để mã hàng không
 rơi ra ngoài giữa hai đợt.
 
 🆕 QĐ 23/08/2026 mở **ngoại lệ thứ hai: hộp thư thông báo hai chiều** (mục 12).
@@ -377,7 +377,7 @@ chỉ đọc. Dải giai đoạn nằm ngay trên bảng tổng hợp, bắt đ�
 | Nhịp | Việc | Ai bị ảnh hưởng |
 |---|---|---|
 | 1 · gõ nháp | Gõ R1/R2/R3, chọn mã để đổ số rớt sang, sửa tới sửa lui | **Không ai** — khoa chưa biết gì |
-| 2 · bấm **"Xác nhận rớt"** | Phần đã chọn được đổ sang mã tương đương; phần **còn lại cuốn chiếu hết** về đợt bổ sung; khoa nhận thông báo đỏ | Khoa |
+| 2 · bấm **"Xác nhận rớt"** | Phần đã chọn được đổ sang mã tương đương; phần **còn lại chuyển tiếp hết** về đợt bổ sung; khoa nhận thông báo đỏ | Khoa |
 
 Vì sao tách hai nhịp: nếu đẩy ngay lúc gõ, PĐD đổi ý đổ sang mã khác thì hệ phải
 rút mã ra khỏi đợt bổ sung — khoa nhìn thấy mã hiện lên rồi biến mất. Hai nhịp
@@ -435,34 +435,34 @@ hình trước v3 nên khoa bấm là vào ngõ cụt.
 
 ---
 
-## 6. Cuốn chiếu mã rớt và pipeline bổ sung
+## 6. Chuyển tiếp mã rớt và pipeline bổ sung
 
 > Viết lại hoàn toàn ngày **21/08/2026**. Luật cũ (*"không tự tạo đề xuất, không
 > tự điền số lượng"*, khoa tự chọn có đề xuất lại không) đã bị đảo — xem
 > `06_DUNG_LAM_LAI.md`.
 
 **Lý do đổi:** mã hàng rớt thầu mà rơi ra ngoài giữa hai đợt thì bệnh viện đứt
-hàng. Cuốn chiếu để mọi mã rớt **luôn có mặt** ở đợt bổ sung kế tiếp, không phụ
+hàng. Chuyển tiếp để mọi mã rớt **luôn có mặt** ở đợt bổ sung kế tiếp, không phụ
 thuộc việc ai đó nhớ đưa nó vào.
 
-### 6.1 Tự cuốn chiếu vào đợt bổ sung gần nhất
+### 6.1 Tự chuyển tiếp vào đợt bổ sung gần nhất
 
 🆕 **Cò là nút "Xác nhận rớt"** (QĐ D2, 23/08/2026), không phải lúc gõ số. Khi
 PĐD bấm, với **từng khoa** đã đề xuất mã đó:
 
 1. Phần rớt **đã đổ sang mã tương đương** (mục 5.3) thì **bỏ qua** — đã có hàng thay.
-2. 🆕 **Phần còn lại — bất kể nhiều hay ít — cuốn chiếu hết** (QĐ D4).
+2. 🆕 **Phần còn lại — bất kể nhiều hay ít — chuyển tiếp hết** (QĐ D4).
 3. Hệ tìm **đợt bổ sung gần nhất** theo lịch cố định T1 · T5 · T9.
    🆕 Đợt bổ sung **luôn mở sẵn** (QĐ D10): hệ tự tạo và tự mở, không đợi PĐD.
    Đợt đích đã chốt Q rồi thì nhảy sang mốc kế tiếp.
 4. Đưa mã vào đợt đó cho khoa, **điền sẵn số lượng đúng bằng số khoa đó đã rớt**.
 5. Khoa nhận **thông báo đỏ**, sửa được ngay — nhiều hơn, ít hơn, hoặc về 0.
 
-> **Vì sao không phải "chỉ mã rớt 100% mới cuốn chiếu".** Phản ví dụ: mã X có
+> **Vì sao không phải "chỉ mã rớt 100% mới chuyển tiếp".** Phản ví dụ: mã X có
 > Q = 100.000, rớt 30.000, trúng 70.000, mà mã quản lý đó không còn mã nào trúng
 > để đổ 30.000 sang. Rớt 30% ≠ 100% nên nếu lấy mốc "rớt sạch" thì **30.000 biến
 > mất** — khoa thiếu hàng, không ai biết cho tới lúc kho báo hết. Đó đúng là chỗ
-> nguyên tắc "liên tục cuốn chiếu để không thiếu hàng" bị hở.
+> nguyên tắc "liên tục chuyển tiếp để không thiếu hàng" bị hở.
 
 Chọn đợt theo **thời điểm phát sinh số rớt**:
 
@@ -485,7 +485,7 @@ Màn theo dõi trả lời đúng một câu hỏi, đọc theo **từng mã hà
 > *Mã này rớt. Những khoa nào đã đề xuất nó? Từng khoa đó đã có nó trong đợt bổ
 > sung gần nhất chưa?*
 
-Màn **"Theo dõi cuốn chiếu mã rớt"** (PĐD), dựng 23/08/2026:
+Màn **"Theo dõi chuyển tiếp mã rớt"** (PĐD), dựng 23/08/2026:
 
 | Cột | Nội dung |
 |---|---|
@@ -495,12 +495,12 @@ Màn **"Theo dõi cuốn chiếu mã rớt"** (PĐD), dựng 23/08/2026:
 | Đợt bổ sung | Tên đợt, hoặc **— TRỐNG in đỏ** nếu chưa vào đợt nào |
 | Khoa đã sửa số | n/m khoa đã đổi số hệ điền sẵn |
 | Khoa đã xác nhận | n/m khoa đã xác nhận danh mục ở đợt bổ sung |
-| Trạng thái | Còn nợ xử lý · Đã đổ sang mã khác · **CUỐN CHIẾU HỎNG** · Đã vào đợt bổ sung |
+| Trạng thái | Còn nợ xử lý · Đã đổ sang mã khác · **CHUYỂN TIẾP HỎNG** · Đã vào đợt bổ sung |
 
 Có nút **"Chạy lại"** trên dòng nào còn nợ hoặc hỏng — gọi lại cò cho riêng mã đó.
 
 Cột "đã vào đợt nào" là **chỗ kiểm tra máy có làm đúng việc không**. Theo luật
-6.1 thì nó phải luôn có đợt; ô trống nghĩa là cuốn chiếu hỏng ở đâu đó, phải xem
+6.1 thì nó phải luôn có đợt; ô trống nghĩa là chuyển tiếp hỏng ở đâu đó, phải xem
 ngay chứ không phải chờ khoa xử lý.
 
 PĐD thao tác thay khoa được, có audit. Nút "Nhắc nhở" sinh template tin nhắn để
@@ -519,7 +519,7 @@ Trong đợt bổ sung, khoa làm **y như gói gốc** (QĐ 21/08/2026): sửa 
 nhận lần N, tới khi PĐD chốt số tham gia đấu thầu của đợt đó. Sau đó đề xuất bổ
 sung đi lại **pipeline đầy đủ**: PĐD hiệu chỉnh ⇄ khoa xác nhận → chốt số tham
 gia đấu thầu → ba giai đoạn → mặc định trúng, chỉ nhập mã rớt → phân bổ kết quả
-→ chốt dữ liệu trình ký. Mã rớt của đợt bổ sung lại cuốn chiếu tiếp sang đợt sau
+→ chốt dữ liệu trình ký. Mã rớt của đợt bổ sung lại chuyển tiếp tiếp sang đợt sau
 theo đúng mục 6.1.
 
 Pipeline bổ sung **độc lập**, không chặn việc chốt kết quả của gói gốc.
@@ -662,20 +662,20 @@ Hai hộp thư riêng, đọc bằng nút chuông trên thanh trên cùng:
 
 | Hộp | Ai đọc | Nhận gì |
 |---|---|---|
-| Hộp thư Phòng Điều dưỡng | PĐD · admin | Khoa vừa sửa số / sửa nội dung · tóm tắt mỗi lần đổ mã · tóm tắt mỗi lần cuốn chiếu |
+| Hộp thư Phòng Điều dưỡng | PĐD · admin | Khoa vừa sửa số / sửa nội dung · tóm tắt mỗi lần đổ mã · tóm tắt mỗi lần chuyển tiếp |
 | Hộp thư của khoa | Đúng khoa đó | Mã rớt đã vào đợt bổ sung (**đỏ**) · số đã chuyển sang mã nào (**đỏ**) · PĐD vừa chỉnh gì trên danh mục |
 
 **Ba luật giữ hộp thư không phình:**
 
-1. **Chỉ việc lớn có dòng riêng** — rớt, đổ mã, cuốn chiếu.
+1. **Chỉ việc lớn có dòng riêng** — rớt, đổ mã, chuyển tiếp.
 2. **Sửa vặt gộp theo ngày**: mỗi khoa mỗi ngày một dòng, đếm bằng `×n`. Không
    gộp thì 62 khoa × hàng trăm mã × 30 cột sẽ đẻ ra hàng trăm dòng mỗi ngày và
    hộp thư thành vô dụng — đúng cái bẫy đã buộc phải nới luật V2 ngày 20/08.
 3. **Xác nhận đã xem là XOÁ HẲN.** Hộp thư không phải sổ lưu trữ; dấu vết đầy đủ
-   nằm ở audit của từng ô và ở các sổ `chuyen_so_rot_v3` · `cuon_chieu_rot_v3`.
+   nằm ở audit của từng ô và ở các sổ `chuyen_so_rot_v3` · `chuyen_tiep_rot_v3`.
 
 Ngoài chuông, mục **Gói bổ sung** của khoa còn có **badge đỏ đếm số mã rớt** vừa
-được cuốn chiếu về, để khoa thấy ngay từ menu mà không phải mở hộp thư.
+được chuyển tiếp về, để khoa thấy ngay từ menu mà không phải mở hộp thư.
 
 Web **không gửi gì ra ngoài** — không email, không tin nhắn. Hộp thư nằm trong
 web, đúng nguyên tắc "Teams là nơi thương lượng".
@@ -688,7 +688,7 @@ Những chức năng sau **vẫn dùng**, nhưng không nằm trong luồng đ�
 và không chặn bất kỳ bước nào của nó.
 
 > 🆕 **QĐ 21/08/2026: bốn màn dưới đây TẠM DỪNG, không build tiếp.** Cả bốn đều
-> đã dựng nhưng chưa ai xài lần nào. Ưu tiên hiện tại là một mặt bàn, cuốn chiếu
+> đã dựng nhưng chưa ai xài lần nào. Ưu tiên hiện tại là một mặt bàn, chuyển tiếp
 > mã rớt và bốn mảng sau đấu thầu. Giữ mô tả ở đây để khi quay lại không phải
 > dựng luật từ đầu.
 
@@ -790,7 +790,7 @@ Không còn "CHỜ XỬ LÝ" — mã đã nằm sẵn trong đợt bổ sung nga
 ├── KHOA ĐÃ SỬA/XÁC NHẬN SỐ  → theo pipeline của đợt bổ sung
 └── KHOA CHỌN KHÔNG CÒN NHU CẦU
 
-CHƯA VÀO ĐỢT NÀO   ← báo đỏ: cuốn chiếu hỏng, không phải chờ khoa
+CHƯA VÀO ĐỢT NÀO   ← báo đỏ: chuyển tiếp hỏng, không phải chờ khoa
 ```
 
 ---
@@ -851,7 +851,7 @@ CHƯA VÀO ĐỢT NÀO   ← báo đỏ: cuốn chiếu hỏng, không phải ch
 | Phân bổ số trúng | không | có |
 | Chốt/lock trình ký (một nút cho cả DOT_GOI) | không | có |
 | Sửa số của khoa khác trên Danh mục tổng hợp | không | có |
-| Sửa số mã rớt đã cuốn chiếu vào đợt bổ sung | có, khoa mình | có, thay khoa, có audit |
+| Sửa số mã rớt đã chuyển tiếp vào đợt bổ sung | có, khoa mình | có, thay khoa, có audit |
 | Rút đề xuất trước khi vào đấu thầu | có, cùng khoa, audit | có |
 | Kích hoạt tùy chọn 30% | có, sau chốt trình ký | có |
 | Duyệt mã kỹ thuật mới | không | có |

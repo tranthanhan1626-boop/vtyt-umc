@@ -9,7 +9,7 @@ Hướng dẫn cho người và cho agent khi làm việc trong repo này.
 
 > 🔴 **Hai lần đổi hướng gần nhất:** bản **MỘT MẶT BÀN** (21/08/2026) — mọi thao
 > tác sửa của PĐD dồn về Danh mục tổng hợp; và bản **VÒNG KHÉP KÍN** (23/08/2026,
-> **đã thi công xong**) — rớt → đổ sang mã tương đương → cuốn chiếu về đợt bổ
+> **đã thi công xong**) — rớt → đổ sang mã tương đương → chuyển tiếp về đợt bổ
 > sung → hộp thư hai chiều. Tài liệu, docx và sơ đồ đều đã đồng bộ tới 23/08.
 >
 > ☠️ **Ba bảng ĐÃ CHẾT, đừng dựng lại:** `goi_thau_ket_qua_ma` ·

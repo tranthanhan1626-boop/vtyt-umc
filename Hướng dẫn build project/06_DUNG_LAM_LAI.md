@@ -40,10 +40,10 @@
 | **Khoá cứng 2 chặn ngay mỗi lần ghi** | Cho lưu nháp lệch, tô đỏ dòng chưa khớp, **chỉ chặn ở cổng chốt trình ký** | 21/08/2026 |
 | **Chốt dữ liệu trình ký bấm từng bảng khoa** (49 nút) | Bỏ hẳn — chỉ còn **một nút chốt toàn bộ** DOT_GOI | 21/08/2026 |
 | **Sửa số sau chốt Q phải mở chốt cả gói con** | **Gõ đè tại chỗ kèm lý do**, Q vẫn giữ làm snapshot | 21/08/2026 |
-| **Mã rớt: "không tự tạo đề xuất, không tự điền số lượng", khoa tự chọn có đề xuất lại không** | **Cuốn chiếu** — hệ tự đưa mã rớt vào đợt bổ sung gần nhất của khoa, tự điền số = số rớt; khoa sửa và quyết cuối | 21/08/2026 |
+| **Mã rớt: "không tự tạo đề xuất, không tự điền số lượng", khoa tự chọn có đề xuất lại không** | **Chuyển tiếp** — hệ tự đưa mã rớt vào đợt bổ sung gần nhất của khoa, tự điền số = số rớt; khoa sửa và quyết cuối | 21/08/2026 |
 | **Đợt bổ sung do PĐD tạo tay khi cần** | Lịch cố định T1/T5/T9; thiếu thì **hệ tự tạo** | 21/08/2026 |
-| **Cuốn chiếu bắn ngay lúc gõ số rớt** | **Hai nhịp** — gõ nháp không ai bị làm phiền, nút **"Xác nhận rớt"** mới là cò | 23/08/2026 |
-| **Chỉ mã rớt 100% mới cuốn chiếu** | **Mọi phần rớt chưa đổ đi đâu** đều cuốn chiếu, kể cả rớt một phần | 23/08/2026 |
+| **Chuyển tiếp bắn ngay lúc gõ số rớt** | **Hai nhịp** — gõ nháp không ai bị làm phiền, nút **"Xác nhận rớt"** mới là cò | 23/08/2026 |
+| **Chỉ mã rớt 100% mới chuyển tiếp** | **Mọi phần rớt chưa đổ đi đâu** đều chuyển tiếp, kể cả rớt một phần | 23/08/2026 |
 | **Hệ tự tạo đợt bổ sung khi thiếu** (còn phải đợi ai đó mở) | Đợt T1/T5/T9 **luôn mở sẵn**, tự tạo và tự mở; đợt đích đã chốt Q thì nhảy mốc kế | 23/08/2026 |
 | **Web không nhắc, không thông báo tự động** | **Hộp thư hai chiều** PĐD ↔ khoa + badge đỏ ở Gói bổ sung. Chỉ việc lớn, sửa vặt gộp theo ngày, xem xong xoá hẳn | 23/08/2026 |
 | **ĐVSD đẩy SL mã rớt sang mã tương đương** (đường cũ ở màn khoa vẫn còn nút) | Chặn hẳn đường đó; **PĐD đổ trên bảng tổng hợp**, giữ nguyên số theo từng khoa, lệch ĐVT thì chặn | 23/08/2026 |

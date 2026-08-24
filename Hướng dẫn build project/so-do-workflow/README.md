@@ -8,9 +8,9 @@
 > | Bản cũ vẽ | Bản 23/08 |
 > |---|---|
 > | Giỏ rớt: khoa tự chọn có đề xuất lại không | **Hai nhịp** — gõ nháp, rồi nút **"Xác nhận rớt"** mới là cò |
-> | Mã rớt vào giỏ chờ khoa xử lý | **Đổ sang mã tương đương** (cùng mã quản lý, giữ số theo khoa, lệch ĐVT thì chặn) · phần chưa đổ **cuốn chiếu hết** |
+> | Mã rớt vào giỏ chờ khoa xử lý | **Đổ sang mã tương đương** (cùng mã quản lý, giữ số theo khoa, lệch ĐVT thì chặn) · phần chưa đổ **chuyển tiếp hết** |
 > | Chốt trình ký từng bảng khoa rồi chốt toàn bộ | **Một nút** chốt toàn bộ |
-> | — | Thêm **hộp thư hai chiều**, **màn theo dõi cuốn chiếu**, và khối **ba bảng đã chết** |
+> | — | Thêm **hộp thư hai chiều**, **màn theo dõi chuyển tiếp**, và khối **ba bảng đã chết** |
 >
 > Sơ đồ là **bản tóm tắt hình ảnh**, không phải nguồn luật. Khi sơ đồ và
 > `../01_NGHIEP_VU_HIEN_HANH.md` khác nhau thì **tài liệu đúng, sơ đồ sai**.

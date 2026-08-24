@@ -55,9 +55,9 @@ def test_tien_do_su_dung_khai_bao_nguon_moc(sql: str) -> None:
     assert "chot_trinh_ky" in than
 
 
-def test_theo_doi_cuon_chieu_co_trang_thai_hong(sql: str) -> None:
-    than = sql.split("view v_theo_doi_cuon_chieu_v3")[1].split(";")[0]
-    for tt in ("con_no_xu_ly", "da_do_sang_ma", "cuon_chieu_hong", "da_cuon_chieu"):
+def test_theo_doi_chuyen_tiep_co_trang_thai_hong(sql: str) -> None:
+    than = sql.split("view v_theo_doi_chuyen_tiep_v3")[1].split(";")[0]
+    for tt in ("con_no_xu_ly", "da_do_sang_ma", "chuyen_tiep_hong", "da_chuyen_tiep"):
         assert tt in than, tt
     assert "khoa_da_xac_nhan" in than
 
@@ -75,10 +75,10 @@ def test_giao_dien_khong_con_man_song_nao_doc_bang_chet() -> None:
     assert not pham, f"màn còn đọc bảng chết: {pham}"
 
 
-def test_man_theo_doi_cuon_chieu_ton_tai() -> None:
-    f = FE / "TheoDoiCuonChieu.jsx"
+def test_man_theo_doi_chuyen_tiep_ton_tai() -> None:
+    f = FE / "TheoDoiChuyenTiep.jsx"
     assert f.exists()
     noi_dung = f.read_text(encoding="utf-8")
-    assert "v_theo_doi_cuon_chieu_v3" in noi_dung
-    assert "xac_nhan_rot_v3" in noi_dung, "phải có nút chạy lại cuốn chiếu"
-    assert "CUỐN CHIẾU HỎNG" in noi_dung, "ô trống phải được gọi đúng tên là hỏng"
+    assert "v_theo_doi_chuyen_tiep_v3" in noi_dung
+    assert "xac_nhan_rot_v3" in noi_dung, "phải có nút chạy lại chuyển tiếp"
+    assert "CHUYỂN TIẾP HỎNG" in noi_dung, "ô trống phải được gọi đúng tên là hỏng"

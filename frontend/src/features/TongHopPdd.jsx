@@ -1294,7 +1294,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                   </td>
                   <OThauCuaDong
                     row={r} ketQua={thau.ketQua} chuaXuLy={thau.chuaXuLy}
-                    daChuyen={thau.daChuyen} daCuonChieu={thau.daCuonChieu}
+                    daChuyen={thau.daChuyen} daChuyenTiep={thau.daChuyenTiep}
                     giaiDoanDangChay={thau.giaiDoanDangChay}
                     onSuaRot={(row, giaiDoan, giaTri) =>
                       setFormRot({ row, giaiDoan, giaTri, dotGoiId })}

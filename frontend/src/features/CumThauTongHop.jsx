@@ -8,7 +8,7 @@ import { fmt } from "../components/ChartDongBo";
  *
  * Bản MỘT MẶT BÀN + VÒNG KHÉP KÍN (chốt 21/08 và 23/08/2026): mọi thao tác sau
  * khi mang hồ sơ đi thầu — gõ số rớt từng giai đoạn, đổ số rớt sang mã tương
- * đương, xác nhận rớt để cuốn chiếu về đợt bổ sung — làm thẳng trên dòng của
+ * đương, xác nhận rớt để chuyển tiếp về đợt bổ sung — làm thẳng trên dòng của
  * bảng Tổng hợp, không rời màn sang Bàn điều hành nữa.
  *
  * Vì sao là cụm cột RỜI chứ không nhét vào COT_PDD: COT_PDD là 30 cột chuẩn
@@ -18,10 +18,10 @@ import { fmt } from "../components/ChartDongBo";
  * Nền dữ liệu (patch_zzzzz):
  *   v_ket_qua_thau_v3    — Q · R1 · R2 · R3 · số trúng theo mã hàng
  *   v_rot_theo_ma_v3     — phần rớt đã GỘP theo mã hàng (cấp mã × khoa chỉ
- *                          màn Theo dõi cuốn chiếu mới cần — 1.608 dòng ở
+ *                          màn Theo dõi chuyển tiếp mới cần — 1.608 dòng ở
  *                          quy mô 250 mã × 60 khoa, đo thật 24/08/2026)
  *   chuyen_so_rot_v3     — sổ đổ số rớt sang mã tương đương
- *   cuon_chieu_rot_v3    — sổ phần rớt đã đẩy về đợt bổ sung
+ *   chuyen_tiep_rot_v3    — sổ phần rớt đã đẩy về đợt bổ sung
  */
 
 export const GIAI_DOAN = [
@@ -36,14 +36,14 @@ export function useDuLieuThau(dotGoiId) {
   const [giaiDoan, setGiaiDoan] = useState([]);
   const [chuaXuLy, setChuaXuLy] = useState(new Map());
   const [daChuyen, setDaChuyen] = useState(new Map());
-  const [daCuonChieu, setDaCuonChieu] = useState(new Map());
+  const [daChuyenTiep, setDaChuyenTiep] = useState(new Map());
   const [dangTai, setDangTai] = useState(false);
   const [coPhienQ, setCoPhienQ] = useState(false);
 
   const tai = useCallback(async () => {
     if (!dotGoiId) {
       setKetQua(new Map()); setGiaiDoan([]); setChuaXuLy(new Map());
-      setDaChuyen(new Map()); setDaCuonChieu(new Map()); setCoPhienQ(false);
+      setDaChuyen(new Map()); setDaChuyenTiep(new Map()); setCoPhienQ(false);
       return;
     }
     setDangTai(true);
@@ -66,7 +66,7 @@ export function useDuLieuThau(dotGoiId) {
         : Promise.resolve({ data: [] }),
       phienId
         ? fetchAllRows((f, t) => supabase.from("v_rot_theo_ma_v3")
-          .select("ma_hang, con_lai, da_chuyen, da_cuon_chieu, ma_hang_nhan, co_khoa_chua_tung_dung")
+          .select("ma_hang, con_lai, da_chuyen, da_chuyen_tiep, ma_hang_nhan, co_khoa_chua_tung_dung")
           .eq("phien_q_id", phienId).range(f, t), { order: "ma_hang" })
         : Promise.resolve({ data: [] }),
     ]);
@@ -77,7 +77,7 @@ export function useDuLieuThau(dotGoiId) {
     const mChua = new Map(); const mCuon = new Map(); const mChuyen = new Map();
     (rot.data || []).forEach((r) => {
       if (Number(r.con_lai) > 0) mChua.set(r.ma_hang, Number(r.con_lai));
-      if (Number(r.da_cuon_chieu) > 0) mCuon.set(r.ma_hang, Number(r.da_cuon_chieu));
+      if (Number(r.da_chuyen_tiep) > 0) mCuon.set(r.ma_hang, Number(r.da_chuyen_tiep));
       if (Number(r.da_chuyen) > 0) {
         mChuyen.set(r.ma_hang, {
           tong: Number(r.da_chuyen),
@@ -87,7 +87,7 @@ export function useDuLieuThau(dotGoiId) {
       }
     });
     setChuaXuLy(mChua);
-    setDaCuonChieu(mCuon);
+    setDaChuyenTiep(mCuon);
     setDaChuyen(mChuyen);
     setDangTai(false);
   }, [dotGoiId]);
@@ -104,7 +104,7 @@ export function useDuLieuThau(dotGoiId) {
   );
 
   return {
-    ketQua, giaiDoan, giaiDoanDangChay, chuaXuLy, daChuyen, daCuonChieu,
+    ketQua, giaiDoan, giaiDoanDangChay, chuaXuLy, daChuyen, daChuyenTiep,
     tongChuaXuLy, dangTai, coPhienQ, taiLaiThau: tai,
   };
 }
@@ -150,9 +150,9 @@ export function ThanhGiaiDoanThau({
     // 1.608, báo 1.000).
     const d = data || {};
     await onXong?.(d.so_dong
-      ? `Đã cuốn chiếu ${d.so_dong} dòng (${d.so_ma} mã × ${d.so_khoa} khoa) về `
+      ? `Đã chuyển tiếp ${d.so_dong} dòng (${d.so_ma} mã × ${d.so_khoa} khoa) về `
         + `${d.ten_dot || "đợt bổ sung"} tháng ${d.thang}/${d.nam}.`
-      : "Không còn phần rớt nào cần cuốn chiếu.");
+      : "Không còn phần rớt nào cần chuyển tiếp.");
   };
 
   // Cụm cột thầu rỗng thì phải NÓI VÌ SAO. Bài học 23/08/2026: ba màn nằm chết
@@ -225,7 +225,7 @@ export function ThanhGiaiDoanThau({
           khoa NGAY</b>, và khoa được báo đỏ. Phần đã đổ sang mã tương đương không bị đưa vào.
           <button type="button" onClick={xacNhanRot} disabled={!!dangChay}
             className="rounded bg-red-600 px-2 py-0.5 font-semibold text-white hover:bg-red-700 disabled:opacity-50">
-            {dangChay === "xac_nhan" ? "Đang xử lý…" : "Đồng ý, cuốn chiếu"}
+            {dangChay === "xac_nhan" ? "Đang xử lý…" : "Đồng ý, chuyển tiếp"}
           </button>
           <button type="button" onClick={() => setHoiXacNhan(false)}
             className="rounded border border-red-300 bg-white px-2 py-0.5 text-red-700">Huỷ</button>
@@ -260,7 +260,7 @@ export function ThanhGiaiDoanThau({
 
 /** Sáu ô đuôi dòng: Q · R1 · R2 · R3 · Trúng · Xử lý rớt. */
 export function OThauCuaDong({
-  row, ketQua, chuaXuLy, daChuyen, daCuonChieu, giaiDoanDangChay, onSuaRot, onDoMa,
+  row, ketQua, chuaXuLy, daChuyen, daChuyenTiep, giaiDoanDangChay, onSuaRot, onDoMa,
 }) {
   const kq = ketQua.get(row.ma_hang);
   const oSo = "px-2 py-1 text-right font-mono text-[12px] tabular-nums";
@@ -277,7 +277,7 @@ export function OThauCuaDong({
 
   const conLai = chuaXuLy.get(row.ma_hang) || 0;
   const chuyen = daChuyen.get(row.ma_hang);
-  const cuon = daCuonChieu.get(row.ma_hang) || 0;
+  const cuon = daChuyenTiep.get(row.ma_hang) || 0;
 
   const oRot = (cot, maGiaiDoan) => {
     const v = Number(kq[cot]) || 0;
@@ -332,7 +332,7 @@ export function OThauCuaDong({
         )}
         {cuon > 0 && (
           <span className="ml-1 inline-flex items-center rounded bg-red-50 px-2 py-0.5 text-red-700"
-            title="Đã cuốn chiếu về đợt bổ sung">
+            title="Đã chuyển tiếp về đợt bổ sung">
             ↻ bổ sung {fmt(cuon)}
           </span>
         )}
@@ -444,7 +444,7 @@ export function HopDoSangMa({ mo, dsAnhEm, onDong, onXong }) {
         </div>
         <div className="mb-3 rounded bg-amber-50 px-2.5 py-2 text-xs text-amber-900">
           Đổ <b>{fmt(mo.conLai)}</b> chưa xử lý. Số của <b>từng khoa giữ nguyên</b> — khoa nào rớt
-          bao nhiêu thì nhận bấy nhiêu ở mã mới. Phần không đổ sẽ cuốn chiếu về đợt bổ sung khi
+          bao nhiêu thì nhận bấy nhiêu ở mã mới. Phần không đổ sẽ chuyển tiếp về đợt bổ sung khi
           bấm “Xác nhận rớt”.
         </div>
         <div className="mb-1 text-[11px] font-medium text-slate-600">
@@ -464,7 +464,7 @@ export function HopDoSangMa({ mo, dsAnhEm, onDong, onXong }) {
         {dsAnhEm.length === 0 && (
           <div className="mb-2 rounded bg-red-50 px-2.5 py-2 text-xs text-red-700">
             Mã quản lý này không còn mã hàng nào khác trong đợt. Không đổ đi đâu được —
-            bấm “Xác nhận rớt” để cuốn chiếu toàn bộ về đợt bổ sung.
+            bấm “Xác nhận rớt” để chuyển tiếp toàn bộ về đợt bổ sung.
           </div>
         )}
         <input value={lyDo} onChange={(e) => setLyDo(e.target.value)}

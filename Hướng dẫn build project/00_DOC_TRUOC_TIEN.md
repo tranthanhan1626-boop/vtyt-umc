@@ -63,7 +63,7 @@ Ngoài ba khoá đó, hệ **cảnh báo chứ không chặn** — trừ hai c�
 chốt số đi thầu và chốt trình ký (xem `01`, mục 4.6 và 8.2).
 
 🆕 **Hai ngoại lệ của "web không tự chạy"**: (1) QĐ 21/08/2026 — mã rớt tự vào đợt bổ
-sung gần nhất, và đợt bổ sung T1/T5/T9 tự được tạo nếu chưa có. Đây là cuốn chiếu
+sung gần nhất, và đợt bổ sung T1/T5/T9 tự được tạo nếu chưa có. Đây là chuyển tiếp
 để mã hàng không rơi ra ngoài giữa hai đợt, không phải cổng chặn — khoa vẫn sửa
 số và vẫn quyết. Xem `01` mục 6.
 (2) QĐ 23/08/2026 — **hộp thư thông báo hai chiều** PĐD ↔ khoa, vì luật V2 cho

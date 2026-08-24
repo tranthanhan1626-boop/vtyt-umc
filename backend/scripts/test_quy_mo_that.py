@@ -223,11 +223,11 @@ def main() -> int:
         else:
             canh_bao.append("Không tìm được cặp mã cùng nhóm cùng ĐVT để thử đổ mã")
 
-        # ── 6. Cò cuốn chiếu — chỗ nặng nhất ─────────────────────────────────
-        print("\n6 · XÁC NHẬN RỚT (cò cuốn chiếu — chỗ nặng nhất)")
+        # ── 6. Cò chuyển tiếp — chỗ nặng nhất ─────────────────────────────────
+        print("\n6 · XÁC NHẬN RỚT (cò chuyển tiếp — chỗ nặng nhất)")
         cur.execute("select count(*) from v_rot_chua_xu_ly_v3 where dot_goi_id=%s and con_lai>0", (dot_goi_id,))
         sap_cuon = cur.fetchone()[0]
-        print(f"  → sắp cuốn chiếu {sap_cuon:,} dòng (mã × khoa)")
+        print(f"  → sắp chuyển tiếp {sap_cuon:,} dòng (mã × khoa)")
         cur.execute("select count(*) from thong_bao")
         tb_truoc = cur.fetchone()[0]
         try:
@@ -240,11 +240,11 @@ def main() -> int:
             # RPC trả về bao nhiêu KHÔNG bằng nó ghi được bao nhiêu — PostgREST
             # cắt phần TRẢ VỀ ở 1.000. Phải đếm trong DB mới biết sự thật.
             cn.rollback()
-            cur.execute("select count(*) from cuon_chieu_rot_v3 where dot_goi_id_goc=%s", (dot_goi_id,))
+            cur.execute("select count(*) from chuyen_tiep_rot_v3 where dot_goi_id_goc=%s", (dot_goi_id,))
             that = cur.fetchone()[0]
-            print(f"  → DB có {that:,} dòng cuon_chieu_rot_v3")
+            print(f"  → DB có {that:,} dòng chuyen_tiep_rot_v3")
             if that < sap_cuon:
-                canh_bao.append(f"MẤT SỐ RỚT: cần cuốn chiếu {sap_cuon:,} nhưng DB chỉ có {that:,}")
+                canh_bao.append(f"MẤT SỐ RỚT: cần chuyển tiếp {sap_cuon:,} nhưng DB chỉ có {that:,}")
             elif day.get("so_dong") != that:
                 canh_bao.append(
                     f"RPC báo {day.get('so_dong'):,} nhưng DB có {that:,} — số báo sai")
@@ -263,8 +263,8 @@ def main() -> int:
         if tb_sau - tb_truoc > 200:
             canh_bao.append(f"Một lần xác nhận rớt đẻ {tb_sau-tb_truoc:,} dòng thông báo — hộp thư sẽ ngập")
 
-        with buoc("v_theo_doi_cuon_chieu_v3 (màn theo dõi)"):
-            td = pdd.table("v_theo_doi_cuon_chieu_v3").select("*", count="exact") \
+        with buoc("v_theo_doi_chuyen_tiep_v3 (màn theo dõi)"):
+            td = pdd.table("v_theo_doi_chuyen_tiep_v3").select("*", count="exact") \
                 .eq("dot_goi_id", dot_goi_id).limit(1).execute()
         print(f"  → {td.count:,} dòng")
 
@@ -300,7 +300,7 @@ def main() -> int:
             try:
                 cn.rollback()
                 cur.execute("set session_replication_role = replica")
-                # Noti của cuốn chiếu neo vào ĐỢT BỔ SUNG (v_bs), không phải đợt
+                # Noti của chuyển tiếp neo vào ĐỢT BỔ SUNG (v_bs), không phải đợt
                 # test — bộ lọc theo dot_id trượt hết. Dọn theo dấu vết trong
                 # `du_lieu` và theo đợt bổ sung đã dùng.
                 cur.execute("""delete from thong_bao
@@ -309,10 +309,10 @@ def main() -> int:
                        or (du_lieu ->> 'dot_goi_goc')::bigint = any(
                              select id from dot_goi where dot_id=%s)
                        or dot_goi_id in (select distinct dot_goi_bo_sung_id
-                                         from cuon_chieu_rot_v3
+                                         from chuyen_tiep_rot_v3
                                          where dot_goi_id_goc in (select id from dot_goi where dot_id=%s))""",
                     (dot_id, dot_id, dot_id))
-                for b, c in (("chuyen_so_rot_v3","dot_goi_id"), ("cuon_chieu_rot_v3","dot_goi_id_goc"),
+                for b, c in (("chuyen_so_rot_v3","dot_goi_id"), ("chuyen_tiep_rot_v3","dot_goi_id_goc"),
                              ("ket_qua_rot_v3","dot_goi_id"), ("phan_bo_trung_v3","dot_goi_id"),
                              ("giai_doan_thau_v3","dot_goi_id"), ("phan_bo_khoa","dot_goi_id"),
                              ("danh_muc_khoa_chot","dot_goi_id"), ("dot_goi_khoa","dot_goi_id")):
@@ -320,15 +320,15 @@ def main() -> int:
                 cur.execute("delete from chot_q_dong where phien_id in (select id from chot_q_phien where dot_goi_id in (select id from dot_goi where dot_id=%s))", (dot_id,))
                 cur.execute("delete from chot_q_phien where dot_goi_id in (select id from dot_goi where dot_id=%s)", (dot_id,))
                 cur.execute("delete from danh_muc_tong_hop_o where nam_de_xuat=%s", (NAM,))
-                # dòng cuốn chiếu đã đẻ proposals ở ĐỢT BỔ SUNG thật — dọn theo dấu
-                # LỖ ĐÃ TỪNG SÓT: dòng cuốn chiếu đẻ proposals ở ĐỢT BỔ SUNG THẬT
+                # dòng chuyển tiếp đã đẻ proposals ở ĐỢT BỔ SUNG thật — dọn theo dấu
+                # LỖ ĐÃ TỪNG SÓT: dòng chuyển tiếp đẻ proposals ở ĐỢT BỔ SUNG THẬT
                 # (không phải đợt test), created_by là email PĐD chứ không phải
                 # 'quymo@test', nam_de_xuat là năm của đợt bổ sung. Ba bộ lọc cũ
                 # đều trượt — lần chạy trước để lại 1.610 dòng.
-                cur.execute("""select distinct dot_goi_bo_sung_id from cuon_chieu_rot_v3
+                cur.execute("""select distinct dot_goi_bo_sung_id from chuyen_tiep_rot_v3
                                where dot_goi_id_goc in (select id from dot_goi where dot_id=%s)""", (dot_id,))
                 bs = [r[0] for r in cur.fetchall() if r[0]]
-                cur.execute("""select distinct proposal_id from cuon_chieu_rot_v3
+                cur.execute("""select distinct proposal_id from chuyen_tiep_rot_v3
                                where dot_goi_id_goc in (select id from dot_goi where dot_id=%s)
                                  and proposal_id is not null""", (dot_id,))
                 props = [r[0] for r in cur.fetchall()]

@@ -162,7 +162,7 @@ export default function QuanLyDuLieuTest({ profile }) {
         // chúng đọc `goi_thau_tien_do` / `goi_thau_ket_qua_ma`, bảng của mô
         // hình TRƯỚC v3, luôn 0 dòng. Dữ liệu kiểm thử của nhánh thầu nay nằm
         // ở `ket_qua_rot_v3` · `phan_bo_trung_v3` · `chuyen_so_rot_v3` ·
-        // `cuon_chieu_rot_v3`, và bị xoá theo khi xoá ĐỢT (cascade) nên không
+        // `chuyen_tiep_rot_v3`, và bị xoá theo khi xoá ĐỢT (cascade) nên không
         // cần mục riêng ở đây.
         {
           key: "phien_tong_hop",

@@ -20,7 +20,7 @@ import PhanGoiConMaQuanLy from "./features/PhanGoiConMaQuanLy";
 import GioRotCuaKhoa from "./features/GioRotCuaKhoa";
 import LichSuXuatHoSo from "./features/LichSuXuatHoSo";
 import HopThuThongBao from "./features/HopThuThongBao";
-import TheoDoiCuonChieu from "./features/TheoDoiCuonChieu";
+import TheoDoiChuyenTiep from "./features/TheoDoiChuyenTiep";
 import TongHopKetQuaThau from "./features/TongHopKetQuaThau";
 import DieuChinhTieuChi from "./features/DieuChinhTieuChi";
 import TienDoSuDung from "./features/TienDoSuDung";
@@ -237,7 +237,7 @@ export default function App() {
     giorot: "Giỏ rớt của khoa",
     choduyet: "Công việc chờ duyệt",
     ketquathau: "Tổng hợp kết quả thầu",
-    cuonchieu: "Theo dõi cuốn chiếu mã rớt",
+    chuyentiep: "Theo dõi chuyển tiếp mã rớt",
     tieuchi: "Điều chỉnh tiêu chí kỹ thuật",
     tiendosudung: "Tiến độ sử dụng theo cam kết",
     napdulieu: "Nạp dữ liệu sử dụng",
@@ -269,7 +269,7 @@ export default function App() {
     : chon.man === "makythuat" ? <NhomKyThuatCuaKhoa profile={profile} />
     : chon.man === "duyetmakythuat" && xemDuocTongHop ? <DuyetNhomKyThuat />
     : chon.man === "ketquathau" && xemDuocTongHop ? <TongHopKetQuaThau profile={profile} />
-    : chon.man === "cuonchieu" && xemDuocTongHop ? <TheoDoiCuonChieu profile={profile} />
+    : chon.man === "chuyentiep" && xemDuocTongHop ? <TheoDoiChuyenTiep profile={profile} />
     : chon.man === "tieuchi" ? <DieuChinhTieuChi profile={profile} />
     : chon.man === "tiendosudung" ? <TienDoSuDung profile={profile}
         onNapDuLieu={() => setChon({ nhom: "chung", man: "napdulieu" })} />
