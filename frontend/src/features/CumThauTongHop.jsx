@@ -38,13 +38,14 @@ export function useDuLieuThau(dotGoiId) {
   const [daChuyen, setDaChuyen] = useState(new Map());
   const [daChuyenTiep, setDaChuyenTiep] = useState(new Map());
   const [phanBo, setPhanBo] = useState(new Map());
+  const [daNhan, setDaNhan] = useState(new Map());
   const [dangTai, setDangTai] = useState(false);
   const [coPhienQ, setCoPhienQ] = useState(false);
 
   const tai = useCallback(async () => {
     if (!dotGoiId) {
       setKetQua(new Map()); setGiaiDoan([]); setChuaXuLy(new Map());
-      setDaChuyen(new Map()); setDaChuyenTiep(new Map()); setPhanBo(new Map()); setCoPhienQ(false);
+      setDaChuyen(new Map()); setDaChuyenTiep(new Map()); setPhanBo(new Map()); setDaNhan(new Map()); setCoPhienQ(false);
       return;
     }
     setDangTai(true);
@@ -57,7 +58,7 @@ export function useDuLieuThau(dotGoiId) {
     // server. Bản cũ tải ba nguồn cấp (mã × khoa): ở quy mô 250 mã × 60 khoa đó
     // là 1.608 dòng, hai lượt phân trang, 3,4 s — chiếm quá nửa thời gian mở
     // bảng (đo thật 24/08/2026). Cấp mã × khoa nay chỉ màn Theo dõi mới cần.
-    const [gd, kq, rot, pb] = await Promise.all([
+    const [gd, kq, rot, pb, nhan] = await Promise.all([
       supabase.from("giai_doan_thau_v3").select("giai_doan, thu_tu, trang_thai")
         .eq("dot_goi_id", dotGoiId).order("thu_tu"),
       phienId
@@ -77,8 +78,16 @@ export function useDuLieuThau(dotGoiId) {
           .select("ma_hang, trung, da_chia, lech, da_khop, so_khoa")
           .eq("phien_q_id", phienId).range(f, t), { order: "ma_hang" })
         : Promise.resolve({ data: [] }),
+      // Dòng của mã NHẬN phải thấy phần được đổ sang. Thiếu chỗ này thì PĐD đổ
+      // xong không thấy số đâu — đúng lỗi chủ dự án báo 24/08/2026.
+      phienId
+        ? fetchAllRows((f, t) => supabase.from("v_nhan_chuyen_rot_v3")
+          .select("ma_hang, da_nhan, so_khoa_nhan, tu_ma_hang, co_khoa_chua_tung_dung")
+          .eq("phien_q_id", phienId).range(f, t), { order: "ma_hang" })
+        : Promise.resolve({ data: [] }),
     ]);
 
+    setDaNhan(new Map((nhan.data || []).map((r) => [r.ma_hang, r])));
     setPhanBo(new Map((pb.data || []).map((r) => [r.ma_hang, r])));
     setGiaiDoan(gd.data || []);
     setKetQua(new Map((kq.data || []).map((r) => [r.ma_hang, r])));
@@ -120,7 +129,7 @@ export function useDuLieuThau(dotGoiId) {
 
   return {
     ketQua, giaiDoan, giaiDoanDangChay, chuaXuLy, daChuyen, daChuyenTiep,
-    phanBo, soChuaChia, tongChuaXuLy, dangTai, coPhienQ, taiLaiThau: tai,
+    phanBo, daNhan, soChuaChia, tongChuaXuLy, dangTai, coPhienQ, taiLaiThau: tai,
   };
 }
 
@@ -311,7 +320,7 @@ export function ThanhGiaiDoanThau({
 
 /** Sáu ô đuôi dòng: Q · R1 · R2 · R3 · Trúng · Xử lý rớt. */
 export function OThauCuaDong({
-  row, ketQua, chuaXuLy, daChuyen, daChuyenTiep, phanBo, giaiDoanDangChay,
+  row, ketQua, chuaXuLy, daChuyen, daChuyenTiep, phanBo, daNhan, giaiDoanDangChay,
   onSuaRot, onDoMa, onChiaTiLe, dangChia,
 }) {
   const kq = ketQua.get(row.ma_hang);
@@ -329,6 +338,7 @@ export function OThauCuaDong({
 
   const conLai = chuaXuLy.get(row.ma_hang) || 0;
   const pb = phanBo?.get(row.ma_hang) || null;
+  const nhan = daNhan?.get(row.ma_hang) || null;
   const chuyen = daChuyen.get(row.ma_hang);
   const cuon = daChuyenTiep.get(row.ma_hang) || 0;
 
@@ -365,8 +375,14 @@ export function OThauCuaDong({
       {oRot("r1", "chao_gia")}
       {oRot("r2", "mo_thau")}
       {oRot("r3", "danh_gia")}
-      <td className={`${oSo} font-semibold text-emerald-700`} style={{ background: "#f0fdf4" }}>
+      <td className={`${oSo} font-semibold text-emerald-700`} style={{ background: "#f0fdf4" }}
+        title={nhan
+          ? `Trúng ${fmt(kq.so_luong_trung)} + nhận ${fmt(nhan.da_nhan)} từ mã rớt = ${fmt(Number(kq.so_luong_trung) + Number(nhan.da_nhan))} sẽ mua`
+          : undefined}>
         {fmt(kq.so_luong_trung)}
+        {nhan && (
+          <span className="ml-1 font-normal text-sky-700">+{fmt(nhan.da_nhan)}</span>
+        )}
       </td>
       {/* QĐ D14 (24/08/2026): hệ không tự chia số trúng về khoa nữa. Cột này là
           chỗ duy nhất thấy dòng nào PĐD còn phải gõ — khoá cứng 2. */}
@@ -407,7 +423,14 @@ export function OThauCuaDong({
             ↻ bổ sung {fmt(cuon)}
           </span>
         )}
-        {conLai === 0 && !chuyen && cuon === 0 && <span className="text-slate-300">—</span>}
+        {nhan && (
+          <span className="ml-1 inline-flex items-center gap-1 rounded bg-sky-100 px-2 py-0.5 font-semibold text-sky-900"
+            title={`Nhận ${fmt(nhan.da_nhan)} từ mã ${nhan.tu_ma_hang} rớt thầu, cho ${nhan.so_khoa_nhan} khoa. Số này được cộng vào bản chốt trình ký và hạn mức 30%.`}>
+            ← nhận {fmt(nhan.da_nhan)} từ {nhan.tu_ma_hang}
+            {nhan.co_khoa_chua_tung_dung && <AlertTriangle size={11} className="text-amber-600" />}
+          </span>
+        )}
+        {conLai === 0 && !chuyen && cuon === 0 && !nhan && <span className="text-slate-300">—</span>}
       </td>
     </>
   );

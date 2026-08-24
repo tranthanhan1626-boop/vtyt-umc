@@ -1336,7 +1336,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                   <OThauCuaDong
                     row={r} ketQua={thau.ketQua} chuaXuLy={thau.chuaXuLy}
                     daChuyen={thau.daChuyen} daChuyenTiep={thau.daChuyenTiep}
-                    phanBo={thau.phanBo}
+                    phanBo={thau.phanBo} daNhan={thau.daNhan}
                     giaiDoanDangChay={thau.giaiDoanDangChay}
                     dangChia={dangChiaTiLe}
                     onChiaTiLe={async (r) => {

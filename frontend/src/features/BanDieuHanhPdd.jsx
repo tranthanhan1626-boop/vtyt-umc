@@ -589,7 +589,13 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
           </span>
           {dsGoiCon.map((g) => (
             <button key={g.goiId} type="button"
-              onClick={() => { window.location.hash = `#tong-hop-pdd/${g.goiId}/${dot.id}`; }}
+              onClick={() => {
+                // Mở TAB TRÌNH DUYỆT MỚI (yêu cầu 24/08/2026): bảng Tổng hợp là
+                // mặt bàn làm việc lâu, PĐD cần giữ Bàn điều hành ở tab cũ để
+                // đối chiếu chứ không phải bấm qua bấm lại.
+                window.open(`${window.location.pathname}#tong-hop-pdd/${g.goiId}/${dot.id}`,
+                  `tong-hop-${g.goiId}-${dot.id}`);
+              }}
               className="inline-flex items-center gap-1 rounded bg-umc-700 px-2.5 py-1 text-xs font-semibold text-white hover:bg-umc-800">
               <Layers3 size={13} /> {g.goi}
             </button>
@@ -686,7 +692,8 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
               setLoi("Chọn một gói con ở trên rồi mới mở được bản Excel tổng hợp — mỗi gói con đi thầu riêng nên có một bản riêng.");
               return;
             }
-            window.location.hash = `#tong-hop-pdd/${goiIdHienTai}/${dot.id}`;
+            window.open(`${window.location.pathname}#tong-hop-pdd/${goiIdHienTai}/${dot.id}`,
+              `tong-hop-${goiIdHienTai}-${dot.id}`);
           }}
         />
       ) : tab === "ket_qua" ? (

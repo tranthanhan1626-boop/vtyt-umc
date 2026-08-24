@@ -545,7 +545,17 @@ def main() -> int:
         assert int(final1["revision"]) == 1
         final_rows = admin.table("chot_trinh_ky_dong_v3").select("so_luong_trung") \
             .eq("phien_id", final1["id"]).execute().data
-        assert sum(float(x["so_luong_trung"]) for x in final_rows) == 150
+        # 24/08/2026 — bản đóng băng nay CỘNG cả phần đã đổ sang mã tương đương.
+        # Trước đó phần đó chỉ nằm ở sổ `chuyen_so_rot_v3` nên Excel trình ký và
+        # hạn mức 30% đều thiếu; đúng lỗi chủ dự án bắt được (đổ 460 mà không
+        # thấy đâu). Kỳ vọng = số trúng + tổng đã nhận.
+        da_nhan = sum(float(x["so_luong"]) for x in
+                      admin.table("chuyen_so_rot_v3").select("so_luong")
+                      .eq("dot_goi_id", dg_id).eq("hieu_luc", True).execute().data)
+        assert sum(float(x["so_luong_trung"]) for x in final_rows) == 150 + da_nhan, \
+            f"bản đóng băng phải bằng số trúng 150 cộng phần đã nhận {da_nhan}"
+        if da_nhan:
+            ok(f"bản chốt trình ký CỘNG cả {da_nhan:.0f} đã đổ sang mã tương đương")
         phai_loi(lambda: pdd.rpc("cap_nhat_giai_doan_thau_v3", {"p_dot_goi_id": dg_id,
             "p_giai_doan": "danh_gia", "p_trang_thai": "dang_thuc_hien",
             "p_ly_do": "thử sửa sau trình ký"}).execute(), "sửa kết quả sau trình ký")
