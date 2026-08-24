@@ -1,7 +1,7 @@
 # ĐỪNG LÀM LẠI — những quyết định đã bị đảo
 
 > Đọc file này **trước khi** dựng bất kỳ cơ chế nào bạn thấy "còn thiếu".
-> Dự án đã đảo luật **35 lần**. Phần lớn thứ trông như thiếu sót là thứ đã bị
+> Dự án đã đảo luật **39 lần**. Phần lớn thứ trông như thiếu sót là thứ đã bị
 > cố ý bỏ đi, có lý do.
 
 Đây **không** phải tài liệu nghiệp vụ. Luật đang chạy nằm ở
@@ -48,6 +48,10 @@
 | **Web không nhắc, không thông báo tự động** | **Hộp thư hai chiều** PĐD ↔ khoa + badge đỏ ở Gói bổ sung. Chỉ việc lớn, sửa vặt gộp theo ngày, xem xong xoá hẳn | 23/08/2026 |
 | **ĐVSD đẩy SL mã rớt sang mã tương đương** (đường cũ ở màn khoa vẫn còn nút) | Chặn hẳn đường đó; **PĐD đổ trên bảng tổng hợp**, giữ nguyên số theo từng khoa, lệch ĐVT thì chặn | 23/08/2026 |
 | **Bốn mảng sau đấu thầu + mẫu Excel gom dữ liệu làm trong đợt này** | **Hoãn sang nhánh sau** — tiến độ gói thầu theo số quyết định / số hợp đồng, nạp dữ liệu 2 lần/tuần | 23/08/2026 |
+| **Chuyển tiếp lần hai đặt lại số của khoa** | **CỘNG THÊM** vào số khoa đang có, không đè (D11) | 24/08/2026 |
+| **Hệ tự cân đối lại khi tỉ lệ giữa các khoa đổi** | **Chỉ cộng thêm, không bao giờ trừ đi** (D12). Hệ chỉ HIỆN phần thừa ra, khoa quyết số cuối | 24/08/2026 |
+| **Gói 30% liệt kê cả mã rớt sạch với trần 0** | Chỉ giữ mã **đã trúng sau cả ba giai đoạn** (D13) | 24/08/2026 |
+| Gọi việc đưa mã rớt sang đợt sau là **"cuốn chiếu"** | Thuật ngữ chuẩn: **"chuyển tiếp"**. Đổi cả tên bảng trong database | 24/08/2026 |
 
 ## Bốn cái bẫy hay khiến người ta code lại đồ đã bỏ
 

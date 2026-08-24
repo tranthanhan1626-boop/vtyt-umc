@@ -462,3 +462,70 @@ kín + 1 bước kiểm view hồi sinh) · 33 bảng về đúng số dòng ban
    dọc · gỡ 2 tab Bàn điều hành) của bản một mặt bàn.
 2. Nhánh D6 — tiến độ gói thầu theo số quyết định / số hợp đồng.
 3. Test ở **quy mô thật**: hàng trăm mã × 62 khoa.
+
+---
+
+## 24/08/2026 — Test quy mô thật, ba quyết định mới, đổi thuật ngữ
+
+### Vòng test quy mô thật: 250 mã hàng × 60 khoa
+
+`backend/scripts/test_quy_mo_that.py` (mới) dựng 5.470 dòng đề xuất, 1.608 dòng
+rớt cấp (mã × khoa), đo thời gian từng bước rồi dọn sạch. **Sáu lỗi** không lộ
+ra ở quy mô 7 mã × 2 khoa của smoke:
+
+| # | Lỗi | Vì sao chỉ lộ ở quy mô thật |
+|---|---|---|
+| 1 | Ghi `phan_bo_khoa` không qua JWT là vỡ NOT NULL | người dùng luôn có JWT; chỉ script nạp dữ liệu mới dính |
+| 2 | Cò trả bảng dài, PostgREST cắt ở 1.000 | dưới 1.000 dòng thì không thấy |
+| 3 | Chuyển tiếp lần hai vỡ khoá duy nhất của `proposals` | cần một mã rớt hai lần |
+| 4 | Một lần bấm đẻ 1.609 dòng thông báo | 2 khoa thì chỉ 2 dòng |
+| 5 | Sửa một ô báo cho khoa của mọi đợt đang mở | cần ≥2 đợt mở cùng lúc |
+| 6 | Bảng Tổng hợp tải 1.608 dòng chỉ để hiện tổng theo mã | 250 mã mới thấy chậm |
+
+Cộng thêm **bốn truy vấn thiếu phân trang** trong chính mã cụm thầu và màn theo
+dõi — bị cắt còn 1.000/1.608, nút "Xác nhận rớt" báo thiếu 38%.
+
+Số đo sau khi vá: mở bảng 250 mã × 60 khoa **4,1 s** (trước 9 s) · sổ một dòng
+60 khoa 2,5 s · màn theo dõi 4,5 s · không lỗi console.
+
+### Ba quyết định mới
+
+**D11 — chuyển tiếp lần hai CỘNG THÊM, không đè.** Khoa sửa 44.210 → 50.000,
+rớt thêm 10.000 → thành 60.000.
+
+**D12 — chỉ cộng thêm, không bao giờ trừ đi.** Mỗi lần ghi/bỏ ngoại lệ rớt, hệ
+chia lại số trúng theo tỉ lệ Q; tỉ lệ giữa các khoa không đứng yên nên phần đã
+chuyển tiếp có thể vượt số rớt hiện hành (đo thật: khoa B thừa 23). Hệ **không
+tự trừ** — chỉ hiện phần thừa ra, khoa quyết số cuối.
+
+**D13 — gói 30% chỉ giữ mã ĐÃ TRÚNG sau cả ba giai đoạn.** Mã rớt sạch biến
+mất khỏi danh sách thay vì hiện dòng trần 0.
+
+### Đổi thuật ngữ: "cuốn chiếu" → CHUYỂN TIẾP
+
+"Cuốn chiếu" mang nghĩa *làm dứt điểm từng phần theo thứ tự* — không phải nghĩa
+dự án dùng. Việc thật là đưa số chưa xử lý sang kỳ sau. Đổi tới tận tên đối
+tượng trong database (`chuyen_tiep_rot_v3` · `v_theo_doi_chuyen_tiep_v3` ·
+`TheoDoiChuyenTiep.jsx`), 30 file.
+
+Phân biệt hai thứ dễ lẫn: `chuyen_so_rot_v3` đổi **MÃ** cùng đợt;
+`chuyen_tiep_rot_v3` đổi **ĐỢT** cùng mã.
+
+### Bộ dữ liệu test đầy đủ cho chủ dự án
+
+`backend/scripts/tao_du_lieu_test_day_du.py` — 350 mã hàng thật chia đúng **cả
+năm gói con** của gói 18T, 50 khoa, 6.918 dòng đề xuất; đã chốt Q và mở sẵn
+giai đoạn Chào giá cho cả 5 gói; mở sẵn toàn bộ đợt bổ sung T9/2026 · T1/2027 ·
+T5/2027 · T9/2027, rỗng. Xoá bằng `--xoa`.
+
+### Nghiệm thu
+
+pytest **160** · smoke v3 **23/23** · `kiem_moi_man` không lỗi ·
+`kiem_truoc_deploy` Sạch · `test:formula` OK · `build` ✓.
+
+### Việc còn nợ
+
+1. `fn_dong_bo_phan_bo_trung_v3` chia lại theo tỉ lệ Q nên **xoá phân bổ số
+   trúng PĐD đã chỉnh tay** mỗi lần thêm/bớt ngoại lệ rớt. Chưa quyết cách xử.
+2. Miếng 1c (nới khoá cứng 2 ở server) · 1d (hai chế độ cột, phím tắt gõ dọc).
+3. Nhánh D6 — tiến độ gói thầu theo số quyết định / số hợp đồng.

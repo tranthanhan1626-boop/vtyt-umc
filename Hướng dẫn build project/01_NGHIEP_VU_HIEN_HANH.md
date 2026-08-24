@@ -475,6 +475,26 @@ Chọn đợt theo **thời điểm phát sinh số rớt**:
 Quy tắc biên: luôn đổ vào **mốc gần nhất chưa chốt Q**. Mốc đích đã chốt Q rồi
 thì sang mốc kế — nếu không, số rớt rơi vào một đợt đã đóng sổ.
 
+#### 🆕 Chuyển tiếp lần thứ hai trở đi (QĐ D11 · D12, 24/08/2026)
+
+Một mã rớt ở chào giá rồi rớt tiếp ở mở thầu là chuyện thường. Hai luật:
+
+| # | Luật |
+|---|---|
+| **D11** | Khoa đã có số ở đợt bổ sung thì phần rớt mới **CỘNG THÊM**, không đè. Khoa sửa 44.210 → 50.000, rớt thêm 10.000 → thành **60.000**. Giữ được cả phần khoa sửa lẫn phần rớt mới |
+| **D12** | Chuyển tiếp **chỉ cộng thêm, không bao giờ trừ đi**. Hệ không tự rút bớt của khoa nào |
+
+**Vì sao D12 quan trọng — và cái giá của nó.** Mỗi lần ghi hoặc bỏ ngoại lệ rớt,
+hệ **chia lại số trúng theo tỉ lệ Q** cho mọi khoa. Tỉ lệ giữa các khoa không
+đứng yên qua ba giai đoạn, mà phần đã chuyển tiếp thì ghi theo tỉ lệ cũ. Đo thật:
+
+> Mã 74960 rớt thêm ở giai đoạn sau. Khoa B: Q 80 · trúng 33 · rớt **47**, nhưng
+> đã chuyển tiếp **70** từ lần trước → thừa **23**.
+
+Hệ **không tự trừ 23 đó đi** — khoa quyết số cuối cùng (D11). Việc của hệ là
+**hiện phần thừa ra**: màn Theo dõi có cột `thừa so với rớt` và trạng thái
+**"Đã đưa nhiều hơn số rớt"**. PĐD hoặc khoa tự cân nhắc giảm.
+
 Cùng một mã quản lý hoặc mã hàng **được phép** nằm ở nhiều đợt bổ sung (mục 1.3);
 hệ cảnh báo mã đang có ở đợt nào, không chặn.
 
@@ -495,7 +515,7 @@ Màn **"Theo dõi chuyển tiếp mã rớt"** (PĐD), dựng 23/08/2026:
 | Đợt bổ sung | Tên đợt, hoặc **— TRỐNG in đỏ** nếu chưa vào đợt nào |
 | Khoa đã sửa số | n/m khoa đã đổi số hệ điền sẵn |
 | Khoa đã xác nhận | n/m khoa đã xác nhận danh mục ở đợt bổ sung |
-| Trạng thái | Còn nợ xử lý · Đã đổ sang mã khác · **CHUYỂN TIẾP HỎNG** · Đã vào đợt bổ sung |
+| Trạng thái | Còn nợ xử lý · Đã đổ sang mã khác · **CHUYỂN TIẾP HỎNG** · Đã vào đợt bổ sung · 🆕 **Đã đưa nhiều hơn số rớt** |
 
 Có nút **"Chạy lại"** trên dòng nào còn nợ hoặc hỏng — gọi lại cò cho riêng mã đó.
 
@@ -617,6 +637,16 @@ Sau khi chốt dữ liệu trình ký (mới hiện nút kích hoạt):
 - Timeline phải tách khả dụng cơ bản, phần mua thêm và hàng đã mua chưa lãnh.
 
 ---
+
+### 🆕 Chỉ mã ĐÃ TRÚNG mới vào gói 30% (QĐ D13, 24/08/2026)
+
+Gói tùy chọn mua thêm **chỉ giữ lại những mã hàng đã trúng thầu sau cả ba giai
+đoạn rớt**. Mã rớt sạch biến mất khỏi danh sách, không hiện một dòng trần 0.
+
+Trước QĐ này, view gom theo (khoa × mã quản lý) mà không lọc dòng số trúng = 0,
+nên mã rớt sạch vẫn nằm trong danh sách với trần 0 — người dùng phải đọc số mới
+biết mã đó không mua thêm được, và ở quy mô thật danh sách dài gấp nhiều lần
+cần thiết.
 
 ## 10. Word và Excel
 
