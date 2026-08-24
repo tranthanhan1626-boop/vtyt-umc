@@ -558,3 +558,87 @@ hiện, nút Xác nhận rớt biến mất; bấm Chia → hết cảnh báo, n
 hiện lại.
 
 Nghiệm thu: pytest **166** · smoke v3 **25/25** (thêm 2 bước cho D14) · build ✓.
+
+### Bổ sung cuối ngày 24/08 (2) — QĐ D15 và ba lỗi lộ ra khi chủ dự án tự test
+
+Chủ dự án bấm thật trên site test và bắt được chuỗi lỗi liên hoàn.
+
+**Báo cáo đầu tiên:** *"tôi chọn rớt bao chỉ đùi chuyển 460 qua mã tương đương
+mà sao không thấy chuyển qua trong tổng hợp?"*
+
+Kiểm ra **hai** lỗi, lỗi thứ hai nặng hơn nhiều:
+
+1. Sổ `chuyen_so_rot_v3` ghi ĐÚNG 460 cho 8 khoa, nhưng chỉ dòng của mã RỚT hiện
+   `→ 72353 (460)`. Dòng của mã NHẬN không hiện gì.
+2. `chot_trinh_ky_toan_bo_v3` đóng băng chỉ từ `phan_bo_trung_v3`, nên phần đổ
+   sang mã tương đương **không có mặt trong bản chốt** → Excel trình ký và hạn
+   mức 30% đều thiếu 460. Tính năng ghi sổ xong rồi bỏ đó.
+
+**Báo cáo thứ hai:** *"nếu nhận 460 rồi thì phải chia lại trên tổng 520+460 chứ,
+sao đã chia chỉ có 520? Làm sao để tôi vô chia bằng tay?"* — dẫn tới **QĐ D15**.
+
+#### QĐ D15 — số phải chia = số trúng + phần nhận
+
+`chuyen_so_rot_v3` trở lại đúng vai **sổ dấu vết**; con số thật nằm ở
+`phan_bo_trung_v3` như mọi mã khác. Một nguồn duy nhất, không cộng ở hai nơi.
+
+| Chỗ sửa | Nội dung |
+|---|---|
+| `v_phan_bo_trung_theo_ma_v3` | thêm `da_nhan` · `phai_chia` |
+| `cap_nhat_phan_bo_trung_v3` | kỳ vọng `phai_chia`; "vượt Q" tính cả phần nhận |
+| `fn_chia_theo_ti_le_q_v3` | chia `phai_chia`, trọng số = Q + phần khoa nhận |
+| `day_so_luong_rot_v3` | đổ xong **xoá trắng** mã nhận + đẻ dòng cho khoa chưa có |
+| `chot_trinh_ky_toan_bo_v3` | **bỏ** phần cộng thêm của zzzzzf — nếu không cộng đôi |
+
+#### Hai lỗi nặng lộ ra khi viết phép thử cho D15
+
+**a. Đổ khi chưa chia thì đổ đi CẢ Q.** Phần rớt của khoa tính bằng
+`q_khoa − so_luong_trung`; từ D14 ghi rớt xong ô về 0 nên `con_lai` = cả Q.
+Đo thật: mã Q = 200 rớt 80, chưa chia → **đổ đi 200**. Thêm cổng chặn cùng lớp
+với cổng của `xac_nhan_rot_v3`.
+
+**b. Đổ được sang mã KHÔNG có trong đợt.** Giao diện chỉ liệt kê mã trong đợt,
+nhưng RPC không kiểm. Mã ngoài snapshot Q thì phần nhận không có chỗ đứng: bảng
+không hiện, cổng khoá cứng 2 cũng không thấy để chặn.
+
+#### PĐD chia tay ngay trên bảng Tổng hợp
+
+`BangSoTrungTheoKhoa` — sổ dòng mã ra là có bảng nhập số trúng cho từng khoa,
+cột *"Nhận từ mã rớt"* hiện riêng, nút **Xác nhận chia** chỉ sáng khi tổng khớp.
+Tải theo yêu cầu, không tải sẵn 5.470 dòng cho mọi dòng.
+
+#### Khoa thấy kết quả trên danh mục của mình
+
+Bật lại phần HIỂN THỊ ở `DanhMucDeXuatKhoa` (view sống lại từ patch_zzzzza):
+nhãn *"Rớt N ở \<giai đoạn\> · trúng M"*, tooltip đủ số mang đi thầu / trúng /
+thiếu / lý do. Nút "Đẩy SL" của khoa vẫn tắt. Đúng nguyên tắc chủ dự án nêu:
+mọi thứ PĐD chỉnh trên Tổng hợp đều phải về tới danh mục của khoa (mục 13 của `01`).
+
+### Ba việc giao diện cùng ngày
+
+1. **Không thấy đường sang giai đoạn 2, 3.** Nút chuyển giai đoạn là biểu tượng
+   11px lọt trong thẻ. Nay là nút CÓ CHỮ: "▶ Bắt đầu" · "✓ Hoàn thành" · "mở lại";
+   giai đoạn chưa tới lượt hiện thẳng "chờ giai đoạn trước".
+
+2. **CHẾ ĐỘ GÕ RỚT** (thi công miếng 1d). Cụm cột thầu bám đuôi bảng nên nằm sau
+   30 cột. Chế độ này ẩn nhóm lịch sử · phân nhóm · thương mại, giữ 14 cột —
+   đo trên màn 1440px: mép phải đúng 1440, **lọt trọn, không cuộn ngang**. Tự bật
+   một lần khi đã chốt Q. Chỉ là LĂNG KÍNH XEM: không đụng `cotAn` và **không đổi
+   file Excel** xuất ra.
+
+3. **Bàn điều hành chỉ còn để xem** (thi công QĐ A2). Gỡ hai tab "Danh mục tổng
+   hợp" và "Kết quả thầu & giỏ rớt". Thay bằng dải nút mở bảng Tổng hợp cho từng
+   gói con, mở bằng **tab trình duyệt mới** để giữ Bàn điều hành ở tab cũ.
+
+### Phép thử mới
+
+`scripts/kiem_do_ma_tuong_duong.py` — dựng riêng một đợt nhỏ (một nhóm, hai mã
+cùng ĐVT, hai khoa), đi trọn đường đổ mã, tự dọn. **PASS 8/8**. Tách khỏi smoke
+vì smoke dựng đợt với hai mã thuộc HAI nhóm khác nhau nên không có đích hợp lệ
+để đổ; thêm mã thứ ba vào smoke kéo theo hàng loạt con số cố định phải sửa theo.
+
+### Nghiệm thu cuối ngày 24/08/2026
+
+`pytest` **180** · `smoke_workflow_v3_staging` **24/24** ·
+`kiem_do_ma_tuong_duong` **8/8** · `kiem_moi_man` không lỗi ·
+`test:formula` OK · `build` ✓.

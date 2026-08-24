@@ -12,6 +12,11 @@ Hướng dẫn cho người và cho agent khi làm việc trong repo này.
 > **đã thi công xong**) — rớt → đổ sang mã tương đương → chuyển tiếp về đợt bổ
 > sung → hộp thư hai chiều. Tài liệu, docx và sơ đồ đều đã đồng bộ tới 23/08.
 >
+> **24/08/2026 — D11–D15.** Thứ tự thao tác sau khi có kết quả thầu, hệ chặn
+> nếu làm sai: gõ số rớt → **CHIA số trúng về khoa** → đổ sang mã tương đương →
+> mã nhận về trống, **CHIA LẠI** trên tổng mới → Xác nhận rớt.
+> Số phải chia = **trúng + phần nhận**. "Cuốn chiếu" nay gọi là **"chuyển tiếp"**.
+>
 > ☠️ **Ba bảng ĐÃ CHẾT, đừng dựng lại:** `goi_thau_ket_qua_ma` ·
 > `goi_thau_tien_do` · `goi_thau_moc` (mô hình trước v3). Màn đọc chúng **hiện
 > rỗng mà không báo lỗi** — đó là lớp lỗi khó thấy nhất của dự án này. Nghi ngờ

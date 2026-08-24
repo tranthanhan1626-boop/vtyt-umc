@@ -24,7 +24,7 @@ const laneColors = {
 // ---------------------------------------------------------------------------
 // DỮ LIỆU SƠ ĐỒ — vẽ lại 23/08/2026 theo workflow v3 (17/08) + luật V2 (19/08)
 // + QĐ 20/08 (cổng chốt trình ký chỉ tính khoa đã gửi đề xuất)
-// + bản MỘT MẶT BÀN (21/08) + bản VÒNG KHÉP KÍN D1–D10 (23/08).
+// + bản MỘT MẶT BÀN (21/08) + VÒNG KHÉP KÍN D1–D10 (23/08) + D11–D15 (24/08).
 //
 // Nguồn chuẩn: ../01_NGHIEP_VU_HIEN_HANH.md
 // Quyết định đã bị đảo (ĐỪNG vẽ lại): ../06_DUNG_LAM_LAI.md
@@ -34,7 +34,7 @@ const overview = {
   id: "overview",
   name: "01 Tổng quan Khoa ↔ PĐD",
   title: "WORKFLOW VTYT — KHOA ↔ PHÒNG ĐIỀU DƯỠNG",
-  subtitle: "Đơn vị workflow là DOT_GOI = Đợt × Gói con · Web là sổ ghi và dấu vết, Teams là nơi thương lượng · Cập nhật 23/08/2026",
+  subtitle: "Đơn vị workflow là DOT_GOI = Đợt × Gói con · Web là sổ ghi và dấu vết, Teams là nơi thương lượng · Cập nhật 24/08/2026",
   width: 3060,
   height: 2150,
   lanes: [
@@ -116,7 +116,7 @@ const khoa = {
   id: "khoa",
   name: "02 Workflow Khoa chi tiết",
   title: "WORKFLOW CHI TIẾT — KHOA / ĐƠN VỊ SỬ DỤNG",
-  subtitle: "Từ chọn phạm vi → lập số → gửi → xác nhận lần N → xử lý rớt → 30% · Cập nhật 23/08/2026",
+  subtitle: "Từ chọn phạm vi → lập số → gửi → xác nhận lần N → xử lý rớt → 30% · Cập nhật 24/08/2026",
   width: 2260,
   height: 2060,
   lanes: [
@@ -188,7 +188,7 @@ const pdd = {
   id: "pdd",
   name: "03 Workflow PĐD chi tiết",
   title: "WORKFLOW CHI TIẾT — PHÒNG ĐIỀU DƯỠNG (PĐD)",
-  subtitle: "Chuẩn bị đợt → hiệu chỉnh → CHỐT Q → ba giai đoạn → rớt → phân bổ số trúng → chốt trình ký · Cập nhật 23/08/2026",
+  subtitle: "Chuẩn bị đợt → hiệu chỉnh → CHỐT Q → ba giai đoạn → rớt → phân bổ số trúng → chốt trình ký · Cập nhật 24/08/2026",
   width: 2260,
   height: 2010,
   lanes: [
@@ -198,7 +198,7 @@ const pdd = {
     { id: "ps1", group: "pdd", x: 120, y: 280, w: 390, h: 135, title: "1 · Tạo / mở đợt", lines: ["Hệ tự sinh 5 DOT_GOI cho gói 18T", "Mỗi đợt bổ sung = 1 gói phẳng", "Đóng đợt là chặn ở DB, không chỉ ở giao diện"] },
     { id: "ps2", group: "pdd", x: 580, y: 280, w: 390, h: 135, title: "2 · Phân gói con & khoa", lines: ["Phân mã quản lý vào từng gói con", "Chỉ định danh sách khoa tham gia", "Đổi được tới khi chốt Q"] },
     { id: "ps3", group: "pdd", x: 1040, y: 280, w: 390, h: 135, title: "3 · Bàn điều hành", lines: ["Theo dõi: đã gửi · đã xác nhận · Word", "Lọc khoa còn thiếu → nhắc qua Teams", "Web KHÔNG tự gửi thông báo"] },
-    { id: "ps4", group: "pdd", x: 1500, y: 280, w: 620, h: 135, title: "4 · Danh mục tổng hợp", lines: ["Cộng theo mã hàng trong đúng một DOT_GOI", "Cột SỐ là VIEW SUM — KHÔNG sửa trực tiếp được", "Cột CHỮ sửa đè trực tiếp (đè cho toàn viện)"] },
+    { id: "ps4", group: "pdd", x: 1500, y: 280, w: 620, h: 135, title: "4 · Danh mục tổng hợp = MẶT BÀN DUY NHẤT", lines: ["Mọi thao tác sửa của PĐD nằm ở đây. Bàn điều hành chỉ để XEM.", "Chế độ gõ rớt gom còn 14 cột: Q · R1 · R2 · R3 · Trúng · Đã chia · Xử lý rớt", "Sửa gì trên đây cũng về tới Danh mục đề xuất của khoa"] },
 
     { id: "ps5", group: "pdd", x: 1500, y: 510, w: 620, h: 145, title: "5 · Hiệu chỉnh số", lines: ["PĐD gõ TỔNG của mã → hệ chia sẵn theo tỉ lệ khoa đã đề xuất", "(làm tròn xuống, phần dư dồn vào khoa có số lớn nhất) — PĐD sửa tay được", "Không lưu được nếu tổng các dòng chưa khớp tổng mới"] },
     { id: "ps5b", group: "gap", shape: "note", x: 1040, y: 510, w: 390, h: 145, title: "Sửa số sau khi khoa đã xác nhận", lines: ["BẮT BUỘC nhập lý do.", "Khoa thấy số cũ, số mới, người sửa và lý do", "ngay trên bảng của mình."] },
@@ -255,7 +255,7 @@ const knowledge = {
   id: "knowledge",
   name: "04 Kiến trúc số & checkpoint",
   title: "KIẾN TRÚC SỐ, CHECKPOINT VÀ VÒNG LẶP",
-  subtitle: "Chuỗi số một chiều một nguồn (QĐ 17/08/2026) · Cập nhật 23/08/2026",
+  subtitle: "Chuỗi số một chiều một nguồn (QĐ 17/08/2026) · Cập nhật 24/08/2026",
   width: 2600,
   height: 2060,
   lanes: [
@@ -673,7 +673,8 @@ const mermaid = {
   WIN --> A9
   A8 -->|số trúng = Q − ΣR| A9["9 · Phân bổ số trúng về khoa<br/>CHỈ PĐD phân bổ · trúng toàn bộ thì giữ nguyên phân bổ Q<br/>trúng một phần thì chia sẵn theo tỉ lệ Q<br/>KHOÁ CỨNG 2 — tổng phân bổ = số trúng"]:::pdd
 
-  A9 -->|sau khi Xác nhận rớt| A10["10 · Theo dõi chuyển tiếp mã rớt<br/>đọc theo TỪNG MÃ RỚT, sổ ra danh sách khoa<br/>ô trống ở cột Đợt bổ sung = CHUYỂN TIẾP HỎNG<br/>bốn trạng thái · có nút Chạy lại"]:::fail
+  A9 -->|D14/D15: PĐD gõ tay số trúng, khoá 2 = trúng+nhận| A9B["Chia số trúng về khoa<br/>sổ dòng mã ra là có bảng nhập từng khoa<br/>chưa chia xong thì không đổ mã, không xác nhận rớt"]:::pdd
+  A9B -->|sau khi Xác nhận rớt| A10["10 · Theo dõi chuyển tiếp mã rớt<br/>đọc theo TỪNG MÃ RỚT, sổ ra danh sách khoa<br/>ô trống ở cột Đợt bổ sung = CHUYỂN TIẾP HỎNG<br/>bốn trạng thái · có nút Chạy lại"]:::fail
   A10 --> A11["11 · Mở đợt bổ sung T1 T5 T9<br/>pipeline bổ sung ĐỘC LẬP,<br/>không chặn chốt kết quả của gói gốc"]:::pdd
   A11 -. "đợt mới" .-> A1
 
@@ -710,10 +711,13 @@ const mermaid = {
   Q -->|mở ba giai đoạn| STAGE["giai_doan_thau_v3<br/>Chào giá → Mở thầu → Đánh giá, đúng thứ tự"]:::pdd
   STAGE -->|ghi ngoại lệ rớt| ROT["ket_qua_rot_v3 — chỉ ghi NGOẠI LỆ RỚT<br/>mặc định mọi mã TRÚNG TOÀN BỘ<br/>rớt ở cấp MÃ HÀNG, được ở nhiều giai đoạn<br/>số trúng = Q − R1+R2+R3 · KHOÁ CỨNG 3"]:::fail
   ROT -->|số trúng| WIN["phan_bo_trung_v3<br/>CHỈ PĐD phân bổ · chỉ khoa đã đề xuất mã mới nhận<br/>KHOÁ CỨNG 2 — tổng phân bổ = số trúng<br/>không có kho dự phòng"]:::pdd
-  ROT -->|nhịp 1: gõ nháp| SWAP["chuyen_so_rot_v3 — ĐỔ SANG MÃ TƯƠNG ĐƯƠNG<br/>cùng mã quản lý · GIỮ NGUYÊN số theo từng khoa<br/>lệch ĐVT thì CHẶN (68/446 nhóm lệch, đo 23/08)<br/>khoa chưa từng dùng mã nhận vẫn đổ, noti nói rõ"]:::pdd
-  ROT -->|nhịp 2: nút Xác nhận rớt| ROLL["chuyen_tiep_rot_v3 — CHUYỂN TIẾP<br/>MỌI phần rớt chưa đổ đi đâu, không chỉ rớt 100%<br/>đợt bổ sung T1/T5/T9 LUÔN MỞ SẴN, hệ tự tạo<br/>số mặc định = số rớt · khoa sửa và quyết cuối"]:::fail
+  ROT -->|D14: ghi rớt là ô về TRỐNG| SPLIT["phan_bo_trung_v3 — PĐD GÕ TAY số trúng theo khoa<br/>hệ KHÔNG tự chia nữa · nút Chia theo tỉ lệ Q khi cần<br/>KHOÁ CỨNG 2 = tổng chia phải bằng TRÚNG + NHẬN (D15)<br/>chưa chia xong thì KHÔNG đổ mã và KHÔNG xác nhận rớt được"]:::ok
+  SPLIT -->|nhịp 1: gõ nháp| SWAP["chuyen_so_rot_v3 — ĐỔ SANG MÃ TƯƠNG ĐƯƠNG<br/>cùng mã quản lý · mã nhận PHẢI CÓ TRONG ĐỢT<br/>lệch ĐVT thì CHẶN (68/446 nhóm lệch)<br/>đổ xong mã NHẬN về trống, chia lại trên trúng+nhận (D15)"]:::pdd
+  SWAP -. "phần nhận" .-> SPLIT
+  SPLIT -->|nhịp 2: nút Xác nhận rớt| ROLL["chuyen_tiep_rot_v3 — CHUYỂN TIẾP<br/>MỌI phần rớt chưa đổ đi đâu, không chỉ rớt 100%<br/>đợt bổ sung T1/T5/T9 LUÔN MỞ SẴN, hệ tự tạo<br/>số mặc định = số rớt · khoa sửa và quyết cuối"]:::fail
   SWAP -. "phần đã đổ thì KHÔNG chuyển tiếp" .-> ROLL
   ROLL -->|đẻ proposals ở đợt bổ sung| PROP
+  SPLIT -->|một nguồn duy nhất, không cộng ở hai nơi| FINAL
   ROLL -->|báo đỏ| MAIL["thong_bao — HỘP THƯ HAI CHIỀU<br/>chỉ việc lớn · sửa vặt gộp một dòng mỗi ngày<br/>XEM XONG LÀ XOÁ HẲN — dấu vết thật ở audit từng ô<br/>badge đỏ ở mục Gói bổ sung của khoa"]:::sys
   ROLL -. "PĐD theo dõi" .-> TRACK["v_theo_doi_chuyen_tiep_v3 — đọc theo TỪNG MÃ RỚT<br/>ô trống ở cột Đợt bổ sung = CHUYỂN TIẾP HỎNG<br/>không phải đang chờ khoa · có nút Chạy lại"]:::pdd
 

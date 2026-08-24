@@ -22,7 +22,8 @@ flowchart TB
   WIN --> A9
   A8 -->|số trúng = Q − ΣR| A9["9 · Phân bổ số trúng về khoa<br/>CHỈ PĐD phân bổ · trúng toàn bộ thì giữ nguyên phân bổ Q<br/>trúng một phần thì chia sẵn theo tỉ lệ Q<br/>KHOÁ CỨNG 2 — tổng phân bổ = số trúng"]:::pdd
 
-  A9 -->|sau khi Xác nhận rớt| A10["10 · Theo dõi cuốn chiếu mã rớt<br/>đọc theo TỪNG MÃ RỚT, sổ ra danh sách khoa<br/>ô trống ở cột Đợt bổ sung = CUỐN CHIẾU HỎNG<br/>bốn trạng thái · có nút Chạy lại"]:::fail
+  A9 -->|D14/D15: PĐD gõ tay số trúng, khoá 2 = trúng+nhận| A9B["Chia số trúng về khoa<br/>sổ dòng mã ra là có bảng nhập từng khoa<br/>chưa chia xong thì không đổ mã, không xác nhận rớt"]:::pdd
+  A9B -->|sau khi Xác nhận rớt| A10["10 · Theo dõi chuyển tiếp mã rớt<br/>đọc theo TỪNG MÃ RỚT, sổ ra danh sách khoa<br/>ô trống ở cột Đợt bổ sung = CHUYỂN TIẾP HỎNG<br/>bốn trạng thái · có nút Chạy lại"]:::fail
   A10 --> A11["11 · Mở đợt bổ sung T1 T5 T9<br/>pipeline bổ sung ĐỘC LẬP,<br/>không chặn chốt kết quả của gói gốc"]:::pdd
   A11 -. "đợt mới" .-> A1
 

@@ -1,6 +1,6 @@
 # Sơ đồ workflow Khoa ↔ Phòng Điều dưỡng
 
-> ✅ **VẼ LẠI 23/08/2026** theo workflow v3 (17/08) + luật V2 (19/08) + QĐ 20/08
+> ✅ **VẼ LẠI 24/08/2026** theo workflow v3 (17/08) + luật V2 (19/08) + QĐ 20/08
 > + bản **MỘT MẶT BÀN** (21/08) + bản **VÒNG KHÉP KÍN** D1–D10 (23/08).
 >
 > Bốn chỗ đổi so với bản 20/08:
@@ -11,6 +11,8 @@
 > | Mã rớt vào giỏ chờ khoa xử lý | **Đổ sang mã tương đương** (cùng mã quản lý, giữ số theo khoa, lệch ĐVT thì chặn) · phần chưa đổ **chuyển tiếp hết** |
 > | Chốt trình ký từng bảng khoa rồi chốt toàn bộ | **Một nút** chốt toàn bộ |
 > | — | Thêm **hộp thư hai chiều**, **màn theo dõi chuyển tiếp**, và khối **ba bảng đã chết** |
+> | Hệ tự chia số trúng theo tỉ lệ Q | **PĐD gõ tay** (D14); khoá cứng 2 = **trúng + nhận** (D15); chưa chia xong thì không đổ mã, không xác nhận rớt |
+> | Bàn điều hành có tab sửa | Bàn điều hành **chỉ để xem**; Danh mục tổng hợp là **mặt bàn duy nhất** |
 >
 > Sơ đồ là **bản tóm tắt hình ảnh**, không phải nguồn luật. Khi sơ đồ và
 > `../01_NGHIEP_VU_HIEN_HANH.md` khác nhau thì **tài liệu đúng, sơ đồ sai**.

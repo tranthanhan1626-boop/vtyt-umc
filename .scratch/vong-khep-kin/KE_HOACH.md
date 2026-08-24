@@ -185,3 +185,58 @@ vào `scripts/don_du_lieu_test_staging.py`.
   dựng giao diện**.
 - `xoa_du_lieu_kiem_thu` không cần sửa: ba bảng mới cascade theo
   `chot_q_phien` / `dot_goi` nên xoá đợt là sạch theo.
+
+
+---
+
+## 9. Ngày 24/08/2026 — D11 đến D15
+
+Vòng **test quy mô thật 250 mã × 60 khoa** (`scripts/test_quy_mo_that.py`) tìm
+6 lỗi; chủ dự án tự bấm trên site test bắt thêm một chuỗi lỗi liên hoàn.
+
+| # | Quyết định |
+|---|---|
+| **D11** | Chuyển tiếp lần hai **CỘNG THÊM** vào số khoa đang có, không đè |
+| **D12** | Chuyển tiếp **chỉ cộng, KHÔNG BAO GIỜ TRỪ**. Tỉ lệ giữa các khoa đổi qua các giai đoạn nên phần đã chuyển tiếp có thể vượt số rớt hiện hành — hệ **hiện phần thừa ra**, không tự chỉnh |
+| **D13** | Gói tùy chọn 30% **chỉ giữ mã đã trúng** sau cả ba giai đoạn |
+| **D14** | **Bỏ tự chia số trúng.** Ghi rớt là ô về trống, PĐD gõ tay; "Chia theo tỉ lệ Q" là nút bấm; cò xác nhận rớt **chặn** khi chưa chia xong |
+| **D15** | Số phải chia = **số trúng + phần nhận** từ mã rớt cùng nhóm. Đổ xong thì mã nhận về trống, chia lại trên tổng mới |
+
+**Thứ tự thao tác, hệ chặn nếu làm sai:**
+
+```text
+gõ số rớt → CHIA số trúng về khoa → đổ sang mã tương đương
+          → mã nhận về trống, CHIA LẠI trên tổng mới → Xác nhận rớt
+```
+
+### Ba cổng chặn ở server, thiếu cái nào cũng hỏng nặng
+
+| Cổng | Nếu thiếu |
+|---|---|
+| **Xác nhận rớt** đòi chia xong | ô trống ⇒ số trúng = 0 ⇒ hệ chuyển tiếp **toàn bộ Q** sang đợt bổ sung |
+| **Đổ mã** đòi mã rớt chia xong | cùng lý do — đo thật: mã Q 200 rớt 80, chưa chia thì **đổ đi 200** |
+| **Đổ mã** đòi mã nhận **có trong đợt** | phần nhận không có chỗ đứng: bảng không hiện, khoá cứng 2 cũng không thấy để chặn |
+
+### Đổi thuật ngữ
+
+"cuốn chiếu" → **"chuyển tiếp"**, đổi cả tên bảng trong database.
+`chuyen_so_rot_v3` đổi **MÃ** cùng đợt · `chuyen_tiep_rot_v3` đổi **ĐỢT** cùng mã.
+
+### Giao diện
+
+Bàn điều hành **chỉ còn để xem** (gỡ 2 tab, thi công QĐ A2) · bảng Tổng hợp có
+**CHẾ ĐỘ GÕ RỚT** gom còn 14 cột lọt trọn màn 1440px · mở bằng **tab trình
+duyệt mới** · nút chuyển giai đoạn có chữ · sổ dòng mã ra là có **bảng chia số
+trúng cho từng khoa** · khoa thấy nhãn kết quả thầu trên danh mục của mình.
+
+### Nghiệm thu 24/08/2026
+
+`pytest` **180** · `smoke v3` **24/24** · `kiem_do_ma_tuong_duong` **8/8** ·
+`kiem_moi_man` không lỗi · `test:formula` OK · `build` ✓.
+
+### Còn nợ
+
+1. Miếng **1c** — nới khoá cứng 2 ở **server** (cho lưu nháp lệch, chỉ chặn ở
+   cổng chốt trình ký). Hiện `cap_nhat_phan_bo_trung_v3` vẫn chặn ngay lúc ghi.
+2. Miếng **1d** còn lại — phím tắt gõ dọc (`grep onKeyDown` vẫn = 0).
+3. Nhánh **D6** — tiến độ gói thầu theo số quyết định / số hợp đồng.

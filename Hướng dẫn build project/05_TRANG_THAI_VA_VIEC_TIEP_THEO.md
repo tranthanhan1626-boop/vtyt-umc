@@ -1,6 +1,6 @@
 # Trạng thái hiện tại và việc tiếp theo
 
-Cập nhật **23/08/2026**. Nhánh `phase-a-luong-de-xuat`.
+Cập nhật **24/08/2026**. Nhánh `phase-a-luong-de-xuat`.
 
 > 🔴 **ĐỔI HƯỚNG 21/08/2026 — đọc trước mọi thứ khác trong file này.**
 >
@@ -23,6 +23,41 @@ Cập nhật **23/08/2026**. Nhánh `phase-a-luong-de-xuat`.
 >
 > Kế hoạch chi tiết + hai tài liệu nền: `.scratch/mot-mat-ban/`
 > (`KE_HOACH.md` · `UX_MOT_MAT_BAN.md` · `DU_LIEU_SAU_THAU.md`).
+
+> ✅ **HÔM NAY 24/08/2026 — đọc khối này trước.**
+>
+> Chủ dự án tự bấm trên site test và bắt được một chuỗi lỗi liên hoàn. Đã vá hết
+> và chốt thêm **5 quyết định D11–D15**. Kèm một vòng **test quy mô thật
+> 250 mã × 60 khoa** tìm ra 6 lỗi nữa.
+>
+> | | |
+> |---|---|
+> | D11 | Chuyển tiếp lần hai **cộng thêm**, không đè số khoa đã sửa |
+> | D12 | Chuyển tiếp **chỉ cộng, không bao giờ trừ**; phần thừa thì HIỆN RA |
+> | D13 | Gói 30% chỉ giữ mã **đã trúng** sau cả ba giai đoạn |
+> | D14 | **Bỏ tự chia số trúng** — PĐD gõ tay; chia theo tỉ lệ là nút bấm |
+> | D15 | Số phải chia = **trúng + phần nhận** từ mã rớt cùng nhóm |
+>
+> **Đổi thuật ngữ:** "cuốn chiếu" → **"chuyển tiếp"**, đổi cả tên bảng trong
+> database. Phân biệt: `chuyen_so_rot_v3` đổi **MÃ** cùng đợt ·
+> `chuyen_tiep_rot_v3` đổi **ĐỢT** cùng mã.
+>
+> **Thứ tự thao tác sau khi có kết quả thầu — hệ chặn nếu làm sai:**
+>
+> ```text
+> gõ số rớt → CHIA số trúng về khoa → đổ sang mã tương đương
+>           → mã nhận về trống, CHIA LẠI trên tổng mới → Xác nhận rớt
+> ```
+>
+> **Giao diện:** Bàn điều hành **chỉ còn để xem** (gỡ 2 tab, thi công QĐ A2) ·
+> bảng Tổng hợp có **CHẾ ĐỘ GÕ RỚT** gom còn 14 cột lọt trọn màn 1440px ·
+> mở bằng **tab trình duyệt mới** · nút chuyển giai đoạn có chữ.
+>
+> **Dữ liệu test đang nằm trên staging** — đợt **#118**, 323 mã × 50 khoa, cả 5
+> gói con đã chốt Q và ở giai đoạn Chào giá; đợt bổ sung T9/2026 · T1/2027 ·
+> T5/2027 · T9/2027 mở sẵn. **100% mã có tổng nằm trong dải P50–P75** tính từ
+> lịch sử thật. Dựng/xoá bằng `scripts/tao_du_lieu_test_day_du.py`.
+> Kịch bản trình bày với lãnh đạo: `.scratch/demo/KICH_BAN_DEMO.md`.
 
 > ✅ **BẢN VÒNG KHÉP KÍN — chốt VÀ THI CÔNG XONG ngày 23/08/2026.**
 >
@@ -76,9 +111,9 @@ v3 mà giữ nguyên tên cột, nên 5 màn sống lại cùng lúc. Chỉ còn
 **17/18 invariant** đo được và đúng. Cái còn lại (*một mã quản lý chỉ thuộc một
 gói con*) cần **quyết định nghiệp vụ**, không phải việc code — xem mục 4.
 
-Nghiệm thu ngày **23/08/2026**: `pytest` **150** · `smoke_workflow_v3_staging`
-**21/21** · 33 bảng về đúng số dòng ban đầu · `kiem_truoc_deploy` **Sạch** ·
-`test:formula` OK · `build` ✓.
+Nghiệm thu ngày **24/08/2026**: `pytest` **180** · `smoke_workflow_v3_staging`
+**24/24** · `kiem_do_ma_tuong_duong` **8/8** · 33 bảng về đúng số dòng ban đầu ·
+`kiem_moi_man` không lỗi · `test:formula` OK · `build` ✓.
 
 🆕 **Thêm một vòng kiểm mới**: `scripts/kiem_moi_man.py --xac-nhan-staging` quét
 mọi `.from()` / `.rpc()` của **36 màn** (63 bảng/view · 41 RPC), gọi thật bằng
@@ -220,6 +255,29 @@ comment/docstring, không chỗ nào đọc file:
 | `frontend/src/lib/congThucSoLuong.js` | 3 |
 | `frontend/src/features/DeXuatTongHop.jsx` | 24 · 196 |
 | `backend/scripts/smoke_pipeline_hien_tai.py` | 7 · 10 |
+
+---
+
+## 3c. 🆕 Việc tiếp theo sau ngày 24/08/2026
+
+Xếp theo thứ tự nên làm:
+
+| # | Việc | Ghi chú |
+|---|---|---|
+| 1 | **Chủ dự án bàn với cấp trên** rồi chốt hướng | Đang dừng ở đây theo yêu cầu 24/08 |
+| 2 | Miếng **1c** — nới khoá cứng 2 ở **server** | Cho lưu nháp lệch, chỉ chặn ở cổng chốt trình ký (QĐ A4). Hiện `cap_nhat_phan_bo_trung_v3` vẫn chặn ngay lúc ghi |
+| 3 | Miếng **1d** còn lại — phím tắt gõ dọc | Chế độ hai cột đã xong 24/08; `grep onKeyDown` vẫn = 0 |
+| 4 | Nhánh **D6** — tiến độ gói thầu theo số quyết định / số hợp đồng | Thiết kế + 6 câu hỏi ở `.scratch/tien-do-goi-thau/BRAINSTORM.md` |
+| 5 | Vẽ lại sơ đồ theo D11–D15 | Sơ đồ đang ở mốc 23/08 |
+
+**Script mới thêm trong hai ngày 23–24/08:**
+
+| Script | Dùng khi |
+|---|---|
+| `kiem_moi_man.py` | sau mỗi lần đổi schema hoặc gỡ/thêm màn — bắt lỗi "hiện rỗng mà không báo" |
+| `test_quy_mo_that.py` | trước khi tin rằng thứ gì đó chạy nổi ở quy mô thật |
+| `kiem_do_ma_tuong_duong.py` | mỗi lần đụng vào đường đổ số rớt sang mã tương đương |
+| `tao_du_lieu_test_day_du.py` | dựng / xoá bộ dữ liệu để chủ dự án tự bấm |
 
 ---
 

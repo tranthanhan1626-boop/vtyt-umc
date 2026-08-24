@@ -300,6 +300,19 @@ chết) · **CÓ DỮ LIỆU**. Script **không tự phán** một bảng rỗng
 Chạy sau mỗi lần đổi schema hoặc gỡ/thêm màn. Cần `MAT_KHAU_TEST` nếu mật khẩu
 tài khoản test khác `111111`.
 
+### 🆕 5d. Bốn script thêm ngày 23–24/08/2026
+
+| Script | Dùng khi | Tự dọn |
+|---|---|---|
+| `kiem_moi_man.py --xac-nhan-staging` | sau mỗi lần đổi schema hoặc gỡ/thêm màn. Gọi mọi `.from()`/`.rpc()` bằng JWT hai vai trò, chia ba nhóm **lỗi · rỗng · có dữ liệu** | không ghi gì |
+| `test_quy_mo_that.py --xac-nhan-staging` | trước khi tin rằng thứ gì đó chạy nổi ở quy mô thật. Dựng 250 mã × 60 khoa, đo thời gian từng bước | ✅ |
+| `kiem_do_ma_tuong_duong.py --xac-nhan-staging` | mỗi lần đụng vào đường đổ số rớt sang mã tương đương. Dựng đợt nhỏ một nhóm hai mã, đi trọn PASS 8/8 | ✅ |
+| `tao_du_lieu_test_day_du.py --xac-nhan-staging` | dựng bộ dữ liệu để chủ dự án tự bấm. Thêm `--xoa` để xoá sạch | theo cờ |
+
+`tao_du_lieu_test_day_du.py` gọi `frontend/tools/tinh-dai-p50-p75.mjs` để lấy
+dải P50–P75 **bằng đúng công thức của web** — không viết lại bằng Python, vì đó
+là đẻ ra bản thứ hai của công thức.
+
 ## 6. Bẫy kỹ thuật quan trọng
 
 1. PostgREST mặc định cắt 1.000 dòng; mọi tải lớn phải phân trang.

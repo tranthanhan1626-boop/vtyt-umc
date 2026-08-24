@@ -1,6 +1,6 @@
 # Đọc trước tiên — hệ thống dự trù & đấu thầu VTYT (UMC)
 
-Cập nhật **23/08/2026**. Nhánh làm việc: `phase-a-luong-de-xuat`.
+Cập nhật **24/08/2026**. Nhánh làm việc: `phase-a-luong-de-xuat`.
 
 > 🆕 **Hai lần đổi hướng gần nhất, đọc theo thứ tự:**
 >
@@ -14,6 +14,17 @@ Cập nhật **23/08/2026**. Nhánh làm việc: `phase-a-luong-de-xuat`.
 > `goi_thau_moc` không còn ai ghi vào, nên năm màn đọc chúng chỉ hiện rỗng mà
 > **không báo lỗi**. 10 quyết định D1–D10, thi công trọn và đo bằng trình duyệt
 > hai vai trò. Bốn mảng sau đấu thầu **hoãn** sang nhánh sau (QĐ D6).
+>
+> **24/08/2026 — chốt thêm D11–D15 và đổi thuật ngữ.** Chủ dự án tự bấm trên
+> site test, bắt được chuỗi lỗi liên hoàn; cộng một vòng test quy mô thật
+> 250 mã × 60 khoa. Năm quyết định: chuyển tiếp lần hai **cộng thêm không đè**
+> (D11) · **chỉ cộng không bao giờ trừ**, phần thừa thì hiện ra (D12) · gói 30%
+> chỉ giữ mã **đã trúng** (D13) · **bỏ tự chia số trúng**, PĐD gõ tay (D14) ·
+> số phải chia = **trúng + phần nhận** từ mã rớt cùng nhóm (D15).
+>
+> **"Cuốn chiếu" nay gọi là "CHUYỂN TIẾP"**, đổi cả tên bảng trong database.
+> Phân biệt hai thứ dễ lẫn: `chuyen_so_rot_v3` đổi **MÃ** cùng đợt ·
+> `chuyen_tiep_rot_v3` đổi **ĐỢT** cùng mã.
 >
 > Luật đang chạy nằm ở `01`. Cái gì đã bị đảo nằm ở `06` — **đọc trước khi dựng
 > bất cứ thứ gì bạn thấy "còn thiếu"**.

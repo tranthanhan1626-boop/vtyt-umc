@@ -21,12 +21,15 @@ flowchart TB
   Q -->|mở ba giai đoạn| STAGE["giai_doan_thau_v3<br/>Chào giá → Mở thầu → Đánh giá, đúng thứ tự"]:::pdd
   STAGE -->|ghi ngoại lệ rớt| ROT["ket_qua_rot_v3 — chỉ ghi NGOẠI LỆ RỚT<br/>mặc định mọi mã TRÚNG TOÀN BỘ<br/>rớt ở cấp MÃ HÀNG, được ở nhiều giai đoạn<br/>số trúng = Q − R1+R2+R3 · KHOÁ CỨNG 3"]:::fail
   ROT -->|số trúng| WIN["phan_bo_trung_v3<br/>CHỈ PĐD phân bổ · chỉ khoa đã đề xuất mã mới nhận<br/>KHOÁ CỨNG 2 — tổng phân bổ = số trúng<br/>không có kho dự phòng"]:::pdd
-  ROT -->|nhịp 1: gõ nháp| SWAP["chuyen_so_rot_v3 — ĐỔ SANG MÃ TƯƠNG ĐƯƠNG<br/>cùng mã quản lý · GIỮ NGUYÊN số theo từng khoa<br/>lệch ĐVT thì CHẶN (68/446 nhóm lệch, đo 23/08)<br/>khoa chưa từng dùng mã nhận vẫn đổ, noti nói rõ"]:::pdd
-  ROT -->|nhịp 2: nút Xác nhận rớt| ROLL["cuon_chieu_rot_v3 — CUỐN CHIẾU<br/>MỌI phần rớt chưa đổ đi đâu, không chỉ rớt 100%<br/>đợt bổ sung T1/T5/T9 LUÔN MỞ SẴN, hệ tự tạo<br/>số mặc định = số rớt · khoa sửa và quyết cuối"]:::fail
-  SWAP -. "phần đã đổ thì KHÔNG cuốn chiếu" .-> ROLL
+  ROT -->|D14: ghi rớt là ô về TRỐNG| SPLIT["phan_bo_trung_v3 — PĐD GÕ TAY số trúng theo khoa<br/>hệ KHÔNG tự chia nữa · nút Chia theo tỉ lệ Q khi cần<br/>KHOÁ CỨNG 2 = tổng chia phải bằng TRÚNG + NHẬN (D15)<br/>chưa chia xong thì KHÔNG đổ mã và KHÔNG xác nhận rớt được"]:::ok
+  SPLIT -->|nhịp 1: gõ nháp| SWAP["chuyen_so_rot_v3 — ĐỔ SANG MÃ TƯƠNG ĐƯƠNG<br/>cùng mã quản lý · mã nhận PHẢI CÓ TRONG ĐỢT<br/>lệch ĐVT thì CHẶN (68/446 nhóm lệch)<br/>đổ xong mã NHẬN về trống, chia lại trên trúng+nhận (D15)"]:::pdd
+  SWAP -. "phần nhận" .-> SPLIT
+  SPLIT -->|nhịp 2: nút Xác nhận rớt| ROLL["chuyen_tiep_rot_v3 — CHUYỂN TIẾP<br/>MỌI phần rớt chưa đổ đi đâu, không chỉ rớt 100%<br/>đợt bổ sung T1/T5/T9 LUÔN MỞ SẴN, hệ tự tạo<br/>số mặc định = số rớt · khoa sửa và quyết cuối"]:::fail
+  SWAP -. "phần đã đổ thì KHÔNG chuyển tiếp" .-> ROLL
   ROLL -->|đẻ proposals ở đợt bổ sung| PROP
+  SPLIT -->|một nguồn duy nhất, không cộng ở hai nơi| FINAL
   ROLL -->|báo đỏ| MAIL["thong_bao — HỘP THƯ HAI CHIỀU<br/>chỉ việc lớn · sửa vặt gộp một dòng mỗi ngày<br/>XEM XONG LÀ XOÁ HẲN — dấu vết thật ở audit từng ô<br/>badge đỏ ở mục Gói bổ sung của khoa"]:::sys
-  ROLL -. "PĐD theo dõi" .-> TRACK["v_theo_doi_cuon_chieu_v3 — đọc theo TỪNG MÃ RỚT<br/>ô trống ở cột Đợt bổ sung = CUỐN CHIẾU HỎNG<br/>không phải đang chờ khoa · có nút Chạy lại"]:::pdd
+  ROLL -. "PĐD theo dõi" .-> TRACK["v_theo_doi_chuyen_tiep_v3 — đọc theo TỪNG MÃ RỚT<br/>ô trống ở cột Đợt bổ sung = CHUYỂN TIẾP HỎNG<br/>không phải đang chờ khoa · có nút Chạy lại"]:::pdd
 
   WIN -->|đã phân bổ hết| FINAL["CHECKPOINT 2 — CHỐT TRÌNH KÝ<br/>chot_trinh_ky_phien_v3<br/>MỘT nút chốt toàn bộ (bỏ 49 nút từng khoa)<br/>QĐ 20/08: chỉ tính khoa đã gửi đề xuất<br/>khoá cột CHỮ và khoá cả DOT_GOI"]:::ok
   FINAL -->|tạo revision| REV["Revision & Excel chính thức<br/>Excel khoa và Excel tổng hợp CÙNG revision<br/>mở lại một bảng khoa thì revision tổng hợp hết hiệu lực"]:::pdd

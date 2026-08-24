@@ -1,7 +1,7 @@
 # ĐỪNG LÀM LẠI — những quyết định đã bị đảo
 
 > Đọc file này **trước khi** dựng bất kỳ cơ chế nào bạn thấy "còn thiếu".
-> Dự án đã đảo luật **40 lần**. Phần lớn thứ trông như thiếu sót là thứ đã bị
+> Dự án đã đảo luật **44 lần**. Phần lớn thứ trông như thiếu sót là thứ đã bị
 > cố ý bỏ đi, có lý do.
 
 Đây **không** phải tài liệu nghiệp vụ. Luật đang chạy nằm ở
@@ -53,6 +53,10 @@
 | **Gói 30% liệt kê cả mã rớt sạch với trần 0** | Chỉ giữ mã **đã trúng sau cả ba giai đoạn** (D13) | 24/08/2026 |
 | Gọi việc đưa mã rớt sang đợt sau là **"cuốn chiếu"** | Thuật ngữ chuẩn: **"chuyển tiếp"**. Đổi cả tên bảng trong database | 24/08/2026 |
 | **Hệ tự chia số trúng theo tỉ lệ Q mỗi lần ghi/bỏ rớt** | **Bỏ hẳn** — ô về trống, PĐD gõ tay; chia theo tỉ lệ là **nút bấm**; cò xác nhận rớt **chặn** khi chưa chia xong (D14) | 24/08/2026 |
+| **Phần đổ sang mã tương đương giữ ở sổ riêng, cộng vào lúc chốt trình ký** | Số thật nằm ở `phan_bo_trung_v3`; khoá cứng 2 = **trúng + nhận**; chốt trình ký **không cộng thêm** (D15) | 24/08/2026 |
+| **Đổ sang mã tương đương lúc nào cũng được** | Phải **chia xong mã rớt trước**, và mã nhận phải **có trong đợt** — nếu không sẽ đổ đi cả Q hoặc đổ vào chỗ không ai kiểm được | 24/08/2026 |
+| **Bàn điều hành có tab Danh mục tổng hợp và tab Kết quả thầu** | Gỡ khỏi menu — Bàn điều hành **chỉ để xem**, mọi thao tác sửa trên bảng Tổng hợp (thi công QĐ A2) | 24/08/2026 |
+| **Khoa không thấy kết quả thầu trên danh mục của mình** | Bật lại phần **XEM**: nhãn rớt/trúng + tooltip. Nút "Đẩy SL" của khoa vẫn tắt | 24/08/2026 |
 
 ## Bốn cái bẫy hay khiến người ta code lại đồ đã bỏ
 

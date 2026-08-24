@@ -401,6 +401,37 @@ Mã rớt mà trong **cùng mã quản lý** còn mã khác trúng thì PĐD đ�
 
 Đổ nhiều lần được (mỗi lần một mã nhận). Bỏ đổ cũng được, kèm lý do.
 
+#### 🆕 Thứ tự bắt buộc, và hai cổng chặn (QĐ D15, 24/08/2026)
+
+```text
+gõ số rớt  →  CHIA số trúng về khoa  →  đổ sang mã tương đương
+           →  mã nhận về trống, CHIA LẠI trên tổng mới  →  Xác nhận rớt
+```
+
+Hai cổng, cả hai đều chặn ở server chứ không chỉ ở giao diện:
+
+| Cổng | Chặn gì | Nếu không có |
+|---|---|---|
+| **Đổ mã** đòi mã rớt đã chia xong | Phần rớt của khoa tính bằng *Q của khoa trừ số trúng*. Từ QĐ D14, ghi rớt xong ô số trúng về **trống (= 0)** | Hệ tưởng khoa rớt **toàn bộ Q** và đổ đi cả Q. Đo thật: mã Q = 200 rớt 80, chưa chia → **đổ đi 200** |
+| **Đổ mã** đòi mã nhận **có trong đợt** | Chỉ mã đã mang đi thầu mới "còn trúng" để gánh thêm | Phần nhận không có chỗ đứng: mã ngoài snapshot Q thì bảng không hiện, cổng khoá cứng 2 cũng không thấy để chặn |
+
+#### 🆕 Số phải chia = số trúng + phần nhận (QĐ D15)
+
+Mã nhận 460 từ mã rớt thì **số phải chia về khoa là trúng + 460**, không phải
+trúng thuần. Sau khi đổ, ô số trúng của mã nhận **về trống** để PĐD chia lại
+trên tổng mới.
+
+| | |
+|---|---|
+| Khoá cứng 2 | tổng chia về khoa = **số trúng + phần nhận** |
+| Chia theo tỉ lệ Q | chia trên tổng đó; trọng số của khoa = **Q của khoa + phần khoa đó nhận** |
+| Khoa chưa từng đề xuất mã nhận | Q = 0 nhưng vẫn có dòng và vẫn nhận — chỉ lấy Q làm trọng số thì phần nhận của họ **bốc hơi** |
+| Bản chốt trình ký | đọc thẳng phân bổ, **không cộng thêm lần nữa** — phần nhận đã nằm trong đó |
+
+**PĐD chia tay ở đâu:** sổ dòng mã trên bảng Tổng hợp ra, có sẵn bảng nhập số
+trúng cho từng khoa, cột *"Nhận từ mã rớt"* hiện riêng. Nút **Xác nhận chia**
+chỉ sáng khi tổng khớp đúng. Không muốn gõ thì bấm nút **Chia** ở cột "Đã chia".
+
 ### 5.4 Phân bổ số trúng về khoa
 
 | Trường hợp | Xử lý |
@@ -428,7 +459,8 @@ chỉnh tay; và tỉ lệ giữa các khoa **không đứng yên** qua ba giai 
 đã chuyển tiếp theo tỉ lệ cũ bị vênh — khoa B từng thừa 23 đơn vị (mục 6).
 
 Cột **"Đã chia"** trên bảng Tổng hợp là chỗ duy nhất thấy dòng nào còn phải gõ:
-lệch thì ô nền đỏ và có nút **Chia** ngay tại chỗ.
+lệch thì ô nền đỏ và có nút **Chia** ngay tại chỗ. 🆕 Từ QĐ D15 (24/08/2026) cột
+này so với **số trúng + phần nhận từ mã rớt cùng nhóm**, xem mục 5.3.
 
 Dòng sổ của khoa hiện sẵn **Q của khoa đó** và **số trúng của mã** để PĐD đối
 chiếu trong lúc gõ. Số gõ vào là **cột riêng, không đè lên Q** — Q là snapshot
@@ -695,6 +727,23 @@ trúc cùng revision và audit.
 **Bỏ hẳn mọi cột giá** khỏi biểu mẫu và bảng dữ liệu (QĐ 17/08/2026): giá dự
 kiến, giá hợp đồng cũ, tổng giá trị ước tính. Giá không thuộc phạm vi hệ thống
 này.
+
+---
+
+## 13. 🆕 Mọi thứ PĐD sửa đều về tới danh mục của khoa (24/08/2026)
+
+Nguyên tắc chủ dự án nêu ngày 24/08: *"bất cứ thông tin nào chỉnh sửa trên danh
+mục tổng hợp thì vẫn phải mặc định lưu về danh mục đề xuất của khoa."*
+
+| PĐD sửa gì trên Tổng hợp | Về tới khoa bằng đường nào |
+|---|---|
+| Cột CHỮ (TSKT, tên thương mại…) | `danh_muc_tong_hop_o` là **một giá trị chung toàn viện** — khoa mở ra thấy ngay (luật V2) |
+| Số lượng đề xuất | ghi thẳng `phan_bo_khoa`, chính là số của khoa |
+| Số trúng chia về khoa | `phan_bo_trung_v3` theo (mã × khoa); khoa thấy trên danh mục của mình qua nhãn kết quả thầu |
+| Rớt · đổ mã · chuyển tiếp | nhãn **"Rớt N ở \<giai đoạn\> · trúng M"** trên dòng của khoa, tooltip đủ số mang đi thầu / trúng / thiếu / lý do; cộng thông báo trong hộp thư |
+
+Khoa **chỉ xem** phần kết quả thầu, không sửa — đổ số rớt sang mã tương đương là
+việc của PĐD (QĐ D1, D3).
 
 ---
 
