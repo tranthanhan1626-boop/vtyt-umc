@@ -57,9 +57,24 @@ def test_giao_dien_hien_phan_nhan() -> None:
 
 
 def test_mo_bang_tong_hop_bang_tab_moi() -> None:
+    """Hai màn dạng Excel phải mở TAB TRÌNH DUYỆT MỚI, không đổi hash tại chỗ.
+
+    Từ 24/08/2026 lời gọi `window.open` gom vào `lib/moManExcel.js` để năm chỗ
+    mở không lệch nhau (tên cửa sổ kèm mã băm, tránh hai khoa khác dấu giành
+    một tab). Nên test soi cái LIB, không soi từng màn.
+    """
     bd = (FE / "BanDieuHanhPdd.jsx").read_text(encoding="utf-8")
     goi = [d for d in bd.splitlines()
            if "#tong-hop-pdd" in d and "window.location.hash" in d
            and not d.strip().startswith("//")]
     assert not goi, f"phải mở tab trình duyệt mới, không đổi hash tại chỗ: {goi}"
-    assert "window.open(" in bd
+    assert "moTongHopPdd(" in bd, "phải đi qua lib chung, đừng gọi window.open tay"
+
+    lib = (FE.parent / "lib" / "moManExcel.js").read_text(encoding="utf-8")
+    assert "window.open(" in lib
+    assert "#tong-hop-pdd" in lib and "#danh-muc-de-xuat" in lib
+
+    # Không màn nào được gọi window.open tay nữa — lệch khỏi lib là lệch tên
+    # cửa sổ, và hai chỗ mở cùng một bảng sẽ đẻ hai tab.
+    tay = [f.name for f in FE.glob("*.jsx") if "window.open(" in f.read_text(encoding="utf-8")]
+    assert not tay, f"còn gọi window.open tay ngoài lib: {tay}"

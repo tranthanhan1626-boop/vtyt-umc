@@ -38,19 +38,61 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 // @param buildQuery (from, to) => query đã gắn .range(from, to)
 // @param order      tên cột, hoặc mảng cột, dùng để sắp xếp ổn định
 // @param pageSize   số dòng mỗi trang
-export async function fetchAllRows(buildQuery, { order, pageSize = 1000 } = {}) {
+/**
+ * Tải hết mọi trang của một truy vấn.
+ *
+ * ⚠️ `buildQuery(from, to)` PHẢI dựng một truy vấn MỚI mỗi lần gọi. Builder của
+ * supabase-js đổi tại chỗ, nên dùng lại một builder đã dựng sẵn thì các trang
+ * sẽ đè range của nhau. Trước 25/08/2026 hàm này chạy nối đuôi nên lỗi đó im
+ * lặng; nay tải song song thì nó làm mất dòng ngay (đo thật: bảng 340 mã hiện
+ * 157 mã, không báo lỗi gì).
+ */
+export async function fetchAllRows(
+  buildQuery,
+  { order, pageSize = 1000, songSong = 4 } = {},
+) {
+  // Server chặn cứng 1.000 dòng mỗi lượt (`db-max-rows` của Supabase). Xin
+  // nhiều hơn thì nó VẪN trả 1.000, mà vòng lặp thấy `data.length < pageSize`
+  // sẽ tưởng hết dữ liệu và DỪNG SỚM — mất dòng trong im lặng. Đo thật
+  // 25/08/2026: xin cỡ trang 5.000 cho 7.556 dòng thì chỉ nhận về 1.000.
+  const buoc = Math.min(pageSize, 1000);
   const cols = order == null ? [] : Array.isArray(order) ? order : [order];
-  const rows = [];
-  for (let from = 0; ; from += pageSize) {
-    let q = buildQuery(from, from + pageSize - 1);
+
+  const tai = async (from) => {
+    let q = buildQuery(from, from + buoc - 1);
     for (const c of cols) q = q.order(c);
-    const { data, error } = await q;
-    if (error) return { data: null, error };
-    rows.push(...data);
-    if (data.length < pageSize) return { data: rows, error: null };
+    return q;
+  };
+
+  // Tải theo ĐỢT SONG SONG thay vì nối đuôi. Ở quy mô thật một màn phải kéo
+  // 7.556 dòng = 8 lượt; nối đuôi là 8 lần chờ mạng cộng lại (đo: 2,0s), còn
+  // chia hai đợt song song chỉ còn 2 lần chờ (đo: 1,16s).
+  //
+  // Không hỏi `count` trước được: `buildQuery` đã dựng sẵn `.select(...)` nên
+  // không chèn thêm tuỳ chọn count vào đó. Nên cứ bắn một đợt, thấy đợt nào có
+  // trang ngắn thì dừng — trang ngắn là hết dữ liệu.
+  // Trang ĐẦU đi một mình. Phần lớn truy vấn của app dưới 1.000 dòng — bắn
+  // song song ngay từ đầu là biến 1 lượt gọi thành 4 cho không.
+  const dauTien = await tai(0);
+  if (dauTien.error) return { data: null, error: dauTien.error };
+  const rows = [...dauTien.data];
+  if (dauTien.data.length < buoc) return { data: rows, error: null };
+
+  for (let dot = 0; ; dot += 1) {
+    const dau = buoc + dot * songSong * buoc;
+    const ketQua = await Promise.all(
+      Array.from({ length: songSong }, (_, k) => tai(dau + k * buoc)),
+    );
+    let het = false;
+    for (const { data, error } of ketQua) {
+      if (error) return { data: null, error };
+      rows.push(...data);
+      if (data.length < buoc) het = true;
+    }
+    if (het) return { data: rows, error: null };
     if (!cols.length && import.meta.env.DEV) {
-      // Chỉ cảnh báo khi THỰC SỰ phải sang trang thứ 2 — dưới 1000 dòng thì
-      // không phân trang nên không có gì sai.
+      // Chỉ cảnh báo khi THỰC SỰ phải sang trang — dưới 1.000 dòng thì không
+      // phân trang nên không có gì sai.
       console.warn(
         "[fetchAllRows] phân trang mà không có `order` — dữ liệu có thể thiếu "
         + "hoặc trùng dòng. Truyền { order: '<cột khoá>' }.",

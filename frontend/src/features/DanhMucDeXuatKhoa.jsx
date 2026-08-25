@@ -101,23 +101,27 @@ async function taiDuLieuKhoa(goiId, khoa, dotId = null) {
   const dsDotId = await taiDotIdCuaGoi(bo);
   let qProposals;
   let laPhanBoV3 = false;
+  // Dựng truy vấn MỚI mỗi trang — xem chú thích cùng lý do ở TongHopPdd.jsx.
+  // Builder supabase-js đổi tại chỗ, mà `fetchAllRows` nay tải song song.
   if (dotGoiId) {
     laPhanBoV3 = true;
-    qProposals = supabase.from("phan_bo_khoa")
+    qProposals = () => supabase.from("phan_bo_khoa")
       .select("proposal_id, ma_hang, so_luong_hien_hanh, so_luong_goc")
       .eq("dot_goi_id", dotGoiId).eq("khoa", khoa);
   } else {
-    qProposals = supabase.from("proposals")
-      .select("id, ma_hang, so_luong, dot_id")
-      .eq("nam_de_xuat", NAM_DE_XUAT).eq("is_current", true)
-      .eq("loai_mua_sam", bo.loai_mua_sam).eq("don_vi", khoa);
-    if (bo.goi) qProposals = qProposals.eq("goi", bo.goi);
+    qProposals = () => {
+      let q = supabase.from("proposals")
+        .select("id, ma_hang, so_luong, dot_id")
+        .eq("nam_de_xuat", NAM_DE_XUAT).eq("is_current", true)
+        .eq("loai_mua_sam", bo.loai_mua_sam).eq("don_vi", khoa);
+      if (bo.goi) q = q.eq("goi", bo.goi);
+      return dotId ? q.eq("dot_id", Number(dotId)) : locTheoDot(q, dsDotId);
+    };
   }
   // `dot_id` là ranh giới nghiệp vụ cuối cùng. Một gói 18 tháng có thể có
   // nhiều kỳ kế tiếp nhau và ba đợt bổ sung cùng loại cũng phải tuyệt đối tách
   // nhau; không được chỉ lọc theo `loai_mua_sam` rồi để kết quả rớt lẫn kỳ.
-  if (!laPhanBoV3) qProposals = dotId ? qProposals.eq("dot_id", Number(dotId)) : locTheoDot(qProposals, dsDotId);
-  const { data: propRows, error: loiProposals } = await fetchAllRows((f, t) => qProposals.range(f, t), { order: "id" });
+  const { data: propRows, error: loiProposals } = await fetchAllRows((f, t) => qProposals().range(f, t), { order: "id" });
   if (loiProposals) throw loiProposals;
   if (!propRows?.length) return { bo, rows: [], dotGoiId };
 

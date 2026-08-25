@@ -95,6 +95,16 @@ Cập nhật **24/08/2026**. Nhánh `phase-a-luong-de-xuat`.
 >
 > Full pipeline chạy hết cả hai đường (18T 5 gói con + bổ sung) trong **105 giây**.
 
+> ⚡ **Mở bảng Tổng hợp 340 mã: 15,9 s → ~5,4 s** (25/08). Hai việc: bọc lời gọi
+> hàm trong policy RLS, và `fetchAllRows` tải các trang SONG SONG thay vì nối
+> đuôi. **Đo trên bản build thật** — bản dev bật StrictMode nên gọi mọi truy vấn
+> hai lần, con số đo ở đó bị thổi lên gấp đôi.
+>
+> ⚠️ **Hợp đồng mới của `fetchAllRows`:** `buildQuery(from, to)` PHẢI dựng truy
+> vấn MỚI mỗi lần. Builder supabase-js đổi tại chỗ; dùng lại một builder đã dựng
+> sẵn thì các trang song song đè range của nhau — đo thật: bảng 340 mã hiện 157
+> mã, không báo lỗi gì.
+
 > 🔴 **25/08/2026 — BẢY LỖI HỆ THỐNG lộ ra ở quy mô thật.** Không cái nào là lỗi
 > mới viết; tất cả nằm sẵn, chỉ chưa ai chạy đủ lớn. Chi tiết ở `07`, khối 25/08 (2).
 >
@@ -347,7 +357,7 @@ Xếp theo thứ tự nên làm:
 | ~~3~~ | ~~**Miếng 0** — mẫu Excel gom dữ liệu~~ | ✅ xong 25/08 |
 | ~~4~~ | ~~**Miếng 3** — nền dữ liệu sau đấu thầu~~ | ✅ xong 25/08 — 3 bảng + đường nạp + mốc cam kết theo ngày giao thật |
 | 1 | **Chốt cách sửa gốc lỗi "đổ quá tay"** | Đang CHẶN được nhưng chưa sửa gốc — xem mục 4 |
-| 2 | **Tối ưu tốc độ bảng Tổng hợp** | 6,7 s ở 340 mã. Đã hẹn làm ngay sau vòng này |
+| ~~5~~ | ~~**Tối ưu tốc độ bảng Tổng hợp**~~ | ✅ xong 25/08 — **15,9 s → ~5,4 s**. Phân trang song song + vá RLS |
 | 3 | Nhánh **D6** — tiến độ gói thầu theo số quyết định / số hợp đồng | Thiết kế + 6 câu hỏi ở `.scratch/tien-do-goi-thau/BRAINSTORM.md` |
 | 4 | Vẽ lại sơ đồ theo D11–D15 | Sơ đồ đang ở mốc 23/08 |
 | 5 | Nợ cũ mục 3b — neo đợt cho 3 bảng còn lại | Cùng lớp lỗi với `danh_muc_khoa_o` đã neo 20/08 |

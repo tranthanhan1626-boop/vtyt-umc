@@ -921,3 +921,79 @@ ra nên chủ dự án phải chốt — ba hướng đề xuất ghi ở `05` m
 vòng xanh, **298 cột** · `kiem_do_ma_tuong_duong` **8/8** · `test:formula` OK ·
 `build` ✓ · full pipeline quy mô thật **105 s, không lỗi** · 33 bảng về đúng số
 dòng ban đầu.
+
+---
+
+## 25/08/2026 (3) — Tối ưu tốc độ bảng Tổng hợp
+
+Đo trên **bản build thật** (`npm run preview`), không phải bản dev. Quan trọng:
+bản dev bật `React.StrictMode` nên gọi **mọi truy vấn hai lần** — 48 lượt REST
+so với 25 lượt của bản thật. Mọi con số đo trên dev đều bị thổi lên gấp đôi.
+
+### Nghẽn nằm ở PHÂN TRANG NỐI ĐUÔI
+
+`fetchAllRows` tải từng trang một, chờ trang trước xong mới xin trang sau. Bảng
+Tổng hợp gói Dùng chung phải kéo **7.556 dòng lịch sử = 8 lượt**, cộng 5.217
+dòng phân bổ = 6 lượt. Nối đuôi là 14 lần chờ mạng cộng lại.
+
+Đo tách bạch trên chính tập đó:
+
+| | |
+|---|---|
+| 8 trang nối đuôi | **2,0 s** |
+| trang đầu + 7 trang song song | **1,16 s** |
+
+**Nới cỡ trang KHÔNG dùng được:** server chặn cứng 1.000 dòng mỗi lượt
+(`db-max-rows`). Xin 5.000 thì **vẫn nhận 1.000**, mà vòng lặp thấy
+`data.length < pageSize` sẽ tưởng hết dữ liệu và **dừng sớm, mất 6.556 dòng
+trong im lặng**. Đã kẹp `Math.min(pageSize, 1000)` để không ai vấp.
+
+### Cách làm: tải theo ĐỢT SONG SONG
+
+Trang đầu đi một mình — phần lớn truy vấn của app dưới 1.000 dòng, bắn song
+song ngay từ đầu là biến 1 lượt gọi thành 4 cho không. Đầy trang thì mới tải
+tiếp theo đợt 4 trang song song, thấy trang ngắn thì dừng.
+
+### Lỗi CÓ SẴN mà thay đổi này làm lộ ra
+
+Bảng 340 mã đột nhiên chỉ hiện **157 mã, không báo lỗi gì**.
+
+Nguyên nhân: hai màn dựng truy vấn MỘT LẦN rồi gọi `.range()` lặp lại trên
+**cùng một builder**. Builder của supabase-js **đổi tại chỗ**, nên bốn lượt song
+song cùng đè lên một range → trùng trang. Chạy nối đuôi thì may mà đúng.
+
+```js
+// SAI — builder dùng lại, các trang đè range của nhau
+qProposals = supabase.from("phan_bo_khoa").select(...).eq(...);
+fetchAllRows((f, t) => qProposals.range(f, t), { order: "id" });
+
+// ĐÚNG — dựng mới mỗi trang
+qProposals = () => supabase.from("phan_bo_khoa").select(...).eq(...);
+fetchAllRows((f, t) => qProposals().range(f, t), { order: "id" });
+```
+
+Đã vá `TongHopPdd.jsx` và `DanhMucDeXuatKhoa.jsx`, và ghi hợp đồng đó thành
+docstring của `fetchAllRows` — đây là bẫy sẽ cắn lại bất cứ ai viết caller mới.
+
+### Kết quả
+
+Đo bằng cùng một phép (chuyển hash khi app đã khởi động, chờ đủ 340 dòng), ba
+lần: **4,9 · 5,5 · 5,7 giây**.
+
+| Mốc | Mở bảng Tổng hợp 340 mã |
+|---|---|
+| Đầu ngày 25/08 | **15,9 s** |
+| Sau vá RLS (`patch_zzzzzm`) | 7,2 s |
+| Sau phân trang song song | **~5,4 s** |
+
+Màn Danh mục đề xuất của khoa: 4,6 s cho 93 dòng.
+
+### Nghiệm thu
+
+`pytest` **209** · `smoke` **29/29** · `kiem_moi_man` ba vòng xanh · `build` ✓ ·
+`test:formula` OK.
+
+Một test phải sửa theo: `test_mo_bang_tong_hop_bang_tab_moi` soi chữ
+`window.open(` trong `BanDieuHanhPdd.jsx`, mà lời gọi đó nay nằm ở
+`lib/moManExcel.js`. Ý định của test vẫn đúng nên chỉ đổi chỗ soi, và thêm một
+phép chặn: **không màn nào được gọi `window.open` tay nữa**.

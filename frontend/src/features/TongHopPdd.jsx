@@ -115,22 +115,29 @@ async function taiDuLieuGoc(goiId, dotId = null) {
   const dsDotId = await taiDotIdCuaGoi(bo);
   let qProposals;
   let laPhanBoV3 = false;
+  // Phải dựng truy vấn MỚI cho mỗi trang. Builder của supabase-js là đối tượng
+  // ĐỔI TẠI CHỖ: gọi `.range()` lần nữa trên cùng một builder là đè lên lần
+  // trước. Chạy nối đuôi thì may mà đúng; từ 25/08/2026 `fetchAllRows` tải các
+  // trang SONG SONG nên bốn lượt cùng đè lên một range → trùng trang, và bảng
+  // 340 mã chỉ hiện 157 mã mà không báo lỗi gì.
   if (dotGoiId) {
     laPhanBoV3 = true;
-    qProposals = supabase.from("phan_bo_khoa")
+    qProposals = () => supabase.from("phan_bo_khoa")
       .select("ma_hang, khoa, so_luong_hien_hanh, so_luong_goc, sua_boi_khoa")
       .eq("dot_goi_id", dotGoiId);
   } else {
-    qProposals = supabase.from("proposals")
-      .select("ma_hang, don_vi, so_luong")
-      .eq("nam_de_xuat", NAM_DE_XUAT)
-      .eq("is_current", true)
-      .eq("loai_mua_sam", bo.loai_mua_sam);
-    if (bo.goi) qProposals = qProposals.eq("goi", bo.goi);
-    qProposals = dotId ? qProposals.eq("dot_id", Number(dotId)) : locTheoDot(qProposals, dsDotId);
+    qProposals = () => {
+      let q = supabase.from("proposals")
+        .select("ma_hang, don_vi, so_luong")
+        .eq("nam_de_xuat", NAM_DE_XUAT)
+        .eq("is_current", true)
+        .eq("loai_mua_sam", bo.loai_mua_sam);
+      if (bo.goi) q = q.eq("goi", bo.goi);
+      return dotId ? q.eq("dot_id", Number(dotId)) : locTheoDot(q, dsDotId);
+    };
   }
   const { data: propRows, error: loiProposals } = await fetchAllRows((f, t) =>
-    qProposals.range(f, t), { order: "id" });
+    qProposals().range(f, t), { order: "id" });
   if (loiProposals) throw loiProposals;
 
   const theoMa = new Map();
