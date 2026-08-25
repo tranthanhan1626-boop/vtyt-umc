@@ -79,7 +79,18 @@ def test_chot_la_khoa_sua_o_ca_hai_man():
     assert "before insert or update or delete on danh_muc_khoa_o" in PATCH_ZS
     # Lớp giao diện (chỉ để người dùng thấy sớm, không phải lớp bảo vệ)
     assert "&& !trangThaiChot" in DANH_MUC_KHOA
-    assert "!chot && !cotLocked.has(col.key)" in TONG_HOP_PDD
+    # 25/08/2026 — assert cũ ở đây là `"!chot && !cotLocked.has(col.key)"`,
+    # tức giao diện khoá MỌI ô theo một cái chốt duy nhất. Câu đó viết từ thời
+    # patch_zs, khi còn đúng một "chốt cả bản". Từ khi tách chốt Q (cột số) và
+    # chốt trình ký (cột chữ), server chặn ở HAI mốc khác nhau — đọc thẳng
+    # `fn_khoa_o_tong_hop_sau_chot_q` trên staging: `sl_de_xuat_2627` cấm khi có
+    # `chot_q_phien`, mọi cột còn lại cấm khi có `chot_trinh_ky_phien_v3`.
+    # Giữ assert cũ nghĩa là bắt giao diện khoá chặt hơn server suốt quãng từ
+    # chốt Q tới chốt trình ký — đúng quãng đang đấu thầu, đúng lúc TSKT và tên
+    # thương mại cần sửa nhất. Nay canh đúng hai mốc đó.
+    assert 'if (col.key === "sl_de_xuat_2627") return !chot;' in TONG_HOP_PDD
+    assert "return revTrinhKy == null;" in TONG_HOP_PDD
+    assert "cotLocked.has(col.key) || dongLocked.has(maHang)" in TONG_HOP_PDD
 
 
 def test_don_cuoi_dot_mo_chot_truoc_khong_tu_chan_chinh_no():

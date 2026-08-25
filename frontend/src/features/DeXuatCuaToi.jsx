@@ -5,7 +5,7 @@ import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import { NHAN_TRANG_THAI, fmtNgayGio, khoaNhom } from "./DeXuatTongHop";
 import { NHAN_GOI_THAU } from "./Function1";
-import { GOI_ID_MAP } from "../lib/cotChuan";
+import { GOI_ID_MAP, goiConCuaDot } from "../lib/cotChuan";
 import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
 import { moDanhMucDeXuat } from "../lib/moManExcel";
 
@@ -35,6 +35,9 @@ const MAU_TRANG_THAI = {
 export default function DeXuatCuaToi({ profile, goi, onMoHoSo }) {
   const [rows, setRows] = useState([]);
   const [tenDot, setTenDot] = useState({});
+  // Cả dòng đợt chứ không chỉ tên: khoá gói con của một đợt bổ sung suy ra
+  // từ `thang_moc` (xem `goiConCuaDot`), thiếu nó thì link mở ra bản rỗng.
+  const [dotTheoId, setDotTheoId] = useState({});
   const [loading, setLoading] = useState(true);
   const [loi, setLoi] = useState("");
   const [dangRut, setDangRut] = useState(null);
@@ -54,8 +57,9 @@ export default function DeXuatCuaToi({ profile, goi, onMoHoSo }) {
       if (error) { setLoi("Không đọc được v_de_xuat_tong_hop — kiểm tra view/RLS trong Supabase (schema hiện tại xem backend/sql/schema.sql)."); setLoading(false); return; }
       setRows(data);
       const { data: dots } = await supabase.from("dot_de_xuat")
-        .select("id, ten").eq("loai_mua_sam", goi);
+        .select("id, ten, thang_moc, loai_mua_sam").eq("loai_mua_sam", goi);
       setTenDot(Object.fromEntries((dots || []).map((d) => [d.id, d.ten])));
+      setDotTheoId(Object.fromEntries((dots || []).map((d) => [d.id, d])));
       setLoading(false);
     })();
   }, [goi]);
@@ -81,12 +85,16 @@ export default function DeXuatCuaToi({ profile, goi, onMoHoSo }) {
       // định thầu không có Danh mục đề xuất dạng này).
       const mauMua = g.items[0]?.loai_mua_sam;
       const goiSet = [...new Set(g.items.map((i) => i.goi).filter(Boolean))];
-      const goiId = mauMua === "mua_sam_bo_sung" ? "bo-sung"
-        : mauMua === "dau_thau_rong_rai" && goiSet.length === 1 ? GOI_LABEL_SANG_ID[goiSet[0]] || null
-        : null;
+      // Vá 25/08/2026: phải là khoá gói con THẬT (`bs-t9`), không phải bí danh
+      // `bo-sung` — `DanhMucDeXuatKhoa` lấy khoá này đi tra `dot_goi`, tra hụt
+      // là màn hiện rỗng mà không báo lỗi.
+      const goiId = mauMua === "chi_dinh_thau" ? null
+        : goiConCuaDot(dotTheoId[g.dot_id],
+            mauMua === "dau_thau_rong_rai" && goiSet.length === 1
+              ? GOI_LABEL_SANG_ID[goiSet[0]] || null : null);
       return { ...g, trangThai: tt.length === 1 ? tt[0] : "hon_hop", lyDoTraLai: lyDo, goiId };
     });
-  }, [rows]);
+  }, [rows, dotTheoId]);
 
   // Danh mục đề xuất là TỔNG của mọi giỏ cùng gói con (không phải 1 file/giỏ)
   // — DanhMucDeXuatKhoa.jsx đọc thẳng theo (khoa, goiId), tự gộp mọi giỏ đã
@@ -95,8 +103,12 @@ export default function DeXuatCuaToi({ profile, goi, onMoHoSo }) {
     const map = new Map();
     nhomLoc.forEach((g) => {
       if (!g.goiId) return;
-      if (!map.has(g.goiId)) map.set(g.goiId, { goiId: g.goiId, donVi: g.don_vi, soGio: 0 });
-      map.get(g.goiId).soGio += 1;
+      // Gom theo (gói con, ĐỢT). `dot_id` là ranh giới nghiệp vụ cuối cùng —
+      // gom mọi đợt vào một nút thì nút đó không nói được nó mở đợt nào, và
+      // link sinh ra thiếu `dotId` sẽ trộn dữ liệu của mọi kỳ.
+      const k = `${g.goiId}:${g.dot_id || ""}`;
+      if (!map.has(k)) map.set(k, { key: k, goiId: g.goiId, dotId: g.dot_id, donVi: g.don_vi, soGio: 0 });
+      map.get(k).soGio += 1;
     });
     return [...map.values()];
   }, [nhomLoc]);
@@ -154,11 +166,12 @@ export default function DeXuatCuaToi({ profile, goi, onMoHoSo }) {
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-umc-200 bg-umc-50 px-3 py-2.5">
           <span className="text-xs font-medium text-umc-900">Danh mục đề xuất của khoa (gộp mọi giỏ cùng gói con):</span>
           {danhMucTheoGoi.map((d) => (
-            <button key={d.goiId} type="button"
-              onClick={() => moDanhMucDeXuat(d.goiId, d.donVi)}
+            <button key={d.key} type="button"
+              onClick={() => moDanhMucDeXuat(d.goiId, d.donVi, d.dotId)}
               title="Mở trong tab trình duyệt mới"
               className="inline-flex items-center gap-1 rounded-md border border-umc-300 bg-white px-2.5 py-1.5 text-xs font-medium text-umc-800 hover:bg-umc-100">
               <ExternalLink size={13} /> {GOI_ID_MAP[d.goiId]?.nhan || d.goiId}
+              {d.dotId && <span className="text-umc-500">· {tenDot[d.dotId] || `đợt #${d.dotId}`}</span>}
               {d.soGio > 1 && <span className="text-umc-500">({d.soGio} giỏ)</span>}
             </button>
           ))}
@@ -212,7 +225,7 @@ export default function DeXuatCuaToi({ profile, goi, onMoHoSo }) {
                         Excel" kiểu cũ sẽ mở một hồ sơ không bao giờ tồn tại. */}
                     {g.goiId && (
                       <button type="button"
-                        onClick={() => moDanhMucDeXuat(g.goiId, g.don_vi)}
+                        onClick={() => moDanhMucDeXuat(g.goiId, g.don_vi, g.dot_id)}
                         title="Mở trong tab trình duyệt mới"
                         className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-white px-2.5 py-1.5 font-medium text-emerald-700 hover:bg-emerald-50">
                         <Sheet size={13} /> Mở Excel danh mục đề xuất

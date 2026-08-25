@@ -740,32 +740,43 @@ export function BangSoTrungTheoKhoa({ dotGoiId, maHang, phaiChia, onLuuXong }) {
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
- *  CHỐT TRÌNH KÝ — trên chính Danh mục tổng hợp
+ *  CHỐT TRÌNH KÝ — MỘT NÚT, trên chính Danh mục tổng hợp
  *
  *  Vì sao ở đây: QĐ 21/08/2026 (một mặt bàn) ghi rõ PĐD làm mọi việc trên Danh
  *  mục tổng hợp, "chốt số đi thầu, chốt trình ký" nằm trong danh sách đó
  *  (`01_NGHIEP_VU_HIEN_HANH.md` mục 0).
  *
- *  🔴 Vì sao PHẢI dựng lại: ngày 24/08 gỡ hai tab "Danh mục tổng hợp" và
- *  "Kết quả thầu & giỏ rớt" khỏi Bàn điều hành với ghi chú "mã giữ nguyên, chỉ
- *  không vào menu". Nhưng ba nút chốt trình ký nằm TRONG tab bị gỡ và không
- *  được dời đi đâu — `setTab` chỉ gọi từ mảng `TAB` còn hai mục, nên từ 24/08
- *  tới 25/08 **không có đường nào bấm chốt trình ký trên giao diện**.
+ *  🔴 Vì sao phải dựng lại: ngày 24/08 gỡ hai tab khỏi Bàn điều hành với ghi
+ *  chú "mã giữ nguyên, chỉ không vào menu". Nhưng ba lời gọi chốt trình ký nằm
+ *  TRONG tab bị gỡ và không được dời đi đâu — `setTab` chỉ gọi từ mảng `TAB`
+ *  còn hai mục. Suốt một ngày rưỡi KHÔNG có đường nào bấm chốt trình ký, mà đó
+ *  là nơi duy nhất khoá cứng 2 được thi hành và là điều kiện của Excel chính
+ *  thức lẫn gói 30%.
  *
- *  Đây là chỗ DUY NHẤT khoá cứng 2 được thi hành, và là điều kiện của Excel
- *  chính thức lẫn gói mua thêm 30%. Bộ dữ liệu test chốt bằng script nên nhìn
- *  qua tưởng vẫn chạy — đúng lớp lỗi "màn chết mà không ai biết" của dự án này.
+ *  🔴 MỘT NÚT, KHÔNG PHẢI 50. QĐ 21/08/2026 bỏ hẳn 49 nút chốt từng bảng khoa
+ *  (`06_DUNG_LAM_LAI.md` dòng 41). Bản đầu của component này dựng lại đúng 50
+ *  nút đó — trái điều 1 của `AGENTS.md`, rà soát độc lập bắt được.
+ *
+ *  Nhưng server VẪN đòi từng khoa: `khoa_chua_du_chot_trinh_ky` là cổng của
+ *  `chot_trinh_ky_toan_bo_v3`, và quyết định 21/08 chưa bao giờ được thi công ở
+ *  tầng database. Nên đường đúng là **một nút, máy tự chạy vòng lặp** — bấm một
+ *  lần, hệ chốt lần lượt từng khoa còn thiếu rồi chốt toàn bộ. Đúng tinh thần
+ *  "bỏ 49 nút" mà không phải đụng vào cổng server.
+ *
+ *  Mở lại một khoa (revision 2 tầng) vẫn giữ, nhưng là MỘT ô chọn khoa chứ
+ *  không phải 50 nút.
  * ─────────────────────────────────────────────────────────────────────────── */
 export function ChotTrinhKyTongHop({ dotGoiId, onXong }) {
   const [mo, setMo] = useState(false);
   const [tai, setTai] = useState(false);
   const [khoaThieu, setKhoaThieu] = useState(null);   // null = chưa đọc được
-  const [daChot, setDaChot] = useState(new Set());
   const [dsKhoa, setDsKhoa] = useState([]);
+  const [daChot, setDaChot] = useState([]);
   const [phien, setPhien] = useState(null);
   const [dangChay, setDangChay] = useState("");
+  const [tienDo, setTienDo] = useState("");
   const [loi, setLoi] = useState("");
-  const [hoiMoLai, setHoiMoLai] = useState(null);     // { khoa, lyDo }
+  const [moLai, setMoLai] = useState({ khoa: "", lyDo: "" });
 
   const doc = useCallback(async () => {
     if (!dotGoiId) return;
@@ -782,33 +793,60 @@ export function ChotTrinhKyTongHop({ dotGoiId, onXong }) {
     if (thieu.error) {
       // Không đọc được cổng ⇒ coi như CHƯA BIẾT ⇒ khoá nút. Đoán "chắc là đủ"
       // ở đây là cách nhanh nhất để chốt một bản trình ký thiếu khoa.
-      setKhoaThieu(null);
-      setLoi(thieu.error.message);
-      return;
+      setKhoaThieu(null); setLoi(thieu.error.message); return;
     }
     setKhoaThieu((thieu.data || []).map((r) => r.khoa));
-    setDaChot(new Set((chot.data || []).map((r) => r.khoa)));
+    setDaChot([...new Set((chot.data || []).map((r) => r.khoa))].sort((a, b) => a.localeCompare(b, "vi")));
     setDsKhoa([...new Set((gui.data || []).map((r) => r.khoa))].sort((a, b) => a.localeCompare(b, "vi")));
     setPhien(ph.data || null);
   }, [dotGoiId]);
 
-  useEffect(() => { if (mo) doc(); }, [mo, doc]);
+  // Đọc CẢ KHI ĐANG ĐÓNG, để nhãn nút nói đúng trạng thái. Bản trước chỉ đọc
+  // lúc mở panel: chốt xong thì màn cha render lại, panel đóng về mặc định và
+  // nút quay lại chữ "Chốt trình ký" như chưa có chuyện gì (đo thật 25/08).
+  useEffect(() => { doc(); }, [doc]);
 
-  const chay = async (ten, rpc, arg, nhan) => {
-    setDangChay(ten); setLoi("");
-    const { error } = await supabase.rpc(rpc, arg);
-    setDangChay("");
-    // Lỗi của THAO TÁC ở lại trong panel. Đẩy nó lên ô lỗi của màn cha là sai
-    // chỗ: ô đó dành cho lỗi TẢI DỮ LIỆU và nó xoá trắng cả bảng — bấm chốt
-    // một khoa mà mất luôn 183 dòng đang xem (đã mắc 25/08/2026).
-    if (error) { setLoi(error.message); return false; }
+  // MỘT NÚT: chốt lần lượt từng khoa còn thiếu rồi chốt toàn bộ. Dừng ngay ở
+  // khoa đầu tiên lỗi và nói rõ khoa nào — chốt được nửa chừng rồi im lặng là
+  // trạng thái khó gỡ nhất.
+  const chotHet = async () => {
+    setDangChay("toan_bo"); setLoi("");
+    for (let i = 0; i < khoaThieu.length; i += 1) {
+      const k = khoaThieu[i];
+      setTienDo(`đang chốt khoa ${i + 1}/${khoaThieu.length} — ${k}`);
+      const { error } = await supabase.rpc("chot_trinh_ky_khoa_v3", {
+        p_dot_goi_id: dotGoiId, p_khoa: k,
+      });
+      if (error) {
+        setDangChay(""); setTienDo("");
+        setLoi(`Dừng ở khoa "${k}": ${error.message}`);
+        await doc();
+        return;
+      }
+    }
+    setTienDo("đang đóng băng bản trình ký…");
+    const { error } = await supabase.rpc("chot_trinh_ky_toan_bo_v3", { p_dot_goi_id: dotGoiId });
+    setDangChay(""); setTienDo("");
+    if (error) { setLoi(error.message); await doc(); return; }
     await doc();
-    await onXong?.(nhan);
-    return true;
+    await onXong?.("Đã chốt trình ký toàn bộ — bản Excel chính thức dùng số này.");
+  };
+
+  const chayMoLai = async () => {
+    if (!moLai.khoa || !moLai.lyDo.trim()) return;
+    setDangChay("mo_lai"); setLoi("");
+    const { error } = await supabase.rpc("mo_chot_trinh_ky_khoa_v3", {
+      p_dot_goi_id: dotGoiId, p_khoa: moLai.khoa, p_ly_do: moLai.lyDo.trim(),
+    });
+    setDangChay("");
+    if (error) { setLoi(error.message); return; }
+    setMoLai({ khoa: "", lyDo: "" });
+    await doc();
+    await onXong?.(`Đã mở lại bảng trình ký khoa ${moLai.khoa} — revision cũ hết hiệu lực.`);
   };
 
   const soThieu = khoaThieu?.length ?? null;
-  const sanSang = soThieu === 0 && dsKhoa.length > 0 && !phien;
+  const sanSang = soThieu !== null && dsKhoa.length > 0 && !phien;
 
   if (!dotGoiId) return null;
 
@@ -828,106 +866,73 @@ export function ChotTrinhKyTongHop({ dotGoiId, onXong }) {
           {tai && <p className="text-slate-400">Đang đọc trạng thái chốt…</p>}
 
           {!tai && khoaThieu === null && (
-            <p className="text-red-700">
-              Không đọc được cổng chốt — nút bị khoá cho tới khi đọc được.{" "}
-              {loi}
-            </p>
+            <p className="text-red-700">Không đọc được cổng chốt — nút bị khoá cho tới khi đọc được. {loi}</p>
           )}
 
           {!tai && khoaThieu !== null && (
             <>
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <span className="text-slate-600">
-                  {dsKhoa.length} khoa đã gửi đề xuất · <b>{dsKhoa.length - soThieu}</b> đã đủ chốt
-                  {soThieu > 0 && <span className="text-amber-700"> · còn <b>{soThieu}</b> khoa thiếu</span>}
+                  {dsKhoa.length} khoa đã gửi đề xuất · <b>{daChot.length}</b> đã chốt bảng
+                  {soThieu > 0 && <span className="text-amber-700"> · còn <b>{soThieu}</b> khoa chưa đủ</span>}
                 </span>
                 {phien && (
                   <span className="rounded bg-emerald-100 px-2 py-0.5 text-emerald-800">
                     revision {phien.revision} · {phien.chot_boi}
                   </span>
                 )}
-                <button type="button" onClick={doc}
-                  className="ml-auto text-slate-500 hover:underline">Đọc lại</button>
+                <button type="button" onClick={doc} className="ml-auto text-slate-500 hover:underline">Đọc lại</button>
               </div>
 
-              {/* Danh sách khoa — chỉ hiện khi CHƯA có revision hiệu lực, vì
-                  chốt xong là bảng đóng băng, chốt/mở từng khoa không còn nghĩa. */}
               {!phien && (
-                <div className="max-h-52 overflow-y-auto rounded border border-slate-100">
-                  {dsKhoa.map((k) => {
-                    const xong = daChot.has(k) && !khoaThieu.includes(k);
-                    return (
-                      <div key={k} className="flex items-center gap-2 border-b border-slate-50 px-2 py-1 last:border-0">
-                        <span className={xong ? "text-emerald-700" : "text-amber-700"}>{xong ? "✓" : "○"}</span>
-                        <span className="flex-1 truncate">{k}</span>
-                        {xong ? (
-                          <button type="button" disabled={!!dangChay}
-                            onClick={() => setHoiMoLai({ khoa: k, lyDo: "" })}
-                            className="rounded border border-slate-300 px-1.5 py-0.5 text-slate-600 disabled:opacity-40">
-                            mở lại
-                          </button>
-                        ) : (
-                          <button type="button" disabled={!!dangChay}
-                            onClick={() => chay(`chot:${k}`, "chot_trinh_ky_khoa_v3",
-                              { p_dot_goi_id: dotGoiId, p_khoa: k }, `Đã chốt trình ký khoa ${k}.`)}
-                            className="rounded bg-umc-700 px-1.5 py-0.5 font-medium text-white disabled:opacity-40">
-                            {dangChay === `chot:${k}` ? "…" : "chốt"}
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {dsKhoa.length === 0 && (
-                    <p className="px-2 py-2 text-slate-400">Chưa khoa nào gửi đề xuất.</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* MỘT nút. Vòng lặp 50 khoa là việc của máy, không phải của
+                      người (QĐ 21/08/2026 bỏ hẳn 49 nút bấm tay). */}
+                  <button type="button" disabled={!sanSang || !!dangChay} onClick={chotHet}
+                    title={dsKhoa.length === 0 ? "Chưa khoa nào gửi đề xuất"
+                      : soThieu > 0 ? `Hệ sẽ chốt lần lượt ${soThieu} khoa còn thiếu rồi đóng băng cả gói con`
+                      : "Đóng băng số của cả gói con thành revision chính thức"}
+                    className="rounded bg-umc-700 px-3 py-1 font-semibold text-white hover:bg-umc-800 disabled:opacity-40">
+                    {dangChay === "toan_bo" ? "Đang chốt…" : "CHỐT TRÌNH KÝ TOÀN BỘ"}
+                  </button>
+                  {tienDo && <span className="text-slate-500">{tienDo}</span>}
+                  {soThieu > 0 && !dangChay && (
+                    <span className="text-slate-500">
+                      hệ tự chốt {soThieu} bảng khoa trước, rồi đóng băng
+                    </span>
                   )}
                 </div>
               )}
 
-              {/* Ô nhập lý do mở lại — KHÔNG dùng window.prompt: hộp thoại của
-                  trình duyệt khoá cả trang và không để lại dấu vết (bài học
-                  23/08, xem 06_DUNG_LAM_LAI.md). */}
-              {hoiMoLai && (
-                <div className="mt-2 flex flex-wrap items-center gap-2 rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-amber-900">
-                  Mở lại <b>{hoiMoLai.khoa}</b> — revision chính thức hiện tại sẽ hết hiệu lực.
-                  <input autoFocus value={hoiMoLai.lyDo}
-                    onChange={(e) => setHoiMoLai((p) => ({ ...p, lyDo: e.target.value }))}
-                    onKeyDown={(e) => { if (e.key === "Escape") setHoiMoLai(null); }}
-                    placeholder="Lý do mở lại (bắt buộc)"
-                    className="w-64 rounded border border-amber-300 px-2 py-0.5" />
-                  <button type="button" disabled={!hoiMoLai.lyDo.trim() || !!dangChay}
-                    onClick={async () => {
-                      const { khoa, lyDo } = hoiMoLai; setHoiMoLai(null);
-                      await chay(`mo:${khoa}`, "mo_chot_trinh_ky_khoa_v3",
-                        { p_dot_goi_id: dotGoiId, p_khoa: khoa, p_ly_do: lyDo.trim() },
-                        `Đã mở lại bảng trình ký khoa ${khoa}.`);
-                    }}
-                    className="rounded bg-amber-600 px-2 py-0.5 font-semibold text-white disabled:opacity-40">
-                    Mở lại
-                  </button>
-                  <button type="button" onClick={() => setHoiMoLai(null)}
-                    className="rounded border border-amber-300 bg-white px-2 py-0.5">Huỷ</button>
+              {/* Mở lại một khoa — revision 2 tầng. MỘT ô chọn, không phải 50 nút. */}
+              {daChot.length > 0 && (
+                <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-2">
+                  <span className="text-slate-500">Mở lại bảng của một khoa:</span>
+                  <select value={moLai.khoa}
+                    onChange={(e) => setMoLai((p) => ({ ...p, khoa: e.target.value }))}
+                    className="rounded border border-slate-300 px-1.5 py-0.5">
+                    <option value="">— chọn khoa —</option>
+                    {daChot.map((k) => <option key={k} value={k}>{k}</option>)}
+                  </select>
+                  {moLai.khoa && (
+                    <>
+                      <input autoFocus value={moLai.lyDo}
+                        onChange={(e) => setMoLai((p) => ({ ...p, lyDo: e.target.value }))}
+                        onKeyDown={(e) => { if (e.key === "Escape") setMoLai({ khoa: "", lyDo: "" }); }}
+                        placeholder="Lý do mở lại (bắt buộc)"
+                        className="w-64 rounded border border-slate-300 px-2 py-0.5" />
+                      <button type="button" disabled={!moLai.lyDo.trim() || !!dangChay}
+                        onClick={chayMoLai}
+                        className="rounded bg-amber-600 px-2 py-0.5 font-semibold text-white disabled:opacity-40">
+                        {dangChay === "mo_lai" ? "…" : "Mở lại"}
+                      </button>
+                      <span className="text-amber-700">revision chính thức hiện tại sẽ hết hiệu lực</span>
+                    </>
+                  )}
                 </div>
               )}
 
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <button type="button" disabled={!sanSang || !!dangChay}
-                  onClick={() => chay("toan_bo", "chot_trinh_ky_toan_bo_v3",
-                    { p_dot_goi_id: dotGoiId }, "Đã chốt trình ký toàn bộ — bản Excel chính thức dùng số này.")}
-                  title={phien ? "DOT_GOI đã có revision trình ký hiệu lực"
-                    : soThieu > 0 ? `Còn ${soThieu} khoa chưa đủ chốt danh mục và chốt trình ký`
-                    : dsKhoa.length === 0 ? "Chưa khoa nào gửi đề xuất"
-                    : "Đóng băng số của cả gói con thành revision chính thức"}
-                  className="rounded bg-umc-700 px-3 py-1 font-semibold text-white hover:bg-umc-800 disabled:opacity-40">
-                  {dangChay === "toan_bo" ? "Đang chốt…" : "CHỐT TRÌNH KÝ TOÀN BỘ"}
-                </button>
-                {soThieu > 0 && (
-                  <span className="text-amber-700">
-                    Còn thiếu: {khoaThieu.slice(0, 4).join(", ")}
-                    {khoaThieu.length > 4 && ` … và ${khoaThieu.length - 4} khoa nữa`}
-                  </span>
-                )}
-                {loi && <span className="text-red-700">{loi}</span>}
-              </div>
+              {loi && <p className="mt-2 text-red-700">{loi}</p>}
             </>
           )}
         </div>

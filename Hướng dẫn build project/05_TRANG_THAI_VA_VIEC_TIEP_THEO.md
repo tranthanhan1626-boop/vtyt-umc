@@ -95,6 +95,14 @@ Cập nhật **24/08/2026**. Nhánh `phase-a-luong-de-xuat`.
 >
 > Full pipeline chạy hết cả hai đường (18T 5 gói con + bổ sung) trong **105 giây**.
 
+> 🔴 **CHỐT TRÌNH KÝ TỪNG MẤT ĐƯỜNG BẤM** (24/08 → vá 25/08). Ba RPC nằm trong
+> tab bị gỡ khỏi Bàn điều hành. Nay là **MỘT nút trên Danh mục tổng hợp**, máy
+> tự chạy vòng lặp qua các khoa — QĐ 21/08 đã bỏ hẳn 49 nút bấm tay, đừng dựng
+> lại. Đo thật: 50 khoa, 52 giây, ra revision 1 với 1.880 dòng đóng băng.
+
+> 🔴 **Vòng E còn nợ:** pipeline gói **bổ sung đi lại từ đầu** (đợt #103) chưa
+> ai chạy. Đây là mảng test lớn nhất còn thiếu.
+
 > 🔴 **TEST Ở LOCALHOST, KHÔNG DÙNG NETLIFY** (QĐ 25/08/2026). Tài khoản
 > Netlify miễn phí đã hết credits build của tháng — push thêm KHÔNG build lại.
 > Nghiệm thu bằng `cd frontend && npm run build && npm run preview` (cổng 4173),

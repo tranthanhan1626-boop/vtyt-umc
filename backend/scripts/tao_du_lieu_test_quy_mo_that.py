@@ -133,6 +133,17 @@ def xoa_bo(cur, nam: int, ten_18t: str, bs_nam: int, bs_thang: int) -> None:
             cur.execute("delete from proposals where id = any(%s)", (props,))
         cur.execute("delete from thong_bao where dot_goi_id = any(%s) or created_by = %s",
                     (dg, NGUOI))
+        # `session_replication_role = replica` ở đầu hàm TẮT CẢ trigger toàn
+        # vẹn khoá ngoại, nên `on delete cascade` KHÔNG chạy — mọi bảng con
+        # phải tự tay xoá, và phải xoá TRƯỚC bảng cha.
+        # `hop_dong_ma_hang` từng bị bỏ sót: đo thật 25/08/2026 sau một lần
+        # dựng lại bộ A, `hop_dong_v3` và `giao_hang` về 0 nhưng
+        # `hop_dong_ma_hang` còn 2 dòng trỏ vào `hop_dong_id` đã biến mất.
+        # Rác đó tích lại mỗi lần dựng lại, và chính `kiem_mau_gom_du_lieu.py`
+        # gọi nó là "dòng mồ côi — LỖI".
+        # Bảng này không có `dot_goi_id`, phải đi qua hợp đồng cha.
+        cur.execute("""delete from hop_dong_ma_hang where hop_dong_id in
+                       (select id from hop_dong_v3 where dot_goi_id = any(%s))""", (dg,))
         for t, c in (
             ("giao_hang", "dot_goi_id"), ("hop_dong_v3", "dot_goi_id"),
             ("chuyen_so_rot_v3", "dot_goi_id"), ("chuyen_tiep_rot_v3", "dot_goi_id_goc"),

@@ -1171,3 +1171,97 @@ lỗi thao tác ở lại trong panel.
 | Bấm chốt một khoa lúc chưa đủ ba giai đoạn | Panel báo "Phải hoàn thành đủ ba giai đoạn đấu thầu", **bảng vẫn nguyên 183 dòng** |
 | Hoàn thành ba giai đoạn rồi chốt một khoa | "1 đã đủ chốt · còn 49 thiếu", khoa đó thành ✓ kèm nút mở lại |
 | Mở lại khoa đó | Nút TẮT khi chưa gõ lý do, BẬT khi có; mở xong đếm về "0 đã đủ chốt" |
+
+---
+
+## 25/08/2026 (7) — Vòng test full trên localhost: bảy lỗi nữa, và tôi tự bắt mình dựng lại thứ đã bỏ
+
+Hai agent: một lập kế hoạch (49 chức năng · 16 mục không kiểm được · 8 vòng
+A→H), một chạy và vá.
+
+### Tôi dựng lại đúng thứ QĐ 21/08 đã bỏ
+
+Bản đầu của `ChotTrinhKyTongHop` có **50 nút chốt từng bảng khoa**. Mà
+`06_DUNG_LAM_LAI.md` dòng 41 ghi rõ: *"Chốt dữ liệu trình ký bấm từng bảng khoa
+(49 nút) → **bỏ hẳn**, chỉ còn một nút chốt toàn bộ DOT_GOI"* (QĐ 21/08/2026).
+Trái điều 1 của `AGENTS.md`. Rà soát độc lập bắt được và **không tự gỡ** — đúng
+cách, vì nó không biết đó là đảo luật có chủ ý hay lỗi.
+
+Nút thắt: server **vẫn** đòi chốt từng khoa —
+`khoa_chua_du_chot_trinh_ky` là cổng của `chot_trinh_ky_toan_bo_v3`, và QĐ 21/08
+chưa bao giờ được thi công ở tầng database. Gỡ thẳng 50 nút là chốt trình ký lại
+thành bất khả.
+
+Đường đúng: **một nút, máy tự chạy vòng lặp.** Bấm một lần, hệ chốt lần lượt
+từng khoa còn thiếu rồi đóng băng cả gói con. Đúng tinh thần "bỏ 49 nút" mà
+không phải đụng cổng server, không thêm cổng nào.
+
+Đo thật: 50 khoa, **52 giây**, hiện tiến độ "đang chốt khoa 25/50 — Khoa Ngoại
+thần kinh", xong ra revision 1 với 1.880 dòng đóng băng. Dừng ở khoa đầu tiên
+lỗi và nói rõ tên khoa — chốt nửa chừng rồi im lặng là trạng thái khó gỡ nhất.
+
+Mở lại một khoa (revision 2 tầng) giữ nguyên, nhưng là **một ô chọn khoa**, không
+phải 50 nút.
+
+Thêm một lỗi nhỏ tự bắt: panel chỉ đọc trạng thái lúc mở, nên chốt xong màn cha
+render lại thì nút quay về chữ "Chốt trình ký" như chưa có chuyện gì. Nay đọc cả
+khi đang đóng.
+
+### Bảy lỗi agent tìm được
+
+**1. Ba cửa vào danh mục khoa ra ba bản khác nhau.** `bo-sung` là **bí danh**,
+còn `dot_goi.goi_id` thật là `bs-t1|t5|t9`. Cửa nào dùng bí danh đi tra `dot_goi`
+thì hụt → `dotGoiId = null` → rơi về đường `proposals` cũ → **bảng rỗng, không
+báo lỗi**. Đo cùng khoa cùng đợt #69: cửa menu **0 mã**, cửa PĐD **25 mã**. Và
+`danh_muc_tong_hop_o` tách hai kho nên PĐD sửa cột chữ mà khoa không thấy. Vá
+bằng `goiConCuaDot()` trong `cotChuan.js` — một chỗ duy nhất dựng khoá gói con.
+
+**2. Giao diện Tổng hợp khoá cả cột CHỮ sau chốt Q** trong khi server chỉ khoá
+cột SỐ. Đọc thẳng `fn_khoa_o_tong_hop_sau_chot_q` trên staging: `sl_de_xuat_2627`
+cấm khi có `chot_q_phien`, mọi cột còn lại cấm khi có `chot_trinh_ky_phien_v3`.
+Giao diện khoá chặt hơn server suốt quãng đang đấu thầu — đúng lúc TSKT và tên
+thương mại cần sửa nhất.
+
+**3. Tooltip "số gốc" in `[object Object]`** — `formatCell` trả phần tử React,
+nhét vào chuỗi `title=`.
+
+**4. Khoa sửa ô, giao diện không đọc lại trạng thái xác nhận.** DB đúng (xác
+nhận bị huỷ), nhưng màn khoa vẫn ghi "Đã xác nhận lần 1" tới khi F5. Khoa không
+biết phải xác nhận lại → PĐD không chốt được số đi thầu mà không ai hiểu vì sao.
+
+**5. `updated_at` đứng yên ở lần ghi đầu** — audit ghi 3 lần, bảng vẫn giờ đầu
+tiên. Nhãn "Sửa cuối lúc…" nói sai giờ.
+
+**6. Khoa sửa số không để lại dấu vết** — sửa 5 lần, `revision` lên 5, mà
+`phan_bo_khoa_audit` 0 dòng của khoa.
+
+**7. Script dựng lại để lại `hop_dong_ma_hang` mồ côi** — `xoa_bo()` tắt trigger
+khoá ngoại rồi xoá tay theo danh sách, mà danh sách thiếu bảng này.
+
+Agent cũng **loại trừ bốn nghi ngờ** sau khi đo kỹ — đáng ghi lại vì chúng trông
+rất giống lỗi: "Chưa xử lý = toàn bộ Q" là hệ quả đúng của D14 · "Lưu tạm không
+lưu được" là server chặn đúng (gõ 300.000 cho khoa Q 28.000) · "Ctrl+Enter không
+chạy" là đọc nhầm · "chỉ 1/2 khoa nhận báo" là do dòng gộp cùng ngày.
+
+### Bốn khuyến nghị, KHÔNG tự làm
+
+1. **🔒 khoá cột không áp cho PĐD** dù tài liệu nói "kể cả PĐD". Nối hai kho lại
+   nghĩa là để cấu hình của 1 trong 50 khoa chặn PĐD — đổi luật, chủ dự án quyết.
+2. Nhãn **"Chưa xử lý N"** khi chưa chia hiện **toàn bộ Q** (rớt 400.000 mà ghi
+   1.400.000). Cổng chặn đúng, chỉ con số dễ đọc nhầm.
+3. **Sửa số sau chốt Q bằng gõ đè tại chỗ (QĐ 21/08) vẫn CHƯA thi công** —
+   trigger chặn cứng, đường duy nhất là "Mở chốt để sửa".
+4. Màn Tổng hợp kết quả thầu mất **25–45 s** ở quy mô hiện tại. Không gọi là lỗi
+   vì chưa ai duyệt ngưỡng (QĐ-18), chỉ ghi lại con số.
+
+### Nghiệm thu
+
+`pytest` **223** · `smoke` **29/29** · `kiem_moi_man` ba vòng xanh, **303 cột** ·
+`kiem_do_ma_tuong_duong` **8/8** · `test:formula` OK · `build` ✓ · console 0 lỗi.
+
+### Hai chỗ agent nói thẳng là KHÔNG kiểm được
+
+- **Vòng E gần như bỏ trống** — pipeline gói bổ sung đi lại từ đầu trên đợt #103
+  (E5–E15) chưa chạy. Đây là mảng lớn nhất còn nợ.
+- **Đợt #69 đã bị làm bẩn vĩnh viễn** (không có script dựng lại): 4 mã đổi số, 1
+  mã phân bổ lại, khoa GMHS đã xác nhận, và mã 66417 được chuyển tiếp về từ bộ B.

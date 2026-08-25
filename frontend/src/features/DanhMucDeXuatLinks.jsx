@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bell, ExternalLink, FileText, Sheet } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
-import { GOI_ID_MAP } from "../lib/cotChuan";
+import { GOI_ID_MAP, goiConCuaDot } from "../lib/cotChuan";
 
 /*
  * Danh mục đề xuất của khoa không còn là một link theo "loại gói". `dot_id`
@@ -57,7 +57,10 @@ export default function DanhMucDeXuatLinks({ profile, goi }) {
     proposals.forEach((p) => {
       if (!p.dot_id) return; // dữ liệu cũ không có đợt không thể tách an toàn
       const dot = dotTheoId.get(Number(p.dot_id));
-      const goiId = p.loai_mua_sam === "mua_sam_bo_sung" ? "bo-sung" : goiLabelSangId[p.goi];
+      // Phải là khoá gói con THẬT (`bs-t9`), không phải bí danh `bo-sung`:
+      // `DanhMucDeXuatKhoa` lấy khoá này đi tra `dot_goi`, tra hụt là màn hiện
+      // rỗng mà không báo lỗi. Xem `goiConCuaDot` trong cotChuan.js.
+      const goiId = goiConCuaDot(dot, goiLabelSangId[p.goi]);
       if (!goiId || !dot) return;
       const key = `${goiId}:${dot.id}`;
       if (!theoDot.has(key)) theoDot.set(key, { key, goiId, dot, soMa: new Set() });

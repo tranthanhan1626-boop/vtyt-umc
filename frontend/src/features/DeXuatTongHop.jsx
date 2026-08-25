@@ -3,7 +3,7 @@ import { Search, ChevronDown, Download, FileText, ExternalLink, Trash2, Package,
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import { NHAN_GOI_THAU } from "./Function1";
-import { GOI_ID_MAP } from "../lib/cotChuan";
+import { GOI_ID_MAP, goiConCuaDot } from "../lib/cotChuan";
 import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
 import { moDanhMucDeXuat } from "../lib/moManExcel";
 
@@ -65,6 +65,9 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
   const [loiCapNhat, setLoiCapNhat] = useState({}); // {key: message}
   const [dsBieuMau, setDsBieuMau] = useState([]);   // danh mục biểu mẫu
   const [phieuTheoNhom, setPhieuTheoNhom] = useState({}); // {khoaNhom: phieu}
+  // Dòng đợt đầy đủ: khoá gói con của một đợt bổ sung suy ra từ `thang_moc`
+  // (xem `goiConCuaDot`), thiếu nó thì link mở ra bản rỗng.
+  const [dotTheoId, setDotTheoId] = useState({});
   const [xacNhanXoa, setXacNhanXoa] = useState(null);   // key nhóm chờ xác nhận xoá
   const [lyDoXoa, setLyDoXoa] = useState("");
 
@@ -77,6 +80,10 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
     , { order: "id" });
     if (error) { setLoi("Không đọc được v_de_xuat_tong_hop — kiểm tra view/RLS trong Supabase (schema hiện tại xem backend/sql/schema.sql)."); setLoading(false); return; }
     setRows(data); setLoi("");
+
+    const { data: dots } = await supabase.from("dot_de_xuat")
+      .select("id, ten, thang_moc, loai_mua_sam").eq("loai_mua_sam", goi);
+    setDotTheoId(Object.fromEntries((dots || []).map((d) => [d.id, d])));
 
     const { data: bm } = await supabase.from("bieu_mau").select("id, ma, ten").order("id");
     setDsBieuMau(bm || []);
@@ -131,10 +138,13 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
         daDiThau: g.items.every((i) => !!i.da_di_thau),
         // Chỉ tính được khi cả giỏ nằm trong 1 gói con — Danh mục đề xuất là
         // một tab theo (khoa, gói con), không phải theo từng giỏ.
-        goiId: goi === "mua_sam_bo_sung" ? "bo-sung"
-          : goi === "dau_thau_rong_rai" && goiSet.length === 1
-            ? GOI_LABEL_SANG_ID[goiSet[0]] || null
-            : null,
+        // Vá 25/08/2026: khoá gói con THẬT (`bs-t9`), không phải bí danh
+        // `bo-sung` — `DanhMucDeXuatKhoa` lấy khoá này đi tra `dot_goi`, tra
+        // hụt là màn hiện rỗng mà không báo lỗi.
+        goiId: goi === "chi_dinh_thau" ? null
+          : goiConCuaDot(dotTheoId[g.dot_id],
+              goi === "dau_thau_rong_rai" && goiSet.length === 1
+                ? GOI_LABEL_SANG_ID[goiSet[0]] || null : null),
       };
     });
     if (sapXep === "goi") {
@@ -142,7 +152,7 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
         || b.created_at.localeCompare(a.created_at));
     }
     return arr;   // mặc định giữ thứ tự mới → cũ (rows đã order created_at desc)
-  }, [rowsLoc, sapXep]);
+  }, [rowsLoc, sapXep, goi, dotTheoId]);
 
   // Neo phiếu vào 1 mã hàng của nhóm (id nhỏ nhất cho ổn định) — proposal_id vẫn
   // NOT NULL và nằm trong nhóm nên FK CASCADE + RLS cũ chạy nguyên.
@@ -363,7 +373,7 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
                           một hồ sơ không bao giờ tồn tại. */}
                       {g.goiId && (
                         <button type="button"
-                          onClick={() => moDanhMucDeXuat(g.goiId, g.don_vi)}
+                          onClick={() => moDanhMucDeXuat(g.goiId, g.don_vi, g.dot_id)}
                           title="Mở trong tab trình duyệt mới"
                           className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-white px-2.5 py-1.5 font-medium text-emerald-700 hover:bg-emerald-50">
                           <Sheet size={13} /> Mở Excel danh mục

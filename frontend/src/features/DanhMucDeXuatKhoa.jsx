@@ -258,9 +258,37 @@ async function taiKetQuaThau(loaiMuaSam, khoa, dsMaHang, dotId = null) {
   return m;
 }
 
-export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, profile, dotId = null }) {
+export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", khoa, profile, dotId = null }) {
   const khoaHienTai = khoa || profile?.khoa || "";
   const laPdd = profile?.role === "dieu_duong" || profile?.role === "admin";
+
+  // ---- Quy chuẩn khoá gói con (vá 25/08/2026) -----------------------------
+  // Đường dẫn có thể mang BÍ DANH `bo-sung` (menu cũ, link đã bookmark) trong
+  // khi `dot_goi.goi_id` thật của đợt bổ sung là `bs-t1|bs-t5|bs-t9`. Lấy bí
+  // danh đi tra `dot_goi` thì không ra dòng nào, `dotGoiId` = null, màn rơi về
+  // đường `proposals` cũ và hiện RỖNG mà KHÔNG báo lỗi — đo thật 25/08 trên
+  // cùng khoa cùng đợt #69: cửa menu 0 mã, cửa Bàn điều hành 25 mã.
+  //
+  // Các cửa vào đã được vá để sinh khoá thật; lớp này giữ cho đường dẫn cũ
+  // vẫn mở đúng bản thay vì mở một bản rỗng trông như "khoa chưa đề xuất gì".
+  // QĐ 17/08: mỗi đợt bổ sung là MỘT gói phẳng, nên đợt chỉ có một gói con thì
+  // không có gì để chọn nhầm.
+  const [goiId, setGoiId] = useState(goiIdUrl);
+  const [sanSangGoi, setSanSangGoi] = useState(!dotId);
+  useEffect(() => {
+    let huy = false;
+    setGoiId(goiIdUrl);
+    if (!dotId) { setSanSangGoi(true); return undefined; }
+    setSanSangGoi(false);
+    (async () => {
+      const { data } = await supabase.from("dot_goi").select("goi_id").eq("dot_id", Number(dotId));
+      if (huy) return;
+      const ds = (data || []).map((r) => r.goi_id);
+      if (ds.length && !ds.includes(goiIdUrl) && ds.length === 1) setGoiId(ds[0]);
+      setSanSangGoi(true);
+    })();
+    return () => { huy = true; };
+  }, [goiIdUrl, dotId]);
 
   const [boThau, setBoThau] = useState(GOI_ID_MAP[goiId] || GOI_ID_MAP["18t-dung-chung"]);
   const [rows, setRows] = useState([]);
@@ -531,6 +559,10 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
   }, [goiId, dotId]);
 
   const taiLai = useCallback(async () => {
+    // Chưa quy chuẩn xong khoá gói con thì chưa tải: tải bằng bí danh sẽ ra
+    // bản rỗng rồi tải lại lần hai, người dùng thấy bảng nhấp nháy từ "không
+    // có mã nào" sang bản thật.
+    if (!sanSangGoi) return;
     setDangTai(true);
     setLoi("");
     try {
@@ -600,12 +632,17 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
       if (dotGoiId) {
         const { data: dsAudit } = await supabase
           .from("phan_bo_khoa_audit")
-          .select("ma_hang, truoc, sau, tong_truoc, tong_sau, ly_do, nguoi_sua, thoi_gian")
+          .select("ma_hang, truoc, sau, tong_truoc, tong_sau, ly_do, nguoi_sua, vai_tro, thoi_gian")
           .eq("dot_goi_id", dotGoiId)
           .order("thoi_gian", { ascending: false });
         // Audit ghi theo MÃ HÀNG cho cả đợt; lọc lại còn đúng lần sửa có động
         // tới khoa đang xem.
-        setDieuChinhPdd((dsAudit || []).filter((a) => (a.sau || {})[khoa] !== undefined));
+        // Bỏ dòng do CHÍNH KHOA gõ (`vai_tro = 'dvsd'`, có từ patch_zzzzzv):
+        // băng dưới đây in "Phòng Điều dưỡng đã điều chỉnh số lượng của khoa",
+        // để lẫn vào thì nó nói sai người. `vai_tro` null = dòng cũ, khi đó chỉ
+        // PĐD ghi được nên vẫn thuộc về băng này.
+        setDieuChinhPdd((dsAudit || []).filter((a) => (a.sau || {})[khoa] !== undefined
+          && a.vai_tro !== "dvsd"));
       }
       setODaSua(daSua);
     } catch (e) {
@@ -613,7 +650,7 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
     } finally {
       setDangTai(false);
     }
-  }, [goiId, khoaHienTai, dotId, taiODaLuu, taiSuaDeCuaPdd]);
+  }, [goiId, khoaHienTai, dotId, sanSangGoi, taiODaLuu, taiSuaDeCuaPdd]);
 
   useEffect(() => { taiLai(); }, [taiLai]);
 
@@ -653,6 +690,12 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
         ? { ...r, [COT_SO_KHOA]: soMoi, mua_them_30: tinhTuyChonMuaThem30(soMoi) }
         : r)));
       setODaSua((prev) => new Map(prev).set(`${maHang}|${colKey}`, true));
+      // Ghi số xong là xác nhận của khoa HẾT HIỆU LỰC ngay ở server
+      // (`fn_huy_xac_nhan_khi_so_doi`). Không đọc lại thì băng trên đầu bảng
+      // vẫn ghi "Đã xác nhận lần 1" trong khi DB đã huỷ — khoa không biết mình
+      // phải bấm xác nhận lần sau, còn PĐD thì không chốt được số đi thầu mà
+      // không ai hiểu vì sao. Đo thật 25/08/2026.
+      await taiTrangThaiChot();
       return;
     }
 
@@ -698,6 +741,9 @@ export default function DanhMucDeXuatKhoa({ goiId = "18t-dung-chung", khoa, prof
         return next;
       });
     }
+    // Cùng lý do như nhánh cột số ở trên: `fn_huy_xac_nhan_khi_o_doi` vừa huỷ
+    // xác nhận của đúng khoa này ở server, băng trên bảng phải nói ra ngay.
+    await taiTrangThaiChot();
   };
 
   const capNhatO = (maHang, colKey, giaTri) => {
@@ -1577,6 +1623,25 @@ export function StyleToolbar() {
       .qtdx-badge.violet { background: #ede9fe; color: #5b21b6; }
     `}</style>
   );
+}
+
+/** Bản CHỮ THUẦN của một ô — dùng cho `title=` (tooltip), `alert`, Excel…
+ *  KHÔNG dùng `formatCell` ở những chỗ đó: nó trả về phần tử React, nhét vào
+ *  chuỗi template thì ra "[object Object]". Đo thật 25/08/2026: tooltip
+ *  "Đã sửa đè — số gốc:" của ô Tiêu chí kỹ thuật in ra chín cái
+ *  "[object Object]" thay vì nội dung gốc — đúng thông tin mà tooltip đó sinh
+ *  ra để nói. */
+export function chuThuanCuaO(v, kieu) {
+  if (v == null || v === "") return "";
+  if (kieu === "num" && typeof v === "number") return fmt(v);
+  if (Array.isArray(v)) return v.map((x) => chuThuanCuaO(x, kieu)).filter(Boolean).join("\n");
+  if (typeof v === "object") {
+    // Ô nhiều dòng được dựng thành mảng đoạn; lấy phần chữ, không lấy khoá máy.
+    const chu = v.text ?? v.noi_dung ?? v.gia_tri ?? v.line ?? v.dong;
+    if (chu != null) return String(chu);
+    return Object.values(v).filter((x) => typeof x === "string" || typeof x === "number").join(" ");
+  }
+  return String(v);
 }
 
 export function formatCell(v, kieu) {

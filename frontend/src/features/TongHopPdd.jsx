@@ -12,7 +12,7 @@ import {
 import { docTenCotTuMau, ganTenMau } from "../lib/tenCotBieuMau";
 import { taiLichSuTheoThang, gomTheoThang } from "../lib/lichSuSuDung";
 import { taiDotIdCuaGoi, locTheoDot } from "../lib/dotBoSung";
-import { StyleTable, StyleToolbar, formatCell, DauVetSuaCuoi } from "./DanhMucDeXuatKhoa";
+import { StyleTable, StyleToolbar, formatCell, chuThuanCuaO, DauVetSuaCuoi } from "./DanhMucDeXuatKhoa";
 import { xuatExcelDong, tenFileAnToan } from "../lib/xuatExcelDong";
 import { daiP50P75, doDaiKyMacDinh } from "../lib/congThucSoLuong";
 import {
@@ -606,10 +606,21 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   // PĐD phải chỉnh được số sai mà không cần nhờ ai. Đổi lại, ô nào bị sửa đè
   // sẽ được ĐÁNH DẤU RÕ kèm số gốc, và mọi lần sửa đều vào audit theo ô
   // (danh_muc_tong_hop_o_audit). Chỉ còn khoá cột/khoá dòng là chặn sửa.
-  // Đã CHỐT cả bản thì không sửa ô nào nữa (patch_zs) — server cũng chặn bằng
-  // trigger, đây chỉ là lớp cho người dùng thấy sớm.
-  const oCoTheSua = (col, maHang) =>
-    !chot && !cotLocked.has(col.key) && !dongLocked.has(maHang);
+  // HAI MỐC KHOÁ KHÁC NHAU, đừng gộp lại làm một (vá 25/08/2026).
+  // Câu cũ ở đây là `!chot && ...`, viết từ thời patch_zs khi còn MỘT cái chốt
+  // cho cả bản. Từ khi tách chốt Q (cột số) và chốt trình ký (cột chữ), server
+  // chặn đúng hai mốc — `fn_khoa_o_tong_hop_sau_chot_q` chỉ cấm `sl_de_xuat_2627`
+  // khi có `chot_q_phien`, còn cột chữ thì cấm khi có `chot_trinh_ky_phien_v3`.
+  // Giao diện vẫn khoá tất cả theo chốt Q, nên suốt quãng từ chốt Q tới chốt
+  // trình ký — đúng quãng đang đấu thầu, đúng lúc TSKT và tên thương mại cần
+  // sửa nhất — PĐD không gõ được ô chữ nào, dù DB vẫn cho.
+  // Đo thật 25/08 trên bộ B (đã chốt Q, chưa chốt trình ký): bấm vào ô Tiêu
+  // chí kỹ thuật không mở được ô nhập.
+  const oCoTheSua = (col, maHang) => {
+    if (cotLocked.has(col.key) || dongLocked.has(maHang)) return false;
+    if (col.key === "sl_de_xuat_2627") return !chot;
+    return revTrinhKy == null;
+  };
 
   /** Ô này có đang bị PĐD sửa đè lên số gốc không? */
   const oBiSuaDe = (maHang, cot) => overrideTheoMa.get(maHang)?.has(cot) ?? false;
@@ -1117,7 +1128,11 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
           </span>
           {chot && (
             <span className="qtdx-badge amber">
-              ĐÃ CHỐT SỐ ĐI THẦU — mọi ô đang khoá · {chot.chot_boi}
+              {/* Nói đúng cái đang bị khoá: chốt Q chỉ đóng băng CỘT SỐ. Cột
+                  chữ còn sửa được tới khi chốt trình ký — băng cũ ghi "mọi ô
+                  đang khoá" nên PĐD tưởng mình phải mở chốt Q mới sửa được
+                  TSKT, mà mở chốt Q thì cả DOT_GOI mất trạng thái. */}
+              ĐÃ CHỐT SỐ ĐI THẦU — cột số đang khoá · {chot.chot_boi}
               {" · "}{new Date(chot.chot_luc).toLocaleString("vi-VN")}
               {` · revision Q${chot.revision} · chốt khi còn ${chot.so_khoa_chua_chot} khoa chưa nộp`}
             </span>
@@ -1282,7 +1297,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                         }}
                         title={[
                           daSuaDe
-                            ? `Đã sửa đè — số gốc: ${formatCell(giaTriGoc(r.ma_hang, c.key), c.kieu) || "(trống)"}`
+                            ? `Đã sửa đè — số gốc: ${chuThuanCuaO(giaTriGoc(r.ma_hang, c.key), c.kieu) || "(trống)"}`
                             : null,
                           // Nhắc lại dấu vết ở tooltip của CẢ Ô chứ không chỉ
                           // trên cái nhãn: nhãn cao 14px, rê trúng nó khó hơn
@@ -1328,7 +1343,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                               <button
                                 onClick={(e) => { e.stopPropagation(); khoiPhucOGoc(r.ma_hang, c.key); }}
                                 className="ml-1 text-[9px] font-semibold text-amber-700 hover:text-amber-900"
-                                title={`Đã sửa đè (số gốc: ${formatCell(giaTriGoc(r.ma_hang, c.key), c.kieu) || "trống"}) — bấm để bỏ sửa đè, trả về số gốc`}>
+                                title={`Đã sửa đè (số gốc: ${chuThuanCuaO(giaTriGoc(r.ma_hang, c.key), c.kieu) || "trống"}) — bấm để bỏ sửa đè, trả về số gốc`}>
                                 ✎
                               </button>
                             )}

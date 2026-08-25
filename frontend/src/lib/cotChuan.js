@@ -209,6 +209,34 @@ export const GOI_ID_MAP = {
   "chi-dinh-thau":   { loai_mua_sam: "chi_dinh_thau", goi: null, nhan: "Chỉ định thầu" },
 };
 
+// -------- Khoá gói con THẬT của một đợt --------------------------------------
+// BẪY 16 LẶP LẠI LẦN BA (đo thật 25/08/2026). `bo-sung` là BÍ DANH: nó nói
+// "phương thức mua sắm bổ sung", không nói ĐỢT NÀO. Nhưng `dot_goi.goi_id` của
+// một đợt bổ sung luôn là `bs-t1` | `bs-t5` | `bs-t9` (QĐ 17/08: mỗi đợt bổ
+// sung là MỘT gói phẳng). Nơi nào lấy `bo-sung` đi tra `dot_goi` thì không ra
+// dòng nào — và cả hai màn đều KHÔNG báo lỗi, chỉ hiện rỗng.
+//
+// Đo được ngày 25/08 trên cùng một khoa, cùng đợt #69: cửa menu *Danh mục đề
+// xuất của khoa* (`bo-sung`) ra **0 mã hàng** và băng "chỉ sửa được ở màn Nhập
+// đề xuất"; cửa PĐD từ Bàn điều hành (`bs-t9`) ra **25 mã hàng** và sửa số
+// được. Cùng lúc đó `danh_muc_tong_hop_o` tách làm hai kho `bo-sung:dot:69` và
+// `bs-t9:dot:69`, nên PĐD sửa cột chữ mà khoa không thấy.
+//
+// Một chỗ duy nhất dựng khoá gói con, để năm cửa vào danh mục khoa không lệch
+// nhau nữa.
+export function goiConCuaDot(dot, goiConMacDinh = null) {
+  if (!dot) return goiConMacDinh;
+  if (dot.loai_mua_sam === "mua_sam_bo_sung") {
+    // `thang_moc` khớp `dot_de_xuat.thang_moc` — cùng khoá mà QUAN_LY_DOT và
+    // `fn_dong_bo_dot_goi_tu_dot_v3` dùng để sinh DOT_GOI.
+    return dot.thang_moc ? `bs-t${dot.thang_moc}` : "bo-sung";
+  }
+  if (dot.loai_mua_sam === "chi_dinh_thau") return "chi-dinh-thau";
+  // Gói 18 tháng có nhiều gói con thật (Dùng chung, GMHS…) nên đợt KHÔNG tự
+  // suy ra được — người gọi phải đưa gói con đang đứng.
+  return goiConMacDinh;
+}
+
 // -------- Ánh xạ cột: Danh mục KHOA <-> Tổng hợp PĐD ----------------------
 // QĐ 08/08/2026 của chủ dự án: "PĐD chỉnh sửa gì thì khoa đều thấy hết".
 // Hai biểu mẫu đặt tên khoá khác nhau cho cùng một thứ, nên phải có bảng tra

@@ -8,7 +8,7 @@ import GoiYSoLuong from "./GoiYSoLuong";
 import { danhGiaSoLuong } from "../lib/congThucSoLuong";
 import { tinhTuyChonMuaThem30 } from "../lib/tuyChonMuaThem";
 import { docGioDeXuat, ghiGioDeXuat } from "../lib/gioDeXuat";
-import { GOI_ID_MAP } from "../lib/cotChuan";
+import { GOI_ID_MAP, goiConCuaDot } from "../lib/cotChuan";
 import {
   gopLichSuTheoMaQuanLy,
   gopThieuTheoMaQuanLy,
@@ -467,12 +467,17 @@ export default function Function1({
   // vì mỗi đề xuất bắt buộc thuộc về đúng 1 khoa (proposals.don_vi NOT NULL).
   const toanVien = khoaHienTai === TOAN_VIEN;
 
-  // goiId cho link "Danh mục đề xuất" toàn màn hình (#danh-muc-de-xuat/<goiId>/<khoa>,
-  // khớp GOI_ID_MAP trong cotChuan.js). Chỉ định thầu không có Danh mục đề xuất
-  // dạng này nên goiId = null, ẩn link.
-  const goiIdDanhMuc = goi === "dau_thau_rong_rai" ? (goiCon || "18t-dung-chung")
-    : goi === "mua_sam_bo_sung" ? "bo-sung"
-    : null;
+  // goiId cho link "Danh mục đề xuất" toàn màn hình
+  // (#danh-muc-de-xuat/<goiId>/<khoa>/<dotId>, khớp GOI_ID_MAP trong
+  // cotChuan.js). Chỉ định thầu không có Danh mục đề xuất dạng này nên
+  // goiId = null, ẩn link.
+  //
+  // Vá 25/08/2026: trước đây chỗ này sinh bí danh `bo-sung` và KHÔNG kèm
+  // `dotId`. Cả hai đều làm `DanhMucDeXuatKhoa` tra hụt `dot_goi`, rơi về
+  // đường `proposals` cũ — đo thật: cửa này ra 7 mã (trộn lẫn mọi kỳ 18T) so
+  // với 109 mã của đúng đợt đang đứng, và ô số thành chỉ đọc.
+  const goiIdDanhMuc = goi === "chi_dinh_thau" ? null
+    : goiConCuaDot(dotDung, goiCon || "18t-dung-chung");
 
   useEffect(() => {
     if (toanVien || !khoaHienTai) {
@@ -1583,7 +1588,7 @@ export default function Function1({
 
         {!toanVien && khoaHienTai && goiIdDanhMuc && (
           <button type="button"
-            onClick={() => moDanhMucDeXuat(goiIdDanhMuc, khoaHienTai)}
+            onClick={() => moDanhMucDeXuat(goiIdDanhMuc, khoaHienTai, dotDung?.id)}
             title="Mở trong tab trình duyệt mới"
             className="flex w-full items-center gap-2 rounded-lg border border-umc-200 bg-umc-50 px-3 py-2.5 text-sm font-medium text-umc-800 hover:bg-umc-100">
             <ExternalLink size={15} />
