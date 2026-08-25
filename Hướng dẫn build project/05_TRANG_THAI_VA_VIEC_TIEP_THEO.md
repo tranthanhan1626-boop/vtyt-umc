@@ -356,7 +356,7 @@ Xếp theo thứ tự nên làm:
 | ~~2~~ | ~~Miếng **1d**~~ | ✅ xong 24/08 — Enter/Shift+Enter/Esc/Ctrl+Enter trong bảng chia số trúng |
 | ~~3~~ | ~~**Miếng 0** — mẫu Excel gom dữ liệu~~ | ✅ xong 25/08 |
 | ~~4~~ | ~~**Miếng 3** — nền dữ liệu sau đấu thầu~~ | ✅ xong 25/08 — 3 bảng + đường nạp + mốc cam kết theo ngày giao thật |
-| 1 | **Chốt cách sửa gốc lỗi "đổ quá tay"** | Đang CHẶN được nhưng chưa sửa gốc — xem mục 4 |
+| ~~6~~ | ~~**Sửa gốc lỗi "đổ quá tay"**~~ | ✅ xong 25/08 — trọng số chia TRỪ phần đã đưa đi (`patch_zzzzzt`) |
 | ~~5~~ | ~~**Tối ưu tốc độ bảng Tổng hợp**~~ | ✅ xong 25/08 — **15,9 s → ~5,4 s**. Phân trang song song + vá RLS |
 | 3 | Nhánh **D6** — tiến độ gói thầu theo số quyết định / số hợp đồng | Thiết kế + 6 câu hỏi ở `.scratch/tien-do-goi-thau/BRAINSTORM.md` |
 | 4 | Vẽ lại sơ đồ theo D11–D15 | Sơ đồ đang ở mốc 23/08 |
@@ -387,29 +387,13 @@ Xếp theo thứ tự nên làm:
 | Dữ liệu giao hàng dạng gì | **Từng lần giao** |
 | "Đã giao" ở mức nào | **Mã hàng × từng khoa** |
 
-### 🔴 Còn mở — QUAN TRỌNG NHẤT: cách sửa gốc lỗi "đổ quá tay"
+### ✅ Đã chốt 25/08/2026 — cách sửa gốc lỗi "đổ quá tay"
 
-Gốc nằm ở **trọng số của `fn_chia_theo_ti_le_q_v3`**: hiện là `q_khoa + nhận`,
-**không trừ phần khoa đã đổ đi / đã chuyển tiếp**. Khoa giữ nguyên trọng số 10
-trong khi 3/10 đã sang mã khác, nên khi tổng phải chia tăng thì nó được chia
-nhiều hơn phần đáng được.
+Chủ dự án chọn **hướng 1: trọng số chia = `(Q của khoa − đã đưa đi) + nhận`**.
+Thi công ở `patch_zzzzzt`, áp cho cả chia tự động lẫn trần gõ tay, và bảng chia
+có thêm cột **Đã đưa đi**. Chi tiết ở `01` mục 5.3 và `07` khối 25/08 (4).
 
-Ba hướng, chủ dự án chốt một:
-
-| | Cách | Nhận xét |
-|---|---|---|
-| **1** | Trọng số đổi thành `(q_khoa − đã đổ − đã chuyển tiếp) + nhận` | **Nhỏ nhất**, không đụng bảng/cột nào. Kiểm chứng số học trên dữ liệu thật: mọi `con_lai` về 0. Nhưng đổi con số chia ra, và `01` mục 5.3 đang ghi thẳng công thức cũ nên phải sửa tài liệu kèm |
-| **2** | `chuyen_so_rot_v3` chỉ lưu Ý ĐỊNH (mã đích + lý do), số lượng suy ra lúc đọc = phần rớt còn lại | Tự co lại khi chia lại. Nhưng đổi hẳn ý nghĩa một bảng đang có audit |
-| **3** | Cấm chia lại một mã đang có dòng đổ đi | Là **cổng chặn quy trình mới** — trái nguyên tắc nền, và chặn đúng thứ tự thao tác D15 vừa chốt |
-
-Chốt hướng 1 thì cần làm cùng lúc hai việc nữa: đưa cùng phép kiểm vào trần
-cần-lý-do của `cap_nhat_phan_bo_trung_v3`, và **thêm cột "đã đổ đi" vào bảng
-"Chia số trúng về khoa"** — hiện PĐD nhìn thấy "Q 10 · nhận — · chia 8" mà
-không có chỗ nào cho biết 3/10 của khoa đó đã sang mã khác.
-
-**Đang chặn tạm bằng `patch_zzzzzn` + `patch_zzzzzs`:** cổng xác nhận rớt và
-cổng chốt trình ký đều từ chối khi có dòng *giữ + đã đổ + đã chuyển tiếp >
-Q + nhận*. Số sai không lên được giấy trình ký, nhưng PĐD phải bỏ đổ rồi làm lại.
+Hai cổng chặn (`patch_zzzzzn` + `patch_zzzzzs`) giữ nguyên làm **lưới an toàn**.
 
 ### Còn mở — khác
 

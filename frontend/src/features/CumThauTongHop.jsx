@@ -607,11 +607,17 @@ export function BangSoTrungTheoKhoa({ dotGoiId, maHang, phaiChia, onLuuXong }) {
     const [pb, nh] = await Promise.all([
       supabase.from("phan_bo_trung_v3").select("khoa, q_khoa, so_luong_trung")
         .eq("phien_q_id", phien.id).eq("ma_hang", maHang).order("khoa"),
-      supabase.from("v_nhan_chuyen_rot_theo_khoa_v3").select("khoa, da_nhan")
+      supabase.from("v_nhan_chuyen_rot_theo_khoa_v3")
+        .select("khoa, da_nhan, da_dua_di, phan_cua_khoa")
         .eq("phien_q_id", phien.id).eq("ma_hang", maHang),
     ]);
-    const nhan = new Map((nh.data || []).map((r) => [r.khoa, Number(r.da_nhan)]));
-    const ds = (pb.data || []).map((r) => ({ ...r, da_nhan: nhan.get(r.khoa) || 0 }));
+    const nhan = new Map((nh.data || []).map((r) => [r.khoa, r]));
+    const ds = (pb.data || []).map((r) => ({
+      ...r,
+      da_nhan: Number(nhan.get(r.khoa)?.da_nhan) || 0,
+      da_dua_di: Number(nhan.get(r.khoa)?.da_dua_di) || 0,
+      phan_cua_khoa: Number(nhan.get(r.khoa)?.phan_cua_khoa ?? r.q_khoa),
+    }));
     setRows(ds);
     setGo(Object.fromEntries(ds.map((r) => [r.khoa, String(r.so_luong_trung)])));
   }, [dotGoiId, maHang]);
@@ -675,7 +681,9 @@ export function BangSoTrungTheoKhoa({ dotGoiId, maHang, phaiChia, onLuuXong }) {
         <thead>
           <tr className="text-[10.5px] text-slate-500">
             <th className="px-3 py-1 text-left" style={{ background: "transparent", color: "#64748b", position: "static" }}>Khoa</th>
-            <th className="px-3 py-1 text-right" style={{ background: "transparent", color: "#64748b", position: "static" }}>Q của khoa</th>
+            <th className="px-3 py-1 text-right" style={{ background: "transparent", color: "#64748b", position: "static" }}  title="Q của khoa theo snapshot đi thầu">Q của khoa</th>
+            <th className="px-3 py-1 text-right" style={{ background: "transparent", color: "#64748b", position: "static" }}
+              title="Phần của khoa ở mã này đã đổ sang mã tương đương hoặc đã chuyển tiếp về đợt bổ sung">Đã đưa đi</th>
             <th className="px-3 py-1 text-right" style={{ background: "transparent", color: "#64748b", position: "static" }}>Nhận từ mã rớt</th>
             <th className="px-3 py-1 text-right" style={{ background: "transparent", color: "#64748b", position: "static" }}>Số trúng chia cho khoa</th>
           </tr>
@@ -685,6 +693,11 @@ export function BangSoTrungTheoKhoa({ dotGoiId, maHang, phaiChia, onLuuXong }) {
             <tr key={r.khoa}>
               <td className="px-3 py-1 text-xs">{r.khoa}</td>
               <td className="px-3 py-1 text-right font-mono text-xs text-slate-500">{fmt(r.q_khoa)}</td>
+              {/* QĐ 25/08/2026: phần đã đưa đi bị TRỪ khỏi trọng số chia. Không
+                  hiện ra thì PĐD thấy con số nhỏ đi mà không hiểu vì sao. */}
+              <td className="px-3 py-1 text-right font-mono text-xs">
+                {r.da_dua_di > 0 ? <span className="text-amber-700">−{fmt(r.da_dua_di)}</span> : "—"}
+              </td>
               <td className="px-3 py-1 text-right font-mono text-xs">
                 {r.da_nhan > 0 ? <span className="text-sky-700">+{fmt(r.da_nhan)}</span> : "—"}
               </td>

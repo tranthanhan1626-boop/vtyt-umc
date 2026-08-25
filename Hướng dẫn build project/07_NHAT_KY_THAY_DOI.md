@@ -997,3 +997,79 @@ Một test phải sửa theo: `test_mo_bang_tong_hop_bang_tab_moi` soi chữ
 `window.open(` trong `BanDieuHanhPdd.jsx`, mà lời gọi đó nay nằm ở
 `lib/moManExcel.js`. Ý định của test vẫn đúng nên chỉ đổi chỗ soi, và thêm một
 phép chặn: **không màn nào được gọi `window.open` tay nữa**.
+
+---
+
+## 25/08/2026 (4) — QĐ: trọng số chia TRỪ phần khoa đã đưa đi
+
+Sửa GỐC lỗi "đổ quá tay". Trước đó chỉ chặn được ở hai cổng
+(`patch_zzzzzn` + `patch_zzzzzs`), tức PĐD vẫn vấp phải rồi mới biết.
+
+### Chủ dự án chốt hướng nào
+
+Được trình ba hướng, chọn **đổi trọng số**:
+
+| | Cách | Chốt |
+|---|---|---|
+| 1 | Trọng số = **(Q − đã đưa đi) + nhận** | ✅ **chọn** |
+| 2 | Sổ đổ tự hạ theo số rớt mới | không |
+| 3 | Cấm chia lại mã đã có dòng đổ đi | không — là cổng chặn quy trình mới |
+
+### Gốc sai ở đâu
+
+"Chia theo tỉ lệ Q" lấy trọng số `q_khoa + nhận`, **không trừ** phần khoa đã đổ
+sang mã khác hoặc đã chuyển tiếp về đợt bổ sung. Một mã hoàn toàn có thể **vừa
+đổ đi vừa nhận về** trong cùng nhóm mã tương đương; khi nó nhận về thì ô số
+trúng về trống và PĐD chia lại — khoa đã đổ đi vẫn được chia như chưa đổ gì.
+
+| Khoa Cấp cứu · Q 10 · đã đổ đi 3 | Trước | Sau |
+|---|---|---|
+| Trọng số | 10 | **7** |
+| Được chia | 8 | 7 |
+| Giữ + đã đổ | 8 + 3 = **11 > Q 10** ❌ | 7 + 3 = **10 = Q** ✅ |
+
+### Thi công — `patch_zzzzzt`
+
+Hai hàm nền: `fn_da_dua_di_cua_khoa_v3` (đổ sang mã tương đương + chuyển tiếp)
+và `fn_trong_so_chia_v3` = `greatest(Q − đã đưa đi, 0) + nhận`.
+
+Áp cùng công thức cho **ba chỗ**, nếu không chúng cãi nhau:
+tổng trọng số · phép chia · chỗ dồn số dư làm tròn. Và cho **trần "vượt phần
+của khoa phải nhập lý do"** khi gõ tay — chia tự động cho khoa 7 mà gõ tay 8 vẫn
+im lặng thì hai đường nói hai luật khác nhau.
+
+**Khoá cứng 2 KHÔNG đổi** (tổng phải chia = trúng + nhận), miếng 1c cũng nguyên.
+
+### Giao diện
+
+Bảng "Chia số trúng về khoa" thêm cột **Đã đưa đi** (dấu trừ, màu hổ phách).
+Không hiện ra thì PĐD thấy con số của một khoa nhỏ đi mà không hiểu vì sao.
+
+### Đo lại trên đúng chuỗi hỏng cũ
+
+Lặp lại kịch bản A→B→C (B vừa đổ đi vừa nhận về), mã 71242:
+
+```
+KHOA                            Q   giữ  đã đưa đi  nhận  cộng lại  được quyền
+Khoa Kiểm soát nhiễm khuẩn     20    19          1     0        20          20  ✅
+Khoa Nội thận thận nhân tạo    20    20          3     3        23          23  ✅
+Khoa Sơ sinh                   20    20          3     3        23          23  ✅
+Khoa Vi sinh                   20    17          3     0        20          20  ✅
+
+Tổng dòng VƯỢT QUYỀN trong cả gói con: 0
+```
+
+Trước khi sửa, đúng bộ số này cho `giữ 25 + đổ 3 = 28 > được quyền 23`.
+
+Hai cổng chặn giữ nguyên — nay là **lưới an toàn** cho bản ghi cũ và đường gõ
+tay, không còn là chỗ chặn thường gặp.
+
+### Nghiệm thu
+
+`pytest` **215** (+6) · `smoke` **29/29** · `kiem_do_ma_tuong_duong` **8/8** ·
+full pipeline quy mô thật không lỗi · `build` ✓.
+
+Full pipeline chậm lại 105 s → 154 s vì hàm trọng số chạy thêm truy vấn con cho
+từng khoa. **Thao tác thật của PĐD không chậm**: chia một mã × 50 khoa mất
+**0,24–0,35 s**, đọc bảng chia 50 dòng mất 0,38 s. 154 giây kia là script chạy
+hàng trăm lượt liên tiếp, không phải người dùng.

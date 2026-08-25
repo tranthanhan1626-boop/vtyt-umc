@@ -439,8 +439,31 @@ trên tổng mới.
 | | |
 |---|---|
 | Khoá cứng 2 | tổng chia về khoa = **số trúng + phần nhận** |
-| Chia theo tỉ lệ Q | chia trên tổng đó; trọng số của khoa = **Q của khoa + phần khoa đó nhận** |
+| Chia theo tỉ lệ Q | chia trên tổng đó; trọng số của khoa = **(Q của khoa − phần đã đưa đi) + phần khoa đó nhận** |
 | Khoa chưa từng đề xuất mã nhận | Q = 0 nhưng vẫn có dòng và vẫn nhận — chỉ lấy Q làm trọng số thì phần nhận của họ **bốc hơi** |
+
+🆕 **QĐ 25/08/2026 — trọng số TRỪ phần khoa đã đưa đi.** "Đã đưa đi" gồm phần đã
+đổ sang mã tương đương và phần đã chuyển tiếp về đợt bổ sung.
+
+Vì sao phải trừ: một mã hoàn toàn có thể **vừa đổ đi vừa nhận về** trong cùng
+một nhóm mã tương đương. Khi nó nhận về, ô số trúng của nó về trống và PĐD chia
+lại trên tổng mới. Nếu trọng số vẫn tính nguyên Q thì khoa đã đổ đi vẫn được
+chia như chưa đổ gì:
+
+| | Trước 25/08 | Từ 25/08 |
+|---|---|---|
+| Khoa Cấp cứu · Q 10 · đã đổ đi 3 | trọng số **10** → chia được 8 | trọng số **7** → chia được 7 |
+| Cộng lại | giữ 8 + đã đổ 3 = **11 > Q 10** ❌ | giữ 7 + đã đổ 3 = **10 = Q** ✅ |
+
+Cùng công thức đó áp cho **trần "vượt phần của khoa phải nhập lý do"** khi PĐD gõ
+tay — hai đường không được nói hai luật khác nhau.
+
+Bảng "Chia số trúng về khoa" có cột **Đã đưa đi** để PĐD thấy vì sao con số của
+một khoa nhỏ đi.
+
+Hai cổng chặn (`xac_nhan_rot_v3` và `chot_trinh_ky_toan_bo_v3`) vẫn giữ phép
+kiểm *giữ + đã đưa đi > Q + nhận* — nay là **lưới an toàn** cho bản ghi cũ và
+cho đường gõ tay, không còn là chỗ chặn thường gặp.
 | Bản chốt trình ký | đọc thẳng phân bổ, **không cộng thêm lần nữa** — phần nhận đã nằm trong đó |
 
 **PĐD chia tay ở đâu:** sổ dòng mã trên bảng Tổng hợp ra, có sẵn bảng nhập số
