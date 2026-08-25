@@ -2,6 +2,37 @@
 
 Hướng dẫn cho người và cho agent khi làm việc trong repo này.
 
+## 🔴 QUY TẮC BẤT DI BẤT DỊCH — CHẠY WEB ĐỂ TEST
+
+**Mọi vòng test chạy ở LOCALHOST. Không dùng Netlify** (QĐ chủ dự án
+25/08/2026 — tài khoản miễn phí đã hết credits build của tháng, push KHÔNG làm
+site đổi theo).
+
+```bash
+cd frontend && npm run build && npm run preview
+# → http://localhost:4173
+# đăng nhập PĐD:  pdd@umc.edu.vn / 111111
+# đăng nhập khoa: dvsd1@umc.edu.vn / 111111
+```
+
+**Ba điều bắt buộc:**
+
+1. **Đo trên `preview`, KHÔNG đo trên `npm run dev`.** Bản dev bật
+   `React.StrictMode` nên gọi **mọi truy vấn hai lần** — 48 lượt REST so với 25
+   của bản thật. Mọi con số đo ở `dev` bị thổi lên gấp đôi.
+2. **Build lại trước mỗi lần đo.** `preview` phục vụ thư mục `dist/` đã build,
+   không tự cập nhật theo mã nguồn.
+3. **Tải lại trang bỏ qua bộ nhớ đệm** sau khi build, nếu không trình duyệt giữ
+   bundle cũ và bạn sẽ kết luận sai về thay đổi của chính mình (đã mắc 25/08).
+   Kiểm nhanh: `[...document.querySelectorAll('script[src]')].map(s=>s.src)`
+   phải trùng tên với `ls frontend/dist/assets/index-*.js`.
+
+**Database không liên quan Netlify** — patch chạy thẳng lên staging bằng
+`backend/scripts/chay_patch.py`, nên phần nghiệp vụ luôn là bản mới nhất kể cả
+khi site đứng yên.
+
+---
+
 ## Đọc gì trước khi chạm vào code
 
 **Toàn bộ tài liệu dự án nằm trong `Hướng dẫn build project/`.** Bắt đầu từ
@@ -21,11 +52,6 @@ Hướng dẫn cho người và cho agent khi làm việc trong repo này.
 > `goi_thau_tien_do` · `goi_thau_moc` (mô hình trước v3). Màn đọc chúng **hiện
 > rỗng mà không báo lỗi** — đó là lớp lỗi khó thấy nhất của dự án này. Nghi ngờ
 > thì chạy `backend/scripts/kiem_moi_man.py --xac-nhan-staging`.
->
-> 🔴 **TEST Ở LOCALHOST.** Netlify miễn phí đã hết credits build của tháng
-> (QĐ 25/08/2026) — push KHÔNG làm site đổi theo. Nghiệm thu bằng
-> `cd frontend && npm run build && npm run preview`. **Đừng đo trên
-> `npm run dev`**: StrictMode gọi mọi truy vấn hai lần, số đo bị thổi gấp đôi.
 >
 > 🔴 **25/08/2026 — quy mô thật làm lộ bảy lỗi hệ thống.** Bộ dữ liệu
 > ~1.586 mã × 50 khoa (`scripts/tao_du_lieu_test_quy_mo_that.py`) tìm ra thứ mà
@@ -52,7 +78,7 @@ Tối thiểu phải đọc trước khi sửa bất cứ thứ gì:
 | Đụng công thức số lượng | `02_CONG_THUC_SO_LUONG.md` — và **đừng đụng trước Phase G** |
 | Không hiểu vì sao code làm thế | `07_NHAT_KY_THAY_DOI.md` |
 
-## Bốn điều dễ làm sai nhất
+## Năm điều dễ làm sai nhất
 
 1. **Đừng dựng lại thứ đã bị bỏ.** Dự án đã đảo luật **29 lần**. Trước khi thêm một
    bước duyệt, một cổng chặn, một cơ chế khoá ô — mở `06_DUNG_LAM_LAI.md` xem
@@ -63,7 +89,11 @@ Tối thiểu phải đọc trước khi sửa bất cứ thứ gì:
 3. **Chỉ có ba khoá cứng toán học.** Ngoài chúng và hai cổng đã chốt, hệ cảnh
    báo chứ không chặn. Đừng tự thêm cổng chặn quy trình. Lưu ý khoá 2 và khoá 3
    **chặn ở hai thời điểm khác nhau** kể từ 21/08/2026 — xem `01` mục 0.
-4. **PĐD chỉ có một mặt bàn.** Mọi thao tác sửa của PĐD đi qua Danh mục tổng
+4. **Đừng tin `build ✓` là màn hình chạy.** Một component dùng mà quên import
+   làm trắng cả màn mà build vẫn qua; một view rớt cột làm ba màn chết mà
+   `pytest` vẫn xanh. Phải **bấm thật** trên `localhost:4173` ít nhất một lượt
+   trên đường mà thay đổi đi qua.
+5. **PĐD chỉ có một mặt bàn.** Mọi thao tác sửa của PĐD đi qua Danh mục tổng
    hợp. Thấy thao tác nào chật chội trên grid thì làm grid rộng ra, **đừng tách
    màn mới** (QĐ 21/08/2026).
 

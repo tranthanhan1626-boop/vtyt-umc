@@ -1,5 +1,23 @@
 # Đọc trước tiên — hệ thống dự trù & đấu thầu VTYT (UMC)
 
+> ## 🔴 CHẠY WEB ĐỂ TEST — quy tắc bất di bất dịch
+>
+> **Localhost, không dùng Netlify** (QĐ 25/08/2026 — tài khoản miễn phí hết
+> credits build của tháng, push KHÔNG làm site đổi theo).
+>
+> ```bash
+> cd frontend && npm run build && npm run preview      # → http://localhost:4173
+> ```
+>
+> PĐD `pdd@umc.edu.vn` / `111111` · khoa `dvsd1@umc.edu.vn` / `111111`
+>
+> **Đo trên `preview`, KHÔNG đo trên `npm run dev`** — bản dev bật StrictMode
+> nên gọi mọi truy vấn hai lần, số đo bị thổi gấp đôi. Build lại trước mỗi lần
+> đo, và tải lại trang bỏ qua bộ nhớ đệm kẻo đọc nhầm bundle cũ.
+>
+> Chi tiết ở `04_VAN_HANH_KY_THUAT.md` mục site, và `AGENTS.md` ngay đầu file.
+
+
 Cập nhật **24/08/2026**. Nhánh làm việc: `phase-a-luong-de-xuat`.
 
 > 🆕 **Hai lần đổi hướng gần nhất, đọc theo thứ tự:**
