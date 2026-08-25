@@ -170,19 +170,52 @@ càng cần.
 
 Xếp theo nguyên tắc: **thứ nào chặn việc của người thì làm trước.**
 
-### Miếng 0 — Dựng lại mẫu Excel gom dữ liệu (nhỏ, làm ngay)
+### Miếng 0 — ✅ XONG 25/08/2026
 
-Workbook `database web.xlsx` lập 03/08 đang trỏ vào các bảng của mô hình **trước
-v3**; bốn sheet sau thầu (`HOP_DONG`, `TON_KHO_HANG_VE`, `KET_QUA_THAU`,
-`GOI_THAU_TIMELINE`) đều **0 dòng**. Chủ dự án điền vào đó thì dữ liệu **rơi vào
-hư không**.
+Workbook `database web.xlsx` lập 03/08 trỏ vào các bảng của mô hình **trước v3**;
+ba sheet sau thầu (`HOP_DONG`, `KET_QUA_THAU`, `GOI_THAU_TIMELINE`) đều **0
+dòng** và điền vào đó thì dữ liệu **rơi vào hư không**.
 
-Dựng lại 2 sheet theo v3: **HỢP ĐỒNG** (số HĐ · ngày ký · thời hạn · nhà thầu ·
-mã hàng — **không cột giá**) và **GIAO HÀNG TỪNG LẦN** (ngày · mã hàng · khoa ·
-số lượng).
+Thay bằng **`database/MAU_GOM_DU_LIEU_SAU_THAU.xlsx`** — sinh bằng
+`backend/scripts/tao_mau_gom_du_lieu_sau_thau.py`, ba sheet:
 
-→ Xong miếng này chủ dự án gom dữ liệu **song song** với lúc build. Đây là lý do
-nó đứng trước miếng grid dù nhỏ hơn nhiều.
+| Sheet | Một dòng là | Cột |
+|---|---|---|
+| `HOP_DONG` | một hợp đồng | gói con · năm · số HĐ · nhà cung cấp · ngày ký · ngày hết hạn · có tùy chọn 30% · ghi chú |
+| `HOP_DONG_MA_HANG` | một mã hàng trong một hợp đồng | số HĐ · mã hàng · số lượng hợp đồng · ĐVT · ghi chú |
+| `GIAO_HANG` | **một lần giao** | ngày giao · số HĐ · mã hàng · số thực nhận · khoa *(để trống nếu về kho)* · ghi chú |
+
+**Bốn quyết định đóng vào thiết kế** — `test_mau_gom_du_lieu_sau_thau.py` giữ cả
+bốn, đừng thêm cột:
+
+1. **Không cột giá** nào (QĐ 17/08, xác nhận 21/08).
+2. Giao hàng ghi **từng lần giao**, không phải ảnh chụp tồn kho định kỳ (21/08).
+   Phương án ảnh chụp nặng gấp 10 (33 MB/năm so với 3,2) mà 90% dòng lặp lại.
+3. **Mỗi nhà thầu một hợp đồng** → tách hai sheet (25/08).
+4. **Không lưu lô/hạn dùng**; cột `khoa` **để trống được** vì hàng về **kho
+   trước** rồi kho mới cấp cho khoa (25/08). Phần kho→khoa lấy từ lịch sử xuất
+   kho HIS đã nạp, không gõ lại.
+
+🆕 **Kèm phép kiểm chạy được NGAY, chưa cần bảng đích:**
+
+```bash
+cd backend && set -a && . ./.env.local && . ../frontend/.env && set +a
+.venv/bin/python scripts/kiem_mau_gom_du_lieu.py \
+    ../database/MAU_GOM_DU_LIEU_SAU_THAU.xlsx --xac-nhan-staging
+```
+
+12 phép: hợp đồng mồ côi · số HĐ lặp · mã hàng không có trong danh mục · khoa sai
+tên · gói con sai · không có đợt khớp · ngày sai dạng · hết hạn trước ngày ký ·
+số âm · mã ghi hai lần trong một HĐ · giao trước ngày ký · giao vượt cam kết.
+Đã đo bằng hai file cố tình sai: bắt đúng cả 12.
+
+→ Chủ dự án gom dữ liệu **song song** với lúc build, và biết ngay dữ liệu có dùng
+được không thay vì gom hàng nghìn dòng sai rồi mới phát hiện lúc nạp.
+
+⚠️ **Đường NẠP chưa có** — ba bảng đích (`hop_dong_v3` · `hop_dong_ma_hang` ·
+`giao_hang`) dựng ở **miếng 3**. Thiết kế cột đã chốt ở
+`.scratch/mot-mat-ban/DU_LIEU_SAU_THAU.md` mục 4; cột của biểu mẫu ánh xạ 1-1
+sang chúng (xem cột "Đích database" trong sheet `01_TU_DIEN_COT`).
 
 ### Miếng 1 — Grid một mặt bàn (lớn nhất)
 
@@ -286,9 +319,9 @@ Xếp theo thứ tự nên làm:
 |---|---|---|
 | ~~1~~ | ~~Miếng **1c**~~ | ✅ xong 24/08 — `patch_zzzzzh` |
 | ~~2~~ | ~~Miếng **1d**~~ | ✅ xong 24/08 — Enter/Shift+Enter/Esc/Ctrl+Enter trong bảng chia số trúng |
-| 1 | **Miếng 0** — dựng lại mẫu Excel gom dữ liệu | Nhỏ, và mở khoá cho chủ dự án gom dữ liệu SONG SONG với lúc build |
+| ~~3~~ | ~~**Miếng 0** — mẫu Excel gom dữ liệu~~ | ✅ xong 25/08 — `MAU_GOM_DU_LIEU_SAU_THAU.xlsx` + phép kiểm 12 mục |
+| 1 | **Miếng 3** — bốn mảng sau đấu thầu | Dựng 3 bảng đích + đường nạp. Biểu mẫu đã có, cột ánh xạ 1-1 |
 | 2 | Nhánh **D6** — tiến độ gói thầu theo số quyết định / số hợp đồng | Thiết kế + 6 câu hỏi ở `.scratch/tien-do-goi-thau/BRAINSTORM.md` |
-| 3 | **Miếng 3** — bốn mảng sau đấu thầu | Phụ thuộc miếng 0 (cần dữ liệu thật để thử) |
 | 4 | Vẽ lại sơ đồ theo D11–D15 | Sơ đồ đang ở mốc 23/08 |
 | 5 | Nợ cũ mục 3b — neo đợt cho 3 bảng còn lại | Cùng lớp lỗi với `danh_muc_khoa_o` đã neo 20/08 |
 

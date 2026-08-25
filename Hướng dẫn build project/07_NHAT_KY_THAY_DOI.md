@@ -739,3 +739,65 @@ không lỗi, 289 cột đều tồn tại · `test:formula` OK · `build` ✓ �
 Một chỗ **chưa đo được**: phím tắt kiểm bằng sự kiện bàn phím dựng trong trang
 (ô 0 → ô 1, có bôi đen). Phím thật gõ từ hệ điều hành thì công cụ không đẩy tới
 được vì cửa sổ Chrome không giữ focus — chủ dự án cần gõ thử một lượt.
+
+---
+
+## 25/08/2026 — Miếng 0: biểu mẫu gom dữ liệu sau đấu thầu
+
+Miếng 0 xếp trước miếng 3 dù nhỏ hơn nhiều, vì nó là thứ duy nhất mở khoá cho
+chủ dự án **gom dữ liệu song song** với lúc build. Miếng 3, nhánh D6 và view cam
+kết 20/50/80 đều cần dữ liệu hợp đồng + giao hàng thật mới thử được.
+
+### Cái cũ hỏng ở đâu
+
+`database/database web.xlsx` (03/08) có ba sheet sau thầu đều **0 dòng** và đều
+trỏ vào mô hình trước v3:
+
+| Sheet cũ | Vì sao điền vào là vô ích |
+|---|---|
+| `GOI_THAU_TIMELINE` | đổ vào `goi_thau_moc` — một trong ba bảng đã chết từ 17/08 |
+| `KET_QUA_THAU` | hình dạng của `goi_thau_ket_qua_ma`, cũng đã chết; và trong v3 kết quả thầu **do web tự sinh** từ số PĐD gõ trên bảng Tổng hợp |
+| `HOP_DONG` | có cột `tran_hop_dong` — trái QĐ 17/08 "không cột giá"; và không neo được vào đợt |
+
+### Cái mới
+
+`backend/scripts/tao_mau_gom_du_lieu_sau_thau.py` →
+`database/MAU_GOM_DU_LIEU_SAU_THAU.xlsx`. Dùng lại bộ định dạng của
+`tao_mau_du_lieu_benh_vien.py` (màu theo mức bắt buộc, ghi chú trong ô tiêu đề,
+kiểm tra dữ liệu, tô đỏ dòng thiếu trường bắt buộc) để hai biểu mẫu quen mắt.
+
+Ba sheet: `HOP_DONG` · `HOP_DONG_MA_HANG` · `GIAO_HANG`.
+
+### Bốn quyết định đóng vào thiết kế
+
+| Quyết định | Ngày | Hệ quả trên biểu mẫu |
+|---|---|---|
+| Không cột giá / đơn giá / trần hợp đồng | 17/08, xác nhận 21/08 | không có cột nào chứa `gia` · `tran` · `tien` |
+| Giao hàng ghi **từng lần giao** | 21/08 | không có cột tồn kho hay `ngay_chot` |
+| **Mỗi nhà thầu một hợp đồng** | 25/08 | tách hai sheet, nối bằng `so_hop_dong` |
+| Không lưu lô/hạn dùng; hàng về **kho trước** | 25/08 | bỏ `so_lo`/`han_dung`; cột `khoa` là **Tùy chọn** |
+
+Quyết định thứ tư đụng câu trả lời 21/08 ("đã giao tính ở mức mã hàng × từng
+khoa"). Cách hoà: tờ giao hàng ghi **nhà thầu → kho**; phần **kho → khoa** lấy
+từ lịch sử xuất kho HIS (141.623 dòng đã nạp). Web ghép hai nguồn, không bắt gõ
+lại. `test_mau_gom_du_lieu_sau_thau.py` (8 phép) giữ cả bốn quyết định.
+
+### Phép kiểm chạy được NGAY, chưa cần bảng đích
+
+`backend/scripts/kiem_mau_gom_du_lieu.py`. Ba bảng đích dựng ở miếng 3, nên nếu
+không có gì kiểm thì chủ dự án gom hàng nghìn dòng rồi tới lúc nạp mới biết sai.
+Script đối chiếu bằng thứ **đã có trên staging**: danh mục vật tư, danh sách
+khoa, các đợt.
+
+12 phép — hợp đồng mồ côi · số HĐ lặp · mã hàng không có trong danh mục · khoa
+sai tên · gói con sai · không có đợt khớp · ngày sai dạng · hết hạn trước ngày ký
+· số âm · mã ghi hai lần trong một HĐ · giao trước ngày ký · giao vượt cam kết.
+Ba phép cuối là **cảnh báo**, không chặn — đều có thể đúng trong thực tế.
+
+Đo bằng hai file cố tình sai: bắt đúng cả 12. Lần thử đầu có hai phép không nổ
+vì bị lỗi khác che (mã ghi hai lần làm số cam kết cộng đôi nên không thấy "giao
+vượt"), phải dựng file thứ hai sạch hơn mới kích hoạt được.
+
+### Nghiệm thu
+
+`pytest` **195** (+8) · biểu mẫu mở lại được và header khớp khai báo.
