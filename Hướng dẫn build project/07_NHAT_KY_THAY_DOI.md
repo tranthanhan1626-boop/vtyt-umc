@@ -1073,3 +1073,50 @@ Full pipeline chậm lại 105 s → 154 s vì hàm trọng số chạy thêm tr
 từng khoa. **Thao tác thật của PĐD không chậm**: chia một mã × 50 khoa mất
 **0,24–0,35 s**, đọc bảng chia 50 dòng mất 0,38 s. 154 giây kia là script chạy
 hàng trăm lượt liên tiếp, không phải người dùng.
+
+---
+
+## 25/08/2026 (5) — Cột "Khoa · tổng" bẻ đôi con số, và chuyển hẳn về localhost
+
+### Số bị cắt giữa chừng
+
+Chủ dự án chụp màn hình: cột số khoa ở chế độ gõ rớt hiện thành
+
+```
+8  khoa ·        1  khoa ·        1  khoa ·
+   tổng  96      5  tổng  1.1     5  tổng  7.2
+          0                40               00
+```
+
+Ba mảnh `[8] [khoa · tổng] [960]` nằm trên MỘT hàng ngang, mà cột chỉ rộng
+104px ở chế độ gõ rớt — trình duyệt bẻ đôi chính **con số**: `960` thành `96`
+và `0`, `1.140` thành `1.1` và `40`.
+
+Sửa: tách hai dòng, **dòng trên số khoa, dòng dưới số tổng**, mỗi dòng
+`whitespace-nowrap` để số không bao giờ bị cắt. Cột hẹp lại còn 92px.
+
+```
+  8 khoa          15 khoa
+960 tổng       1.140 tổng
+```
+
+### QĐ: từ nay test ở LOCALHOST
+
+Tài khoản Netlify là bản **miễn phí** và **đã hết credits build của tháng**.
+Đo thật: sau ba commit (`f50347d` → `41cc7a8` → `831e002`), chờ 10 phút mà site
+vẫn giữ bundle cũ `index-CF9unKCY.js`.
+
+**Đừng dựa vào Netlify để nghiệm thu nữa.** Mọi vòng test chạy trên máy:
+
+```bash
+cd frontend && npm run build && npm run preview     # cổng 4173
+```
+
+**Phải đo trên `preview`, không đo trên `dev`** — bản dev bật `React.StrictMode`
+nên gọi mọi truy vấn hai lần (48 lượt REST so với 25 của bản thật).
+
+Database **không liên quan Netlify**: patch chạy thẳng lên staging bằng
+`scripts/chay_patch.py`, nên phần nghiệp vụ luôn là bản mới nhất kể cả khi site
+đứng yên.
+
+Đã ghi vào `AGENTS.md`, `04` mục site, và `05`.

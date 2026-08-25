@@ -1194,7 +1194,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                   </th>
                 );
               })}
-              <th style={{ minWidth: cheDoGoRot ? 104 : 160 }}>{cheDoGoRot ? "Khoa" : "Số khoa · sổ chi tiết"}</th>
+              <th style={{ minWidth: cheDoGoRot ? 104 : 160 }}>{cheDoGoRot ? "Khoa · tổng" : "Số khoa · sổ chi tiết"}</th>
               <th style={{ minWidth: 76 }} title="Số đã chốt đi thầu — bất biến">Q</th>
               <th style={{ minWidth: 68 }} title="Rớt ở giai đoạn Chào giá">R1</th>
               <th style={{ minWidth: 68 }} title="Rớt ở giai đoạn Mở thầu">R2</th>
@@ -1372,11 +1372,22 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                       </td>
                     );
                   })}
-                  <td className="qtdx-cell readonly" style={{ minWidth: cheDoGoRot ? 104 : 160 }}>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="font-mono text-emerald-800 font-semibold">{r.khoaDeXuat.length}</span>
-                      <span className="text-slate-500">khoa · tổng</span>
-                      <span className="font-mono font-semibold">{fmt(r.tongToanVien)}</span>
+                  {/* HAI DÒNG, mỗi dòng KHÔNG được xuống hàng giữa chừng.
+                      Bản cũ nhồi cả ba mảnh trên một hàng ngang; ở chế độ gõ
+                      rớt cột chỉ rộng 104px nên trình duyệt bẻ đôi chính CON
+                      SỐ — "1.140" thành "1.1" và "40", "960" thành "96" và "0"
+                      (chủ dự án báo 25/08/2026). `whitespace-nowrap` là thứ
+                      giữ cho số không bao giờ bị cắt. */}
+                  <td className="qtdx-cell readonly" style={{ minWidth: cheDoGoRot ? 92 : 160 }}>
+                    <span className="flex flex-col leading-tight">
+                      <span className="whitespace-nowrap">
+                        <span className="font-mono font-semibold text-emerald-800">{r.khoaDeXuat.length}</span>
+                        <span className="ml-1 text-slate-500">khoa</span>
+                      </span>
+                      <span className="whitespace-nowrap">
+                        <span className="font-mono font-semibold">{fmt(r.tongToanVien)}</span>
+                        <span className="ml-1 text-slate-500">tổng</span>
+                      </span>
                     </span>
                   </td>
                   <OThauCuaDong

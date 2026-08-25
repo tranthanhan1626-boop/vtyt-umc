@@ -95,6 +95,12 @@ Cập nhật **24/08/2026**. Nhánh `phase-a-luong-de-xuat`.
 >
 > Full pipeline chạy hết cả hai đường (18T 5 gói con + bổ sung) trong **105 giây**.
 
+> 🔴 **TEST Ở LOCALHOST, KHÔNG DÙNG NETLIFY** (QĐ 25/08/2026). Tài khoản
+> Netlify miễn phí đã hết credits build của tháng — push thêm KHÔNG build lại.
+> Nghiệm thu bằng `cd frontend && npm run build && npm run preview` (cổng 4173),
+> **không đo trên `npm run dev`** vì StrictMode gọi mọi truy vấn hai lần.
+> Database không liên quan: patch chạy thẳng lên staging.
+
 > ⚡ **Mở bảng Tổng hợp 340 mã: 15,9 s → ~5,4 s** (25/08). Hai việc: bọc lời gọi
 > hàm trong policy RLS, và `fetchAllRows` tải các trang SONG SONG thay vì nối
 > đuôi. **Đo trên bản build thật** — bản dev bật StrictMode nên gọi mọi truy vấn

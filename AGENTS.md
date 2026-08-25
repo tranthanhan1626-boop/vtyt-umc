@@ -22,6 +22,11 @@ Hướng dẫn cho người và cho agent khi làm việc trong repo này.
 > rỗng mà không báo lỗi** — đó là lớp lỗi khó thấy nhất của dự án này. Nghi ngờ
 > thì chạy `backend/scripts/kiem_moi_man.py --xac-nhan-staging`.
 >
+> 🔴 **TEST Ở LOCALHOST.** Netlify miễn phí đã hết credits build của tháng
+> (QĐ 25/08/2026) — push KHÔNG làm site đổi theo. Nghiệm thu bằng
+> `cd frontend && npm run build && npm run preview`. **Đừng đo trên
+> `npm run dev`**: StrictMode gọi mọi truy vấn hai lần, số đo bị thổi gấp đôi.
+>
 > 🔴 **25/08/2026 — quy mô thật làm lộ bảy lỗi hệ thống.** Bộ dữ liệu
 > ~1.586 mã × 50 khoa (`scripts/tao_du_lieu_test_quy_mo_that.py`) tìm ra thứ mà
 > 208 test và 29 bước smoke đều không thấy. Hai luật rút ra:

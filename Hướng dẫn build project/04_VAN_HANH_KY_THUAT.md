@@ -162,9 +162,34 @@ Có hai site Netlify khác nhau, đừng nhầm:
 | `vtyt-umc` (production hiện có) | `main` | `jttucjnkqxckphmmilaa`, đang ở schema nền, chưa có các bảng/RPC A2→Z | chưa ai dùng thật |
 | **Site test — https://vtyt-umc-test.netlify.app** | `phase-a-luong-de-xuat` | `ihgfafubwyxnbubmppbj` | người được mời test |
 
-Site test **tự build mỗi lần push** lên `phase-a-luong-de-xuat`. Kiểm bản deploy
-đã nhận commit mới chưa: so tên file bundle trên site với file vừa build cục bộ —
-`ls frontend/dist/assets/index-*.js` phải trùng tên `<script src>` của trang.
+> 🔴 **QĐ 25/08/2026 — TỪ NAY TEST Ở LOCALHOST, KHÔNG DÙNG NETLIFY.**
+> Tài khoản Netlify là bản **miễn phí** và đã **hết credits build của tháng**.
+> Site vẫn phục vụ bản deploy cuối (`f50347d`), nhưng **push thêm sẽ KHÔNG build
+> lại** — đã đo: chờ 10 phút sau ba commit, site vẫn giữ bundle cũ.
+>
+> **Đừng dựa vào Netlify để nghiệm thu.** Mọi vòng test chạy trên máy:
+>
+> ```bash
+> cd frontend
+> npm run build && npm run preview    # bản CHẠY THẬT, cổng 4173
+> ```
+>
+> **Phải đo trên `preview`, không đo trên `npm run dev`.** Bản dev bật
+> `React.StrictMode` nên gọi **mọi truy vấn hai lần** — 48 lượt REST so với 25
+> của bản thật. Con số đo ở dev bị thổi lên gấp đôi.
+>
+> Database thì **không liên quan Netlify**: patch chạy thẳng lên staging bằng
+> `scripts/chay_patch.py`, nên phần nghiệp vụ luôn là bản mới nhất kể cả khi
+> site đứng yên.
+
+Khi nào có credits trở lại: site test **tự build mỗi lần push** lên
+`phase-a-luong-de-xuat`. Kiểm bản deploy đã nhận commit mới chưa — so tên file
+bundle trên site với file vừa build cục bộ:
+
+```bash
+curl -s https://vtyt-umc-test.netlify.app/ | grep -o 'index-[A-Za-z0-9_-]*\.js'
+ls frontend/dist/assets/index-*.js          # hai cái phải trùng tên
+```
 
 File `backend/sql/patch_production_a2_z_20260804.sql` giữ làm mốc lịch sử
 (bundle A2→Z gộp một lần), không còn là bước của quy trình hằng ngày.
