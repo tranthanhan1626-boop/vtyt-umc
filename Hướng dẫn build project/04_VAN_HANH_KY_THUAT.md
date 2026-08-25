@@ -160,7 +160,11 @@ Có hai site Netlify khác nhau, đừng nhầm:
 | Site | Nhánh Git theo dõi | DB Supabase | Ai dùng |
 |---|---|---|---|
 | `vtyt-umc` (production hiện có) | `main` | `jttucjnkqxckphmmilaa`, đang ở schema nền, chưa có các bảng/RPC A2→Z | chưa ai dùng thật |
-| Site test | `phase-a-luong-de-xuat` | `ihgfafubwyxnbubmppbj` | người được mời test |
+| **Site test — https://vtyt-umc-test.netlify.app** | `phase-a-luong-de-xuat` | `ihgfafubwyxnbubmppbj` | người được mời test |
+
+Site test **tự build mỗi lần push** lên `phase-a-luong-de-xuat`. Kiểm bản deploy
+đã nhận commit mới chưa: so tên file bundle trên site với file vừa build cục bộ —
+`ls frontend/dist/assets/index-*.js` phải trùng tên `<script src>` của trang.
 
 File `backend/sql/patch_production_a2_z_20260804.sql` giữ làm mốc lịch sử
 (bundle A2→Z gộp một lần), không còn là bước của quy trình hằng ngày.
