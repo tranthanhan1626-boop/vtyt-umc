@@ -84,6 +84,30 @@ Cập nhật **24/08/2026**. Nhánh `phase-a-luong-de-xuat`.
 > ⚠️ **Mục 3 bên dưới (bốn miếng của MỘT MẶT BÀN) đã lạc hậu ở miếng 0 và 3.**
 > **Miếng 1 và miếng 2 đã XONG HẲN** (1c và 1d khép lại cuối ngày 24/08).
 
+> 🟢 **25/08/2026 — MIẾNG 3 XONG, và bộ dữ liệu QUY MÔ THẬT đã có.**
+>
+> Ba bảng sau đấu thầu (`hop_dong_v3` · `hop_dong_ma_hang` · `giao_hang`), mốc
+> cam kết 20/50/80 đếm từ ngày hàng về thật, đường nạp từ biểu mẫu Excel.
+>
+> Hai bộ dữ liệu ~1.586 mã × 50 khoa (≈16.200 dòng), tách nhau theo NĂM:
+> **A = 2029** (test nội bộ) · **B = 2030** (chủ dự án tự bấm). Dựng lại bằng
+> `scripts/tao_du_lieu_test_quy_mo_that.py --xac-nhan-staging --bo A|B`.
+>
+> Full pipeline chạy hết cả hai đường (18T 5 gói con + bổ sung) trong **105 giây**.
+
+> 🔴 **25/08/2026 — BẢY LỖI HỆ THỐNG lộ ra ở quy mô thật.** Không cái nào là lỗi
+> mới viết; tất cả nằm sẵn, chỉ chưa ai chạy đủ lớn. Chi tiết ở `07`, khối 25/08 (2).
+>
+> Nặng nhất: **24 policy RLS gọi hàm theo TỪNG DÒNG** — ở 18.764 dòng là gần
+> 37.000 truy vấn phụ cho một lần đọc, làm mở bảng Tổng hợp mất 15,9 s và đếm
+> view kết quả thầu thì timeout. Vá xong còn **6,7 s** và **0,9 s**.
+>
+> Và **rò rỉ RLS**: khoa đọc được dòng rớt/chuyển tiếp/giao hàng của **cả 50
+> khoa** ở ba bảng. Đã bịt.
+>
+> **Luật rút ra:** mọi policy RLS phải bọc lời gọi hàm trong `(select ham())`.
+> `kiem_moi_man.py` nay có vòng canh riêng cho việc này.
+
 > 🔴 **24/08/2026 cuối ngày — HAI LỖI CÓ SẴN, cùng một lớp: màn chết mà không
 > ai biết.** Cả hai chỉ lộ ra khi bấm thật trên trình duyệt, `build` và
 > `pytest` đều cho qua.
@@ -125,10 +149,11 @@ v3 mà giữ nguyên tên cột, nên 5 màn sống lại cùng lúc. Chỉ còn
 **17/18 invariant** đo được và đúng. Cái còn lại (*một mã quản lý chỉ thuộc một
 gói con*) cần **quyết định nghiệp vụ**, không phải việc code — xem mục 4.
 
-Nghiệm thu ngày **24/08/2026 (cuối ngày)**: `pytest` **187** ·
+Nghiệm thu ngày **25/08/2026 (cuối ngày)**: `pytest` **209** ·
 `smoke_workflow_v3_staging` **29/29** · `kiem_do_ma_tuong_duong` **8/8** ·
-33 bảng về đúng số dòng ban đầu · `kiem_moi_man` không lỗi và **289 cột các màn
-xin đều tồn tại** · `test:formula` OK · `build` ✓.
+33 bảng về đúng số dòng ban đầu · `kiem_moi_man` **ba vòng** xanh (nguồn · **298
+cột** · RLS) · `test:formula` OK · `build` ✓ · **full pipeline quy mô thật
+(1.586 mã × 50 khoa, cả hai đường) 105 giây không lỗi**.
 
 🆕 **Thêm một vòng kiểm mới**: `scripts/kiem_moi_man.py --xac-nhan-staging` quét
 mọi `.from()` / `.rpc()` của **36 màn** (63 bảng/view · 41 RPC), gọi thật bằng
@@ -319,9 +344,11 @@ Xếp theo thứ tự nên làm:
 |---|---|---|
 | ~~1~~ | ~~Miếng **1c**~~ | ✅ xong 24/08 — `patch_zzzzzh` |
 | ~~2~~ | ~~Miếng **1d**~~ | ✅ xong 24/08 — Enter/Shift+Enter/Esc/Ctrl+Enter trong bảng chia số trúng |
-| ~~3~~ | ~~**Miếng 0** — mẫu Excel gom dữ liệu~~ | ✅ xong 25/08 — `MAU_GOM_DU_LIEU_SAU_THAU.xlsx` + phép kiểm 12 mục |
-| 1 | **Miếng 3** — bốn mảng sau đấu thầu | Dựng 3 bảng đích + đường nạp. Biểu mẫu đã có, cột ánh xạ 1-1 |
-| 2 | Nhánh **D6** — tiến độ gói thầu theo số quyết định / số hợp đồng | Thiết kế + 6 câu hỏi ở `.scratch/tien-do-goi-thau/BRAINSTORM.md` |
+| ~~3~~ | ~~**Miếng 0** — mẫu Excel gom dữ liệu~~ | ✅ xong 25/08 |
+| ~~4~~ | ~~**Miếng 3** — nền dữ liệu sau đấu thầu~~ | ✅ xong 25/08 — 3 bảng + đường nạp + mốc cam kết theo ngày giao thật |
+| 1 | **Chốt cách sửa gốc lỗi "đổ quá tay"** | Đang CHẶN được nhưng chưa sửa gốc — xem mục 4 |
+| 2 | **Tối ưu tốc độ bảng Tổng hợp** | 6,7 s ở 340 mã. Đã hẹn làm ngay sau vòng này |
+| 3 | Nhánh **D6** — tiến độ gói thầu theo số quyết định / số hợp đồng | Thiết kế + 6 câu hỏi ở `.scratch/tien-do-goi-thau/BRAINSTORM.md` |
 | 4 | Vẽ lại sơ đồ theo D11–D15 | Sơ đồ đang ở mốc 23/08 |
 | 5 | Nợ cũ mục 3b — neo đợt cho 3 bảng còn lại | Cùng lớp lỗi với `danh_muc_khoa_o` đã neo 20/08 |
 
@@ -350,7 +377,31 @@ Xếp theo thứ tự nên làm:
 | Dữ liệu giao hàng dạng gì | **Từng lần giao** |
 | "Đã giao" ở mức nào | **Mã hàng × từng khoa** |
 
-### Còn mở
+### 🔴 Còn mở — QUAN TRỌNG NHẤT: cách sửa gốc lỗi "đổ quá tay"
+
+Gốc nằm ở **trọng số của `fn_chia_theo_ti_le_q_v3`**: hiện là `q_khoa + nhận`,
+**không trừ phần khoa đã đổ đi / đã chuyển tiếp**. Khoa giữ nguyên trọng số 10
+trong khi 3/10 đã sang mã khác, nên khi tổng phải chia tăng thì nó được chia
+nhiều hơn phần đáng được.
+
+Ba hướng, chủ dự án chốt một:
+
+| | Cách | Nhận xét |
+|---|---|---|
+| **1** | Trọng số đổi thành `(q_khoa − đã đổ − đã chuyển tiếp) + nhận` | **Nhỏ nhất**, không đụng bảng/cột nào. Kiểm chứng số học trên dữ liệu thật: mọi `con_lai` về 0. Nhưng đổi con số chia ra, và `01` mục 5.3 đang ghi thẳng công thức cũ nên phải sửa tài liệu kèm |
+| **2** | `chuyen_so_rot_v3` chỉ lưu Ý ĐỊNH (mã đích + lý do), số lượng suy ra lúc đọc = phần rớt còn lại | Tự co lại khi chia lại. Nhưng đổi hẳn ý nghĩa một bảng đang có audit |
+| **3** | Cấm chia lại một mã đang có dòng đổ đi | Là **cổng chặn quy trình mới** — trái nguyên tắc nền, và chặn đúng thứ tự thao tác D15 vừa chốt |
+
+Chốt hướng 1 thì cần làm cùng lúc hai việc nữa: đưa cùng phép kiểm vào trần
+cần-lý-do của `cap_nhat_phan_bo_trung_v3`, và **thêm cột "đã đổ đi" vào bảng
+"Chia số trúng về khoa"** — hiện PĐD nhìn thấy "Q 10 · nhận — · chia 8" mà
+không có chỗ nào cho biết 3/10 của khoa đó đã sang mã khác.
+
+**Đang chặn tạm bằng `patch_zzzzzn` + `patch_zzzzzs`:** cổng xác nhận rớt và
+cổng chốt trình ký đều từ chối khi có dòng *giữ + đã đổ + đã chuyển tiếp >
+Q + nhận*. Số sai không lên được giấy trình ký, nhưng PĐD phải bỏ đổ rồi làm lại.
+
+### Còn mở — khác
 
 | Việc | Nội dung |
 |---|---|

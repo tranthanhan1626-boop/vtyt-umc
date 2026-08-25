@@ -694,8 +694,9 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
               setLoi("Chọn một gói con ở trên rồi mới mở được bản Excel tổng hợp — mỗi gói con đi thầu riêng nên có một bản riêng.");
               return;
             }
-            window.open(`${window.location.pathname}#tong-hop-pdd/${goiIdHienTai}/${dot.id}`,
-              `tong-hop-${goiIdHienTai}-${dot.id}`);
+            // Đi qua lib chung như bốn chỗ kia — tên cửa sổ kèm mã băm nên hai
+            // gói con khác dấu không giành nhau một tab (lib/moManExcel.js).
+            moTongHopPdd(goiIdHienTai, dot.id);
           }}
         />
       ) : tab === "ket_qua" ? (

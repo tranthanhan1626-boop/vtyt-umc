@@ -801,3 +801,123 @@ vượt"), phải dựng file thứ hai sạch hơn mới kích hoạt được.
 ### Nghiệm thu
 
 `pytest` **195** (+8) · biểu mẫu mở lại được và header khớp khai báo.
+
+---
+
+## 25/08/2026 (2) — Miếng 3, quy mô thật, và bảy lỗi hệ thống lộ ra
+
+Ngày dài nhất của dự án tính theo số lỗi tìm được. Không lỗi nào trong đó là lỗi
+mới viết hôm nay — tất cả đã nằm sẵn, chỉ chưa ai chạy đủ lớn để chúng lộ ra.
+
+### Miếng 3 — nền dữ liệu sau đấu thầu
+
+| Patch | Nội dung |
+|---|---|
+| `patch_zzzzzj` | Ba bảng `hop_dong_v3` · `hop_dong_ma_hang` · `giao_hang`. Neo đợt bằng **khoá ngoại thật**, cascade hai tầng. "Đã giao / còn thiếu" là VIEW, không phải cột |
+| `patch_zzzzzk` | `v_tien_do_su_dung` đổi mốc đếm 20/50/80 sang **ngày hàng về thật**; chưa có dòng giao thì lùi về ngày chốt trình ký. Cột `nguon_moc` nói rõ đang lấy mốc nào |
+| `scripts/nap_du_lieu_sau_thau.py` | Đọc biểu mẫu Excel → DB. Kiểm trước nạp sau · một transaction · từ chối nạp lại nếu sẽ nhân đôi dòng giao |
+
+Một chỗ tài liệu ghi sai đã sửa: `v_tien_do_su_dung` **đã** được viết lại lên v3
+từ 23/08, không còn đọc bảng chết. Việc thật chỉ là đổi mốc.
+
+### Bộ dữ liệu quy mô thật
+
+`scripts/tao_du_lieu_test_quy_mo_that.py` — hai bộ tách hẳn nhau theo NĂM:
+**A** (2029) để test nội bộ, **B** (2030) để chủ dự án tự bấm.
+
+Mỗi bộ: **~1.586 mã × 50 khoa ≈ 16.200 dòng đề xuất**, dựng trong ~28 giây.
+Dùng chung 340 · GMHS 341 · CTCH-NTK 305 · Tim mạch 296 · RHM 183 · bổ sung 121.
+
+RHM chỉ có **193 mã có lịch sử HIS** nên không đủ 300 — **không bịa thêm**.
+
+Kiểm lại bằng đúng công thức của web: **1.315 mã thường không mã nào ra ngoài
+dải P50–P75** · **150 mã cố ý vượt đều thật sự vượt** (10,2%) · **100 mã đủ 50
+khoa** · câu giải trình "dữ liệu test" nằm đúng ở dòng sổ của từng khoa.
+
+Ép 50 khoa cho MỌI mã là bất khả: phần lớn mã là hàng ít dùng (CTCH-NTK có
+234/293 mã cả viện dùng dưới 200 cái/18 tháng). Chia 55 cái cho 50 khoa thì hoặc
+mỗi khoa 1 cái, hoặc vọt khỏi P75. Nên **20 mã sản lượng cao mỗi gói ép đủ 50
+khoa**, còn lại giữ số khoa thực tế.
+
+### Full pipeline ở quy mô thật — cả hai đường
+
+`scripts/test_full_pipeline_quy_mo_that.py`. Gói 18T (5 gói con) và gói bổ sung
+đi **giống hệt nhau**: ba giai đoạn → rớt → chia → đổ mã → chia lại → xác nhận
+rớt → chuyển tiếp → chốt trình ký. **105 giây, không lỗi.**
+
+Bước chậm nhất: **chốt trình ký 50 khoa, 5,5–6,6 giây** mỗi gói con.
+
+### Bảy lỗi hệ thống, không cái nào là lỗi mới
+
+**1. 24 policy RLS gọi hàm theo TỪNG DÒNG** (`patch_zzzzzm`). Policy viết
+`current_user_role() = any(...)` không bọc `(select ...)` nên Postgres gọi lại
+cho mỗi dòng — mà thân hàm là `select role from users where email = auth.email()`.
+Ở 18.764 dòng là gần **37.000 truy vấn phụ** cho một lần đọc. 101 policy khác
+của dự án viết đúng; 24 cái này sót.
+
+| | Trước | Sau |
+|---|---|---|
+| Đếm toàn bộ view kết quả thầu | timeout | 0,9 s |
+| Mở bảng Tổng hợp 340 mã | 15,9 s | **6,7 s** |
+
+**2. `v_ket_qua_thau_theo_khoa` chọn nhầm kế hoạch** (`patch_zzzzzl`) — ép vật
+chất hoá hai CTE. Còn sót: `limit` không kèm `order by` vẫn timeout, nhưng không
+màn nào dùng dạng đó.
+
+**3. `v_tien_do_su_dung` timeout + đếm đôi + rớt 5 cột** (`patch_zzzzzo`). Nested
+loop **126 triệu phép so sánh**. `dung` gộp thiếu `dot_goi_id` nên hai đợt cùng
+gói con dùng chung một tổng usage (**6.762.500 thay vì 3.381.250**). Và view rớt
+`sl_de_xuat` · `tb_thang` · `con_lai` · `thang_con_lai` · `ngay_du_kien_het` từ
+`patch_zzzzza` — băng cảnh báo "sắp hết hàng" của **mọi khoa** im lặng biến mất
+vì component nuốt lỗi.
+
+**4. `kiem_moi_man.py` không đọc được `.select("a," + " b")`** — chỉ lấy mảnh
+chuỗi đầu, nên hai cột ở mảnh sau **chưa bao giờ được dò**. Đây là lý do lỗi 3
+lọt. Đã vá; **289 → 298 cột**. Và ba vòng nay luôn chạy hết thay vì dừng ở vòng
+đầu.
+
+**5. Số đổ hiển thị lệch sổ** (`patch_zzzzzp`) — hai dòng cạnh nhau của cùng một
+màn nói "9" và "10". `v_rot_theo_ma_v3` cộng qua view có lọc
+`q_khoa > so_luong_trung` nên khoa được chia bằng/hơn Q rơi khỏi tập.
+
+**6. Rò rỉ RLS: khoa đọc được dòng của cả 50 khoa** (`patch_zzzzzq`) ở
+`chuyen_so_rot_v3` · `chuyen_tiep_rot_v3` · `giao_hang`. Ba bảng khai
+`using (auth.role() = 'authenticated')`. Sau vá: khoa 7 và 35 dòng · **1 khoa**;
+PĐD vẫn 423 và 1.468 dòng · 50 khoa.
+
+**7. Khoá duy nhất cũ trên `danh_muc_khoa_chot`** (`patch_zzzzzr`) —
+`patch_zzzzw` (20/08) thêm khoá đúng theo `dot_goi_id` nhưng **không gỡ khoá
+cũ**, nên việc neo đợt bị vô hiệu.
+
+### Lỗi "đổ quá tay" — chặn được, gốc còn mở
+
+Một mã **vừa đổ đi vừa nhận về** trong cùng nhóm mã tương đương. Khi nhận về,
+`day_so_luong_rot_v3` đặt phân bổ của nó về 0 (QĐ D15) rồi PĐD chia lại trên
+tổng mới → số trúng từng khoa TĂNG → số rớt GIẢM. `chuyen_so_rot_v3` đã ghi cứng
+con số cũ, không giảm theo.
+
+Đo được: mã 64453, Q của khoa 10, trúng 7 → rớt 3 → đổ 3. Sau khi nhận về và
+chia lại, trúng lên 8 → rớt còn 2. Khoa thành ra có 8 + 3 = **11 trên Q 10**.
+
+`patch_zzzzzn` chặn ở cổng xác nhận rớt. Rà soát độc lập chỉ ra bản đó có
+**điểm mù toàn phần**: nó đọc `v_rot_chua_xu_ly_v3`, mà view đó lọc
+`q_khoa > so_luong_trung` — đo thật trên staging: **26 dòng vượt, cổng thấy 0**.
+
+`patch_zzzzzs` bịt lại: tính thẳng từ `phan_bo_trung_v3` và hai sổ qua hàm
+`fn_dong_vuot_quyen_v3`, đặt phép kiểm ở **cả hai cổng** (trước nay chốt trình
+ký không có, mà chốt trình ký **không đòi** phải xác nhận rớt trước).
+
+Một lần siết nữa sau khi đo: chỉ soi dòng **thật sự có sổ đổ**. Thiếu điều kiện
+đó thì cổng bắt nhầm việc đúng — PĐD chia cho một khoa vượt Q **có lý do** là
+hợp lệ.
+
+⚠️ **Gốc vẫn chưa sửa.** Gốc nằm ở trọng số của `fn_chia_theo_ti_le_q_v3`:
+`q_khoa + nhận`, **không trừ phần khoa đã đổ đi**. Sửa gốc làm đổi con số chia
+ra nên chủ dự án phải chốt — ba hướng đề xuất ghi ở `05` mục 4.
+
+### Nghiệm thu cuối ngày 25/08/2026
+
+`pytest` **209** · `smoke_workflow_v3_staging` **29/29** · `kiem_moi_man` ba
+vòng xanh, **298 cột** · `kiem_do_ma_tuong_duong` **8/8** · `test:formula` OK ·
+`build` ✓ · full pipeline quy mô thật **105 s, không lỗi** · 33 bảng về đúng số
+dòng ban đầu.

@@ -72,6 +72,35 @@ def bo_bang_nhung(sel: str) -> str:
     return "".join(ra)
 
 
+def doc_select(cua_so: str) -> str | None:
+    """Danh sách cột trong `.select(...)`, GHÉP CẢ CHUỖI BỊ NỐI BẰNG `+`.
+
+    Vì sao không dùng một `re.search` như bản 24/08: câu dài hay được ngắt dòng
+    thành `.select("a, b," + " c, d")`, mà biểu thức cũ chỉ lấy được mảnh ĐẦU.
+    Đo thật 25/08/2026: `ThongBaoChamTienDo` xin `con_lai` và `ngay_du_kien_het`
+    ở mảnh thứ hai, hai cột đó KHÔNG có trong view — vòng dò cột vẫn báo xanh
+    suốt hai ngày trong khi màn đó chết hẳn với `42703` và nuốt lỗi im lặng.
+    Cùng lớp lỗi mà chính vòng kiểm này sinh ra để bắt.
+    """
+    m = re.search(r"\.select\(\s*", cua_so)
+    if not m:
+        return None
+    manh: list[str] = []
+    i = m.end()
+    while i < len(cua_so):
+        if cua_so[i] != '"':
+            break
+        j = cua_so.find('"', i + 1)
+        if j == -1:
+            break
+        manh.append(cua_so[i + 1:j])
+        # Bỏ qua khoảng trắng, xuống dòng và dấu `+` để bắt mảnh kế tiếp.
+        i = j + 1
+        while i < len(cua_so) and cua_so[i] in " \t\r\n+":
+            i += 1
+    return "".join(manh) if manh else None
+
+
 def cot_theo_nguon() -> dict[str, dict[str, set[str]]]:
     """Cột mà từng màn THẬT SỰ xin ở từng bảng/view.
 
@@ -92,9 +121,9 @@ def cot_theo_nguon() -> dict[str, dict[str, set[str]]]:
             ke = song.find('.from("', m.end())
             cua_so = song[m.end(): ke if ke != -1 else m.end() + 700]
             cot: set[str] = set()
-            sel = re.search(r'\.select\(\s*"([^"]*)"', cua_so)
-            if sel:
-                cot |= {c.strip() for c in bo_bang_nhung(sel.group(1)).split(",")}
+            sel = doc_select(cua_so)
+            if sel is not None:
+                cot |= {c.strip() for c in bo_bang_nhung(sel).split(",")}
             cot |= {o for o in re.findall(r'\.order\(\s*"([^"]*)"', cua_so)}
             cot = {c for c in cot if COT_HOP_LE.match(c)}
             if cot:
@@ -173,13 +202,18 @@ def main() -> int:
         man = sorted(m for m, v in theo_man.items() if b in v)
         print(f"    {b:32s} ← {', '.join(man)}{ghi}")
 
+    # Vòng một hỏng thì GHI LẠI rồi vẫn chạy tiếp hai vòng sau. Bản 24/08
+    # `return 1` ngay tại đây, nên hôm 25/08 một view timeout đã che khuất cả
+    # vòng dò cột lẫn vòng RLS — ba lớp lỗi khác nhau, không lớp nào được phép
+    # nuốt lớp kia.
+    hong = False
     if loi:
+        hong = True
         print(f"\n❌ LỖI: {len(loi)} bảng")
         for b, v in sorted(loi.items()):
             for vai in ("pdd", "khoa"):
                 if v[vai][0] == "LOI":
                     print(f"    {b:32s} [{vai}] {v[vai][1]}")
-        return 1
 
     # ── Vòng hai: dò ĐÚNG CỘT mà từng màn xin (thêm 24/08/2026) ──────────
     theo_cot = cot_theo_nguon()
@@ -195,13 +229,14 @@ def main() -> int:
         if loi_cot:
             cot_hong[bang] = loi_cot
     if cot_hong:
+        hong = True
         print(f"\n❌ CỘT KHÔNG TỒN TẠI: {len(cot_hong)} bảng/view")
         for bang, thieu in sorted(cot_hong.items()):
             man = sorted({m for c in theo_cot[bang] for m in theo_cot[bang][c]})
             print(f"    {bang:32s} thiếu: {thieu}")
             print(f"    {'':32s}   ← {', '.join(man)}")
-        return 1
-    print("✅ Mọi cột các màn xin đều tồn tại")
+    else:
+        print("✅ Mọi cột các màn xin đều tồn tại")
 
     con_song_doc_bang_chet = {
         b: sorted(m for m, v in theo_man.items() if b in v)
@@ -213,8 +248,70 @@ def main() -> int:
             if man:
                 print(f"    {b:32s} ← {', '.join(man)}")
 
+    # ── Vòng ba: RLS có gọi hàm theo TỪNG DÒNG không (thêm 25/08/2026) ───
+    if not kiem_rls_goi_ham_mot_lan():
+        hong = True
+
+    if hong:
+        print("\n❌ Còn lỗi ở trên — xem từng khối.")
+        return 1
     print("\n✅ Không màn nào gọi ra lỗi.")
     return 0
+
+
+def kiem_rls_goi_ham_mot_lan() -> bool:
+    """Policy RLS phải bọc lời gọi hàm trong `(select ...)`.
+
+    Vì sao: `current_user_role() = any(...)` viết trần thì Postgres coi là biểu
+    thức theo dòng và gọi lại cho TỪNG DÒNG. Thân hàm là `select role from
+    users where email = auth.email()` — mỗi dòng một truy vấn bảng. Đo thật
+    ngày 25/08/2026 ở 18.764 dòng `phan_bo_trung_v3`: đọc qua PostgREST mất
+    8,1s và đếm toàn bộ thì timeout; bọc lại còn dưới 1s.
+
+    Bọc trong `(select ...)` biến nó thành InitPlan — chạy đúng một lần cho cả
+    câu, KHÔNG đổi nghĩa của luật.
+
+    Cần `SUPABASE_STAGING_DB_URL`; thiếu thì bỏ qua vòng này chứ không báo đỏ.
+    """
+    dsn = os.environ.get("SUPABASE_STAGING_DB_URL", "").strip()
+    if not dsn:
+        print("\n⏭  Bỏ vòng kiểm RLS (thiếu SUPABASE_STAGING_DB_URL).")
+        return True
+    try:
+        import psycopg
+    except ImportError:
+        print("\n⏭  Bỏ vòng kiểm RLS (chưa cài psycopg).")
+        return True
+
+    ham = re.compile(r"\b(current_user_role|current_user_khoa|auth\.email|auth\.uid|auth\.role)\s*\(\s*\)")
+    xau: list[tuple[str, str, str]] = []
+    with psycopg.connect(dsn) as cn, cn.cursor() as cur:
+        cur.execute("""
+            select c.relname, p.polname,
+                   pg_get_expr(p.polqual, p.polrelid),
+                   pg_get_expr(p.polwithcheck, p.polrelid)
+            from pg_policy p
+            join pg_class c on c.oid = p.polrelid
+            join pg_namespace n on n.oid = c.relnamespace
+            where n.nspname = 'public'
+            order by 1, 2""")
+        for bang, pol, qual, check in cur.fetchall():
+            for nhan, bieu_thuc in (("using", qual), ("with check", check)):
+                if not bieu_thuc:
+                    continue
+                for m in ham.finditer(bieu_thuc):
+                    truoc = bieu_thuc[max(0, m.start() - 12):m.start()]
+                    if "( SELECT " not in truoc:
+                        xau.append((bang, pol, f"{nhan}: {m.group(1)}()"))
+
+    if xau:
+        print(f"\n❌ RLS GỌI HÀM THEO TỪNG DÒNG: {len(xau)} chỗ")
+        print("   Bọc lại thành `(select ham())` — chạy một lần thay vì mỗi dòng một lần.")
+        for bang, pol, chi_tiet in xau:
+            print(f"    {bang:32s} \"{pol}\" — {chi_tiet}")
+        return False
+    print("\n✅ Mọi policy RLS đều gọi hàm một lần cho cả câu")
+    return True
 
 
 if __name__ == "__main__":

@@ -178,6 +178,13 @@ def main() -> int:
     s.them(True, "HOP_DONG", "gói con không hợp lệ",
            [f"dòng {r['_dong']}: {chuoi(r.get('goi_con'))!r}" for r in hd
             if chuoi(r.get("goi_con")) not in GOI_CON_HOP_LE])
+    # `nam` là cột BẮT BUỘC trong từ điển cột, và `nap_du_lieu_sau_thau.py` gọi
+    # thẳng `int(nam)` để tìm đợt. Bỏ trống hay gõ chữ thì kiểm cũ nói "nạp
+    # được" rồi nạp vỡ bằng `ValueError` — đo thật 25/08/2026 với một file để
+    # trống ô năm.
+    s.them(True, "HOP_DONG", "năm không phải số 4 chữ số",
+           [f"dòng {r['_dong']}: {chuoi(r.get('nam'))!r}" for r in hd
+            if not re.fullmatch(r"\d{4}", chuoi(r.get("nam")))])
     s.them(True, "HOP_DONG", "ngày ký không đọc được (phải dạng YYYY-MM-DD)",
            [f"dòng {r['_dong']}: {chuoi(r.get('ngay_ky'))!r}" for r in hd
             if la_ngay(r.get("ngay_ky")) is None])
@@ -198,6 +205,10 @@ def main() -> int:
     s.them(True, "HOP_DONG_MA_HANG", "số hợp đồng không có ở sheet HOP_DONG (dòng mồ côi)",
            [f"dòng {r['_dong']}: {chuoi(r.get('so_hop_dong'))!r}" for r in hdmh
             if chuoi(r.get("so_hop_dong")) not in biet_hd])
+    # Ô mã hàng để TRỐNG lọt qua mọi phép đối chiếu bên dưới (chúng đều bỏ qua
+    # ô rỗng), rồi nạp vỡ vì `ma_hang` là `not null`. Bắt ngay tại đây.
+    s.them(True, "HOP_DONG_MA_HANG", "thiếu mã hàng",
+           [f"dòng {r['_dong']}" for r in hdmh if not chuoi(r.get("ma_hang"))])
     s.them(True, "HOP_DONG_MA_HANG", "số lượng hợp đồng không phải số nguyên không âm",
            [f"dòng {r['_dong']}: {chuoi(r.get('so_luong_hop_dong'))!r}" for r in hdmh
             if not so_nguyen_khong_am(r.get("so_luong_hop_dong"))])
@@ -219,6 +230,8 @@ def main() -> int:
     s.them(True, "GIAO_HANG", "số hợp đồng không có ở sheet HOP_DONG (dòng mồ côi)",
            [f"dòng {r['_dong']}: {chuoi(r.get('so_hop_dong'))!r}" for r in gh
             if chuoi(r.get("so_hop_dong")) not in biet_hd])
+    s.them(True, "GIAO_HANG", "thiếu mã hàng",
+           [f"dòng {r['_dong']}" for r in gh if not chuoi(r.get("ma_hang"))])
     s.them(True, "GIAO_HANG", "ngày giao không đọc được (phải dạng YYYY-MM-DD)",
            [f"dòng {r['_dong']}: {chuoi(r.get('ngay_giao'))!r}" for r in gh
             if la_ngay(r.get("ngay_giao")) is None])

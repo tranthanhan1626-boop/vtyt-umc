@@ -125,6 +125,36 @@ chính chúng.
 đang đọc nó, và chạy `kiem_moi_man.py` **sau mỗi lần viết lại view** — không chỉ
 khi thêm/bớt bảng.
 
+### 🔴 Bẫy thứ ba cùng họ: policy RLS gọi hàm theo TỪNG DÒNG (25/08/2026)
+
+Policy viết trần:
+
+```sql
+current_user_role() = any (array['dieu_duong','admin']) or khoa = current_user_khoa()
+```
+
+Postgres coi đó là biểu thức theo dòng và gọi lại cho **mỗi dòng**. Thân hàm là
+`select role from users where email = auth.email()` — tức mỗi dòng một truy vấn
+bảng. Ở 18.764 dòng là gần **37.000 truy vấn phụ** cho một lần đọc.
+
+Bọc trong `(select ...)` biến nó thành InitPlan — chạy đúng một lần cho cả câu,
+**không đổi nghĩa của luật**:
+
+```sql
+(select current_user_role()) = any (array['dieu_duong','admin'])
+or khoa = (select current_user_khoa())
+```
+
+Đo thật: mở bảng Tổng hợp 340 mã **15,9 s → 6,7 s**; đếm view kết quả thầu
+**timeout → 0,9 s**. `kiem_moi_man.py` nay có vòng canh riêng cho việc này.
+
+**Và đừng chép khuôn `using (auth.role() = 'authenticated')` cho bảng CÓ CỘT
+KHOA.** Ba bảng làm vậy (`chuyen_so_rot_v3` · `chuyen_tiep_rot_v3` · `giao_hang`)
+để khoa đọc được dòng của cả 50 khoa. Bảng có cột `khoa` thì dùng khuôn
+"PĐD xem hết, khoa xem dòng của mình".
+
+---
+
 ### 🔴 Bẫy anh em: component dùng mà không import
 
 Cùng ngày, `BangSoTrungTheoKhoa` được dùng ở `TongHopPdd.jsx:1427` nhưng **không

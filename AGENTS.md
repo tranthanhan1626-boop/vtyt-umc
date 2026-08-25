@@ -22,6 +22,14 @@ Hướng dẫn cho người và cho agent khi làm việc trong repo này.
 > rỗng mà không báo lỗi** — đó là lớp lỗi khó thấy nhất của dự án này. Nghi ngờ
 > thì chạy `backend/scripts/kiem_moi_man.py --xac-nhan-staging`.
 >
+> 🔴 **25/08/2026 — quy mô thật làm lộ bảy lỗi hệ thống.** Bộ dữ liệu
+> ~1.586 mã × 50 khoa (`scripts/tao_du_lieu_test_quy_mo_that.py`) tìm ra thứ mà
+> 208 test và 29 bước smoke đều không thấy. Hai luật rút ra:
+> **(1)** mọi policy RLS phải bọc lời gọi hàm trong `(select ham())`, nếu không
+> nó chạy lại cho từng dòng; **(2)** bảng có cột `khoa` thì đừng chép khuôn
+> `using (auth.role() = 'authenticated')` — khoa sẽ đọc được dòng của mọi khoa.
+> `kiem_moi_man.py` nay canh cả hai.
+>
 > 🔴 **24/08/2026 — lớp lỗi đó tái diễn hai lần trong một ngày.** Viết lại một
 > view mà rớt cột (`v_ket_qua_thau_theo_khoa` mất `da_xu_ly` · `ket_qua_id` ·
 > `dot_id`) làm vỡ hẳn ba màn; và một component dùng mà quên import làm trắng
