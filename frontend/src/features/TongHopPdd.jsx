@@ -17,6 +17,10 @@ import { xuatExcelDong, tenFileAnToan } from "../lib/xuatExcelDong";
 import { daiP50P75, doDaiKyMacDinh } from "../lib/congThucSoLuong";
 import {
   useDuLieuThau, ThanhGiaiDoanThau, OThauCuaDong, HopNhapRot, HopDoSangMa,
+  // 25/08/2026 — dựng lại bước CHỐT TRÌNH KÝ trên chính mặt bàn này. Ba nút đó
+  // nằm trong tab bị gỡ khỏi Bàn điều hành hôm 24/08 và không được dời đi đâu,
+  // nên suốt từ đó không có đường nào bấm chốt trình ký trên giao diện.
+  ChotTrinhKyTongHop,
   // 24/08/2026 — THIẾU TỪ LÚC THÊM (QĐ D15): dùng ở dòng sổ mà không import,
   // nên sổ một dòng ở đợt đã chốt Q là trắng cả màn. Build không bắt được
   // (ReferenceError lúc chạy), chỉ lộ ra khi bấm thật trên trình duyệt.
@@ -990,6 +994,17 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                   await taiLai();
                 }}
               />
+              {thau.coPhienQ && (
+                <ChotTrinhKyTongHop
+                  dotGoiId={dotGoiId}
+                  onXong={async (m) => {
+                    setThongBaoThau(m || "");
+                    await thau.taiLaiThau();
+                    await taiLai();
+                  }}
+                />
+              )}
+
               {/* Băng đếm mã chưa chia đủ số trúng — đường vào duy nhất để dọn
                   nốt các bản nháp còn thiếu (miếng 1c). */}
               {thau.coPhienQ && maChuaChiaDu.size > 0 && (

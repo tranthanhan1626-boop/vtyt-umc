@@ -1120,3 +1120,54 @@ Database **không liên quan Netlify**: patch chạy thẳng lên staging bằng
 đứng yên.
 
 Đã ghi vào `AGENTS.md`, `04` mục site, và `05`.
+
+---
+
+## 25/08/2026 (6) — Dựng lại BƯỚC CHỐT TRÌNH KÝ, nó đã mất đường bấm từ hôm 24/08
+
+Agent lập kế hoạch test tìm ra. **Đây là lỗi nặng nhất của hai ngày qua.**
+
+### Mất đường thế nào
+
+Ngày 24/08 gỡ hai tab "Danh mục tổng hợp" và "Kết quả thầu & giỏ rớt" khỏi Bàn
+điều hành, ghi chú *"mã giữ nguyên bên dưới, chỉ không vào menu nữa"*. Nhưng ba
+lời gọi chốt trình ký — `chot_trinh_ky_khoa_v3` · `mo_chot_trinh_ky_khoa_v3` ·
+`chot_trinh_ky_toan_bo_v3` — nằm **trong** `TabKetQua`, và `setTab` chỉ được gọi
+từ mảng `TAB` nay còn hai mục. Không có đường nào bấm tới.
+
+Nặng vì chốt trình ký là:
+- nơi **duy nhất** khoá cứng 2 được thi hành trên giao diện;
+- điều kiện của **Excel chính thức** và **gói mua thêm 30%**.
+
+Bộ dữ liệu test chốt bằng script nên nhìn qua tưởng vẫn chạy — đúng lớp lỗi
+"màn chết mà không ai biết" mà `06_DUNG_LAM_LAI.md` gọi là bẫy thứ năm.
+
+### Dựng lại ở đâu
+
+Trên **chính Danh mục tổng hợp** — đúng chỗ `01` mục 0 đã ghi từ QĐ 21/08: *"PĐD
+làm mọi việc trên Danh mục tổng hợp: … chốt số đi thầu, chốt trình ký"*. Không
+phải thiết kế mới, chỉ là thi công cái đã chốt.
+
+`ChotTrinhKyTongHop` trong `CumThauTongHop.jsx`: nút gập/mở cạnh dải giai đoạn,
+đếm "N khoa đã gửi · M đã đủ chốt · còn K thiếu", danh sách khoa với nút chốt /
+mở lại từng khoa, và nút CHỐT TOÀN BỘ chỉ sáng khi còn 0 khoa thiếu.
+
+Hai chỗ giữ đúng bài học cũ:
+- **Không đọc được cổng ⇒ khoá nút**, không đoán "chắc là đủ".
+- **Không dùng `window.prompt`** cho lý do mở lại — hộp thoại trình duyệt khoá
+  cả trang và không để lại dấu vết (bài học 23/08). Dùng ô nhập trong trang.
+
+### Một lỗi tôi tự gây rồi tự bắt
+
+Bản đầu đẩy lỗi RPC lên ô lỗi của màn cha. Ô đó dành cho lỗi **tải dữ liệu** và
+nó **xoá trắng cả bảng** — bấm chốt một khoa mà mất luôn 183 dòng đang xem. Sửa:
+lỗi thao tác ở lại trong panel.
+
+### Đo trên trình duyệt, bản build thật
+
+| Phép | Kết quả |
+|---|---|
+| Mở panel khi chưa hoàn thành ba giai đoạn | "50 khoa đã gửi · 0 đã đủ chốt · còn 50 thiếu", nút toàn bộ TẮT kèm lý do |
+| Bấm chốt một khoa lúc chưa đủ ba giai đoạn | Panel báo "Phải hoàn thành đủ ba giai đoạn đấu thầu", **bảng vẫn nguyên 183 dòng** |
+| Hoàn thành ba giai đoạn rồi chốt một khoa | "1 đã đủ chốt · còn 49 thiếu", khoa đó thành ✓ kèm nút mở lại |
+| Mở lại khoa đó | Nút TẮT khi chưa gõ lý do, BẬT khi có; mở xong đếm về "0 đã đủ chốt" |
