@@ -11,9 +11,8 @@ chủ dự án viết. File này là **bản thi hành**: cùng nội dung nhưn
 mức code và schema. Hai file phải luôn khớp nhau; sửa một bên thì sửa cả bên
 kia.
 
-> ⚠️ **Còn lệch:** bản MỘT MẶT BÀN (21/08/2026) và QĐ 20/08/2026 về mục 8.2 đã
-> vào file này nhưng `.docx` **chưa** sửa theo. Xem `07_NHAT_KY_THAY_DOI.md`,
-> mục "Việc còn nợ".
+> ✅ **`.docx` đã đồng bộ tới 25/08/2026** — khoá cứng 2 (miếng 1c), trọng số
+> chia trừ phần đã đưa đi, và mục XII quater về dữ liệu sau đấu thầu.
 >
 > ⚠️ **Luật ở đây là luật ĐÃ CHỐT, không phải luật ĐÃ CHẠY.** Phần MỘT MẶT BÀN
 > chốt ngày 21/08/2026, **chưa thi công**. Chỗ nào đang mô tả trạng thái tương

@@ -313,8 +313,10 @@ riêng**; xoá một đợt thì dòng của đợt kia còn nguyên.
 | `danh_muc_khoa_cot_cau_hinh` | cấu hình khoá/ẩn cột theo (goi_id, nam, khoa); cấu hình kỳ trước lẫn sang kỳ sau | Miếng 1d |
 | `dem_du_lieu_lam_viec` · `don_du_lieu_lam_viec` | nút "Kết thúc đợt & dọn" nhận (goi_id, nam) nên quét **cả 3 đợt bổ sung cùng năm** | Miếng 2 |
 
-**c. `.docx` chưa đồng bộ.** `Full workflow vtyt web.docx` còn thiếu QĐ 20/08
-(mục 8.2) **và toàn bộ bản MỘT MẶT BÀN 21/08**. Theo quy ước hai file phải khớp.
+**c. `.docx` — ✅ ĐÃ ĐỒNG BỘ 25/08/2026.** `Full workflow vtyt web.docx` nay
+khớp `01`: khoá cứng 2 nới theo miếng 1c, trọng số chia trừ phần đã đưa đi, và
+mục **XII quater** về dữ liệu sau đấu thầu (hợp đồng · giao hàng · mốc cam kết).
+Sửa `01` thì nhớ sửa cả `.docx` — quy ước hai file phải khớp.
 
 **d. Sơ đồ `so-do-workflow/` lại lạc hậu** — vẽ lại 20/08 theo v3+V2, chưa có
 21/08. Lưu ý `generate-diagrams.mjs` **không sinh `.png`**, phải xuất tay theo

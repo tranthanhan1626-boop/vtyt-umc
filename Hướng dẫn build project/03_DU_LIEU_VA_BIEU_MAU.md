@@ -42,20 +42,48 @@ thì lịch sử xuất kho có thể thấp hơn nhu cầu thật.
 
 **🆕 Cập nhật 21/08/2026 — bốn mảng sau đấu thầu vào phạm vi:**
 
-⚠️ **Đọc trước khi bắt đầu gom dữ liệu.** Workbook `database web.xlsx` lập
-03/08/2026 đang trỏ vào các bảng của mô hình **trước v3**; bốn sheet sau thầu
-(`HOP_DONG` · `TON_KHO_HANG_VE` · `KET_QUA_THAU` · `GOI_THAU_TIMELINE`) đều **0
-dòng** và không code nào đọc chúng nữa. **Điền vào đó là dữ liệu rơi vào hư
-không.** Phải dựng lại mẫu theo v3 trước (miếng 0 ở `05`, mục 3).
+✅ **XONG 25/08/2026 — dùng biểu mẫu MỚI, đừng đụng file cũ.**
+
+| | |
+|---|---|
+| **Điền vào đây** | `database/MAU_GOM_DU_LIEU_SAU_THAU.xlsx` |
+| Sinh lại bằng | `backend/scripts/tao_mau_gom_du_lieu_sau_thau.py` |
+| Kiểm trước khi gửi | `backend/scripts/kiem_mau_gom_du_lieu.py <file> --xac-nhan-staging` |
+| Nạp vào DB | `backend/scripts/nap_du_lieu_sau_thau.py <file> --xac-nhan-staging` |
+
+Ba sheet, điền theo thứ tự: **`HOP_DONG`** (mỗi nhà thầu một dòng) →
+**`HOP_DONG_MA_HANG`** (mã hàng thuộc từng hợp đồng) → **`GIAO_HANG`** (mỗi lần
+hàng về một dòng, điền dần không cần chờ đủ).
+
+Phép kiểm bắt **12 loại sai** trước khi nạp: hợp đồng mồ côi · số HĐ lặp · mã
+hàng không có trong danh mục · khoa sai tên · gói con sai · không có đợt khớp ·
+ngày sai dạng · hết hạn trước ngày ký · số âm · mã ghi hai lần trong một HĐ ·
+giao trước ngày ký · giao vượt cam kết.
+
+⚠️ **Ba sheet sau thầu của `database web.xlsx` (03/08/2026) đã LẠC HẬU** —
+`HOP_DONG` (có cột trần hợp đồng, trái QĐ bỏ mọi cột giá) · `KET_QUA_THAU`
+(trong v3 kết quả thầu do web TỰ SINH) · `GOI_THAU_TIMELINE` (đổ vào
+`goi_thau_moc` đã chết từ 17/08). **Điền vào đó là dữ liệu rơi vào hư không.**
+
+Ba bảng đích đã dựng ngày 25/08 (`patch_zzzzzj`): `hop_dong_v3` ·
+`hop_dong_ma_hang` · `giao_hang`, neo đợt bằng khoá ngoại thật, cascade hai
+tầng. "Đã giao / còn thiếu" **không lưu thành cột** — là view
+`v_giao_hang_theo_ma_v3`.
 
 | Mảng | Cần gì | Trạng thái nguồn |
 |---|---|---|
-| **Hợp đồng** | số HĐ · ngày ký · thời hạn · nhà thầu trúng theo mã hàng. **Không đơn giá, không giá trị HĐ** | `kha_dung_hop_dong_ma_hang` đã có 2.661 dòng nhưng khoá theo dòng file Excel, **không neo `dot_goi`**. Thiếu số HĐ/ngày ký/thời hạn |
-| **Giao hàng** | **từng lần giao**: ngày · mã hàng · **khoa** · số lượng | **Chưa có nguồn, chưa có bảng.** Sheet `TON_KHO_HANG_VE` đã thiết kế 20 cột nhưng rỗng |
-| **Cam kết 20/50/80** | không cần dữ liệu mới — tính bằng view từ số trúng + số đã giao | View hiện tại đọc 3 bảng chết trước v3. Phải viết lại |
+| **Hợp đồng** | số HĐ · ngày ký · thời hạn · nhà thầu trúng theo mã hàng. **Không đơn giá, không giá trị HĐ** | ✅ Bảng `hop_dong_v3` + `hop_dong_ma_hang` đã dựng 25/08. **Mỗi nhà thầu MỘT hợp đồng** (QĐ 25/08) nên tách hai bảng |
+| **Giao hàng** | **từng lần giao**: ngày · mã hàng · số lượng · khoa *(để trống nếu về kho chung)* | ✅ Bảng `giao_hang` đã dựng 25/08. **Không lưu lô/hạn dùng** (QĐ 25/08) |
+| **Cam kết 20/50/80** | không cần dữ liệu mới — tính bằng view từ số trúng + số đã giao | ✅ `v_tien_do_su_dung` viết lại 25/08: mốc đếm = **ngày hàng về thật** (`min(giao_hang.ngay_giao)`), chưa có dòng giao thì lùi về ngày chốt trình ký. Cột `nguon_moc` nói rõ đang lấy mốc nào |
 | **Mua thêm 30%** | không cần gì thêm | ✅ Đã đúng theo v3 |
 
 Ba quyết định về mức chi tiết (QĐ 21/08/2026):
+
+🆕 **Bốn quyết định 25/08/2026 đóng vào biểu mẫu** — `test_mau_gom_du_lieu_sau_thau.py`
+giữ cả bốn, đừng thêm cột: (1) không cột giá nào; (2) giao hàng ghi từng lần
+giao; (3) mỗi nhà thầu một hợp đồng → hai sheet; (4) không lưu lô/hạn dùng, và
+cột `khoa` **để trống được** vì hàng về **kho trước** rồi kho mới cấp cho khoa —
+phần kho→khoa lấy từ lịch sử xuất kho HIS (141.623 dòng đã nạp), không gõ lại.
 
 - Giao hàng lưu **sự kiện từng lần giao** (≈12.000 dòng/đợt ≈ **3,2 MB/năm**),
   **không** lưu ảnh chụp tồn kho theo kỳ (≈48.000 dòng/năm ≈ 33 MB/năm — nặng gấp
