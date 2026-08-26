@@ -41,6 +41,9 @@
 | **Chốt dữ liệu trình ký bấm từng bảng khoa** (49 nút) | Bỏ hẳn — chỉ còn **một nút chốt toàn bộ** DOT_GOI | 21/08/2026 |
 | **Sửa số sau chốt Q phải mở chốt cả gói con** | **Gõ đè tại chỗ kèm lý do**, Q vẫn giữ làm snapshot | 21/08/2026 |
 | **Mã rớt: "không tự tạo đề xuất, không tự điền số lượng", khoa tự chọn có đề xuất lại không** | **Chuyển tiếp** — hệ tự đưa mã rớt vào đợt bổ sung gần nhất của khoa, tự điền số = số rớt; khoa sửa và quyết cuối | 21/08/2026 |
+| **Một mã quản lý chỉ thuộc MỘT gói con (invariant 2)** | **KHÔNG phải luật.** Mọi mã quản lý đều có thể vào bất kỳ gói con nào — đừng dựng ràng buộc, đừng báo lỗi 3 mã "vắt ngang" | 26/08/2026 |
+| **Đổ mã rớt sang mã tương đương chỉ ghi sổ `chuyen_so_rot_v3`** | Số đề xuất trên **cả hai màn** hiện theo: mã đổ đi về **0**, mã nhận **cộng thêm**. Tính lúc hiện, không ghi đè | 26/08/2026 |
+| **Go-live 01/01/2027, pilot T12, chuyển sang project production riêng** | **Go-live GIỮA T9/2026**; pilot trên đợt bổ sung T9; **staging CHÍNH LÀ production** | 26/08/2026 |
 | **Mã rớt tự thành `proposals` ở đợt bổ sung (QĐ 21/08 ở trên)** | **Vào GIỎ, không vào `proposals`.** Số điền sẵn là *gợi ý*; khoa tự sửa rồi tự bấm "Gửi giỏ" mới thành đề xuất. Bàn điều hành nhắc "còn N mã trong giỏ, M khoa chưa gửi" — **PĐD không gửi thay khoa** | 26/08/2026 |
 | **Đợt bổ sung do PĐD tạo tay khi cần** | Lịch cố định T1/T5/T9; thiếu thì **hệ tự tạo** | 21/08/2026 |
 | **Chuyển tiếp bắn ngay lúc gõ số rớt** | **Hai nhịp** — gõ nháp không ai bị làm phiền, nút **"Xác nhận rớt"** mới là cò | 23/08/2026 |
@@ -179,6 +182,74 @@ cái vòng mà quyết định 26/08 muốn nối liền. `patch_zzzzzy` vá.
 frontend **tiêu thụ** cấu trúc đó, không chỉ chỗ nó **tạo** ra.
 
 ---
+
+### BẪY — hỏi chủ dự án chọn cách ghi TRƯỚC KHI đọc trigger của bảng (26/08/2026)
+
+Chủ dự án muốn "đổ mã A sang B thì số đề xuất mã A về 0". Tôi đưa hai phương án
+— *tính ra lúc hiện* và *ghi đè database* — chủ dự án chọn **ghi đè**. Thi công
+xong chạy lên staging mới lộ ra:
+
+```
+trg_khoa_phan_bo_sau_chot_q → 'Số tham gia thầu đã chốt; PĐD phải mở snapshot Q trước.'
+```
+
+`phan_bo_khoa` bị **khoá cứng 1** chặn sau chốt Q, mà `day_so_luong_rot_v3` bắt
+buộc phải có `chot_q_phien.hieu_luc` — tức đổ mã **LUÔN LUÔN** sau chốt Q.
+Phương án ghi đè **không bao giờ đi được**. Tệ hơn: để nguyên thì mỗi lần PĐD
+bấm "đổ" đều ăn exception — **hỏng hẳn chức năng** (đã phải vá gấp bằng
+`patch_zzzzzzb`).
+
+**Luật:** trước khi hỏi "ghi vào đâu / ghi kiểu gì", đọc `pg_trigger` của bảng
+đó. Đưa ra một phương án mà hệ thống cấm là làm mất thời gian của cả hai bên và
+suýt hỏng chức năng đang chạy.
+
+```sql
+select t.tgname, p.proname, pg_get_triggerdef(t.oid) from pg_trigger t
+join pg_proc p on p.oid = t.tgfoid
+where t.tgrelid = '<tên bảng>'::regclass and not t.tgisinternal;
+```
+
+### BẪY — `.select()` thiếu cột mà chỗ vẽ đang đọc (26/08/2026)
+
+`taiKetQuaThau()` trong `DanhMucDeXuatKhoa.jsx` select 10 cột nhưng thiếu
+`so_luong_trung`, trong khi chỗ vẽ nhãn đọc `r.rot.so_luong_trung` ở **ba** nơi.
+Không lỗi, không cảnh báo, chỉ sai lặng lẽ:
+
+```js
+Number(undefined) > 0   →  false   ⇒  mã rớt MỘT PHẦN vẫn bị dán nhãn đỏ "Rớt toàn bộ"
+fmt(undefined)          →  "NaN"   ⇒  tooltip hiện "trúng NaN"
+```
+
+`fmt` là `Math.round(n).toLocaleString("vi-VN")` — `Math.round(undefined)` là
+`NaN`, và `NaN.toLocaleString()` ra chuỗi `"NaN"` chứ không ném lỗi.
+
+**Luật:** đổi chỗ VẼ thì soi lại `.select()` của truy vấn nuôi nó, và ngược lại.
+`build ✓` và pytest đều không bắt được lớp lỗi này.
+
+### BẪY — đoán nguyên nhân từ chỉ số gián tiếp thay vì đọc log (26/08/2026)
+
+Netlify đứng ở bản cũ hơn HEAD **8 commit**. Tôi lần lượt kết luận sai hai lần:
+"hết phút build" (đoán theo lời kể), rồi "không phải hết credits" (đoán theo
+`capabilities.credits = {included:300, used:0}` — chỉ số đó nói chuyện khác).
+
+Sự thật chỉ hiện ra khi đọc đúng bản ghi của deploy hỏng:
+
+```
+error_message: "Skipped due to account credit usage exceeded"
+skipped: true
+```
+
+**Luật:** khi một hệ thống ngoài "không làm gì cả", đọc bản ghi lỗi của đúng
+lần chạy đó trước. Chỉ số tổng quan của tài khoản có thể mâu thuẫn với sự thật.
+
+### BẪY — `git checkout <commit> -- <thư mục>` để dò bản cũ (26/08/2026)
+
+Dùng nó dò xem Netlify chạy bundle nào ⇒ **7 file đã xoá sống lại** và bị stage
+sẵn (`HoSoTrucTuyen.jsx`, `PhieuDeNghi.jsx`, `xuatHoSo.js`…). `git checkout HEAD
+-- <thư mục>` **không** dọn được vì chúng đã nằm trong index.
+
+Phải dọn bằng `git rm --cached <file>` + `rm <file>`, rồi `git status` sạch mới
+thôi. Tốt hơn: dò bằng `git stash` hoặc worktree riêng.
 
 ## Một thứ KHÔNG nằm trong bảng nhưng cũng đừng đụng
 

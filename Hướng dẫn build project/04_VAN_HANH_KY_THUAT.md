@@ -164,8 +164,12 @@ Có hai site Netlify khác nhau, đừng nhầm:
 
 > 🔴 **QĐ 25/08/2026 — TỪ NAY TEST Ở LOCALHOST, KHÔNG DÙNG NETLIFY.**
 > Tài khoản Netlify là bản **miễn phí** và đã **hết credits build của tháng**.
-> Site vẫn phục vụ bản deploy cuối (`f50347d`), nhưng **push thêm sẽ KHÔNG build
+> Site vẫn phục vụ bản deploy cuối, nhưng **push thêm sẽ KHÔNG build
 > lại** — đã đo: chờ 10 phút sau ba commit, site vẫn giữ bundle cũ.
+>
+> 🆕 **26/08/2026 — vẫn đẩy lên Netlify được** bằng đường không tốn credits
+> (xem khối "ĐẨY LÊN NETLIFY KHI ĐÃ HẾT CREDITS" ngay dưới). Chủ dự án muốn
+> test trên Netlify thì dùng cách đó; localhost vẫn là chỗ nghiệm thu chính.
 >
 > **Đừng dựa vào Netlify để nghiệm thu.** Mọi vòng test chạy trên máy:
 >
@@ -182,14 +186,63 @@ Có hai site Netlify khác nhau, đừng nhầm:
 > `scripts/chay_patch.py`, nên phần nghiệp vụ luôn là bản mới nhất kể cả khi
 > site đứng yên.
 
-Khi nào có credits trở lại: site test **tự build mỗi lần push** lên
-`phase-a-luong-de-xuat`. Kiểm bản deploy đã nhận commit mới chưa — so tên file
-bundle trên site với file vừa build cục bộ:
+### 🔴 ĐẨY LÊN NETLIFY KHI ĐÃ HẾT CREDITS (26/08/2026) — CÁCH DUY NHẤT CHẠY ĐƯỢC
+
+**Vấn đề đo thật:** hết credits thì Netlify vẫn NHẬN commit nhưng **bỏ qua
+không build**. Site cứ phục vụ bản cũ, không báo gì cho ai. Ngày 26/08 site
+đứng ở bản cũ hơn HEAD **8 commit**, chủ dự án test và gặp lỗi đã vá từ lâu
+(*"chưa xác định được DOT_GOI"*, vá ở `d897232`), tưởng là lỗi mới.
+
+Xem đúng lý do bằng API — **đừng đoán từ chỉ số gián tiếp**:
 
 ```bash
-curl -s https://vtyt-umc-test.netlify.app/ | grep -o 'index-[A-Za-z0-9_-]*\.js'
-ls frontend/dist/assets/index-*.js          # hai cái phải trùng tên
+netlify api listSiteDeploys --data '{"site_id":"<id>","per_page":3}'
+netlify api getSiteDeploy   --data '{"site_id":"<id>","deploy_id":"<id>"}'
+#   → error_message: "Skipped due to account credit usage exceeded"
+#   → skipped: true
 ```
+
+⚠️ Trường `capabilities.credits` của tài khoản báo `{included: 300, used: 0}`
+**dù đã hết credits** — chỉ số đó nói chuyện khác. Chỉ `error_message` của đúng
+deploy hỏng mới là sự thật.
+
+**Cách đẩy KHÔNG tốn credits.** Credits chỉ bị trừ khi Netlify tự chạy build
+trên máy của họ. Dựng sẵn ở máy mình rồi tải file lên thì không tốn gì:
+
+```bash
+# 1. cài + đăng nhập (một lần; `netlify login` mở trình duyệt, PHẢI người thật bấm)
+npm install -g netlify-cli
+netlify login
+netlify link --id 883aef7e-fc50-4b29-bc27-2d97557f353e     # site vtyt-umc-test
+
+# 2. mỗi lần deploy
+cd frontend && npm run build && cd ..
+netlify deploy --dir=frontend/dist                          # tải lên, KHÔNG build
+#   → in ra Draft URL kèm deploy id, ví dụ 6a8e5eca3515985bcd7adc96
+
+# 3. promote bản vừa tải thành production
+netlify api restoreSiteDeploy \
+  --data '{"site_id":"883aef7e-fc50-4b29-bc27-2d97557f353e","deploy_id":"<deploy id>"}'
+
+# 4. kiểm — hai tên bundle PHẢI trùng
+curl -s https://vtyt-umc-test.netlify.app/ | grep -o 'index-[A-Za-z0-9_-]*\.js'
+ls frontend/dist/assets/index-*.js
+```
+
+`netlify deploy --prod` **KHÔNG chạy được** khi hết credits — trả
+`JSONHTTPError: Forbidden` ở đúng bước publish (bước tải lên thì vẫn được). Đó
+là lý do phải tách làm hai bước: `deploy` (không `--prod`) rồi `restoreSiteDeploy`.
+
+**Thông tin tài khoản:** `tranthanhan1626@gmail.com` · team `tranthanhan1626`
+(gói Free) · site id `883aef7e-fc50-4b29-bc27-2d97557f353e`.
+
+> ⚠️ **Đừng dùng `git checkout <commit> -- frontend/src` để dò xem Netlify đang
+> chạy bản nào.** Nó kéo NGƯỢC những file đã xoá về cây thư mục và stage sẵn —
+> ngày 26/08 làm 7 file hồ sơ Word đã xoá sống lại. Nếu buộc phải làm, dọn bằng
+> `git rm --cached` + `rm` từng file, rồi `git status` phải sạch.
+
+Khi có credits trở lại: site test **tự build mỗi lần push** lên
+`phase-a-luong-de-xuat`, không cần hai bước trên nữa. Vẫn nên kiểm tên bundle.
 
 File `backend/sql/patch_production_a2_z_20260804.sql` giữ làm mốc lịch sử
 (bundle A2→Z gộp một lần), không còn là bước của quy trình hằng ngày.

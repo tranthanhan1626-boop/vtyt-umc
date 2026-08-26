@@ -53,6 +53,20 @@ nó là ghi chú thi công cũ — đừng lấy quyết định từ đó.
 
 ---
 
+> 🔴🔴 **GO-LIVE: GIỮA THÁNG 9/2026 (08–20/09).** Không phải 01/01/2027 như
+> tài liệu cũ. Việc thật đầu tiên: **62 khoa gõ đề xuất cho gói 18 tháng
+> 2027-2028**. Chỉ **nửa đầu** pipeline (khoa đề xuất → PĐD tổng hợp → chốt Q →
+> chốt trình ký) nằm trên đường tới mốc này; nửa sau phải mở thầu xong mới
+> chạm tới. Chi tiết ở `05_TRANG_THAI_VA_VIEC_TIEP_THEO.md`, khối đầu file.
+>
+> 🔴 **CHỈ ĐẠO NỀN:** *"đừng phát sinh thêm nhiều function nữa (làm đơn giản
+> tối ưu click)"* — không thêm tính năng, không thêm màn. Việc đáng làm là
+> **giảm số cú bấm**, vì nó nhân với 62 khoa × hàng trăm mã.
+>
+> ⚠️ **Staging CHÍNH LÀ production.** Không có project Supabase thứ ba. Mọi thứ
+> "chỉ bật trên staging" (nút xoá dữ liệu kiểm thử…) sẽ bật trên hệ thống thật —
+> xem `patch_zzzzzz_go_tay_xoa_du_lieu.sql`, đã viết sẵn, **chờ lệnh chủ dự án**.
+
 ## Dự án này là gì
 
 Web nội bộ cho Bệnh viện Đại học Y Dược TP.HCM, phục vụ việc **dự trù số lượng

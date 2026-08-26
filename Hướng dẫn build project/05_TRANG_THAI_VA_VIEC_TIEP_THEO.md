@@ -174,6 +174,43 @@ Cập nhật **24/08/2026**. Nhánh `phase-a-luong-de-xuat`.
 
 ---
 
+> 🔴🔴 **26/08/2026 — MỐC GO-LIVE ĐỔI. ĐỌC KHỐI NÀY TRƯỚC MỌI THỨ KHÁC.**
+>
+> Chủ dự án báo: **go-live là GIỮA THÁNG 9/2026**, không phải 01/01/2027.
+> Nguyên văn: *"go live là tháng 9/2026 không còn nhiều thời gian đâu, gói 18
+> tháng 2027-2028"*. Ngày khoa thật sự ngồi gõ: **08–20/09/2026**.
+>
+> **Hệ quả: chỉ NỬA ĐẦU pipeline nằm trên đường tới go-live.**
+>
+> ```
+> khoa đăng nhập → chọn mã → gõ số → giỏ → gửi → xác nhận danh mục
+>                                                      ↓
+>                          PĐD tổng hợp → sửa → chốt Q → chốt trình ký
+> ```
+>
+> Nửa sau (3 giai đoạn thầu → rớt → đổ mã → giỏ rớt → hợp đồng → giao hàng →
+> cam kết 20/50/80 → 30%) phải **mở thầu xong mới chạm tới**, sớm nhất cuối
+> 2026. Đã xây và đã đo, **không cần đụng thêm** trong đợt gấp này.
+>
+> | Quyết định kèm theo | Nội dung |
+> |---|---|
+> | Lịch sử HIS | Giữ **3 năm gần nhất** (2027 thì giữ 2024–2026). Đo thật: `usage_history_current` đang đúng 2024·2025·2026 = **64 MB**, nên **đứng yên**, KHÔNG phải +55 MB/năm như tài liệu cũ ghi |
+> | Nhập dữ liệu sau thầu | Vẫn là **Phòng Điều dưỡng**, **không thêm vai trò mới** |
+> | Pilot | Trên **đợt bổ sung T9/2026** — việc thật, số thật, 3–5 khoa |
+> | Gói con | **Mọi mã quản lý đều có thể vào bất kỳ gói con nào.** "Invariant 2 — một mã quản lý chỉ thuộc một gói con" chính thức **KHÔNG phải luật**, đừng dựng ràng buộc cho nó |
+> | 62 tài khoản | Khoa **tự đăng ký**, PĐD gán khoa ở màn `QuanLyNguoiDung` (đã có sẵn, đã nối menu) |
+> | Sao lưu | Chủ dự án quyết **bỏ qua** rủi ro gói free không có backup tự động. Đã nêu một lần, không nhắc lại |
+>
+> 🔴 **CHỈ ĐẠO NỀN, ÁP CHO MỌI VIỆC TỪ GIỜ:**
+> *"đừng phát sinh thêm nhiều function nữa (làm đơn giản tối ưu click)"*
+> — không thêm tính năng, không thêm màn. Việc code đáng làm nhất là **giảm số
+> cú bấm** trên đường khoa gõ đề xuất, vì nó nhân với 62 khoa × hàng trăm mã.
+
+> ⚠️ **Sửa thông tin cũ đã sai trong file này:**
+> - Mục 6 ghi *"chưa có màn quản trị người dùng"* — **SAI**. `QuanLyNguoiDung.jsx`
+>   đã có và đã nối vào menu (`App.jsx:267`).
+> - Mục 7 ghi HIS tăng ~55 MB/năm — **SAI từ 26/08**, đã có luật giữ 3 năm.
+
 ## 1. Web đáp ứng bao nhiêu phần workflow
 
 **43/43 điều khoản kiểm được của workflow v3** — đã bấm thật trên giao diện ở
@@ -456,9 +493,9 @@ Hai cổng chặn (`patch_zzzzzn` + `patch_zzzzzs`) giữ nguyên làm **lưới
 | **6. Một mặt bàn** | Miếng 0 · 1 · 2 | 🆕 **chưa bắt đầu** |
 | **7. Sau đấu thầu mở rộng** | Miếng 3: hợp đồng · giao hàng · cam kết 20/50/80 | 🆕 **chưa bắt đầu** |
 | Test quy mô thật | Hàng trăm mã × 62 khoa | chưa làm |
-| Pilot 3–5 khoa | | T12/2026 |
-| Chuyển production | Theo thứ tự bắt buộc ở `04`, mục 4b | T12/2026 |
-| **Go-live** | | **01/01/2027** |
+| ~~Pilot 3–5 khoa T12/2026~~ | **ĐỔI 26/08:** pilot trên đợt bổ sung **T9/2026** | T9/2026 |
+| ~~Chuyển production T12/2026~~ | **ĐỔI 26/08:** dùng CHÍNH project staging làm production | T9/2026 |
+| **Go-live** | ~~01/01/2027~~ → **GIỮA T9/2026 (08–20/09)** | **T9/2026** |
 
 > Năm chặng đầu lập ngày 17/08/2026 và đã chạy nhanh hơn kế hoạch rất nhiều — tới
 > 20/08 cả năm đều có đường đi chạy được trên staging. Thời gian đệm T9–T11 giờ
@@ -486,9 +523,24 @@ Hai cổng chặn (`patch_zzzzzn` + `patch_zzzzzs`) giữ nguyên làm **lưới
 
 ```text
 users 8 · vat_tu 3.327 · nhom_ky_thuat 1.369
-usage_history_current 141.623 · usage_history_changelog 291.622
-dot_de_xuat 0 · proposals 0 · phan_bo_khoa 0 · chot_q_phien 0
+usage_history_current 141.623 (2024: 54.736 · 2025: 56.651 · 2026: 30.236, tới T6)
+usage_history_changelog 291.622
+dot_de_xuat 1 (#200 "Gói rộng rãi 1/2027 - 6/2028") · dot_goi 5
+proposals 24 · phan_bo_khoa 24 · chot_q_phien 1
 ```
+
+> **Đo lại 26/08/2026 (chiều).** Đã dọn sạch 11.030 dòng / 5 đợt / 9 gói con,
+> gồm cả 4 đợt bổ sung rỗng #191–194 sinh ra từ các lần chạy thử. Database
+> **143 → 135 MB** sau `VACUUM FULL`. Sau đó chủ dự án tự tạo đợt #200 và cho
+> dvsd1/dvsd2 gửi 12 mã mỗi khoa để test thật.
+>
+> ⚠️ **HIS mới tới T6/2026 — thiếu T7 và T8.** Gợi ý P50–P75 khoa nhìn thấy
+> trong T9 sẽ dựa trên dữ liệu cũ 3 tháng. **Phải nạp trước khi mở cho 62 khoa.**
+>
+> ⚠️ `usage_history_changelog` **48 MB và chưa có luật cắt nào** — quy tắc "giữ
+> 3 năm" chỉ áp cho `usage_history_current`. Cần luật riêng.
+
+
 
 **Dung lượng — đo thật 21/08/2026** (`pg_database_size`, không phải ước lượng):
 

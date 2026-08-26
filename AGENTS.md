@@ -2,6 +2,57 @@
 
 Hướng dẫn cho người và cho agent khi làm việc trong repo này.
 
+## 🔴🔴 GO-LIVE GIỮA T9/2026 — ĐỌC TRƯỚC MỌI THỨ
+
+Không phải 01/01/2027. Việc thật đầu tiên: **62 khoa gõ đề xuất cho gói 18
+tháng 2027-2028**, ngày 08–20/09/2026.
+
+**Chỉ nửa đầu pipeline nằm trên đường tới mốc này** — khoa đề xuất → giỏ → gửi
+→ xác nhận danh mục → PĐD tổng hợp → chốt Q → chốt trình ký. Nửa sau (thầu →
+rớt → đổ mã → hợp đồng → giao hàng → cam kết 20/50/80 → 30%) phải mở thầu xong
+mới chạm tới, sớm nhất cuối 2026.
+
+🔴 **CHỈ ĐẠO NỀN CỦA CHỦ DỰ ÁN — áp cho mọi việc từ giờ:**
+
+> *"đừng phát sinh thêm nhiều function nữa (làm đơn giản tối ưu click)"*
+
+Không thêm tính năng, không thêm màn. Việc code đáng làm nhất là **giảm số cú
+bấm** trên đường khoa gõ đề xuất — nó nhân với 62 khoa × hàng trăm mã.
+
+⚠️ **Staging CHÍNH LÀ production.** Không có project Supabase thứ ba. Mọi thứ
+"chỉ bật trên staging" sẽ bật trên hệ thống thật của 62 khoa.
+
+---
+
+## 🔴 ĐẨY LÊN NETLIFY — TÀI KHOẢN ĐÃ HẾT CREDITS
+
+Hết credits thì Netlify **nhận commit nhưng bỏ qua không build**, site cứ phục
+vụ bản cũ và **không báo gì cho ai**. Ngày 26/08 site đứng sau HEAD 8 commit,
+chủ dự án test và gặp lỗi đã vá từ lâu.
+
+`netlify deploy --prod` trả `Forbidden`. Đường chạy được (không tốn credits vì
+mình tự build ở máy, Netlify chỉ nhận file):
+
+```bash
+cd frontend && npm run build && cd ..
+netlify deploy --dir=frontend/dist          # in ra Draft URL kèm deploy id
+netlify api restoreSiteDeploy \
+  --data '{"site_id":"883aef7e-fc50-4b29-bc27-2d97557f353e","deploy_id":"<id>"}'
+curl -s https://vtyt-umc-test.netlify.app/ | grep -o 'index-[A-Za-z0-9_-]*\.js'
+```
+
+`netlify login` mở trình duyệt nên **phải người thật bấm** — bảo chủ dự án gõ
+`!netlify login`. Tài khoản `tranthanhan1626@gmail.com`, team Free.
+
+Muốn biết vì sao Netlify không build: **đọc `error_message` của đúng deploy
+hỏng**, đừng đoán từ `capabilities.credits` (chỉ số đó nói chuyện khác):
+
+```bash
+netlify api listSiteDeploys --data '{"site_id":"<id>","per_page":3}'
+```
+
+---
+
 ## 🔴 QUY TẮC BẤT DI BẤT DỊCH — CHẠY WEB ĐỂ TEST
 
 **Mọi vòng test chạy ở LOCALHOST. Không dùng Netlify** (QĐ chủ dự án
@@ -95,7 +146,7 @@ Tối thiểu phải đọc trước khi sửa bất cứ thứ gì:
 | Đụng công thức số lượng | `02_CONG_THUC_SO_LUONG.md` — và **đừng đụng trước Phase G** |
 | Không hiểu vì sao code làm thế | `07_NHAT_KY_THAY_DOI.md` |
 
-## Năm điều dễ làm sai nhất
+## Bảy điều dễ làm sai nhất
 
 1. **Đừng dựng lại thứ đã bị bỏ.** Dự án đã đảo luật **29 lần**. Trước khi thêm một
    bước duyệt, một cổng chặn, một cơ chế khoá ô — mở `06_DUNG_LAM_LAI.md` xem
@@ -113,6 +164,18 @@ Tối thiểu phải đọc trước khi sửa bất cứ thứ gì:
 5. **PĐD chỉ có một mặt bàn.** Mọi thao tác sửa của PĐD đi qua Danh mục tổng
    hợp. Thấy thao tác nào chật chội trên grid thì làm grid rộng ra, **đừng tách
    màn mới** (QĐ 21/08/2026).
+6. **Đọc `pg_trigger` của bảng TRƯỚC khi hỏi chủ dự án chọn cách ghi.** Ngày
+   26/08 tôi đưa phương án "ghi đè `phan_bo_khoa`", chủ dự án chọn, thi công
+   xong mới lộ ra bảng đó bị **khoá cứng 1** chặn sau chốt Q — phương án không
+   bao giờ đi được, và để nguyên thì **hỏng hẳn chức năng đổ mã**.
+   ```sql
+   select t.tgname, p.proname, pg_get_triggerdef(t.oid) from pg_trigger t
+   join pg_proc p on p.oid = t.tgfoid
+   where t.tgrelid = '<bảng>'::regclass and not t.tgisinternal;
+   ```
+7. **Đổi chỗ VẼ thì soi lại `.select()` nuôi nó.** Thiếu một cột là sai lặng lẽ,
+   không lỗi không cảnh báo: `Number(undefined) > 0` luôn false, `fmt(undefined)`
+   ra chuỗi `"NaN"` hiện thẳng ra màn. `build ✓` và pytest đều không bắt được.
 
 ## Ranh giới an toàn
 

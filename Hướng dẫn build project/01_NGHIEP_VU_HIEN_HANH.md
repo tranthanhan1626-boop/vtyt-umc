@@ -117,7 +117,9 @@ phân bổ số trúng · chốt dữ liệu trình ký · revision và audit.
 
 Trong cùng một đợt 18 tháng:
 
-- Một mã quản lý chỉ thuộc một gói con.
+- ~~Một mã quản lý chỉ thuộc một gói con.~~ 🆕 **BỎ 26/08/2026** — chủ dự án
+  chốt: *"tất cả mã quản lý đều có thể add vào gói con đó"*. Đây **không phải
+  luật**; đừng dựng ràng buộc, đừng báo lỗi mã "vắt ngang gói con".
 - Tất cả mã hàng thuộc mã quản lý phải nằm cùng gói con.
 - Một mã hàng không được xuất hiện ở hai gói con.
 - Mã hàng mới thêm vào mã quản lý kế thừa gói con của mã quản lý.
@@ -468,6 +470,57 @@ cho đường gõ tay, không còn là chỗ chặn thường gặp.
 **PĐD chia tay ở đâu:** sổ dòng mã trên bảng Tổng hợp ra, có sẵn bảng nhập số
 trúng cho từng khoa, cột *"Nhận từ mã rớt"* hiện riêng. Nút **Xác nhận chia**
 chỉ sáng khi tổng khớp đúng. Không muốn gõ thì bấm nút **Chia** ở cột "Đã chia".
+
+### 5.3b 🆕 Đổ xong thì SỐ ĐỀ XUẤT trên bảng đổi theo (QĐ 26/08/2026)
+
+**Yêu cầu của chủ dự án:** *"mã hàng A xác nhận rớt chuyển số lượng qua mã
+tương đương B thì tổng hợp danh mục đề xuất số lượng đề xuất mã A là 0 và mã B
+là hiển thị tổng sau khi A đổ qua, danh mục đề xuất của khoa cũng liên kết dữ
+liệu tổng hợp danh mục đề xuất pdd."*
+
+Trước 26/08, đổ mã chỉ ghi sổ `chuyen_so_rot_v3` — hai bảng vẫn hiện số cũ như
+chưa có gì xảy ra. Nay:
+
+```
+số hiện  =  số gốc  −  đã đổ đi  +  nhận về
+```
+
+Đo thật trên đợt #200, đổ `66510 → 74372`:
+
+| | GMHS | RHM |
+|---|---|---|
+| `66510` (đổ đi) | 20.000 → **0** | 20.000 → **0** |
+| `74372` (nhận) | 40.000 → **60.000** | 5.000 → **25.000** |
+| Tổng hợp PĐD | `66510` → **0** · `74372` → **85.000** | |
+
+**Tính lúc hiện, KHÔNG ghi đè.** Chủ dự án ban đầu chọn ghi đè; thi công rồi mới
+lộ ra `phan_bo_khoa` bị **khoá cứng 1** chặn sau chốt Q, mà đổ mã thì luôn sau
+chốt Q — xem bẫy trong `06_DUNG_LAM_LAI.md`. Cách tính-lúc-hiện cho **màn hình
+giống hệt** mà được thêm hai thứ:
+
+| | Ghi đè | Tính ra |
+|---|---|---|
+| Bỏ ngoại lệ đổ | gõ tay lại từng khoa (Dùng chung có **50 khoa**) | **số tự về** |
+| Số đã mang đi thầu | bị viết lại sau khi biết kết quả | **giữ nguyên trong snapshot** |
+
+**Hai màn đọc CHUNG một nguồn** `v_phan_bo_sau_dieu_chuyen_v3` — đây chính là
+"danh mục khoa liên kết dữ liệu tổng hợp PĐD". PĐD sửa gì khoa thấy nấy, không
+còn hai con số khác nhau cho cùng một mã.
+
+**Mã đã đổ hết KHÔNG bị ẩn nữa.** Bản trước ẩn hẳn dòng đó khỏi màn khoa — khoa
+mở danh mục thấy mã mình đề xuất biến mất, không biết số đi đâu, phải hỏi PĐD.
+Nay giữ dòng với số 0 kèm nhãn:
+
+```
+66510   ↪ đã đổ 20.000 sang 74372
+74372   ↩ nhận 20.000 từ 66510
+```
+
+> ⚠️ **Số trúng đã chia và "đề xuất + nhận" KHÔNG bắt buộc bằng nhau.** Đo thật:
+> PĐD chia trúng cho `74372` là GMHS 80.000 / RHM 5.000, trong khi "đề xuất +
+> nhận" ra 60.000 / 25.000. Tổng bằng nhau (85.000) nhưng chia từng khoa thì
+> lệch. Chủ dự án chốt 26/08: **lệch là bình thường** — "đề xuất + nhận" là nhu
+> cầu, "số trúng" là PĐD quyết chia thực tế. Không ràng buộc, không báo đỏ.
 
 ### 5.4 Phân bổ số trúng về khoa
 
@@ -945,7 +998,10 @@ CHƯA VÀO ĐỢT NÀO   ← báo đỏ: chuyển tiếp hỏng, không phải c
 ## 14. Invariant bắt buộc
 
 1. Một DOT_GOI độc lập hoàn toàn với gói con khác.
-2. Trong đợt 18 tháng, một mã quản lý chỉ thuộc một gói con.
+2. ~~Trong đợt 18 tháng, một mã quản lý chỉ thuộc một gói con.~~
+   🆕 **BỎ 26/08/2026.** Mọi mã quản lý đều có thể vào bất kỳ gói con nào. Ba mã
+   `N03.03.050.07` · `N05.02.030.14` · `N07.03.020.01` từng bị ghi là "vi phạm
+   invariant 2" — nay hợp lệ, không phải sửa gì.
 3. Tổng mã hàng sau quy đổi phải bằng tổng mã quản lý. *(khóa cứng 1)*
 4. Tổng số rớt ba giai đoạn không vượt số tham gia đấu thầu. *(khóa cứng 3 —
    chặn ngay lúc gõ)*
