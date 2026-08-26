@@ -71,3 +71,28 @@ def test_man_khoa_giu_dong_ma_da_do_va_co_nhan() -> None:
         "không được ẩn mã đã đổ: khoa thấy đề xuất biến mất, không biết số đi đâu"
     assert "đã đổ {fmt(r.da_do_di)} sang {r.do_sang_ma}" in src
     assert "nhận {fmt(r.nhan_ve)} từ {r.nhan_tu_ma}" in src
+
+
+def test_view_khong_co_cot_id_nen_phan_trang_phai_doi_khoa() -> None:
+    """`fetchAllRows` phân trang bằng cột `order`. View gộp KHÔNG có `id`, để
+    `order: "id"` là ăn 42703 ngay khi mở màn — chủ dự án gặp thật 26/08:
+    "column v_phan_bo_sau_dieu_chuyen_v3.id does not exist".
+    """
+    for man in ("TongHopPdd.jsx", "DanhMucDeXuatKhoa.jsx"):
+        src = (FE / man).read_text(encoding="utf-8")
+        goi = src.split("qProposals().range(f, t)")[1][:160]
+        assert 'order: "id"' not in goi, f"{man}: view gộp không có cột id"
+        assert 'laPhanBoV3 ? ["ma_hang", "khoa"]' in goi, \
+            f"{man}: đường v3 phải phân trang theo (ma_hang, khoa)"
+
+
+def test_bon_truong_dieu_chuyen_duoc_chep_sang_row() -> None:
+    """`row` trong `taiDuLieuKhoa` dựng TỪNG FIELD, không spread `prop` — chọn
+    cột trong `.select()` thôi là chưa đủ. Thiếu bước chép thì chỗ vẽ đọc
+    undefined và nhãn "↪ đã đổ … sang …" không bao giờ hiện. Bắt được bằng cách
+    BẤM THẬT trên Chrome; `build ✓` và pytest văn bản đều im.
+    """
+    src = (FE / "DanhMucDeXuatKhoa.jsx").read_text(encoding="utf-8")
+    for truong in ("da_do_di: Number(prop.da_do_di)", "nhan_ve: Number(prop.nhan_ve)",
+                   "do_sang_ma: prop.do_sang_ma", "nhan_tu_ma: prop.nhan_tu_ma"):
+        assert truong in src, f"row thiếu {truong}"

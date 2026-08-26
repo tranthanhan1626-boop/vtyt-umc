@@ -126,7 +126,14 @@ async function taiDuLieuKhoa(goiId, khoa, dotId = null) {
   // `dot_id` là ranh giới nghiệp vụ cuối cùng. Một gói 18 tháng có thể có
   // nhiều kỳ kế tiếp nhau và ba đợt bổ sung cùng loại cũng phải tuyệt đối tách
   // nhau; không được chỉ lọc theo `loai_mua_sam` rồi để kết quả rớt lẫn kỳ.
-  const { data: propRows, error: loiProposals } = await fetchAllRows((f, t) => qProposals().range(f, t), { order: "id" });
+  // ⚠️ View `v_phan_bo_sau_dieu_chuyen_v3` KHÔNG có cột `id` (nó gộp từ
+  // `phan_bo_khoa` + hai nhánh điều chuyển). `fetchAllRows` phân trang bằng
+  // cột `order`, nên để `"id"` là ăn lỗi 42703 ngay khi mở màn. Khoá thật của
+  // view là (dot_goi_id, ma_hang, khoa) — đã lọc sẵn dot_goi_id nên hai cột
+  // còn lại đủ ổn định để phân trang.
+  const { data: propRows, error: loiProposals } = await fetchAllRows(
+    (f, t) => qProposals().range(f, t),
+    { order: laPhanBoV3 ? ["ma_hang", "khoa"] : "id" });
   if (loiProposals) throw loiProposals;
   if (!propRows?.length) return { bo, rows: [], dotGoiId };
 
@@ -203,6 +210,15 @@ async function taiDuLieuKhoa(goiId, khoa, dotId = null) {
       tskt_2627: vt.tieu_chi_ky_thuat || null,
       quy_cach: null,
       dvt: vt.dvt || null,
+      // QĐ 26/08/2026 — bốn trường điều chuyển PHẢI được chép sang `row`.
+      // `row` dựng từng field một, không spread `prop`, nên chọn cột trong
+      // `.select()` thôi là chưa đủ: chỗ vẽ nhãn đọc `r.da_do_di` sẽ ra
+      // undefined và nhãn "↪ đã đổ … sang …" không bao giờ hiện.
+      // (Bắt được bằng cách BẤM THẬT trên Chrome, build ✓ và pytest đều im.)
+      da_do_di: Number(prop.da_do_di) || 0,
+      nhan_ve: Number(prop.nhan_ve) || 0,
+      do_sang_ma: prop.do_sang_ma || null,
+      nhan_tu_ma: prop.nhan_tu_ma || null,
       // Cột lịch sử theo đúng các năm đang có dữ liệu; năm còn dở chỉ cộng
       // tới tháng cuối THẬT của năm đó.
       ...Object.fromEntries(dsNamCoDuLieu.map(({ nam, thangCuoi }) => [

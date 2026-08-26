@@ -226,6 +226,25 @@ fmt(undefined)          →  "NaN"   ⇒  tooltip hiện "trúng NaN"
 **Luật:** đổi chỗ VẼ thì soi lại `.select()` của truy vấn nuôi nó, và ngược lại.
 `build ✓` và pytest đều không bắt được lớp lỗi này.
 
+### BẪY — đổi NGUỒN truy vấn mà không soi hết chỗ tiêu thụ (26/08/2026)
+
+Đổi hai màn từ `phan_bo_khoa` sang `v_phan_bo_sau_dieu_chuyen_v3`. `build ✓`,
+238 test xanh, giao. Chủ dự án mở màn là chết ngay. **Hai lỗi, một nguyên nhân:**
+
+1. **View gộp không có cột `id`.** `fetchAllRows` phân trang bằng cột `order`,
+   để nguyên `order: "id"` ⇒ `42703 column … .id does not exist`. Bảng gốc có
+   `id`, view thì không — đổi nguồn là phải đổi luôn khoá phân trang.
+2. **`row` dựng TỪNG FIELD, không spread `prop`.** Chọn thêm cột trong
+   `.select()` là chưa đủ; phải chép tay sang `row`. Thiếu bước đó thì chỗ vẽ
+   đọc `undefined` và nhãn **không hiện, không báo lỗi gì cả**.
+
+**Luật:** đổi nguồn của một truy vấn thì đi hết ba chặng — (a) cột dùng để
+phân trang có tồn tại ở nguồn mới không, (b) mọi cột chỗ vẽ đang đọc có trong
+`.select()` không, (c) chúng có được **chép sang object cuối cùng** không.
+
+Lỗi 2 **chỉ bắt được bằng cách bấm thật**. Đây đúng là lớp lỗi mà quy tắc
+"xây xong phải có người bấm thử" sinh ra để chặn — và lần này tôi bỏ qua nó.
+
 ### BẪY — đoán nguyên nhân từ chỉ số gián tiếp thay vì đọc log (26/08/2026)
 
 Netlify đứng ở bản cũ hơn HEAD **8 commit**. Tôi lần lượt kết luận sai hai lần:

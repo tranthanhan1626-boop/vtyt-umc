@@ -145,8 +145,13 @@ async function taiDuLieuGoc(goiId, dotId = null) {
       return dotId ? q.eq("dot_id", Number(dotId)) : locTheoDot(q, dsDotId);
     };
   }
+  // ⚠️ View `v_phan_bo_sau_dieu_chuyen_v3` KHÔNG có cột `id` (nó gộp từ
+  // `phan_bo_khoa` + hai nhánh điều chuyển). `fetchAllRows` phân trang bằng
+  // cột `order`, nên để `"id"` là ăn lỗi 42703 ngay khi mở màn. Khoá thật của
+  // view là (dot_goi_id, ma_hang, khoa) — đã lọc sẵn dot_goi_id nên hai cột
+  // còn lại đủ ổn định để phân trang.
   const { data: propRows, error: loiProposals } = await fetchAllRows((f, t) =>
-    qProposals().range(f, t), { order: "id" });
+    qProposals().range(f, t), { order: laPhanBoV3 ? ["ma_hang", "khoa"] : "id" });
   if (loiProposals) throw loiProposals;
 
   const theoMa = new Map();

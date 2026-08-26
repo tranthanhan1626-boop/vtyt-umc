@@ -86,6 +86,21 @@ khi site đứng yên.
 
 ## 🔴 QUY TẮC — XÂY XONG MỘT TÍNH NĂNG LÀ PHẢI CÓ NGƯỜI KHÁC BẤM THỬ
 
+> ⚠️ **26/08/2026 — TÔI ĐÃ VI PHẠM QUY TẮC NÀY VÀ TRẢ GIÁ NGAY.**
+> Đổi nguồn dữ liệu của hai màn (`phan_bo_khoa` → `v_phan_bo_sau_dieu_chuyen_v3`),
+> chạy `build ✓` + 238 test văn bản rồi giao thẳng. Chủ dự án mở màn là **chết
+> ngay**: `column v_phan_bo_sau_dieu_chuyen_v3.id does not exist` — view gộp
+> không có cột `id` mà `fetchAllRows` vẫn phân trang bằng `order: "id"`.
+>
+> Vá xong tôi mới chịu bấm Chrome, và **bắt thêm lỗi thứ hai** mà không cách nào
+> khác thấy được: `row` trong `taiDuLieuKhoa` dựng **từng field một**, không
+> spread `prop` — nên chọn cột trong `.select()` thôi là chưa đủ, bốn trường
+> điều chuyển không bao giờ tới chỗ vẽ và nhãn "↪ đã đổ … sang …" **không hiện**.
+> Không lỗi, không cảnh báo, chỉ lặng lẽ thiếu.
+>
+> **Hai lỗi, cùng một tính năng, cùng một lần bỏ qua việc bấm thử.**
+> `build ✓` và `pytest` xanh **không** chứng minh màn hình chạy.
+
 Chủ dự án chốt 26/08/2026: **mỗi lần build xong một tính năng, giao cho một
 agent ĐỘC LẬP bấm thử tính năng đó trên trình duyệt như người dùng thật** (Chrome
 qua `mcp__chrome-devtools__*`), tổng hợp lỗi rồi báo về để người xây vá.
