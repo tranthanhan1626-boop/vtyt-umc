@@ -174,9 +174,14 @@ export function ThanhGiaiDoanThau({
     // bảng dài nên PostgREST cắt ở 1.000 và màn báo hụt (đo thật 24/08: cần
     // 1.608, báo 1.000).
     const d = data || {};
+    // QĐ 26/08/2026 — phải nói rõ mã mới nằm trong GIỎ, CHƯA thành đề xuất.
+    // Bản trước viết "đã chuyển tiếp … về đợt bổ sung", PĐD đọc xong tưởng
+    // việc đã xong trong khi thực tế đang chờ từng khoa bấm "Gửi giỏ".
     await onXong?.(d.so_dong
-      ? `Đã chuyển tiếp ${d.so_dong} dòng (${d.so_ma} mã × ${d.so_khoa} khoa) về `
-        + `${d.ten_dot || "đợt bổ sung"} tháng ${d.thang}/${d.nam}.`
+      ? `Đã đẩy ${d.so_dong} dòng (${d.so_ma} mã × ${d.so_khoa} khoa) vào GIỎ của khoa ở `
+        + `${d.ten_dot || "đợt bổ sung"} tháng ${d.thang}/${d.nam}. `
+        + `Số lượng mới là gợi ý — khoa phải tự sửa rồi bấm “Gửi giỏ” thì mới thành đề xuất. `
+        + `Theo dõi phần chưa gửi ở Bàn điều hành.`
       : "Không còn phần rớt nào cần chuyển tiếp.");
   };
 
@@ -272,7 +277,7 @@ export function ThanhGiaiDoanThau({
       )}
       {tongChuaXuLy > 0 && soChuaChia === 0 && !hoiXacNhan && (
         <button type="button" onClick={() => setHoiXacNhan(true)} disabled={!!dangChay}
-          title="Đưa phần rớt chưa đổ đi đâu vào đợt bổ sung của từng khoa"
+          title="Đẩy phần rớt chưa đổ đi đâu vào GIỎ đợt bổ sung của từng khoa — khoa tự quyết số rồi tự gửi"
           className="ml-1 inline-flex items-center gap-1 rounded bg-red-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-red-700 disabled:opacity-50">
           <AlertTriangle size={12} />
           {dangChay === "xac_nhan" ? "Đang xử lý…" : `Xác nhận rớt (${fmt(tongChuaXuLy)})`}
@@ -281,11 +286,12 @@ export function ThanhGiaiDoanThau({
 
       {hoiXacNhan && (
         <span className="inline-flex flex-wrap items-center gap-2 rounded border border-red-300 bg-red-50 px-2.5 py-1.5 text-[11px] text-red-900">
-          <b>{fmt(tongChuaXuLy)}</b> chưa đổ sang mã nào sẽ vào <b>đợt bổ sung gần nhất của từng
-          khoa NGAY</b>, và khoa được báo đỏ. Phần đã đổ sang mã tương đương không bị đưa vào.
+          <b>{fmt(tongChuaXuLy)}</b> chưa đổ sang mã nào sẽ vào <b>GIỎ</b> của từng khoa ở đợt bổ
+          sung gần nhất, kèm số lượng <b>gợi ý</b> — <b>chưa phải đề xuất</b>. Khoa được báo đỏ,
+          tự sửa số rồi tự bấm “Gửi giỏ”. Phần đã đổ sang mã tương đương không bị đưa vào.
           <button type="button" onClick={xacNhanRot} disabled={!!dangChay}
             className="rounded bg-red-600 px-2 py-0.5 font-semibold text-white hover:bg-red-700 disabled:opacity-50">
-            {dangChay === "xac_nhan" ? "Đang xử lý…" : "Đồng ý, chuyển tiếp"}
+            {dangChay === "xac_nhan" ? "Đang xử lý…" : "Đồng ý, đẩy vào giỏ"}
           </button>
           <button type="button" onClick={() => setHoiXacNhan(false)}
             className="rounded border border-red-300 bg-white px-2 py-0.5 text-red-700">Huỷ</button>

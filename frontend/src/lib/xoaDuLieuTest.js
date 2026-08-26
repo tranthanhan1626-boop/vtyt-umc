@@ -6,6 +6,13 @@ const supabaseUrl = String(import.meta.env.VITE_SUPABASE_URL || "");
 
 // Local dev và đúng project staging mới hiện dấu xóa. Production không thể
 // bật nhầm chỉ bằng UI vì RPC phía DB còn kiểm tra issuer của JWT.
+//
+// ⚠️ 26/08/2026 — go-live giữa T9 dùng CHÍNH project staging làm hệ thống
+// thật, nên nhánh `supabaseUrl.includes(MA_DU_AN_STAGING)` sẽ bật dấu xoá
+// ngay trên hệ thống của 62 khoa. Chủ dự án quyết GIỮ để còn xoá trong giai
+// đoạn test, và sẽ báo thời điểm gỡ. Việc phải làm trước khi mở cho khoa:
+// gỡ 4 RPC (backend/sql/patch_zzzzzz_go_tay_xoa_du_lieu.sql) và đổi dòng
+// dưới thành chỉ đọc cờ VITE_ENABLE_TEST_DELETE.
 export const BAT_XOA_DU_LIEU_TEST =
   import.meta.env.DEV
   || supabaseUrl.includes(MA_DU_AN_STAGING)

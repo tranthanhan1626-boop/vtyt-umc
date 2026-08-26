@@ -1540,3 +1540,75 @@ mở 4 đợt bổ sung" (luật là đúng 3 mốc T1/T5/T9 mỗi năm). Nay gh
 vẫn nằm trên staging — lệnh xoá bị sandbox chặn. Chúng rỗng hoàn toàn
 (0 proposals / 0 giỏ) và `fn_dot_bo_sung_gan_nhat()` tự tạo lại khi cần, nên xoá
 được bằng hộp thoại **"Kết thúc đợt & dọn"** trên Bàn điều hành.
+
+---
+
+## 26/08/2026 (chiều) — Mốc go-live dời lên GIỮA T9/2026
+
+Chủ dự án báo lại mốc: **không phải 01/01/2027 mà là 08–20/09/2026**. Việc thật
+đầu tiên vẫn là **gói 18 tháng 2027-2028**, tức 62 khoa ngồi gõ đề xuất trong
+khoảng 13 ngày nữa.
+
+**Hệ quả — chỉ NỬA ĐẦU pipeline nằm trên đường tới go-live:**
+
+```
+khoa đăng nhập → chọn mã → gõ số → giỏ → gửi → xác nhận danh mục
+                                                     ↓
+                         PĐD tổng hợp → sửa → chốt Q → chốt trình ký
+```
+
+Nửa sau (3 giai đoạn thầu → rớt → đổ mã → giỏ rớt → hợp đồng → giao hàng →
+cam kết 20/50/80 → 30%) phải mở thầu xong mới chạm tới, sớm nhất cuối 2026.
+
+**Bốn quyết định kèm theo:**
+
+| | Quyết định |
+|---|---|
+| Lịch sử HIS | Chỉ giữ **3 năm gần nhất** (2027 thì giữ 2024–2026). Đo thật: `usage_history_current` đang đúng 2024·2025·2026 = 64 MB ⇒ **đứng yên**, không phải +55 MB/năm như tài liệu cũ ghi |
+| Nhập dữ liệu sau thầu | Vẫn là **Phòng Điều dưỡng**, không thêm vai trò mới |
+| Pilot | Trên **đợt bổ sung T9/2026** — việc thật, số thật, 3–5 khoa |
+| Gói con | **Mọi mã quản lý đều có thể vào bất kỳ gói con nào.** Không xây thêm ràng buộc; "invariant 2 — một mã quản lý chỉ thuộc một gói con" chính thức **không phải luật**. Hiển thị lịch sử của khoa giữ y như hiện tại |
+
+**Chỉ đạo nền:** *"đừng phát sinh thêm nhiều function nữa (làm đơn giản tối ưu
+click)"* — 13 ngày còn lại **không thêm tính năng**, việc code duy nhất là giảm
+số cú bấm trên đường khoa gõ đề xuất.
+
+**Rủi ro đã nêu, chủ dự án quyết bỏ qua:** gói free không có sao lưu tự động.
+
+### Đã làm trong ngày
+
+1. **Câu báo "xác nhận rớt" nói sai việc** — `CumThauTongHop.jsx`. Sau QĐ 26/08
+   mã rớt vào GIỎ chứ không thành đề xuất, nhưng ba chỗ chữ vẫn theo luật cũ:
+   câu kết quả *"Đã chuyển tiếp N dòng về đợt bổ sung"*, hộp xác nhận *"sẽ vào
+   đợt bổ sung của từng khoa **NGAY**"*, và nút *"Đồng ý, chuyển tiếp"*. PĐD đọc
+   xong tưởng việc đã xong trong khi đang chờ từng khoa bấm "Gửi giỏ". Đã sửa cả
+   ba + tooltip. (Phát hiện của vòng nghiệm thu độc lập.)
+2. **Dọn sạch dữ liệu test** — 11.030 dòng / 5 đợt / 9 gói con, gồm cả 4 đợt bổ
+   sung rỗng #191–194. Database 143 → 135 MB sau `VACUUM FULL`. Nền còn nguyên:
+   `vat_tu` 3.327 · `nhom_ky_thuat` 1.369 · `usage_history_current` 141.623 ·
+   `users` 8 · `goi_con` 10.
+3. **Dừng nghiệm thu tính năng "mã rớt → giỏ".** Agent kẹt ở bước D: 9 khoa của
+   gói RHM đều không có tài khoản (`dvsd1`/`dvsd2` nằm ngoài nhóm đó). Năm khẳng
+   định ở tầng database đã đo thật; phần mắt-thấy-trên-màn-khoa để tới lúc chạy
+   thật đợt bổ sung T9. Không dựng cảnh giả thêm.
+
+### 🔴 Việc BẮT BUỘC trước khi mở cho 62 khoa — đã viết sẵn, CHỜ LỆNH
+
+`backend/sql/patch_zzzzzz_go_tay_xoa_du_lieu.sql` **(chưa chạy)**.
+
+Vì go-live dùng **chính project staging** làm hệ thống thật, mọi lớp chặn nút
+xoá dữ liệu kiểm thử đều hỏng theo kiểu **fail-open**:
+
+- `xoa_du_lieu_kiem_thu` chặn bằng `position('ihgfafubwyxnbubmppbj' in iss)` —
+  đúng cái ref sắp thành production, nên **luôn cho qua**.
+- `xoa_dot_kiem_thu_v3` chỉ đòi role `dieu_duong`/`admin` — mà PĐD là **người
+  dùng thật**, bấm được là mất cả đợt của 62 khoa.
+- Frontend `BAT_XOA_DU_LIEU_TEST` tự bật khi thấy ref staging trong URL.
+
+Nút hiện ở **5 chỗ**, trong đó `DeXuatCuaToi.jsx:320` là **màn của khoa** (khoa
+xoá vĩnh viễn đề xuất của chính mình) và `QuanLyDot.jsx:130` xoá cả đợt.
+
+Chủ dự án quyết **giữ lại** vì còn đang test, và sẽ báo thời điểm gỡ. Lúc đó:
+chạy patch trên **và** đổi `BAT_XOA_DU_LIEU_TEST` thành chỉ đọc cờ
+`VITE_ENABLE_TEST_DELETE`. Sau khi gỡ, dọn dữ liệu bằng
+`backend/scripts/don_sach_moi_dot.py`.
