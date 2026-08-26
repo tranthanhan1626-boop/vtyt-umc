@@ -1540,6 +1540,19 @@ export function StyleTable() {
          width:100% + colgroup mới thật sự chốt độ rộng; w-max trên table không
          đủ vì fixed-layout không tự co giãn theo nội dung. */
       table.qtdx-table { table-layout: fixed; width: 100%; }
+      /* Bảng Tổng hợp có tới 340 dòng x 30 cột, khoảng 10.000 ô. Mỗi lần sổ
+         hay thu một dòng, React dựng lại toàn bộ khối JSX của bảng — đo thật
+         26/08/2026 trên gói Dùng chung 340 mã: hai tác vụ dài 152ms và 85ms,
+         tổng 237ms bị khoá, đủ để cảm thấy khựng.
+         content-visibility auto bảo trình duyệt BỎ QUA layout và vẽ cho các
+         dòng ngoài tầm nhìn — chỉ khoảng 15 dòng đang thấy phải tính thật.
+         contain-intrinsic-size cho nó biết chiều cao ước lượng để thanh cuộn
+         không nhảy. KHÔNG áp cho dòng đang mở rộng (qtdx-row-mo) vì dòng đó
+         cao bất thường, đoán sai chiều cao là bảng giật khi cuộn.
+         Lưu ý: khối CSS này nằm trong template literal nên chú thích TUYỆT ĐỐI
+         không được chứa dấu backtick. */
+      tr.qtdx-row { content-visibility: auto; contain-intrinsic-size: auto 34px; }
+      tr.qtdx-row-mo { content-visibility: visible; }
       /* WRAPTEXT MỌI Ô (chốt 08/08/2026). Trước đây mặc định là 1 dòng +
          ellipsis, chỉ cột kieu="wide" mới xuống dòng — hậu quả: TSKT, tên vật
          tư, tên thương mại dài bị cắt "..." và người dùng phải bấm vào ô mới

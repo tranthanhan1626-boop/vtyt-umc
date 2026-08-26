@@ -1322,3 +1322,68 @@ kèm `dot.id` từ đầu. Chỉ đường qua *Đề xuất số lượng* là 
 dựng hash `#danh-muc-de-xuat/`** trong `features/` và bắt lỗi nếu thiếu phần đợt.
 
 `pytest` **228** · `kiem_moi_man` ba vòng xanh · `test:formula` OK · `build` ✓.
+
+---
+
+## 26/08/2026 (2) — Sổ một dòng bị khựng, và ba hiểu nhầm cần nói rõ
+
+Chủ dự án báo: thao tác trên Netlify chậm, sổ một mã hàng xuống xem các khoa thì
+đợi lâu; và bảng Tổng hợp chỉ kéo được **67 mã hàng**.
+
+### Ba chuyện khác nhau, chỉ một là lỗi
+
+**1. "Chỉ 67 mã hàng" — KHÔNG phải lỗi.** Đó là đợt **#118 "TEST ĐẦY ĐỦ"**, bộ
+test *nhỏ và nhanh* dựng 24/08, mỗi gói con 70 mã. Bộ quy mô thật là **"TEST QUY
+MÔ THẬT B" — đợt #188, gói Dùng chung 340 mã**.
+
+| Đợt | Tên | Mã hàng (Dùng chung) |
+|---|---|---:|
+| #118 | TEST ĐẦY ĐỦ — Gói 18 tháng 1/2028 - 6/2029 | 67 |
+| **#188** | **TEST QUY MÔ THẬT B — chủ dự án tự bấm** | **340** |
+
+**2. "Chậm trên Netlify" — Netlify đang phục vụ bản CŨ.** Hết credits build từ
+25/08, site đứng ở `f50347d` và thiếu **năm commit** kể từ đó. Quy tắc đã ghi ở
+đầu `AGENTS.md`: **nghiệm thu ở localhost**, không đo trên Netlify.
+
+**3. Sổ dòng bị khựng — CÓ THẬT, đã vá.**
+
+### Vì sao khựng
+
+Khối JSX của bảng dài **270 dòng**, nhân với **340 dòng dữ liệu × 30 cột ≈
+10.000 ô**. Mỗi lần sổ hay thu MỘT dòng, React dựng lại toàn bộ khối đó.
+
+Đo trên gói Dùng chung 340 mã: hai tác vụ dài **152ms và 85ms**, tổng **237ms bị
+khoá** — đủ để cảm thấy khựng, và trên máy chậm hơn thì gấp mấy lần.
+
+Database không phải chỗ nghẽn: hai truy vấn khi sổ dòng chỉ **0,3–0,5 giây** mỗi
+cái, chạy song song.
+
+### Cách vá: bảo trình duyệt bỏ qua dòng ngoài tầm nhìn
+
+`content-visibility: auto` trên mỗi dòng dữ liệu — trình duyệt **không tính
+layout và không vẽ** các dòng đang nằm ngoài màn hình. Bảng có 340 dòng mà chỉ
+~15 dòng đang thấy, nên phần việc thật giảm hơn hai chục lần.
+
+`contain-intrinsic-size: auto 34px` cho nó biết chiều cao ước lượng để thanh
+cuộn không nhảy. **Không áp cho dòng đang mở rộng** — dòng đó cao bất thường,
+đoán sai chiều cao là bảng giật khi cuộn.
+
+Đây là CSS thuần, không đụng một dòng logic nào.
+
+| Phép đo (gói Dùng chung, 340 mã) | Trước | Sau |
+|---|---|---|
+| Tác vụ dài nhất khi sổ một dòng | **152 ms** | **84 ms** |
+| Tổng thời gian bị khoá | 237 ms | **167 ms** |
+| Bảng khoa hiện ra | 0,25 s | **0,17 s** |
+| Bảng chia số trúng hiện ra | 0,57 s | **0,39 s** |
+| Mở cả bảng | ~5,4 s | **4,0–5,1 s** |
+
+⚠️ Một cái bẫy khi sửa: khối CSS này nằm trong **template literal** của
+`StyleTable`, nên chú thích trong đó **tuyệt đối không được chứa dấu backtick** —
+nó cắt chuỗi và build gãy. Đã ghi cảnh báo ngay tại chỗ.
+
+### Một chỗ dữ liệu cần biết
+
+Phiên Q của gói Dùng chung bộ B đã bị **mở lại với lý do "test"**
+(`hieu_luc = false`), nên gói đó mất cụm cột thầu. Không phải lỗi — ai đó bấm
+"Mở chốt để sửa". Đã chốt lại; cả 6 gói con nay đều có phiên Q hiệu lực.

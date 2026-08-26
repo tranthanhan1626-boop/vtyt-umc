@@ -1239,7 +1239,11 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
               const dongKhoa = dongLocked.has(r.ma_hang);
               return (
               <FragmentRow key={r.ma_hang}>
-                <tr>
+                {/* `qtdx-row` bật `content-visibility: auto` — trình duyệt bỏ
+                    qua layout và vẽ cho dòng ngoài tầm nhìn. Dòng đang mở rộng
+                    thì tắt đi, vì chiều cao nó bất thường và đoán sai là bảng
+                    giật khi cuộn (xem StyleTable trong DanhMucDeXuatKhoa.jsx). */}
+                <tr className={rowMoRong.has(r.ma_hang) ? "qtdx-row-mo" : "qtdx-row"}>
                   <td className="freeze" style={{ width: 30, left: 0, background: "#f1f5f9", padding: 0, textAlign: "center", borderBottom: "1px solid #e2e8f0", borderRight: "1px solid #e2e8f0" }}>
                     <span className="inline-flex items-center">
                       <button onClick={() => toggleExpand(r.ma_hang)}
