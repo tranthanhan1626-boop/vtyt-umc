@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ExternalLink, FileText, Package, Sheet, Trash2, Undo2, X } from "lucide-react";
+import { ExternalLink, Package, Sheet, Trash2, Undo2, X } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import { NHAN_TRANG_THAI, fmtNgayGio, khoaNhom } from "./DeXuatTongHop";
@@ -32,7 +32,7 @@ const MAU_TRANG_THAI = {
 // Không lọc theo don_vi ở FE — RLS của proposals đã tự giới hạn dvsd chỉ thấy
 // đúng khoa mình (policy "xem đề xuất theo phân quyền khoa"), không cần lặp
 // lại điều kiện đó ở đây.
-export default function DeXuatCuaToi({ profile, goi, onMoHoSo }) {
+export default function DeXuatCuaToi({ profile, goi }) {
   const [rows, setRows] = useState([]);
   const [tenDot, setTenDot] = useState({});
   // Cả dòng đợt chứ không chỉ tên: khoá gói con của một đợt bổ sung suy ra
@@ -184,13 +184,6 @@ export default function DeXuatCuaToi({ profile, goi, onMoHoSo }) {
           // khoa ở RPC, không còn khóa theo email của người bấm gửi ban đầu.
           const cungKhoa = g.don_vi === profile.khoa;
           const coTheRut = cungKhoa && g.trangThai !== "hoan_thanh" && g.trangThai !== "hon_hop";
-          const moHoSo = (maHoSo) => onMoHoSo?.({
-            dotId: g.dot_id,
-            donVi: g.don_vi,
-            nhomDeXuat: g.nhom_de_xuat,
-            proposalId: g.nhom_de_xuat ? null : g.items[0]?.id,
-            maHoSo,
-          });
           return (
             <motion.div
               layout={!giamChuyenDong}
@@ -210,15 +203,11 @@ export default function DeXuatCuaToi({ profile, goi, onMoHoSo }) {
                 <span className={`inline-block px-2 py-0.5 rounded-full font-medium ${MAU_TRANG_THAI[g.trangThai]}`}>
                   {g.trangThai === "hon_hop" ? "Hỗn hợp" : NHAN_TRANG_THAI[g.trangThai]}
                 </span>
-                {/* Giỏ đã GỬI là mở được Word cam kết, không chờ PĐD duyệt
-                    xong (chốt 08/08/2026, xem patch_zq). Có thẻ ở đây nghĩa là
-                    giỏ đã nằm trong `proposals`, tức đã gửi. */}
+                {/* QĐ 25/08/2026 — bỏ hẳn Word cam kết và Phiếu đề nghị mua.
+                    Danh mục đề xuất của khoa đã xác nhận CHÍNH LÀ bộ hồ sơ, nên
+                    ở đây chỉ còn một đường: mở đúng danh mục đó. */}
                 {goi !== "chi_dinh_thau" && (
                   <div className="ml-auto flex flex-wrap items-center gap-2">
-                    <button type="button" onClick={() => moHoSo("cam_ket_sl")}
-                      className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-white px-2.5 py-1.5 font-medium text-blue-700 hover:bg-blue-50">
-                      <FileText size={13} /> Mở phiếu Word cam kết
-                    </button>
                     {/* Excel danh mục KHÔNG còn là tài liệu trong bộ hồ sơ
                         (chốt 07/08/2026) — nó là tab riêng, gộp mọi giỏ cùng
                         gói con. Nút này chỉ điều hướng sang đó; bấm "Mở phiếu

@@ -11,12 +11,16 @@ import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
 import { BAT_XOA_DU_LIEU_TEST } from "../lib/xoaDuLieuTest";
 
 const fmtNgay = (x) => x ? new Date(x).toLocaleString("vi-VN") : "";
+// Ba nhóm dưới đây thuộc TÍNH NĂNG ĐÃ BỎ (Word cam kết / Phiếu đề nghị mua,
+// QĐ 25/08/2026). Giữ trong công cụ dọn vì bảng cũ vẫn còn dòng tồn từ trước —
+// bỏ mục dọn đi thì không ai quét được nữa. Nhãn ghi rõ "đã bỏ" để không ai
+// tưởng hệ thống còn sinh ra chúng.
 const tenMaHoSo = {
-  chi_dinh_thau: "Word chỉ định thầu",
-  cam_ket_sl: "Word cam kết",
-  danh_muc_dvsd: "Excel danh mục khoa",
-  de_nghi_mua: "Word đề nghị mua",
-  tong_hop_thau: "Excel tổng hợp thầu",
+  chi_dinh_thau: "Word chỉ định thầu (đã bỏ)",
+  cam_ket_sl: "Word cam kết (đã bỏ)",
+  danh_muc_dvsd: "Excel danh mục khoa (đã bỏ)",
+  de_nghi_mua: "Word đề nghị mua (đã bỏ)",
+  tong_hop_thau: "Excel tổng hợp thầu (đã bỏ)",
 };
 
 function nhomDeXuat(rows) {
@@ -66,7 +70,7 @@ export default function QuanLyDuLieuTest({ profile }) {
       },
       {
         key: "ho_so_cong_tac",
-        ten: "File Word / Excel đang cộng tác",
+        ten: "File Word / Excel đang cộng tác (tính năng đã bỏ — dòng tồn)",
         query: () => fetchAllRows((f, t) => supabase.from("ho_so_cong_tac")
           .select("id,ma_ho_so,loai_tai_lieu,don_vi,trang_thai,nguon_key,updated_at")
           .order("updated_at", { ascending: false }).range(f, t), { order: "id" }),
@@ -75,7 +79,7 @@ export default function QuanLyDuLieuTest({ profile }) {
       },
       {
         key: "lan_xuat_ho_so",
-        ten: "Lịch sử xuất Word / Excel",
+        ten: "Lịch sử xuất Word / Excel (tính năng đã bỏ — dòng tồn)",
         query: () => fetchAllRows((f, t) => supabase.from("lan_xuat_ho_so")
           .select("id,ten_ho_so,ma_ho_so,don_vi,so_dong,ngay_xuat")
           .order("ngay_xuat", { ascending: false }).range(f, t), { order: "id" }),
@@ -93,7 +97,7 @@ export default function QuanLyDuLieuTest({ profile }) {
       },
       {
         key: "phieu_de_nghi",
-        ten: "Phiếu đề nghị mua",
+        ten: "Phiếu đề nghị mua (tính năng đã bỏ — dòng tồn)",
         query: () => fetchAllRows((f, t) => supabase.from("phieu_de_nghi")
           .select("id,proposal_id,trang_thai,created_at,updated_at")
           .order("created_at", { ascending: false }).range(f, t), { order: "id" }),

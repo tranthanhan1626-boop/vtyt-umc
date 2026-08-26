@@ -332,7 +332,7 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold leading-tight">Bàn điều hành</span>
               <span className="mt-1 block text-[11px] leading-tight opacity-70">
-                Theo dõi khoa · Phiếu đề nghị — chỉ để xem
+                Theo dõi khoa theo từng gói — chỉ để xem
               </span>
             </span>
           </button>

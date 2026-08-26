@@ -49,7 +49,12 @@ const goiConCuaDotNay = (dot) => {
     return [{ goiId: id, ...GOI_ID_MAP[id], goi: `Đợt T${dot.thang_moc}` }];
   }
   if (dot.loai_mua_sam === "chi_dinh_thau") {
-    return [{ goiId: "chi-dinh-thau", ...GOI_ID_MAP["chi-dinh-thau"] }];
+    // BẪY 16: `GOI_ID_MAP["chi-dinh-thau"].goi === null` (cũng như mọi `bs-t*`).
+    // Trước đây đổ thẳng ra màn thành chữ "lọc theo gói null". Nhãn người đọc
+    // được nằm ở `nhan`, nên chuẩn hoá NGAY TẠI NGUỒN — chỗ nào dùng dsGoiCon
+    // cũng an toàn, không phải nhớ `?? nhan` ở từng chỗ hiện chữ.
+    const g = GOI_ID_MAP["chi-dinh-thau"];
+    return [{ goiId: "chi-dinh-thau", ...g, goi: g?.goi || g?.nhan || "Chỉ định thầu" }];
   }
   // Gói 18 tháng — năm gói con thật.
   return Object.entries(GOI_ID_MAP)
@@ -98,6 +103,10 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   const [chotDanhMucV3, setChotDanhMucV3] = useState([]);
   const [chotTrinhKyKhoaV3, setChotTrinhKyKhoaV3] = useState([]);
   const [phienTrinhKyV3, setPhienTrinhKyV3] = useState([]);
+  // QĐ 26/08/2026 — mã rớt đẩy VÀO GIỎ khoa, khoa tự gửi. Đây là sổ những dòng
+  // đã vào giỏ mà khoa CHƯA gửi; PĐD nhắc được chứ không gửi thay được.
+  const [rotTrongGio, setRotTrongGio] = useState([]);
+  const [xemRotTrongGio, setXemRotTrongGio] = useState(false);
   const [dangTai, setDangTai] = useState(true);
   const [loi, setLoi] = useState("");
   const [canhBaoChot, setCanhBaoChot] = useState("");
@@ -154,15 +163,42 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   const soDotTheoLoai = useMemo(() => {
     const m = {};
     dsDot.forEach((d) => {
-      if (!m[d.loai_mua_sam]) m[d.loai_mua_sam] = { tong: 0, mo: 0, nam: new Set() };
+      if (!m[d.loai_mua_sam]) m[d.loai_mua_sam] = { tong: 0, mo: 0, nam: new Set(), theoNam: {} };
       m[d.loai_mua_sam].tong += 1;
       if (d.trang_thai === "mo") m[d.loai_mua_sam].mo += 1;
-      if (d.nam) m[d.loai_mua_sam].nam.add(d.nam);
+      if (d.nam) {
+        m[d.loai_mua_sam].nam.add(d.nam);
+        m[d.loai_mua_sam].theoNam[d.nam] = (m[d.loai_mua_sam].theoNam[d.nam] || 0) + 1;
+      }
     });
     return m;
   }, [dsDot]);
   const dot = useMemo(() => dsDot.find((d) => String(d.id) === dotId) || null, [dsDot, dotId]);
   const dsGoiCon = useMemo(() => goiConCuaDotNay(dot), [dot]);
+  // QĐ 26/08/2026 — gom sổ "rớt còn nằm trong giỏ" theo khoa để nhắc.
+  const tomTatRotTrongGio = useMemo(() => {
+    const theoKhoa = new Map();
+    rotTrongGio.forEach((r) => {
+      if (!theoKhoa.has(r.khoa)) theoKhoa.set(r.khoa, { khoa: r.khoa, soMa: 0, tong: 0, ds: [] });
+      const k = theoKhoa.get(r.khoa);
+      k.soMa += 1;
+      k.tong += Number(r.so_rot) || 0;
+      k.ds.push(r);
+    });
+    const dsKhoaGio = [...theoKhoa.values()]
+      .sort((a, b) => b.soMa - a.soMa || String(a.khoa).localeCompare(String(b.khoa), "vi"));
+    return {
+      soDong: rotTrongGio.length,
+      soMa: new Set(rotTrongGio.map((r) => r.ma_hang)).size,
+      soKhoa: dsKhoaGio.length,
+      dsKhoa: dsKhoaGio,
+    };
+  }, [rotTrongGio]);
+
+  const nhanGoiCon = useMemo(
+    () => dsGoiCon.find((g) => g.goiId === goiConId)?.goi || "",
+    [dsGoiCon, goiConId]
+  );
 
   // Đổi đợt sang loại khác thì gói con cũ không còn hợp lệ.
   useEffect(() => {
@@ -191,6 +227,9 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   // ---- Dữ liệu chính ------------------------------------------------------
   const tai = useCallback(async () => {
     if (!dot) return;
+    // Chưa chọn gói con thì màn không hiện bảng nào — nạp lúc này là ném đi
+    // trọn một lượt truy vấn (đo 25/08: 27 request cho một cú đổi đợt).
+    if (!goiConId) { setDangTai(false); return; }
     setDangTai(true);
     setLoi("");
     setCanhBaoChot("");
@@ -295,6 +334,20 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
     setKhoaThamGiaV3(rKhoaThamGia.error ? [] : (rKhoaThamGia.data || []));
     setChotTrinhKyKhoaV3(rChotTrinhKyKhoa.error ? [] : (rChotTrinhKyKhoa.data || []));
     setPhienTrinhKyV3(rPhienTrinhKy.error ? [] : (rPhienTrinhKy.data || []));
+
+    // QĐ 26/08/2026 — mã rớt của đợt này đã đẩy vào giỏ khoa nào mà chưa gửi.
+    // Đọc theo ĐỢT GỐC (`dot_goi_id_goc`) chứ không theo đợt bổ sung: PĐD đang
+    // đứng ở gói con vừa xác nhận rớt và muốn biết "số mình đẩy đi đã có ai
+    // nhận chưa", không phải đi tìm sang đợt khác.
+    // View là patch mới — thiếu thì mất một băng nhắc, không được làm hỏng màn.
+    if (dotGoiDangXem.length) {
+      const { data: dRot, error: eRot } = await supabase.from("v_ma_rot_trong_gio_v3")
+        .select("khoa, ma_hang, so_rot, so_trong_gio, dot_goi_id_goc, dot_goi_bo_sung_id")
+        .in("dot_goi_id_goc", dotGoiDangXem.map((dg) => dg.id));
+      setRotTrongGio(eRot ? [] : (dRot || []));
+    } else {
+      setRotTrongGio([]);
+    }
 
     // Mốc dữ liệu HIS mới nhất — PĐD nạp file 2 lần/tuần nên cần biết ngay
     // "số đang dùng để tính là tới tháng mấy", không phải tự nhớ.
@@ -668,8 +721,11 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
                 {(() => {
                   const t = soDotTheoLoai[l.ma];
                   if (!t) return "chưa có đợt";
-                  const soNam = t.nam.size;
-                  return soNam > 1 ? `${t.tong} đợt · ${soNam} năm` : `${t.tong} đợt`;
+                  // Ghi rõ TỪNG NĂM. "4 đợt · 2 năm" từng bị đọc nhầm thành
+                  // "một năm mở 4 đợt bổ sung" — trong khi luật là đúng 3 mốc
+                  // T1/T5/T9 mỗi năm (phản hồi 26/08/2026).
+                  if (t.nam.size <= 1) return `${t.tong} đợt`;
+                  return [...t.nam].sort().map((n) => `${n}: ${t.theoNam[n]}`).join(" · ");
                 })()}
               </span>
             </button>
@@ -710,7 +766,9 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
             </button>
           ))}
           {dsGoiCon.length === 0 && (
-            <span className="text-xs text-slate-500">Đợt này chưa có gói con nào.</span>
+            <span className="text-xs text-slate-500">
+              {dot ? "Đợt này chưa có gói con nào." : "Chọn đợt ở trên để hiện gói con."}
+            </span>
           )}
         </div>
 
@@ -727,10 +785,61 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
             so={tongQuan.soKhoaCanChot ? `${tongQuan.soKhoaDaChot}/${tongQuan.soKhoaCanChot}` : "—"}
             vach="bg-cyan-400" />
         </div>
+        {/* QĐ 26/08/2026 — mã rớt KHÔNG còn tự thành đề xuất ở đợt bổ sung; nó
+            nằm trong GIỎ của khoa cho tới khi chính khoa bấm "Gửi giỏ". PĐD
+            nhìn thấy phần chưa gửi để NHẮC — cố ý không có nút gửi thay khoa:
+            số lượng mua là chữ ký của khoa, không phải phép trừ của máy. */}
+        {tomTatRotTrongGio.soDong > 0 && (
+          <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2">
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <AlertTriangle size={15} className="shrink-0 text-amber-600" />
+              <span className="font-semibold text-amber-900">
+                Còn {fmt(tomTatRotTrongGio.soMa)} mã rớt nằm trong giỏ,{" "}
+                {fmt(tomTatRotTrongGio.soKhoa)} khoa chưa gửi
+              </span>
+              <button type="button" onClick={() => setXemRotTrongGio((v) => !v)}
+                className="rounded border border-amber-400 bg-white px-2 py-0.5 text-xs font-medium text-amber-800 hover:bg-amber-100">
+                {xemRotTrongGio ? "Thu lại" : "Bấm để xem khoa nào"}
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-amber-800">
+              Số lượng trong giỏ mới là GỢI Ý. Khoa phải tự sửa rồi bấm “Gửi giỏ” thì mới thành
+              đề xuất chính thức của đợt bổ sung. Phòng Điều dưỡng nhắc được, <b>không gửi thay khoa</b>.
+            </p>
+            {xemRotTrongGio && (
+              <div className="mt-2 max-h-64 overflow-auto rounded border border-amber-200 bg-white">
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-amber-100/80 text-amber-900">
+                    <tr>
+                      <th className="px-2 py-1 text-left font-semibold">Khoa</th>
+                      <th className="px-2 py-1 text-right font-semibold">Mã chưa gửi</th>
+                      <th className="px-2 py-1 text-right font-semibold">Tổng SL rớt</th>
+                      <th className="px-2 py-1 text-left font-semibold">Mã hàng</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tomTatRotTrongGio.dsKhoa.map((k) => (
+                      <tr key={k.khoa} className="border-t border-amber-100 align-top">
+                        <td className="px-2 py-1 font-medium text-slate-800">{k.khoa}</td>
+                        <td className="px-2 py-1 text-right tabular-nums">{fmt(k.soMa)}</td>
+                        <td className="px-2 py-1 text-right tabular-nums">{fmt(k.tong)}</td>
+                        <td className="px-2 py-1 text-slate-600">
+                          {k.ds.slice(0, 6).map((r) => r.ma_hang).join(", ")}
+                          {k.ds.length > 6 ? ` … (+${k.ds.length - 6})` : ""}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
           <span>
             {fmt(tongQuan.soMaQuanLy)} mã quản lý · {fmt(tongQuan.soMaHang)} mã hàng
-            {goiConId ? ` · lọc theo gói ${GOI_ID_MAP[goiConId]?.goi}` : " · tất cả gói con"}
+            {goiConId ? ` · lọc theo ${nhanGoiCon || goiConId}` : " · tất cả gói con"}
           </span>
           {/* Mọi số lịch sử trên màn này đều tính từ dữ liệu HIS đã nạp — nên
               hiện thẳng mốc mới nhất cạnh nút nạp, thay vì bắt PĐD tự nhớ. */}
@@ -861,7 +970,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
               chưa neo theo đợt nên tính chung cho cả gói con trong năm {NAM_DE_XUAT}.
             </p>
             <p className="mt-2 text-[11px] text-slate-500">
-              <b>KHÔNG</b> đụng tới: đề xuất của khoa, lịch sử HIS, bản Word cam kết,
+              <b>KHÔNG</b> đụng tới: đề xuất của khoa, lịch sử HIS,
               kết quả thầu và toàn bộ lịch sử chỉnh sửa (audit).
             </p>
             <div className="mt-4 flex justify-end gap-2">

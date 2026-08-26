@@ -63,8 +63,6 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
   const [trangThaiLoc, setTrangThaiLoc] = useState("");
   const [dangCapNhat, setDangCapNhat] = useState(null); // key nhóm đang xử lý
   const [loiCapNhat, setLoiCapNhat] = useState({}); // {key: message}
-  const [dsBieuMau, setDsBieuMau] = useState([]);   // danh mục biểu mẫu
-  const [phieuTheoNhom, setPhieuTheoNhom] = useState({}); // {khoaNhom: phieu}
   // Dòng đợt đầy đủ: khoá gói con của một đợt bổ sung suy ra từ `thang_moc`
   // (xem `goiConCuaDot`), thiếu nó thì link mở ra bản rỗng.
   const [dotTheoId, setDotTheoId] = useState({});
@@ -85,15 +83,9 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
       .select("id, ten, thang_moc, loai_mua_sam").eq("loai_mua_sam", goi);
     setDotTheoId(Object.fromEntries((dots || []).map((d) => [d.id, d])));
 
-    const { data: bm } = await supabase.from("bieu_mau").select("id, ma, ten").order("id");
-    setDsBieuMau(bm || []);
-    // Phiếu gắn theo nhóm (nhom_de_xuat) HOẶC theo proposal_id lẻ (đề xuất cũ).
-    const { data: phieu } = await fetchAllRows((f, t) =>
-      supabase.from("phieu_de_nghi").select("id, proposal_id, nhom_de_xuat, bieu_mau_id, trang_thai").range(f, t)
-    , { order: "id" });
-    setPhieuTheoNhom(Object.fromEntries(
-      (phieu || []).map((p) => [p.nhom_de_xuat || `le:${p.proposal_id}`, p])
-    ));
+    // (Gỡ 25/08/2026) Ở đây từng đọc `bieu_mau` + `phieu_de_nghi` cho ô chọn
+    // biểu mẫu. Tính năng phiếu đề nghị mua đã bỏ; giữ lại chỉ tốn 2 lượt
+    // truy vấn cho thứ không còn hiện ra màn.
     setLoading(false);
   };
 
@@ -153,26 +145,6 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
     }
     return arr;   // mặc định giữ thứ tự mới → cũ (rows đã order created_at desc)
   }, [rowsLoc, sapXep, goi, dotTheoId]);
-
-  // Neo phiếu vào 1 mã hàng của nhóm (id nhỏ nhất cho ổn định) — proposal_id vẫn
-  // NOT NULL và nằm trong nhóm nên FK CASCADE + RLS cũ chạy nguyên.
-  const idNeo = (g) => Math.min(...g.items.map((i) => i.id));
-
-  const chonBieuMau = async (g, bieuMauId) => {
-    const cu = phieuTheoNhom[g.key];
-    if (cu) {
-      const { data, error } = await supabase.from("phieu_de_nghi")
-        .update({ bieu_mau_id: bieuMauId }).eq("id", cu.id).select();
-      if (!error && data?.[0]) setPhieuTheoNhom((p) => ({ ...p, [g.key]: data[0] }));
-      return;
-    }
-    const { data, error } = await supabase.from("phieu_de_nghi").insert({
-      proposal_id: idNeo(g), nhom_de_xuat: g.nhom_de_xuat, bieu_mau_id: bieuMauId,
-      created_by: profile.email,
-    }).select();
-    if (error) { setLoiCapNhat((p) => ({ ...p, [g.key]: error.message })); return; }
-    if (data?.[0]) setPhieuTheoNhom((p) => ({ ...p, [g.key]: data[0] }));
-  };
 
   // "Xoá" trên UI nhưng DB chỉ đánh dấu đã rút, giữ nguyên dữ liệu + phiếu để
   // truy vết. RPC xử lý nguyên nhóm trong một transaction.
@@ -332,7 +304,6 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
       ) : (
         <div className="space-y-3">
           {nhomLoc.map((g) => {
-            const phieu = phieuTheoNhom[g.key];
             return (
               <div key={g.key} className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                 {/* Đầu nhóm: thông tin chung của cả bản đề xuất */}
@@ -357,16 +328,6 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
                       (chốt 08/08/2026, xem patch_zq). */}
                   {goi !== "chi_dinh_thau" && (
                     <div className="flex flex-wrap items-center gap-2">
-                      <button type="button" onClick={() => onMoHoSo?.({
-                        dotId: g.dot_id,
-                        donVi: g.don_vi,
-                        nhomDeXuat: g.nhom_de_xuat,
-                        proposalId: g.nhom_de_xuat ? null : g.items[0]?.id,
-                        maHoSo: "cam_ket_sl",
-                      })}
-                        className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-white px-2.5 py-1.5 font-medium text-blue-700 hover:bg-blue-50">
-                        <FileText size={13} /> Mở Word cam kết
-                      </button>
                       {/* Excel danh mục KHÔNG còn là tài liệu trong bộ hồ sơ
                           (chốt 07/08/2026) — nó là tab riêng gộp mọi giỏ cùng
                           gói con. Gọi onMoHoSo("danh_muc_dvsd") như trước sẽ mở
@@ -441,26 +402,11 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
                     dưới dạng nhãn đọc, đủ để đọc dữ liệu cũ. */}
                 <div className="flex flex-wrap items-start gap-x-6 gap-y-3 px-4 py-3 border-t border-slate-100 bg-white">
 
-                  <div className="min-w-[240px]">
-                    <p className="text-xs text-slate-400 mb-1.5">Biểu mẫu đề nghị mua (chung cả nhóm)</p>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="relative">
-                        <select value={phieu?.bieu_mau_id || ""}
-                          onChange={(e) => e.target.value && chonBieuMau(g, Number(e.target.value))}
-                          className="appearance-none border border-slate-300 rounded-md pl-2 pr-7 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-umc-500">
-                          <option value="">— chọn biểu mẫu —</option>
-                          {dsBieuMau.map((b) => <option key={b.id} value={b.id}>{b.ten}</option>)}
-                        </select>
-                        <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                      </div>
-                      {phieu && (
-                        <a href={`?phieu=${phieu.id}`} target="_blank" rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-umc-700 hover:text-umc-900 hover:underline">
-                          <FileText size={12} /> Mở phiếu để điền <ExternalLink size={10} />
-                        </a>
-                      )}
-                    </div>
-                  </div>
+                  {/* (Gỡ 25/08/2026) Ô "Biểu mẫu đề nghị mua" + link `?phieu=` từng
+                      nằm ở đây. Phiếu đề nghị mua và Word cam kết đã bỏ hẳn —
+                      danh mục đề xuất đã xác nhận CHÍNH LÀ bộ hồ sơ. App.jsx
+                      cũng đã gỡ handler `?phieu=`, nên hai điều khiển đó chỉ
+                      còn là nút bấm chết câm. */}
 
                   <div className="ml-auto flex flex-col items-end gap-2">
                     {g.trangThai === "hoan_thanh" ? (

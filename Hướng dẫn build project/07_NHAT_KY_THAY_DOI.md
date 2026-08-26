@@ -1479,3 +1479,64 @@ Bộ sinh trước đăng ký **cả 62 khoa vào mọi gói con**. Nay:
 
 `pytest` **222** · `kiem_moi_man` ba vòng xanh (32 màn · 65 bảng/view) ·
 `test:formula` OK · `build` ✓ · database **135 MB**.
+
+---
+
+## 26/08/2026 — Mã rớt đi vào GIỎ của khoa (đảo QĐ 21/08)
+
+**Yêu cầu:** *"nếu mã nào tích rớt và đẩy sang gói bổ sung là đẩy vô giỏ chứ
+không gửi giỏ nha… để khoa tự vô quyết số lượng đề xuất và gửi giỏ → đi tiếp
+vòng full pipeline giống gói con trong gói 18 tháng"*, kèm chọn phương án
+*"Vào giỏ, nhưng hệ nhắc lại nếu để lâu — PĐD nhắc được, KHÔNG gửi thay khoa."*
+
+**Trước:** `xac_nhan_rot_v3` `insert into proposals` cho từng khoa ở đợt bổ sung,
+`is_current = true`. Máy ký thay khoa; khoa chỉ còn đường sửa lại.
+
+**Sau:** phần rớt **upsert vào `gio_nhap`** của khoa tại đợt bổ sung, số lượng
+là **gợi ý**; khoa sửa rồi tự bấm "Gửi giỏ" mới thành `proposals`.
+
+| Việc | Chỗ làm |
+|---|---|
+| Rớt → giỏ, không → `proposals` | `patch_zzzzzx_ma_rot_vao_gio.sql` |
+| Mục giỏ đủ danh tính (`ma_hang`/`ten_vat_tu`/`dvt`/`ma_quan_ly`/`ten_quan_ly`/`goi`) | `patch_zzzzzy_gio_rot_du_truong.sql` |
+| Sổ nhắc `v_ma_rot_trong_gio_v3` (`security_invoker`) | `patch_zzzzzx` |
+| Băng "⚠ Còn N mã rớt nằm trong giỏ, M khoa chưa gửi" + bảng xem khoa nào | `BanDieuHanhPdd.jsx` |
+| Nhãn `⟳ rớt thầu · gợi ý N` trên dòng giỏ của khoa | `Function1.jsx` |
+
+**Đo thật trên staging** (chạy trong transaction rồi rollback, không đụng dữ liệu):
+
+```
+cảnh: mã 55677 · tổng Q 80 · trúng 60 · 'Khoa Da liễu thẩm mỹ da' bị chia 0 → rớt 20
+A. CỘNG DỒN: khoa tự gõ 7 + rớt 20 → soLuong = 27 · so_cong_don = 1   ✅
+B. proposals sinh ra ở đợt bổ sung: 0                                  ✅
+C. PĐD insert proposals hộ khoa → InsufficientPrivilege (RLS chặn)     ✅
+D. view nhắc 2 dòng / 2 khoa chưa gửi                                  ✅
+E. mục giỏ đủ 12/12 trường màn giỏ cần                                 ✅
+```
+
+**PĐD không gửi thay khoa được** không phải quy ước mà là RLS trên `proposals` —
+đã thử insert bằng JWT của PĐD và bị chặn thật.
+
+---
+
+## 26/08/2026 — Vá 9 lỗi từ đợt nghiệm thu độc lập
+
+Agent bấm Chrome như người dùng thật trên commit `9c61b88`, báo về 9 lỗi:
+
+| # | Mức | Lỗi | Vá ở |
+|---|---|---|---|
+| 1 | CHẶN | 19 nút "Mở phiếu Word cam kết" còn trên màn khoa, bấm **chết câm** (`App.jsx` không truyền `onMoHoSo`) | `DeXuatCuaToi.jsx` — bỏ nút + handler + prop |
+| 2 | VỪA | Hiện chữ `"lọc theo gói null"` (BẪY 16: `GOI_ID_MAP[...].goi === null`) | `BanDieuHanhPdd.jsx` — chuẩn hoá nhãn ngay tại `goiConCuaDotNay` |
+| 3 | HIỆU NĂNG | Đổi đợt bắn **27 request** rồi vứt đi (chưa chọn gói con vẫn nạp full) | `tai()` thoát sớm khi `!goiConId` |
+| 4–8 | NHẸ | Chữ sót của tính năng đã xoá (5 chỗ) | `KhungGoiThau` · `ChoDuyet` · `DanhMucDeXuatLinks` · `QuanLyDuLieuTest` · `BanDieuHanhPdd` |
+| 9 | NHẸ | "Đợt này chưa có gói con nào" hiện cả khi **chưa chọn đợt** | `BanDieuHanhPdd.jsx` |
+| — | mã chết | `DeXuatTongHop.jsx` còn ô chọn biểu mẫu + nút Word + 2 truy vấn `bieu_mau`/`phieu_de_nghi` | gỡ hết |
+
+**Chip loại gói** đổi cách đếm: `"4 đợt · 2 năm"` từng bị đọc nhầm thành "một năm
+mở 4 đợt bổ sung" (luật là đúng 3 mốc T1/T5/T9 mỗi năm). Nay ghi rõ từng năm:
+`2026: 1 · 2027: 3`.
+
+⚠️ **Còn tồn:** 4 đợt bổ sung rỗng (#191–194) sinh ra từ các lần chạy thử trước
+vẫn nằm trên staging — lệnh xoá bị sandbox chặn. Chúng rỗng hoàn toàn
+(0 proposals / 0 giỏ) và `fn_dot_bo_sung_gan_nhat()` tự tạo lại khi cần, nên xoá
+được bằng hộp thoại **"Kết thúc đợt & dọn"** trên Bàn điều hành.

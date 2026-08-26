@@ -85,8 +85,8 @@ export default function DanhMucDeXuatLinks({ profile, goi }) {
         <div className="min-w-0 flex-1">
           <h2 className="text-base font-semibold text-slate-900">Danh mục đề xuất của khoa</h2>
           <p className="mt-0.5 text-sm text-slate-500">
-            Mỗi dòng là một kỳ/đợt độc lập. Số đỏ là mã rớt chưa xử lý của đúng kỳ đó;
-            Word và Excel web đã làm được liệt kê kèm theo thứ tự cập nhật.
+            Mỗi dòng là một kỳ/đợt độc lập. Số đỏ là mã rớt chưa xử lý của đúng kỳ đó.
+            Danh mục đã xác nhận của kỳ nào chính là bộ hồ sơ của kỳ đó.
           </p>
         </div>
       </div>

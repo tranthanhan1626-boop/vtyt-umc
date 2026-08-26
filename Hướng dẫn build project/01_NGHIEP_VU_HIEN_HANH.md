@@ -391,7 +391,7 @@ chỉ đọc. Dải giai đoạn nằm ngay trên bảng tổng hợp, bắt đ�
 | Nhịp | Việc | Ai bị ảnh hưởng |
 |---|---|---|
 | 1 · gõ nháp | Gõ R1/R2/R3, chọn mã để đổ số rớt sang, sửa tới sửa lui | **Không ai** — khoa chưa biết gì |
-| 2 · bấm **"Xác nhận rớt"** | Phần đã chọn được đổ sang mã tương đương; phần **còn lại chuyển tiếp hết** về đợt bổ sung; khoa nhận thông báo đỏ | Khoa |
+| 2 · bấm **"Xác nhận rớt"** | Phần đã chọn được đổ sang mã tương đương; phần **còn lại vào GIỎ** của khoa ở đợt bổ sung (QĐ 26/08 — chưa phải đề xuất, khoa tự gửi); khoa nhận thông báo đỏ | Khoa |
 
 Vì sao tách hai nhịp: nếu đẩy ngay lúc gõ, PĐD đổi ý đổ sang mã khác thì hệ phải
 rút mã ra khỏi đợt bổ sung — khoa nhìn thấy mã hiện lên rồi biến mất. Hai nhịp
@@ -540,8 +540,23 @@ PĐD bấm, với **từng khoa** đã đề xuất mã đó:
 3. Hệ tìm **đợt bổ sung gần nhất** theo lịch cố định T1 · T5 · T9.
    🆕 Đợt bổ sung **luôn mở sẵn** (QĐ D10): hệ tự tạo và tự mở, không đợi PĐD.
    Đợt đích đã chốt Q rồi thì nhảy sang mốc kế tiếp.
-4. Đưa mã vào đợt đó cho khoa, **điền sẵn số lượng đúng bằng số khoa đó đã rớt**.
-5. Khoa nhận **thông báo đỏ**, sửa được ngay — nhiều hơn, ít hơn, hoặc về 0.
+4. 🆕 **Đẩy mã vào GIỎ của khoa** ở đợt đó (QĐ 26/08/2026), số lượng điền sẵn
+   đúng bằng số khoa đó đã rớt — nhưng đó chỉ là **GỢI Ý**, chưa phải đề xuất.
+   Mã đã có sẵn trong giỏ thì phần rớt được **CỘNG THÊM**, không ghi đè (D11).
+5. Khoa nhận **thông báo đỏ**, mở giỏ, sửa số cho đúng nhu cầu rồi **tự bấm
+   "Gửi giỏ"** → lúc đó mới thành `proposals` và đi tiếp **full pipeline y như
+   một gói con của gói 18 tháng**.
+6. 🆕 Bàn điều hành nhắc **"Còn N mã rớt nằm trong giỏ, M khoa chưa gửi"**, bấm
+   xem được khoa nào. **PĐD nhắc được, KHÔNG gửi thay khoa** — RLS trên
+   `proposals` chặn thật, không chỉ là quy ước.
+
+> **Vì sao đảo lại QĐ 21/08.** Bản 21/08 cho hệ `insert` thẳng vào `proposals`,
+> tức là **máy ký thay khoa**. Số lượng mua kỳ tới là chữ ký của khoa, không
+> phải phép trừ của máy: rớt 30.000 kỳ trước không có nghĩa kỳ sau cần đúng
+> 30.000 (có thể đã đổi phác đồ, đã mượn được, đã có mã tương đương). Cái lo
+> của QĐ 21/08 — "khoa quên thì số bốc hơi" — được giải bằng chỗ khác: sổ
+> `chuyen_tiep_rot_v3` vẫn ghi đủ mọi dòng rớt, và Bàn điều hành nhắc phần chưa
+> gửi. Không mất số, mà cũng không ký thay ai.
 
 > **Vì sao không phải "chỉ mã rớt 100% mới chuyển tiếp".** Phản ví dụ: mã X có
 > Q = 100.000, rớt 30.000, trúng 70.000, mà mã quản lý đó không còn mã nào trúng

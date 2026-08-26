@@ -41,6 +41,7 @@
 | **Chốt dữ liệu trình ký bấm từng bảng khoa** (49 nút) | Bỏ hẳn — chỉ còn **một nút chốt toàn bộ** DOT_GOI | 21/08/2026 |
 | **Sửa số sau chốt Q phải mở chốt cả gói con** | **Gõ đè tại chỗ kèm lý do**, Q vẫn giữ làm snapshot | 21/08/2026 |
 | **Mã rớt: "không tự tạo đề xuất, không tự điền số lượng", khoa tự chọn có đề xuất lại không** | **Chuyển tiếp** — hệ tự đưa mã rớt vào đợt bổ sung gần nhất của khoa, tự điền số = số rớt; khoa sửa và quyết cuối | 21/08/2026 |
+| **Mã rớt tự thành `proposals` ở đợt bổ sung (QĐ 21/08 ở trên)** | **Vào GIỎ, không vào `proposals`.** Số điền sẵn là *gợi ý*; khoa tự sửa rồi tự bấm "Gửi giỏ" mới thành đề xuất. Bàn điều hành nhắc "còn N mã trong giỏ, M khoa chưa gửi" — **PĐD không gửi thay khoa** | 26/08/2026 |
 | **Đợt bổ sung do PĐD tạo tay khi cần** | Lịch cố định T1/T5/T9; thiếu thì **hệ tự tạo** | 21/08/2026 |
 | **Chuyển tiếp bắn ngay lúc gõ số rớt** | **Hai nhịp** — gõ nháp không ai bị làm phiền, nút **"Xác nhận rớt"** mới là cò | 23/08/2026 |
 | **Chỉ mã rớt 100% mới chuyển tiếp** | **Mọi phần rớt chưa đổ đi đâu** đều chuyển tiếp, kể cả rớt một phần | 23/08/2026 |
@@ -163,6 +164,19 @@ có trong câu import** — sổ một dòng ở đợt đã chốt Q là **tr�
 
 **Đừng tin `build ✓` là màn hình chạy được.** Phải bấm thật ít nhất một lần trên
 đường mà thay đổi đi qua.
+
+### BẪY — server ghi thẳng vào cấu trúc do frontend dựng (26/08/2026)
+
+`patch_zzzzzx` cho `xac_nhan_rot_v3` ghi mã rớt vào `gio_nhap.noi_dung`. Mục
+ghi ra đủ đúng theo `MAC_DINH_NHAP()` — nơi frontend **tạo** mục giỏ. Nhưng màn
+giỏ **tiêu thụ** mục đó bằng `Object.values(nhapLieu)` rồi đọc `n.ma_hang`,
+`n.ma_quan_ly`, `n.ten_vat_tu`, `n.dvt`; những trường này được gắn ở **chỗ bỏ mã
+vào giỏ**, không nằm trong `MAC_DINH_NHAP()`. Kết quả suýt xảy ra: mã rớt vào
+giỏ nhưng hiện dòng trống và bấm "Gửi giỏ" đẩy lên `ma_hang: undefined` — đúng
+cái vòng mà quyết định 26/08 muốn nối liền. `patch_zzzzzy` vá.
+
+**Luật:** hễ server ghi thẳng vào một cấu trúc mà frontend dựng, phải đọc chỗ
+frontend **tiêu thụ** cấu trúc đó, không chỉ chỗ nó **tạo** ra.
 
 ---
 

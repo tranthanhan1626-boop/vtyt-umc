@@ -2095,7 +2095,18 @@ export default function Function1({
                             <div key={n.ma_hang}
                               className={`flex items-start gap-2 text-xs rounded-md px-2 py-1.5 border ${thieu ? "border-amber-200 bg-amber-50" : "border-slate-100 bg-slate-50/60"}`}>
                               <span className="font-mono text-slate-500 shrink-0">{n.ma_hang}</span>
-                              <span className="flex-1 min-w-0 leading-tight">{n.ten_vat_tu}</span>
+                              <span className="flex-1 min-w-0 leading-tight">
+                                {n.ten_vat_tu}
+                                {/* QĐ 26/08/2026 — mã do rớt thầu đưa về nằm sẵn trong giỏ.
+                                    Phải nói rõ số đang hiện là GỢI Ý: khoa dễ tưởng mình
+                                    đã gõ số này rồi và gửi luôn con số của máy. */}
+                                {n.tuMaRot && (
+                                  <span className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800"
+                                    title={n.ghiChu || "Mã rớt thầu kỳ trước chuyển sang đợt bổ sung"}>
+                                    ⟳ rớt thầu · gợi ý {fmt(n.soRotGoc ?? n.soLuong)}
+                                  </span>
+                                )}
+                              </span>
                               <label className="inline-flex shrink-0 items-center gap-1 text-slate-400">
                                 <span className="hidden lg:inline">SL</span>
                                 <input

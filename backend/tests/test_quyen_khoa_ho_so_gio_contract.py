@@ -17,31 +17,31 @@ def test_rut_de_xuat_phan_quyen_theo_khoa_khong_theo_email_nguoi_tao():
     assert "Chỉ account đã tạo hồ sơ này mới được rút." not in DE_XUAT_KHOA
 
 
-def test_the_gio_co_nut_word_cam_ket_va_link_excel_danh_muc():
-    """Thẻ giỏ (màn khoa và màn PĐD) phải mở được cả Word cam kết lẫn Excel
-    danh mục.
+def test_the_gio_khong_con_word_cam_ket_chi_con_link_excel_danh_muc():
+    """ĐẢO 25/08/2026 — Word cam kết và Phiếu đề nghị mua bị BỎ HẲN.
 
-    ĐỔI 08/08/2026, hai lần:
-      1. Excel danh mục KHÔNG còn là tài liệu trong bộ hồ sơ (chốt 07/08) nên
-         nút cũ `onMoHoSo("danh_muc_dvsd")` mở ra một hồ sơ không bao giờ tồn
-         tại. Giờ là link sang tab riêng `#danh-muc-de-xuat/...`.
-      2. Không còn chờ `hoan_thanh`: gửi giỏ là mở được cam kết luôn
-         (patch_zq) — nên KHÔNG được khoá nút sau trạng thái đó nữa.
+    Danh mục đề xuất của khoa đã xác nhận CHÍNH LÀ bộ hồ sơ. Bản trước của test
+    này bắt buộc phải CÓ nút cam kết; giữ nguyên thì nó khoá luôn quyết định gỡ.
+
+    Nghiệm thu độc lập 26/08 bắt được đúng chỗ đau: nút vẫn còn trên màn khoa
+    (19 nút) nhưng `App.jsx` không truyền `onMoHoSo` nên bấm **chết câm** —
+    `npm run build` không bắt được loại lỗi này, chỉ người bấm mới thấy.
     """
     for source in (DE_XUAT_KHOA, DE_XUAT_PDD):
-        assert "cam_ket_sl" in source
-        assert "#danh-muc-de-xuat/" in source
-        assert 'trangThai === "hoan_thanh" && goi !== "chi_dinh_thau"' not in source, (
-            "patch_zq: không được chặn nút cam kết theo trạng thái duyệt nữa"
-        )
+        assert "cam_ket_sl" not in source, "Word cam kết đã bỏ, không được còn nút"
+        assert "#danh-muc-de-xuat/" in source, "đường vào bộ hồ sơ thật phải còn"
 
-    # Chỉ soi màn khoa cho nút Excel chết: màn PĐD vẫn dùng hợp lệ mã hồ sơ
-    # `danh_muc_dvsd` cho chức năng GỘP Excel nhiều giỏ (nguon_key "gop:...",
-    # RPC gop_excel_danh_muc_de_xuat) — cái đó là hồ sơ có thật, đừng cấm nhầm.
-    assert 'maHoSo: "danh_muc_dvsd"' not in DE_XUAT_KHOA, (
-        "nút Excel cũ trên thẻ giỏ mở một hồ sơ không bao giờ tồn tại — "
-        "phải là link sang tab Danh mục đề xuất"
+    assert "onMoHoSo" not in DE_XUAT_KHOA, (
+        "bỏ nút thì bỏ luôn prop — để lại là mời người sau gắn nút chết câm khác"
     )
+    assert 'maHoSo: "danh_muc_dvsd"' not in DE_XUAT_KHOA
+    # Soi TRUY VẤN thật, không soi chữ: chú thích "(Gỡ 25/08) từng đọc
+    # phieu_de_nghi ở đây" là thứ nên giữ, nó giải thích chỗ trống.
+    for goi_ham in ('from("phieu_de_nghi")', 'from("bieu_mau")', 'href={`?phieu='):
+        assert goi_ham not in DE_XUAT_PDD, (
+            f"{goi_ham} thuộc tính năng đã bỏ; App.jsx cũng đã gỡ handler ?phieu= "
+            "nên giữ lại chỉ còn là nút bấm chết câm"
+        )
 
 
 def test_ma_da_gui_an_den_khi_pdd_chot_da_di_thau():

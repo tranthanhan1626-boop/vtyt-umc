@@ -29,7 +29,7 @@ export default function ChoDuyet({ onDoiSoLuong, onMoManKhac }) {
   if (!rows.length) return <div className="py-12 text-center">
     <Inbox size={32} className="mx-auto mb-3 text-slate-300" />
     <p className="text-sm font-medium text-slate-600">Không có yêu cầu nào chờ duyệt</p>
-    <p className="mt-1 text-xs text-slate-400">Word và Excel được tạo từ dữ liệu hiện hành, không đi qua vòng duyệt riêng.</p>
+    <p className="mt-1 text-xs text-slate-400">Danh mục đề xuất của khoa được xác nhận thẳng trên màn, không đi qua vòng duyệt riêng.</p>
   </div>;
 
   return <div className="space-y-4">
