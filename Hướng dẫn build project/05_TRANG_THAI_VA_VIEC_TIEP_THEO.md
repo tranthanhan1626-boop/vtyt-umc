@@ -519,42 +519,54 @@ Hai cổng chặn (`patch_zzzzzn` + `patch_zzzzzs`) giữ nguyên làm **lưới
 
 ## 7. Trạng thái staging ngay lúc này
 
-Đã dọn về **dữ liệu nền**, mọi bảng nghiệp vụ = 0:
+> **Đo thật cuối ngày 26/08/2026.** Chủ dự án đã tự chạy hết vòng và báo
+> **"tôi test ổn"**.
 
 ```text
+── NỀN (không dựng lại được)
 users 8 · vat_tu 3.327 · nhom_ky_thuat 1.369
 usage_history_current 141.623 (2024: 54.736 · 2025: 56.651 · 2026: 30.236, tới T6)
 usage_history_changelog 291.622
-dot_de_xuat 1 (#200 "Gói rộng rãi 1/2027 - 6/2028") · dot_goi 5
-proposals 24 · phan_bo_khoa 24 · chot_q_phien 1
+
+── NGHIỆP VỤ (dữ liệu chủ dự án tự tạo khi test)
+dot_de_xuat 2   #200 "Gói rộng rãi 1/2027 - 6/2028"
+                #201 "Mua sắm bổ sung đợt tháng 9/2026"  ← hệ TỰ TẠO khi xác nhận rớt
+dot_goi 6 · proposals 24 · phan_bo_khoa 24 · chot_q_phien 1
+danh_muc_khoa_chot 2 · chuyen_so_rot_v3 3 · chuyen_tiep_rot_v3 5 · gio_nhap 5 mục
+
+dung lượng 136 / 500 MB
 ```
 
-> **Đo lại 26/08/2026 (chiều).** Đã dọn sạch 11.030 dòng / 5 đợt / 9 gói con,
-> gồm cả 4 đợt bổ sung rỗng #191–194 sinh ra từ các lần chạy thử. Database
-> **143 → 135 MB** sau `VACUUM FULL`. Sau đó chủ dự án tự tạo đợt #200 và cho
-> dvsd1/dvsd2 gửi 12 mã mỗi khoa để test thật.
->
-> ⚠️ **HIS mới tới T6/2026 — thiếu T7 và T8.** Gợi ý P50–P75 khoa nhìn thấy
-> trong T9 sẽ dựa trên dữ liệu cũ 3 tháng. **Phải nạp trước khi mở cho 62 khoa.**
->
-> ⚠️ `usage_history_changelog` **48 MB và chưa có luật cắt nào** — quy tắc "giữ
-> 3 năm" chỉ áp cho `usage_history_current`. Cần luật riêng.
+**Bản đang chạy:** commit `702d039` · bundle `index-BzCD7WGD.js` ·
+Netlify và localhost **trùng nhau**.
 
+### Đã chạy được hết vòng, đo trên dữ liệu thật
 
+```
+khoa gửi đề xuất → xác nhận lần 1 → PĐD tổng hợp → chốt Q → ba giai đoạn thầu
+→ ghi rớt → chia số trúng → đổ mã tương đương → xác nhận rớt → mã rớt VÀO GIỎ
+```
 
-**Dung lượng — đo thật 21/08/2026** (`pg_database_size`, không phải ước lượng):
-
-| | |
+| Khẳng định | Đo được |
 |---|---|
-| Cả database | **136 / 500 MB** gói free |
-| `usage_history_current` | 63,67 MB |
-| `usage_history_changelog` | 48,23 MB |
-| Hai bảng đó cộng lại | **111,9 MB = 82% database** |
-| Bốn mảng sau đấu thầu sẽ tốn | **≈5–6 MB/năm** |
+| Đổ mã xong số đề xuất đổi theo | `66510` 20.000→**0** · `74372` 40.000→**60.000** ✅ |
+| Nhãn điều chuyển hiện trên màn khoa | `↪ đã đổ 20.000 sang 74372` · `↩ nhận 20.000 từ 66510` ✅ |
+| Mã rớt vào giỏ, KHÔNG tự thành đề xuất | `gio_nhap` 5 mục · `proposals` bổ sung **0** ✅ |
+| Sổ cái rớt không neo đề xuất | `chuyen_tiep_rot_v3` 5 dòng, `proposal_id` NULL cả 5 ✅ |
+| Bàn điều hành nhắc phần chưa gửi | `v_ma_rot_trong_gio_v3` → 5 mã / 2 khoa ✅ |
+| Mục giỏ đủ danh tính | **12/12 trường** màn giỏ cần ✅ |
+| Đợt bổ sung tự tạo khi cần | #201 T9/2026 sinh ra lúc xác nhận rớt ✅ |
 
-Giả định "import dữ liệu sau thầu vào sẽ quá nặng" đã được **đo và bác bỏ**. Chỗ
-nặng là lịch sử HIS (~55 MB/năm), không phải dữ liệu nghiệp vụ. `patch_zn` chỉ
-nén `usage_history_current`, **không đụng** changelog.
+### 🔴 Việc phải làm trước khi mở cho 62 khoa
+
+| | Việc | Trạng thái |
+|---|---|---|
+| 1 | Chạy `backend/sql/patch_zzzzzz_go_tay_xoa_du_lieu.sql` + đổi `BAT_XOA_DU_LIEU_TEST` thành chỉ đọc cờ `VITE_ENABLE_TEST_DELETE` | **viết sẵn, CHỜ LỆNH chủ dự án** — còn đang giai đoạn test |
+| 2 | Nạp HIS **T7 và T8/2026** (đang mới tới T6) | chưa làm — gợi ý P50–P75 đang dựa trên dữ liệu cũ 3 tháng |
+| 3 | Dọn dữ liệu test, mở đợt thật cho gói 18 tháng 2027-2028 | chưa làm |
+| 4 | 62 khoa đăng ký, PĐD gán khoa ở màn `QuanLyNguoiDung` | chưa làm |
+| 5 | Đặt luật cắt cho `usage_history_changelog` (48 MB, chưa có luật) | chưa làm |
+| 6 | Giảm số cú bấm trên đường khoa gõ đề xuất — **việc code duy nhất đáng làm** | chưa bắt đầu |
 
 Tài khoản test — **mật khẩu tất cả là `111111`**:
 

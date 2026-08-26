@@ -1711,3 +1711,60 @@ netlify api restoreSiteDeploy --data '{"site_id":"…","deploy_id":"…"}'
 ```
 
 Nghiệm thu: `pytest` **238** · `build` ✓.
+
+---
+
+## 26/08/2026 (cuối ngày) — Hai lỗi của việc đổi nguồn truy vấn, và một quy tắc bị chính tôi vi phạm
+
+Đổi nguồn hai màn từ `phan_bo_khoa` sang `v_phan_bo_sau_dieu_chuyen_v3`, chạy
+`build ✓` + 238 test văn bản rồi **giao thẳng, không bấm thử**. Chủ dự án mở
+"Danh mục đề xuất của khoa" là chết ngay.
+
+| # | Lỗi | Vì sao lọt |
+|---|---|---|
+| 1 | `column v_phan_bo_sau_dieu_chuyen_v3.id does not exist` | `fetchAllRows` phân trang bằng `order: "id"`. Bảng gốc có cột `id`, **view gộp thì không**. Đổi nguồn mà quên đổi khoá phân trang |
+| 2 | Nhãn `↪ đã đổ 20.000 sang 74372` **không hiện** | `row` trong `taiDuLieuKhoa` dựng **từng field một**, không spread `prop` — chọn cột trong `.select()` là chưa đủ, phải chép tay sang. Không lỗi, không cảnh báo, chỉ lặng lẽ thiếu |
+
+**Lỗi 2 chỉ bắt được bằng cách BẤM THẬT.** Nếu chỉ vá lỗi 1 rồi giao tiếp, chủ
+dự án sẽ mở được màn nhưng tính năng vẫn không chạy — mất thêm một vòng nữa.
+
+**Luật rút ra (đã vào `06` và `AGENTS.md`):** đổi nguồn của một truy vấn thì đi
+hết ba chặng — (a) cột dùng để phân trang có tồn tại ở nguồn mới không, (b) mọi
+cột chỗ vẽ đang đọc có trong `.select()` không, (c) chúng có được **chép sang
+object cuối cùng** không.
+
+### Đo lại bằng Chrome sau khi vá
+
+```
+Danh mục đề xuất — Khoa GMHS - Phòng mổ · 12 mã hàng · 1 mã đang rớt thầu
+   Khẩu trang y tế dây thun   ↪ đã đổ 20.000 sang 74372  (+ "Rớt toàn bộ ở Chào giá")
+   mã 74372                   ↩ nhận 20.000 từ 66510     → 60.000
+   0 lỗi console
+Danh mục tổng hợp — Gói 18T / Dùng chung : mở được, 0 lỗi console
+```
+
+### ✅ Mã rớt → GIỎ: đã chạy thật bằng dữ liệu của chủ dự án
+
+Tính năng này trước đó chỉ đo được ở tầng database (agent nghiệm thu kẹt vì
+không có tài khoản khoa phù hợp). Nay chủ dự án tự chạy hết vòng, đo lại trên
+dữ liệu thật:
+
+```
+chuyen_tiep_rot_v3   5 dòng · proposal_id = NULL cả 5        ✅ không neo đề xuất
+gio_nhap             5 mục / 2 khoa, ở đợt #201 (bổ sung T9/2026 — hệ TỰ TẠO)
+proposals bổ sung    0                                        ✅ không tự sinh đề xuất
+v_ma_rot_trong_gio   5 mã / 2 khoa chưa gửi                   ✅ Bàn điều hành nhắc đúng
+```
+
+Mẫu một mục giỏ thật — **đủ 12/12 trường** màn giỏ cần:
+
+```json
+{"ma_hang":"66509","ten_vat_tu":"Khăn phẫu thuật, cỡ 60 x 60 cm","dvt":"Cái",
+ "ma_quan_ly":"K26.04.000.01","ten_quan_ly":"Khăn phẫu thuật","goi":"Dùng chung",
+ "soLuong":1800,"tuThang":9,"tuNam":2026,"denThang":12,"denNam":2026,
+ "loaiLyDo":"khac","tuMaRot":true,"soRotGoc":1800,
+ "ghiChu":"Mã rớt thầu chuyển tiếp 1800 đơn vị (đợt gốc #826). Khoa tự quyết số cuối cùng rồi bấm \"Gửi giỏ\"."}
+```
+
+Nghiệm thu cuối ngày: `pytest` **240** · `build` ✓ · Chrome hai màn 0 lỗi
+console · Netlify = localhost = `index-BzCD7WGD.js` (commit `702d039`).

@@ -2,6 +2,39 @@
 
 Hướng dẫn cho người và cho agent khi làm việc trong repo này.
 
+## 📍 BẮT ĐẦU SESSION MỚI — TÌNH HÌNH TỚI CUỐI 26/08/2026
+
+Chủ dự án đã tự chạy hết vòng và báo **"tôi test ổn"**. Không có lỗi nào đang mở.
+
+```
+commit  702d039   ·  bundle index-BzCD7WGD.js  ·  Netlify = localhost
+pytest  240 xanh  ·  build ✓  ·  Chrome hai màn 0 lỗi console
+staging 136/500 MB · đợt #200 (18 tháng) + #201 (bổ sung T9/2026, hệ tự tạo)
+```
+
+**Vòng đã đo được hết, trên dữ liệu thật của chủ dự án:**
+
+```
+khoa gửi đề xuất → xác nhận lần 1 → PĐD tổng hợp → chốt Q → ba giai đoạn thầu
+→ ghi rớt → chia số trúng → đổ mã tương đương → xác nhận rớt → mã rớt VÀO GIỎ
+```
+
+**Sáu việc còn lại trước khi mở cho 62 khoa** — chi tiết ở
+`05_TRANG_THAI_VA_VIEC_TIEP_THEO.md` mục 7:
+
+1. Chạy `backend/sql/patch_zzzzzz_go_tay_xoa_du_lieu.sql` — **viết sẵn, CHỜ
+   LỆNH**. Chủ dự án muốn giữ nút xoá trong lúc còn test và sẽ báo thời điểm gỡ.
+2. Nạp HIS **T7 + T8/2026** (đang mới tới T6).
+3. Dọn dữ liệu test, mở đợt thật cho gói 18 tháng 2027-2028.
+4. 62 khoa đăng ký → PĐD gán khoa ở màn `QuanLyNguoiDung` (đã có sẵn).
+5. Luật cắt cho `usage_history_changelog` (48 MB, chưa có luật nào).
+6. **Giảm số cú bấm** trên đường khoa gõ đề xuất — việc code duy nhất đáng làm.
+   Bắt đầu bằng ĐO, không đoán.
+
+⚠️ **Không tự ý chạy việc 1.** Chủ dự án đã nói rõ sẽ báo khi nào gỡ.
+
+---
+
 ## 🔴🔴 GO-LIVE GIỮA T9/2026 — ĐỌC TRƯỚC MỌI THỨ
 
 Không phải 01/01/2027. Việc thật đầu tiên: **62 khoa gõ đề xuất cho gói 18
