@@ -458,7 +458,24 @@ export default function Function1({
   const CO_TUY_CHON_30 = goi !== "chi_dinh_thau";
   // Gói bổ sung có 3 đợt/năm nên phải CHỌN. Gói khác chỉ 1 đợt -> tự lấy.
   const [dotChon, setDotChon] = useState(null);
-  const dotDung = dsDot.length > 1 ? dsDot.find((d) => d.id === dotChon) : dot;
+
+  // Bấm "Tháng 1" ở menu là đã nói rõ tháng mốc rồi, nên danh sách đợt phải
+  // lọc theo đúng tháng đó. Bản trước liệt kê cả T1, T5, T9 — khoa bấm Tháng 1
+  // mà ô chọn vẫn mời chọn Tháng 9 (đo thật 26/08/2026, 6 đợt bổ sung đang mở).
+  const thangMocCuaGoiCon = /^bs-t(\d+)$/.exec(goiCon || "")?.[1];
+  const dsDotHopLe = useMemo(
+    () => (thangMocCuaGoiCon
+      ? dsDot.filter((d) => String(d.thang_moc) === thangMocCuaGoiCon)
+      : dsDot),
+    [dsDot, thangMocCuaGoiCon],
+  );
+
+  // Còn đúng MỘT đợt hợp lệ thì tự lấy — bắt người dùng chọn trong danh sách
+  // một phần tử là bắt thao tác thừa. Nhiều hơn một thì vẫn phải chọn, không
+  // đoán hộ.
+  const dotDung = dsDotHopLe.length > 1
+    ? dsDotHopLe.find((d) => d.id === dotChon)
+    : (dsDotHopLe[0] || (dsDot.length > 1 ? undefined : dot));
   useEffect(() => {
     setDotChon(dotIdKhoiTao ? Number(dotIdKhoiTao) : null);
   }, [goi, dotIdKhoiTao]);
@@ -1586,7 +1603,18 @@ export default function Function1({
           </div>
         )}
 
-        {!toanVien && khoaHienTai && goiIdDanhMuc && (
+        {/* Thiếu `dotDung?.id` là sinh ra `#danh-muc-de-xuat/<goi>/<khoa>` KHÔNG
+            kèm đợt. Màn kia tra hụt `dot_goi`, rơi về đường `proposals` cũ lọc
+            theo năm mặc định, và hiện "0 mã hàng" kèm băng "đợt này chưa đi
+            đường v3" — chủ dự án gặp đúng chỗ này ngày 26/08/2026. Thà không có
+            nút còn hơn có nút dẫn vào màn rỗng. */}
+        {!toanVien && khoaHienTai && goiIdDanhMuc && !dotDung?.id && dsDotHopLe.length > 1 && (
+          <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-2.5 text-xs text-slate-500">
+            Chọn đợt ở ô <b>&ldquo;Gửi vào đợt nào&rdquo;</b> phía trên rồi mới mở được
+            Danh mục đề xuất — mỗi đợt là một danh mục riêng.
+          </p>
+        )}
+        {!toanVien && khoaHienTai && goiIdDanhMuc && dotDung?.id && (
           <button type="button"
             onClick={() => moDanhMucDeXuat(goiIdDanhMuc, khoaHienTai, dotDung?.id)}
             title="Mở trong tab trình duyệt mới"
@@ -2118,7 +2146,7 @@ export default function Function1({
                     <select value={dotChon ?? ""} onChange={(e) => setDotChon(Number(e.target.value) || null)}
                       className="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm">
                       <option value="">— chọn đợt —</option>
-                      {dsDot.map((d) => <option key={d.id} value={d.id}>{d.ten}</option>)}
+                      {dsDotHopLe.map((d) => <option key={d.id} value={d.id}>{d.ten}</option>)}
                     </select>
                   </div>
                 )}

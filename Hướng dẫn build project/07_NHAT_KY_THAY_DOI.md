@@ -1265,3 +1265,60 @@ chạy" là đọc nhầm · "chỉ 1/2 khoa nhận báo" là do dòng gộp cù
   (E5–E15) chưa chạy. Đây là mảng lớn nhất còn nợ.
 - **Đợt #69 đã bị làm bẩn vĩnh viễn** (không có script dựng lại): 4 mã đổi số, 1
   mã phân bổ lại, khoa GMHS đã xác nhận, và mã 66417 được chuyển tiếp về từ bộ B.
+
+---
+
+## 26/08/2026 — Chủ dự án bấm thật: gói bổ sung ra danh mục TRỐNG
+
+Chủ dự án đăng nhập `dvsd1`/`dvsd2`, vào gói bổ sung, mở Danh mục đề xuất của
+khoa — **không thấy mã hàng nào**. Trong khi database có **16 mã** cho khoa của
+dvsd1 và **11 mã** cho khoa của dvsd2 ở đúng đợt đó.
+
+Đây là **vòng E mà hai agent hôm qua bỏ trống** — pipeline gói bổ sung đi lại từ
+đầu. Kế hoạch có ghi là còn nợ, và đúng chỗ còn nợ thì có lỗi.
+
+### Hai lỗi, cùng một gốc: đường vào thiếu mã đợt
+
+**Lỗi 1 — nút mở danh mục sinh đường dẫn KHÔNG kèm đợt.**
+
+```
+#danh-muc-de-xuat/bs-t1/Khoa GMHS - Phòng mổ        ← thiếu /189
+```
+
+`dotDung` rỗng vì gói bổ sung có **6 đợt đang mở** mà `dotChon` khởi tạo `null`
+— khoa chưa chọn đợt nào. Nút vẫn hiện và vẫn bấm được. Thiếu mã đợt thì
+`DanhMucDeXuatKhoa` tra hụt `dot_goi`, rơi về đường `proposals` cũ lọc theo
+`nam_de_xuat = 2027` trong khi đợt là năm 2030 → **0 mã hàng**, kèm băng *"đợt
+này chưa đi đường v3, chỉ sửa được ở màn Nhập đề xuất"* — nhắc lại đúng cái luật
+đã bị đảo từ 19/08.
+
+Vá: **không có `dotDung.id` thì không có nút.** Thay bằng lời nhắc *"Chọn đợt ở
+ô Gửi vào đợt nào phía trên rồi mới mở được Danh mục đề xuất"*. Thà không có nút
+còn hơn có nút dẫn vào màn rỗng.
+
+**Lỗi 2 — bấm "Tháng 1" mà ô chọn đợt vẫn mời chọn Tháng 9.**
+
+Menu gói con đã nói rõ tháng mốc, nhưng danh sách đợt liệt kê cả 6 đợt bổ sung
+đang mở của mọi tháng. Vá: lọc theo `thang_moc` của gói con đang đứng — bấm
+Tháng 1 chỉ còn 3 đợt T1. Và **còn đúng một đợt hợp lệ thì tự lấy**, không bắt
+chọn trong danh sách một phần tử.
+
+### Đo lại sau khi vá
+
+| | Trước | Sau |
+|---|---|---|
+| Ô chọn đợt khi bấm "Tháng 1" | 6 đợt (T1, T5, T9 lẫn lộn) | **3 đợt T1** |
+| Nút mở khi chưa chọn đợt | có, dẫn vào màn rỗng | **không có**, thay bằng lời nhắc |
+| Đường dẫn sinh ra sau khi chọn đợt | `…/Khoa GMHS - Phòng mổ` | `…/Khoa GMHS - Phòng mổ/189` |
+| dvsd1 mở danh mục | 0 mã hàng | **16 mã hàng**, không cảnh báo |
+| dvsd2 mở danh mục | 0 mã hàng | **11 mã hàng**, không cảnh báo |
+
+Đường qua màn *Danh mục đề xuất của khoa* (danh sách kỳ/đợt) vốn đã đúng — nó
+kèm `dot.id` từ đầu. Chỉ đường qua *Đề xuất số lượng* là hỏng.
+
+### Test canh
+
+`test_duong_vao_danh_muc_khoa.py` — 5 phép, trong đó có một phép **quét mọi chỗ
+dựng hash `#danh-muc-de-xuat/`** trong `features/` và bắt lỗi nếu thiếu phần đợt.
+
+`pytest` **228** · `kiem_moi_man` ba vòng xanh · `test:formula` OK · `build` ✓.

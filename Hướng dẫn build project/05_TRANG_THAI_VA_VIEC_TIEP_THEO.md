@@ -100,8 +100,14 @@ Cập nhật **24/08/2026**. Nhánh `phase-a-luong-de-xuat`.
 > tự chạy vòng lặp qua các khoa — QĐ 21/08 đã bỏ hẳn 49 nút bấm tay, đừng dựng
 > lại. Đo thật: 50 khoa, 52 giây, ra revision 1 với 1.880 dòng đóng băng.
 
-> 🔴 **Vòng E còn nợ:** pipeline gói **bổ sung đi lại từ đầu** (đợt #103) chưa
-> ai chạy. Đây là mảng test lớn nhất còn thiếu.
+> 🔴 **Vòng E còn nợ:** pipeline gói **bổ sung đi lại từ đầu** chưa ai chạy hết.
+> Ngày 26/08 chủ dự án bấm thật vào đúng chỗ này và gặp ngay lỗi: danh mục của
+> khoa **trống trơn** dù database có 16 và 11 mã. Gốc là **đường vào thiếu mã
+> đợt** — đã vá, nhưng phần còn lại của vòng E vẫn chưa ai đi.
+>
+> **Luật rút ra:** mọi đường vào `#danh-muc-de-xuat/` phải kèm ĐỦ gói con VÀ mã
+> đợt. Thiếu mã đợt thì màn kia rơi về đường `proposals` cũ và hiện 0 mã mà
+> không báo lỗi. `test_duong_vao_danh_muc_khoa.py` quét mọi chỗ dựng hash đó.
 
 > 🔴 **TEST Ở LOCALHOST, KHÔNG DÙNG NETLIFY** (QĐ 25/08/2026). Tài khoản
 > Netlify miễn phí đã hết credits build của tháng — push thêm KHÔNG build lại.
