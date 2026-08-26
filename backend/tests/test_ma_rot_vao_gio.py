@@ -85,3 +85,15 @@ def test_man_gio_khoa_danh_dau_ma_do_rot_dua_ve() -> None:
     assert "n.tuMaRot" in man, "dòng giỏ do rớt đưa về phải có nhãn riêng"
     assert "rớt thầu" in man and "gợi ý" in man, \
         "phải nói rõ số đang hiện là GỢI Ý, không phải số khoa đã quyết"
+
+
+def test_nhan_rot_tren_man_khoa_phai_lay_du_so_luong_trung() -> None:
+    """Nhãn rớt trên Danh mục đề xuất của khoa đọc `r.rot.so_luong_trung` ở ba
+    chỗ: điều kiện màu, chữ trên nhãn, và tooltip. Thiếu cột trong `.select()`
+    thì `Number(undefined) > 0` luôn false ⇒ mã rớt MỘT PHẦN vẫn bị dán nhãn đỏ
+    "Rớt toàn bộ", tooltip hiện "trúng NaN". Lỗi thật, vá 26/08/2026.
+    """
+    man = (FE / "DanhMucDeXuatKhoa.jsx").read_text(encoding="utf-8")
+    truy_van = man.split("v_ket_qua_thau_theo_khoa")[1].split(".range(")[0]
+    for cot in ("so_luong_trung", "so_luong_de_xuat", "so_luong_thieu", "ma_moc_rot"):
+        assert cot in truy_van, f"truy vấn kết quả thầu thiếu cột {cot} mà chỗ vẽ đang đọc"

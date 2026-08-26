@@ -246,7 +246,14 @@ async function taiKetQuaThau(loaiMuaSam, khoa, dsMaHang, dotId = null) {
   if (!dsMaHang?.length) return new Map();
   const { data, error } = await fetchAllRows((f, t) => {
     let q = supabase.from("v_ket_qua_thau_theo_khoa")
-      .select("goi_id, ten_goi, ma_hang, ket_qua, ma_moc_rot, ly_do_khong_trung, so_luong_de_xuat, so_luong_thieu, da_xu_ly, ket_qua_id")
+      // `so_luong_trung` PHẢI có trong select: chỗ vẽ nhãn rớt đọc
+      // `r.rot.so_luong_trung` ở ba nơi (điều kiện màu, chữ trên nhãn, tooltip).
+      // Thiếu nó thì giá trị là undefined ⇒ `Number(undefined) > 0` luôn false
+      // ⇒ mã rớt MỘT PHẦN vẫn bị dán nhãn đỏ "Rớt toàn bộ", và tooltip hiện
+      // "trúng NaN" (fmt = Math.round(undefined).toLocaleString()).
+      // Vá 26/08/2026 sau khi chủ dự án hỏi "chia số trúng rồi danh mục khoa
+      // có đổi theo không".
+      .select("goi_id, ten_goi, ma_hang, ket_qua, ma_moc_rot, ly_do_khong_trung, so_luong_de_xuat, so_luong_trung, so_luong_thieu, da_xu_ly, ket_qua_id")
       .eq("don_vi", khoa).eq("loai_mua_sam", loaiMuaSam).eq("ket_qua", "khong_trung")
       .in("ma_hang", dsMaHang);
     if (dotId) q = q.eq("dot_id", Number(dotId));

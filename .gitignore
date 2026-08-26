@@ -39,3 +39,6 @@ phan-tich-cong-thuc/*.json
 
 # Biểu mẫu thật của bệnh viện — không commit (dung lượng lớn, có dữ liệu khoa)
 Form biểu mẫu/
+
+# Local Netlify folder
+.netlify
