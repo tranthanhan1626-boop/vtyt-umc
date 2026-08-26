@@ -105,8 +105,13 @@ async function taiDuLieuKhoa(goiId, khoa, dotId = null) {
   // Builder supabase-js đổi tại chỗ, mà `fetchAllRows` nay tải song song.
   if (dotGoiId) {
     laPhanBoV3 = true;
-    qProposals = () => supabase.from("phan_bo_khoa")
-      .select("proposal_id, ma_hang, so_luong_hien_hanh, so_luong_goc")
+      // QĐ 26/08/2026 — đọc SỐ SAU ĐIỀU CHUYỂN, không đọc thẳng `phan_bo_khoa`.
+      // Đổ mã A sang mã tương đương B thì A phải về 0 và B phải cộng thêm, ở
+      // CẢ bảng Tổng hợp của PĐD lẫn Danh mục của khoa. View tính
+      // `gốc − đã đổ đi + nhận về`; không ghi đè vì `phan_bo_khoa` bị khoá
+      // cứng 1 chặn sau chốt Q, và số đã mang đi thầu là bằng chứng.
+    qProposals = () => supabase.from("v_phan_bo_sau_dieu_chuyen_v3")
+      .select("proposal_id, ma_hang, so_luong_hien_hanh, so_luong_goc, da_do_di, nhan_ve, do_sang_ma, nhan_tu_ma")
       .eq("dot_goi_id", dotGoiId).eq("khoa", khoa);
   } else {
     qProposals = () => {
@@ -611,11 +616,10 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
       setDsNamCoDuLieu(dsNam || []);
       // Áp giá trị đã lưu ĐÈ lên số gốc hệ thống dựng ra.
       const daSua = new Map();
-      // Khi khoa đã chuyển xong số lượng của một mã rớt sang mã tương đương,
-      // mã nguồn không còn thuộc danh mục làm việc. Dấu vết rớt vẫn nằm ở
-      // Tiến độ gói thầu; không giữ một dòng 0 gây hiểu nhầm là còn phải xử lý.
+      // QĐ 26/08/2026 — GIỮ LẠI dòng của mã đã đổ xong, hiện số 0 kèm nhãn
+      // "đã đổ N sang mã X". Bản trước ẩn hẳn: khoa mở danh mục thấy mã mình
+      // đề xuất biến mất, không biết số đi đâu, phải hỏi lại PĐD.
       const rowsDangHien = rowsGoc
-        .filter((r) => !ketQuaTheoMa.get(r.ma_hang)?.da_xu_ly)
         .map((r) => {
         const ov = oDaLuu.get(r.ma_hang);
         const dong = { ...r, rot: ketQuaTheoMa.get(r.ma_hang) || null };
@@ -1367,6 +1371,21 @@ function RowKhoa({
               ) : (
                 <span>
                   {formatCell(value, c.kieu)}
+                  {/* QĐ 26/08/2026 — mã đã đổ hết sang mã tương đương thì số về 0.
+                      Phải nói RA MẶT số đi đâu, nếu không khoa nhìn dòng 0 tưởng
+                      mình mất đề xuất. Cả chiều nhận cũng vậy. */}
+                  {c.key === "ten_vt_2627" && Number(r.da_do_di) > 0 && (
+                    <span title={`Số đề xuất của khoa cho mã này đã chuyển sang mã ${r.do_sang_ma}. Số gốc vẫn giữ trong hồ sơ thầu.`}
+                      className="ml-1.5 inline-flex items-center gap-1 rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-medium align-middle text-slate-700">
+                      ↪ đã đổ {fmt(r.da_do_di)} sang {r.do_sang_ma}
+                    </span>
+                  )}
+                  {c.key === "ten_vt_2627" && Number(r.nhan_ve) > 0 && (
+                    <span title={`Mã ${r.nhan_tu_ma} rớt thầu, phần của khoa được chuyển sang mã này.`}
+                      className="ml-1.5 inline-flex items-center gap-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium align-middle text-emerald-800">
+                      ↩ nhận {fmt(r.nhan_ve)} từ {r.nhan_tu_ma}
+                    </span>
+                  )}
                   {c.key === "ten_vt_2627" && dangRot && (
                     // CHỈ ĐỂ XEM. Việc đổ số rớt sang mã tương đương là của
                     // Phòng Điều dưỡng, làm trên Danh mục tổng hợp (QĐ D1/D3).

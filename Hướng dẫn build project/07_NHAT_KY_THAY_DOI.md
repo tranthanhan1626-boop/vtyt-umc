@@ -1612,3 +1612,102 @@ Chủ dự án quyết **giữ lại** vì còn đang test, và sẽ báo thời
 chạy patch trên **và** đổi `BAT_XOA_DU_LIEU_TEST` thành chỉ đọc cờ
 `VITE_ENABLE_TEST_DELETE`. Sau khi gỡ, dọn dữ liệu bằng
 `backend/scripts/don_sach_moi_dot.py`.
+
+---
+
+## 26/08/2026 (tối) — Đổ mã tương đương thì SỐ ĐỀ XUẤT hiện theo
+
+**Yêu cầu:** *"mã hàng A xác nhận rớt chuyển số lượng qua mã tương đương B thì
+tổng hợp danh mục đề xuất số lượng đề xuất mã A là 0 và mã B là hiển thị tổng
+sau khi A đổ qua, danh mục đề xuất của khoa cũng liên kết dữ liệu tổng hợp
+danh mục đề xuất pdd."*
+
+**Trước:** đổ `66510 → 74372` chỉ ghi `chuyen_so_rot_v3`. Bảng Tổng hợp và màn
+khoa vẫn hiện 20.000 / 40.000 y như chưa có gì.
+
+**Sau:**
+
+| | GMHS | RHM |
+|---|---|---|
+| `66510` (đổ đi) | 20.000 → **0** | 20.000 → **0** |
+| `74372` (nhận) | 40.000 → **60.000** | 5.000 → **25.000** |
+
+### Đường đi vòng — và vì sao
+
+Chủ dự án ban đầu chọn **ghi đè thẳng** vào `phan_bo_khoa`. Thi công
+(`patch_zzzzzza`) rồi chạy lên staging mới lộ ra **khoá cứng 1**:
+
+```
+trg_khoa_phan_bo_sau_chot_q → 'Số tham gia thầu đã chốt; PĐD phải mở snapshot Q trước.'
+```
+
+Mà `day_so_luong_rot_v3` bắt buộc phải có `chot_q_phien.hieu_luc` — tức đổ mã
+**luôn luôn** sau chốt Q. Đường ghi đè không bao giờ đi được, và để nguyên thì
+mỗi lần bấm "đổ" đều ăn exception, **hỏng hẳn chức năng**. `patch_zzzzzzb` trả
+lại ngay.
+
+⚠️ **Bài học:** đọc trigger của bảng TRƯỚC khi hỏi chủ dự án chọn cách ghi. Câu
+hỏi đưa ra một phương án mà hệ thống không cho phép.
+
+Giải thích lại bằng số cụ thể, chủ dự án chốt **cách 1 — tính ra lúc hiện**:
+
+```
+số hiện  =  số gốc  −  đã đổ đi  +  nhận về
+```
+
+| | Ghi đè | Tính ra |
+|---|---|---|
+| Màn hình | 0 / 60.000 | **0 / 60.000** (giống hệt) |
+| Bỏ ngoại lệ đổ | gõ tay lại từng khoa (Dùng chung có 50 khoa) | **số tự về** |
+| Số đã mang đi thầu | bị viết lại sau khi biết kết quả | **giữ nguyên** |
+
+### Thi công
+
+`patch_zzzzzzc_so_de_xuat_sau_dieu_chuyen.sql`
+
+- `v_phan_bo_sau_dieu_chuyen_v3` — `security_invoker`, gộp bằng **JOIN +
+  GROUP BY** chứ không gọi hàm theo từng dòng (bài học `patch_zzzzzm`: gọi hàm
+  mỗi dòng làm bảng Tổng hợp mất 15,9 giây). Có nhánh `union all` cho **khoa
+  nhận mà chưa từng đề xuất mã đó** — thiếu nó là phần nhận bốc hơi khỏi bảng.
+- `v_phan_bo_tong_hop` viết lại trên nền view đó, mang thêm `da_do_di` ·
+  `nhan_ve` · `do_sang_ma` · `nhan_tu_ma` để màn hiện nhãn mà không phải thêm
+  một truy vấn nữa.
+- `TongHopPdd.jsx` và `DanhMucDeXuatKhoa.jsx` cùng đọc **một nguồn** — đây
+  chính là "danh mục khoa liên kết dữ liệu tổng hợp PĐD".
+- Màn khoa **bỏ chỗ ẩn** mã đã đổ xong (`.filter(... !da_xu_ly)`). Bản trước ẩn
+  hẳn: khoa mở danh mục thấy mã mình đề xuất biến mất, không biết số đi đâu.
+  Nay giữ dòng, số 0, kèm nhãn `↪ đã đổ 20.000 sang 74372`; chiều nhận có nhãn
+  `↩ nhận 20.000 từ 66510`.
+
+### Đo thật trên staging
+
+```
+mã     khoa    trước   đổ đi   nhận   => HIỆN
+66510  GMHS    20.000  20.000      0  =>       0     ✅
+66510  RHM     20.000  20.000      0  =>       0     ✅
+74372  GMHS    40.000       0 20.000  =>  60.000     ✅
+74372  RHM      5.000       0 20.000  =>  25.000     ✅
+Tổng hợp PĐD:  66510 → 0 · 74372 → 85.000           ✅
+RLS: dvsd1 thấy 2 dòng (của mình) · pdd thấy 4       ✅
+Bỏ đổ → tự về 20.000 / 20.000 / 40.000 / 5.000       ✅
+```
+
+### Kèm một lỗi thật khác
+
+`taiKetQuaThau()` trong `DanhMucDeXuatKhoa.jsx` select 10 cột nhưng **thiếu
+`so_luong_trung`**, trong khi chỗ vẽ nhãn rớt đọc `r.rot.so_luong_trung` ở ba
+nơi. Hậu quả: `Number(undefined) > 0` luôn false ⇒ mã rớt **một phần** vẫn bị
+dán nhãn đỏ *"Rớt toàn bộ"*, tooltip hiện *"trúng NaN"*.
+
+### Netlify
+
+Tài khoản **hết credits** nên Netlify nhận commit rồi bỏ qua không build
+(`error_message: "Skipped due to account credit usage exceeded"`), site đứng ở
+bản cũ **8 commit**. Đường vòng không tốn credits:
+
+```
+netlify deploy --dir=frontend/dist                    # tải lên, không build
+netlify api restoreSiteDeploy --data '{"site_id":"…","deploy_id":"…"}'
+```
+
+Nghiệm thu: `pytest` **238** · `build` ✓.

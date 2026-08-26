@@ -126,8 +126,13 @@ async function taiDuLieuGoc(goiId, dotId = null) {
   // 340 mã chỉ hiện 157 mã mà không báo lỗi gì.
   if (dotGoiId) {
     laPhanBoV3 = true;
-    qProposals = () => supabase.from("phan_bo_khoa")
-      .select("ma_hang, khoa, so_luong_hien_hanh, so_luong_goc, sua_boi_khoa")
+      // QĐ 26/08/2026 — đọc SỐ SAU ĐIỀU CHUYỂN, không đọc thẳng `phan_bo_khoa`.
+      // Đổ mã A sang mã tương đương B thì A phải về 0 và B phải cộng thêm, ở
+      // CẢ bảng Tổng hợp của PĐD lẫn Danh mục của khoa. View tính
+      // `gốc − đã đổ đi + nhận về`; không ghi đè vì `phan_bo_khoa` bị khoá
+      // cứng 1 chặn sau chốt Q, và số đã mang đi thầu là bằng chứng.
+    qProposals = () => supabase.from("v_phan_bo_sau_dieu_chuyen_v3")
+      .select("ma_hang, khoa, so_luong_hien_hanh, so_luong_goc, sua_boi_khoa, da_do_di, nhan_ve, do_sang_ma, nhan_tu_ma")
       .eq("dot_goi_id", dotGoiId);
   } else {
     qProposals = () => {
