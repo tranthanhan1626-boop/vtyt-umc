@@ -8,7 +8,6 @@ import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import { GOI_ID_MAP } from "../lib/cotChuan";
 import { gomTheoMaQuanLy, tinhTinhHinhKhoa, tinhTongQuan } from "../lib/tongHopDeXuat";
-import HoSoTrucTuyen from "./HoSoTrucTuyen";
 import GioRotToanVien from "./GioRotToanVien";
 import { moDanhMucDeXuat, moTongHopPdd } from "../lib/moManExcel";
 
@@ -33,11 +32,30 @@ const GIAI_DOAN = [
 
 const NAM_DE_XUAT = new Date().getFullYear() + 1;
 
-// goiId (khoá GOI_ID_MAP) của các gói con thuộc một loại mua sắm.
-const goiConCuaLoai = (loai) =>
-  Object.entries(GOI_ID_MAP)
-    .filter(([, v]) => v.loai_mua_sam === loai)
+// Gói con THẬT của một ĐỢT.
+//
+// QĐ 26/08/2026 — **gói bổ sung KHÔNG chia gói con.** Chủ dự án: *"cứ đợt gói
+// bổ sung theo 3 mốc tháng trong năm chính là gói con"*. Nên với đợt bổ sung,
+// gói con suy thẳng từ `thang_moc` của đợt và chỉ có ĐÚNG MỘT.
+//
+// Bản trước lọc GOI_ID_MAP theo `loai_mua_sam`, ra 4 mục cho gói bổ sung
+// (`bo-sung` + `bs-t1/t5/t9`) — trong đó `bo-sung` là bí danh không có nhãn,
+// nên hàng chip hiện ra bốn nút TRỐNG TRƠN (chủ dự án chụp màn hình báo).
+const goiConCuaDotNay = (dot) => {
+  if (!dot) return [];
+  if (dot.loai_mua_sam === "mua_sam_bo_sung") {
+    if (!dot.thang_moc) return [];
+    const id = `bs-t${dot.thang_moc}`;
+    return [{ goiId: id, ...GOI_ID_MAP[id], goi: `Đợt T${dot.thang_moc}` }];
+  }
+  if (dot.loai_mua_sam === "chi_dinh_thau") {
+    return [{ goiId: "chi-dinh-thau", ...GOI_ID_MAP["chi-dinh-thau"] }];
+  }
+  // Gói 18 tháng — năm gói con thật.
+  return Object.entries(GOI_ID_MAP)
+    .filter(([k, v]) => v.loai_mua_sam === dot.loai_mua_sam && k.startsWith("18t-"))
     .map(([k, v]) => ({ goiId: k, ...v }));
+};
 
 const fmtNgay = (s) => (s ? new Date(s).toLocaleDateString("vi-VN") : "—");
 const soNgayTu = (s) => (s ? Math.floor((Date.now() - new Date(s).getTime()) / 86400000) : null);
@@ -59,12 +77,17 @@ const NHAN_DUNG_LUONG = {
 export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   const [dsDot, setDsDot] = useState([]);
   const [dotId, setDotId] = useState("");
+  // QĐ 26/08/2026 — sổ BA CẤP: loại gói → đợt → gói con. Trước đây đổ thẳng
+  // mọi đợt của mọi loại vào một ô chọn, và bảng theo dõi hiện ngay cả khi
+  // chưa chọn gói con nào; chủ dự án muốn phải chọn tới gói con rồi mới sổ
+  // tiếp thông tin.
+  const [loaiGoi, setLoaiGoi] = useState("");     // "" = chưa chọn loại
+  const [goiCuaKhoa, setGoiCuaKhoa] = useState(new Map());
   const [goiConId, setGoiConId] = useState("");   // "" = tất cả gói con
   const [tab, setTab] = useState("khoa");          // khoa | tong_hop | ket_qua
 
   const [rows, setRows] = useState([]);
   const [dsKhoa, setDsKhoa] = useState([]);
-  const [khoaCoWord, setKhoaCoWord] = useState(new Set());
   const [khoaDaChot, setKhoaDaChot] = useState(new Set());
   const [ketQuaRot, setKetQuaRot] = useState([]);
   const [dsDotGoi, setDsDotGoi] = useState([]);
@@ -114,13 +137,48 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
     })();
   }, []);
 
+  // Ba cấp sổ (QĐ 26/08/2026): loại gói → đợt → gói con. Chưa chọn đủ ba thì
+  // KHÔNG sổ dashboard — chủ dự án muốn phải chọn tới gói con mới hiện tiếp.
+  const LOAI_GOI = [
+    { ma: "dau_thau_rong_rai", ten: "Gói 18 tháng", moTa: "Đấu thầu rộng rãi" },
+    { ma: "mua_sam_bo_sung", ten: "Gói bổ sung", moTa: "3 đợt/năm · T1, T5, T9" },
+    { ma: "chi_dinh_thau", ten: "Chỉ định thầu", moTa: "Mua nhanh, hạn chế dùng" },
+  ];
+  const dsDotTheoLoai = useMemo(
+    () => (loaiGoi ? dsDot.filter((d) => d.loai_mua_sam === loaiGoi) : []),
+    [dsDot, loaiGoi],
+  );
+  // Đếm đợt ĐANG MỞ theo loại, tách theo năm. Gói bổ sung chỉ có 3 mốc
+  // T1/T5/T9 mỗi năm (QĐ 17/08/2026) — đếm gộp mọi năm ra "4 đợt" thì nhìn
+  // như phá luật, dù T9/2026 và T1/2027 là hai năm khác nhau.
+  const soDotTheoLoai = useMemo(() => {
+    const m = {};
+    dsDot.forEach((d) => {
+      if (!m[d.loai_mua_sam]) m[d.loai_mua_sam] = { tong: 0, mo: 0, nam: new Set() };
+      m[d.loai_mua_sam].tong += 1;
+      if (d.trang_thai === "mo") m[d.loai_mua_sam].mo += 1;
+      if (d.nam) m[d.loai_mua_sam].nam.add(d.nam);
+    });
+    return m;
+  }, [dsDot]);
   const dot = useMemo(() => dsDot.find((d) => String(d.id) === dotId) || null, [dsDot, dotId]);
-  const dsGoiCon = useMemo(() => (dot ? goiConCuaLoai(dot.loai_mua_sam) : []), [dot]);
+  const dsGoiCon = useMemo(() => goiConCuaDotNay(dot), [dot]);
 
   // Đổi đợt sang loại khác thì gói con cũ không còn hợp lệ.
   useEffect(() => {
-    setGoiConId((cu) => (cu && dsGoiCon.some((g) => g.goiId === cu) ? cu : ""));
+    // Một gói con duy nhất (bổ sung, chỉ định thầu) thì TỰ CHỌN — bắt bấm một
+    // nút trong danh sách một phần tử là bắt thao tác thừa.
+    setGoiConId((cu) => {
+      if (cu && dsGoiCon.some((g) => g.goiId === cu)) return cu;
+      return dsGoiCon.length === 1 ? dsGoiCon[0].goiId : "";
+    });
   }, [dsGoiCon]);
+
+  // Đổi loại gói thì buông đợt cũ — đợt của loại khác không còn nghĩa gì.
+  useEffect(() => {
+    setDotId((cu) => (dsDotTheoLoai.some((d) => String(d.id) === cu) ? cu : ""));
+    setGoiConId("");
+  }, [loaiGoi, dsDotTheoLoai]);
 
   // goiId dùng cho danh_muc_khoa_chot / link Danh mục đề xuất. Gói bổ sung chỉ
   // có một khoá "bo-sung" (xem bẫy 16, Tổng quan/04_VAN_HANH_KY_THUAT.md).
@@ -148,14 +206,11 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
     const dotGoiIds = dotGoiDangXem.map((dg) => dg.id);
     setDsDotGoi(dotGoiData || []);
 
-    const [rDeXuat, rKhoa, rHoSo, rKetQua, rGiaiDoan, rGioRot, rPhanBoTrung,
+    const [rDeXuat, rKhoa, rKetQua, rGiaiDoan, rGioRot, rPhanBoTrung,
       rKhoaThamGia, rSoHienHanh, rChotTrinhKyKhoa, rPhienTrinhKy] = await Promise.all([
       fetchAllRows((f, t) => supabase.from("v_de_xuat_tong_hop").select("*")
         .eq("loai_mua_sam", dot.loai_mua_sam).eq("dot_id", dot.id).range(f, t), { order: "id" }),
       supabase.from("v_don_vi").select("don_vi"),
-      fetchAllRows((f, t) => supabase.from("ho_so_cong_tac")
-        .select("don_vi, loai_tai_lieu, ma_ho_so")
-        .eq("dot_id", dot.id).eq("loai_tai_lieu", "word").range(f, t), { order: "id" }),
       dotGoiIds.length
         ? fetchAllRows((f, t) => supabase.from("v_ket_qua_thau_v3").select("*")
           .in("dot_goi_id", dotGoiIds).range(f, t), { order: "ma_hang" })
@@ -216,7 +271,23 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
       })
       .filter((r) => Number(r.so_luong) > 0));
     setDsKhoa((rKhoa.data || []).map((x) => x.don_vi));
-    setKhoaCoWord(new Set((rHoSo.data || []).map((x) => x.don_vi)));
+
+    // Khoa này đang đề xuất ở NHỮNG GÓI NÀO — trên toàn hệ, không riêng đợt
+    // đang đứng (QĐ 26/08/2026). Đọc `v_khoa_theo_goi_v3` (patch_zzzzzw); màn
+    // này chỉ nạp dữ liệu của một đợt nên không tự biết được.
+    const rGoiKhoa = await fetchAllRows((f, t) =>
+      supabase.from("v_khoa_theo_goi_v3")
+        .select("khoa, dot_goi_id, goi_id, ten_goi, ten_dot, nam, thang_moc, loai_mua_sam, trang_thai_dot, so_ma_quan_ly, so_ma_hang, tong_so_luong")
+        .range(f, t), { order: "khoa" });
+    const gom = new Map();
+    (rGoiKhoa.data || []).forEach((r) => {
+      if (!gom.has(r.khoa)) gom.set(r.khoa, []);
+      gom.get(r.khoa).push(r);
+    });
+    gom.forEach((ds) => ds.sort((a, b) =>
+      Number(b.nam || 0) - Number(a.nam || 0)
+      || String(a.ten_goi).localeCompare(String(b.ten_goi), "vi")));
+    setGoiCuaKhoa(gom);
     setKetQuaRot(rKetQua.error ? [] : (rKetQua.data || []));
     setGiaiDoanThau(rGiaiDoan.error ? [] : (rGiaiDoan.data || []));
     setGioRotV3(rGioRot.error ? [] : (rGioRot.data || []));
@@ -288,8 +359,8 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   }, [dsKhoa, khoaThamGiaV3, goiConId, dotGoiHienTai]);
 
   const tinhHinhKhoa = useMemo(
-    () => tinhTinhHinhKhoa(dsKhoaTheoGoi, rowsLoc, khoaCoWord, khoaDaChot),
-    [dsKhoaTheoGoi, rowsLoc, khoaCoWord, khoaDaChot]
+    () => tinhTinhHinhKhoa(dsKhoaTheoGoi, rowsLoc, khoaDaChot),
+    [dsKhoaTheoGoi, rowsLoc, khoaDaChot]
   );
   const tongQuan = useMemo(() => tinhTongQuan(tinhHinhKhoa, cay), [tinhHinhKhoa, cay]);
 
@@ -492,7 +563,6 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   const copyNhac = async (k) => {
     const thieu = [
       !k.daDeXuat && "chưa gửi đề xuất",
-      k.daDeXuat && !k.coWord && "chưa tạo bản cam kết Word",
       k.daDeXuat && !k.daChot && "chưa xác nhận Danh mục đề xuất (bản hiện tại)",
     ].filter(Boolean).join(", ");
     const tin = `Kính gửi ${k.don_vi},\nĐợt "${dot?.ten}" hiện ${thieu || "đã đủ hồ sơ"}. `
@@ -536,9 +606,10 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   // trên bảng Tổng hợp danh mục đề xuất. Gỡ hai tab "Danh mục tổng hợp" và
   // "Kết quả thầu & giỏ rớt" để không còn hai đường làm cùng một việc.
   // Mã của hai tab đó giữ nguyên bên dưới, chỉ không vào menu nữa.
+  // QĐ 26/08/2026 — bỏ tab "Phiếu đề nghị mua thầu". Danh mục đề xuất đã được
+  // khoa xác nhận LÀ hồ sơ, không cần bản Word/phiếu riêng nữa.
   const TAB = [
     { ma: "khoa", ten: "Theo dõi khoa", Icon: Building2 },
-    { ma: "ho_so", ten: "Phiếu đề nghị mua thầu", Icon: FileSignature },
   ];
 
   return (
@@ -547,13 +618,28 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
       <div className="rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="mr-2 text-base font-semibold text-slate-900">Bàn điều hành</h2>
+          {/* CẤP 2 — đợt, chỉ của loại gói đang chọn. Trước 26/08/2026 ô này
+              đổ thẳng mọi đợt của mọi loại vào một danh sách. */}
           <select value={dotId} onChange={(e) => setDotId(e.target.value)}
-            className="min-w-64 rounded-lg border border-slate-300 px-3 py-2 text-sm">
-            {dsDot.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.ten} · {d.trang_thai === "mo" ? "đang mở" : "đã đóng"}
-              </option>
-            ))}
+            disabled={!loaiGoi}
+            className="min-w-64 rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400">
+            <option value="">
+              {loaiGoi ? `— chọn đợt (${dsDotTheoLoai.length}) —` : "— chọn loại gói trước —"}
+            </option>
+            {/* Gom theo NĂM. Gói bổ sung có 3 mốc T1/T5/T9 mỗi năm; đổ phẳng
+                mọi năm vào một danh sách làm con số tổng đọc thành "4 đợt" và
+                nhìn như phá luật 3 đợt/năm (chủ dự án báo 26/08/2026). */}
+            {[...new Set(dsDotTheoLoai.map((d) => d.nam))]
+              .sort((a, b) => Number(b) - Number(a))
+              .map((nam) => (
+                <optgroup key={nam} label={`Năm ${nam}`}>
+                  {dsDotTheoLoai.filter((d) => d.nam === nam).map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.ten} · {d.trang_thai === "mo" ? "đang mở" : "đã đóng"}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
           </select>
           <button type="button" onClick={tai}
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50">
@@ -566,14 +652,35 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
           </button>
         </div>
 
-        {dsGoiCon.length > 1 && (
+        {/* CẤP 1 — loại gói. Sổ dần: loại → đợt → gói con → dashboard
+            (QĐ 26/08/2026). */}
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <span className="mr-1 text-xs text-slate-500">Loại gói:</span>
+          {LOAI_GOI.map((l) => (
+            <button key={l.ma} type="button" onClick={() => setLoaiGoi(l.ma)}
+              title={l.moTa}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${
+                loaiGoi === l.ma
+                  ? "bg-umc-800 text-white"
+                  : "border border-slate-300 text-slate-600 hover:bg-slate-50"}`}>
+              {l.ten}
+              <span className={loaiGoi === l.ma ? "ml-1 opacity-80" : "ml-1 text-slate-400"}>
+                {(() => {
+                  const t = soDotTheoLoai[l.ma];
+                  if (!t) return "chưa có đợt";
+                  const soNam = t.nam.size;
+                  return soNam > 1 ? `${t.tong} đợt · ${soNam} năm` : `${t.tong} đợt`;
+                })()}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* CẤP 3 — gói con. Bỏ nút "Tất cả": mỗi gói con đi thầu riêng, gộp
+            chung chỉ ra một con số không dùng được vào việc gì (QĐ 26/08/2026). */}
+        {dot && dsGoiCon.length > 1 && (
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
             <span className="mr-1 text-xs text-slate-500">Gói con:</span>
-            <button type="button" onClick={() => setGoiConId("")}
-              className={`rounded-full px-3 py-1 text-xs font-medium ${
-                !goiConId ? "bg-[var(--umc-blue)] text-white" : "border border-slate-300 text-slate-600 hover:bg-slate-50"}`}>
-              Tất cả
-            </button>
             {dsGoiCon.map((g) => (
               <button key={g.goiId} type="button" onClick={() => setGoiConId(g.goiId)}
                 className={`rounded-full px-3 py-1 text-xs font-medium ${
@@ -609,14 +716,16 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
 
         {/* Thanh tổng quan */}
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-          <ONhanh nhan="Khoa toàn viện" so={tongQuan.soKhoaToanVien} vach="bg-slate-300" />
+          {/* "Khoa tham gia gói này", KHÔNG phải toàn viện: gói chuyên khoa
+              (GMHS · RHM · Tim mạch) chỉ vài khoa dự (QĐ 26/08/2026). */}
+          <ONhanh nhan="Khoa tham gia gói" so={tongQuan.soKhoaToanVien} vach="bg-slate-300" />
           <ONhanh nhan="Đã đề xuất" so={tongQuan.soKhoaDaDeXuat} mau="text-emerald-600" vach="bg-emerald-500" />
           <ONhanh nhan="Chưa đề xuất" so={tongQuan.soKhoaChuaDeXuat}
             mau={tongQuan.soKhoaChuaDeXuat > 0 ? "text-red-600" : "text-slate-800"}
             vach={tongQuan.soKhoaChuaDeXuat > 0 ? "bg-red-500" : "bg-emerald-500"} />
-          <ONhanh nhan="Đủ Word cam kết" so={`${tongQuan.soKhoaCoWord}/${tongQuan.soKhoaDaDeXuat}`} vach="bg-cyan-400" />
-          <ONhanh nhan="Đã xác nhận bản hiện tại" so={`${tongQuan.soKhoaDaChot}/${tongQuan.soKhoaCanChot}`} vach="bg-cyan-400" />
-          <ONhanh nhan="Tổng SL toàn viện" so={fmt(tongQuan.tongSoLuong)} mau="text-umc-600" vach="bg-umc-600" />
+          <ONhanh nhan="Đã xác nhận bản hiện tại"
+            so={tongQuan.soKhoaCanChot ? `${tongQuan.soKhoaDaChot}/${tongQuan.soKhoaCanChot}` : "—"}
+            vach="bg-cyan-400" />
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
           <span>
@@ -672,16 +781,31 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
         ))}
       </div>
 
-      {dangTai ? (
+      {/* Chưa chọn đủ ba cấp thì KHÔNG sổ dashboard. Trước 26/08/2026 bảng hiện
+          ngay cả khi chưa chọn gói con, và con số là tổng gộp mọi gói con —
+          nhìn thì có số mà không dùng được vào việc gì. */}
+      {!goiConId ? (
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
+          <Layers3 size={28} className="mx-auto text-slate-300" />
+          <p className="mt-2 text-sm font-medium text-slate-700">
+            {!loaiGoi ? "Chọn loại gói ở trên"
+              : !dotId ? "Chọn đợt của " + (LOAI_GOI.find((l) => l.ma === loaiGoi)?.ten || "")
+              : dsGoiCon.length > 1 ? "Chọn một gói con"
+              : "Đợt này chưa có gói con nào — kiểm lại dữ liệu đợt"}
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
+            Loại gói → đợt → gói con → bảng điều hành. Mỗi gói con đi thầu riêng
+            nên số liệu cũng riêng.
+          </p>
+        </div>
+      ) : dangTai ? (
         <p className="p-4 text-sm text-slate-500">Đang tải dữ liệu toàn viện…</p>
       ) : tab === "khoa" ? (
         <TabKhoa
           khoaHienThi={khoaHienThi} locKhoa={locKhoa} setLocKhoa={setLocKhoa}
           tuKhoa={tuKhoa} setTuKhoa={setTuKhoa} tongQuan={tongQuan}
           moDanhMucKhoa={moDanhMucKhoa} copyNhac={copyNhac} khoaDaCopy={khoaDaCopy}
-          onMoCamKet={(khoa) => onMoManKhac?.({
-            man: "bieu_mau", goi: dot.loai_mua_sam, dotId: dot.id, donVi: khoa,
-          })}
+          goiCuaKhoa={goiCuaKhoa}
         />
       ) : tab === "tong_hop" ? (
         <TabTongHop
@@ -708,49 +832,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
           khoaThamGia={khoaThamGiaV3} chotDanhMuc={chotDanhMucV3}
           chotTrinhKyKhoa={chotTrinhKyKhoaV3} phienTrinhKy={phienTrinhKyV3}
           onTaiLai={tai} />
-      ) : (
-        // "Phiếu đề nghị mua thầu" (Word `de_nghi_mua`) — 1 trong 5 biểu mẫu
-        // chính thức. Trước 09/08/2026 nó chỉ tạo được ở màn "Tổng hợp & xuất
-        // hồ sơ", tức là phải chốt một snapshot `phien_tong_hop` trước. Màn đó
-        // thuộc workflow cũ và đã gỡ, nên biểu mẫu dời về đây.
-        //
-        // `DE_NGHI_MUA` trong coCauBieuMau.js là văn bản thuần, KHÔNG chứa
-        // dòng dữ liệu nào (danh mục đi kèm là bản Excel tổng hợp riêng). Vẫn
-        // truyền `rowsLoc` vì HoSoTrucTuyen dùng số dòng để biết đợt đã có đề
-        // xuất hay chưa — không có dòng nào thì tạo phiếu trình ký là vô nghĩa.
-        // Neo vào (đợt, gói con) chứ không vào một snapshot số lượng, nên phiếu
-        // luôn khớp bản tổng hợp live đang xem.
-        <div className="space-y-3">
-          {!goiIdHienTai ? (
-            <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
-              <FileSignature size={26} className="mx-auto text-slate-300" />
-              <p className="mt-2 text-sm font-medium text-slate-600">Chọn một gói con ở trên</p>
-              <p className="mt-1 text-xs text-slate-400">
-                Mỗi gói con đi thầu riêng nên có phiếu đề nghị riêng.
-              </p>
-            </div>
-          ) : (
-            <HoSoTrucTuyen
-              key={`pdd-${dot.id}-${goiIdHienTai}`}
-              profile={profile}
-              goi={dot.loai_mua_sam}
-              dotId={dot.id}
-              donVi="Phòng Điều dưỡng"
-              nguonKey={`goi-con:${goiIdHienTai}`}
-              rows={rowsLoc}
-              usage={{}}
-              taiLieu={[{ ma: "de_nghi_mua", ten: "Phiếu đề nghị mua thầu" }]}
-              meta={{
-                don_vi: "Phòng Điều dưỡng",
-                nguoi_lap: profile.ho_ten || profile.email,
-                goi_con: GOI_ID_MAP[goiIdHienTai]?.goi || goiIdHienTai,
-              }}
-              tieuDe="Phiếu đề nghị mua thầu — Phòng Điều dưỡng"
-              moTa="Danh mục đi kèm là bản Excel ở tab Danh mục tổng hợp; phiếu này chỉ là phần văn bản trình ký."
-            />
-          )}
-        </div>
-      )}
+      ) : null}
 
       {formDon && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
@@ -825,8 +907,10 @@ function ONhanh({ nhan, so, mau = "text-slate-800", vach = "bg-slate-200" }) {
 // ---------------------------------------------------------------- TAB 1
 function TabKhoa({
   khoaHienThi, locKhoa, setLocKhoa, tuKhoa, setTuKhoa, tongQuan,
-  moDanhMucKhoa, copyNhac, khoaDaCopy, onMoCamKet,
+  moDanhMucKhoa, copyNhac, khoaDaCopy, goiCuaKhoa,
 }) {
+  // Khoa nào đang mở phần "đề xuất ở những gói nào". Một khoa mỗi lần cho gọn.
+  const [khoaMoGoi, setKhoaMoGoi] = useState("");
   const BO_LOC = [
     { ma: "tat_ca", ten: `Tất cả (${tongQuan.soKhoaToanVien})` },
     { ma: "chua", ten: `Chưa đề xuất (${tongQuan.soKhoaChuaDeXuat})` },
@@ -858,19 +942,25 @@ function TabKhoa({
               <th className="px-3 py-2 text-center">Đề xuất</th>
               <th className="px-3 py-2 text-right">Mã QL</th>
               <th className="px-3 py-2 text-right">Mã hàng</th>
-              <th className="px-3 py-2 text-center">Word cam kết</th>
+              <th className="px-3 py-2 text-right">Tổng SL</th>
+              <th className="px-3 py-2 text-center">Số gói</th>
               <th className="px-3 py-2 text-center">Xác nhận đề xuất</th>
               <th className="px-3 py-2 text-right">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {khoaHienThi.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-500">Không có khoa nào khớp bộ lọc.</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-sm text-slate-500">Không có khoa nào khớp bộ lọc.</td></tr>
             ) : khoaHienThi.map((k) => (
-              // Sọc ngựa vằn + đổi nền khi rê chuột: bảng 7 cột × 62 khoa, mắt
-              // phải dò ngang từ tên khoa sang cột "Xác nhận đề xuất" tận bên phải.
-              // Hàng khoa CHƯA đề xuất vẫn giữ nền đỏ nhạt, đè lên sọc.
-              <tr key={k.don_vi} className={`border-b border-slate-100 transition-colors last:border-0 hover:bg-umc-50/70 ${
+              <Fragment key={k.don_vi}>
+              {/* Sọc ngựa vằn + đổi nền khi rê chuột: mắt phải dò ngang từ tên
+                  khoa sang cột "Xác nhận đề xuất" tận bên phải. Hàng khoa CHƯA
+                  đề xuất giữ nền đỏ nhạt, đè lên sọc.
+                  CẢNH BÁO: chú thích ở đây phải là chú thích JSX trong ngoặc
+                  nhọn, KHÔNG được dùng hai gạch chéo. Từ 26/08/2026 khối này
+                  nằm trong Fragment nên hai gạch chéo biến thành CHỮ HIỆN RA
+                  TRÊN BẢNG — chủ dự án chụp màn hình báo. */}
+              <tr className={`border-b border-slate-100 transition-colors last:border-0 hover:bg-umc-50/70 ${
                 !k.daDeXuat ? "bg-red-50/40" : "even:bg-slate-50/60"}`}>
                 <td className="px-4 py-2 font-medium text-slate-800">{k.don_vi}</td>
                 <td className="px-3 py-2 text-center">
@@ -880,9 +970,26 @@ function TabKhoa({
                 </td>
                 <td className="px-3 py-2 text-right font-mono text-xs">{k.daDeXuat ? fmt(k.soMaQuanLy) : "—"}</td>
                 <td className="px-3 py-2 text-right font-mono text-xs">{k.daDeXuat ? fmt(k.soMaHang) : "—"}</td>
+                <td className="px-3 py-2 text-right font-mono text-xs">{k.daDeXuat ? fmt(k.tongSoLuong) : "—"}</td>
+                {/* QĐ 26/08/2026 — khoa này đang đề xuất ở BAO NHIÊU GÓI, tính
+                    trên toàn hệ chứ không riêng gói con đang đứng. Bấm vào số
+                    thì xổ ra từng gói kèm số mã quản lý / mã hàng của gói đó. */}
                 <td className="px-3 py-2 text-center">
-                  {k.coWord ? <CheckCircle2 size={15} className="mx-auto text-emerald-600" />
-                    : <span className="text-xs text-slate-300">—</span>}
+                  {(() => {
+                    const ds = goiCuaKhoa.get(k.don_vi) || [];
+                    if (!ds.length) return <span className="text-xs text-slate-300">—</span>;
+                    return (
+                      <button type="button"
+                        onClick={() => setKhoaMoGoi((cu) => (cu === k.don_vi ? "" : k.don_vi))}
+                        title="Bấm để xem khoa này đang đề xuất ở những gói nào"
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          khoaMoGoi === k.don_vi
+                            ? "bg-umc-700 text-white"
+                            : "border border-umc-300 bg-umc-50 text-umc-800 hover:bg-umc-100"}`}>
+                        {ds.length} gói <span className="opacity-70">{khoaMoGoi === k.don_vi ? "▲" : "▼"}</span>
+                      </button>
+                    );
+                  })()}
                 </td>
                 <td className="px-3 py-2 text-center">
                   {k.daChot ? <CheckCircle2 size={15} className="mx-auto text-emerald-600" />
@@ -896,10 +1003,6 @@ function TabKhoa({
                           className="inline-flex items-center gap-1 rounded border border-umc-200 bg-umc-50 px-2 py-1 text-[11px] font-medium text-umc-700 hover:bg-umc-100">
                           <ExternalLink size={11} /> Danh mục
                         </button>
-                        <button type="button" onClick={() => onMoCamKet(k.don_vi)}
-                          className="inline-flex items-center gap-1 rounded border border-blue-200 bg-white px-2 py-1 text-[11px] font-medium text-blue-700 hover:bg-blue-50">
-                          Cam kết
-                        </button>
                       </>
                     )}
                     {!k.duHoSo && (
@@ -912,6 +1015,49 @@ function TabKhoa({
                   </div>
                 </td>
               </tr>
+
+              {/* Dòng xổ: khoa này đang đề xuất ở những gói nào. Bàn điều hành
+                  chỉ nạp dữ liệu của gói con đang đứng, nên phần này đọc từ
+                  `v_khoa_theo_goi_v3` — view gom trên toàn hệ (patch_zzzzzw). */}
+              {khoaMoGoi === k.don_vi && (
+                <tr key={`${k.don_vi}:goi`} className="bg-umc-50/40">
+                  <td colSpan={8} className="px-4 py-2">
+                    <div className="rounded-lg border border-umc-200 bg-white p-2">
+                      <p className="mb-1 text-[11px] font-semibold text-umc-900">
+                        {k.don_vi} — đang đề xuất ở {(goiCuaKhoa.get(k.don_vi) || []).length} gói
+                      </p>
+                      <table className="w-full">
+                        <thead>
+                          <tr className="text-[10.5px] uppercase tracking-wide text-slate-500">
+                            <th className="px-2 py-1 text-left">Gói</th>
+                            <th className="px-2 py-1 text-left">Đợt</th>
+                            <th className="px-2 py-1 text-right">Mã QL</th>
+                            <th className="px-2 py-1 text-right">Mã hàng</th>
+                            <th className="px-2 py-1 text-right">Tổng SL</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(goiCuaKhoa.get(k.don_vi) || []).map((g) => (
+                            <tr key={g.dot_goi_id} className="border-t border-slate-100">
+                              <td className="px-2 py-1 text-xs font-medium text-slate-800">{g.ten_goi}</td>
+                              <td className="px-2 py-1 text-xs text-slate-500">
+                                {g.ten_dot}
+                                {g.trang_thai_dot === "mo"
+                                  ? <span className="ml-1 text-emerald-600">· đang mở</span>
+                                  : <span className="ml-1 text-slate-400">· đã đóng</span>}
+                              </td>
+                              <td className="px-2 py-1 text-right font-mono text-xs">{fmt(g.so_ma_quan_ly)}</td>
+                              <td className="px-2 py-1 text-right font-mono text-xs">{fmt(g.so_ma_hang)}</td>
+                              <td className="px-2 py-1 text-right font-mono text-xs">{fmt(g.tong_so_luong)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              </Fragment>
             ))}
           </tbody>
         </table>

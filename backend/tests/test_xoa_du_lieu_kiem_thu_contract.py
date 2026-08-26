@@ -9,8 +9,6 @@ NUT_XOA = (ROOT / "frontend/src/components/NutXoaDuLieuTest.jsx").read_text()
 CLIENT = (ROOT / "frontend/src/lib/xoaDuLieuTest.js").read_text()
 DE_XUAT_KHOA = (ROOT / "frontend/src/features/DeXuatCuaToi.jsx").read_text()
 DE_XUAT_PDD = (ROOT / "frontend/src/features/DeXuatTongHop.jsx").read_text()
-HO_SO = (ROOT / "frontend/src/features/HoSoTrucTuyen.jsx").read_text()
-LICH_SU = (ROOT / "frontend/src/features/LichSuXuatHoSo.jsx").read_text()
 
 
 def test_rpc_chi_chay_dung_staging_va_can_cum_xac_nhan():
@@ -57,20 +55,6 @@ def test_khong_co_nhanh_xoa_du_lieu_nen_benh_vien():
     lowered = PATCH.lower()
     for statement in forbidden:
         assert statement not in lowered
-
-
-def test_dau_xoa_co_mat_toan_app_va_truc_tiep_tai_de_xuat_file():
-    assert "<QuanLyDuLieuTest profile={profile}" in APP
-    assert "Dọn dữ liệu kiểm thử" in QUAN_LY
-    assert "Đề xuất / giỏ đã gửi" in QUAN_LY
-    assert "File Word / Excel đang cộng tác" in QUAN_LY
-    assert "Lịch sử xuất Word / Excel" in QUAN_LY
-    assert "XÓA VĨNH VIỄN DỮ LIỆU KIỂM THỬ" in NUT_XOA
-    for source in (DE_XUAT_KHOA, DE_XUAT_PDD):
-        assert 'loai="nhom_de_xuat"' in source
-        assert "Xóa hẳn dữ liệu test" in source
-    assert 'loai="ho_so_cong_tac"' in HO_SO
-    assert 'loai="lan_xuat_ho_so"' in LICH_SU
 
 
 def test_ui_xoa_test_tu_an_o_production():

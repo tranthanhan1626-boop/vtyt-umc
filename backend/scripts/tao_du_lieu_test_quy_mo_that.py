@@ -54,12 +54,18 @@ SO_MA_BO_SUNG = 150
 GIAI_TRINH_VUOT = ("Dữ liệu test — cố ý đề xuất vượt dải P50–P75 để thử cảnh báo "
                    "của hệ thống. Không phải nhu cầu thật.")
 
+# (nhãn gói, số mã, SỐ KHOA THAM DỰ).
+#
+# QĐ 26/08/2026 — chủ dự án: *"chỉ có gói dùng chung là tổng hợp gần như tất cả
+# các khoa thôi, còn gói GMHS gói RHM các gói chuyên khoa khác thì số lượng khoa
+# tham dự không nhiều bằng"*. Bản trước đăng ký CẢ 50 khoa vào mọi gói con, nên
+# Bàn điều hành hiện "62 khoa tham gia" cho cả gói Răng Hàm Mặt — sai bản chất.
 GOI_CON = {
-    "18t-dung-chung": ("Dùng chung", 350),
-    "18t-gmhs":       ("GMHS", 350),
-    "18t-ctch-ntk":   ("CTCH-NTK", 350),
-    "18t-tim-mach":   ("Tim mạch", 320),
-    "18t-rhm":        ("Răng Hàm Mặt", 193),
+    "18t-dung-chung": ("Dùng chung", 350, 50),
+    "18t-gmhs":       ("GMHS", 350, 22),
+    "18t-ctch-ntk":   ("CTCH-NTK", 350, 18),
+    "18t-tim-mach":   ("Tim mạch", 320, 14),
+    "18t-rhm":        ("Răng Hàm Mặt", 193, 9),
 }
 
 BO = {
@@ -185,7 +191,7 @@ def dung_mot_goi(cur, cn, dot_id: int, dot_goi_id: int, goi_id: str, nhan_goi: s
 
     dong, o_giai_trinh, bo_qua, so_vuot, so_ep_that = [], [], 0, 0, 0
     for m in ds_ma:
-        n_ep = SO_KHOA if m in ep else None
+        n_ep = len(khoa) if m in ep else None
         chon = (chon_vuot_dai(dai.get(m), n_ep) if m in vuot
                 else chon_trong_dai(dai.get(m), n_ep))
         if not chon and n_ep:                 # ép 50 khoa không lọt dải -> thả ra
@@ -300,7 +306,9 @@ def main() -> int:
     print(f"  đợt 18T #{dot_id} · năm {nam} · {len(khoa)} khoa\n")
 
     tong = {"ma": 0, "dong": 0, "vuot": 0, "ep": 0, "o": 0}
-    for goi_id, (nhan_goi, so_ma) in GOI_CON.items():
+    for goi_id, (nhan_goi, so_ma, so_khoa_goi) in GOI_CON.items():
+        # Khoa dự gói con này — lấy đầu danh sách cho ổn định giữa các lần dựng.
+        khoa_goi = khoa[:so_khoa_goi]
         cur.execute("""insert into dot_goi (dot_id, goi_id, trang_thai, ngay_mo, created_by)
                        values (%s,%s,'mo',now(),%s)
                        on conflict (dot_id, goi_id) do update set trang_thai='mo'
@@ -308,14 +316,14 @@ def main() -> int:
         dgid = cur.fetchone()[0]
         cur.executemany("""insert into dot_goi_khoa (dot_goi_id, khoa, updated_by)
                            values (%s,%s,%s) on conflict do nothing""",
-                        [(dgid, k, NGUOI) for k in khoa])
+                        [(dgid, k, NGUOI) for k in khoa_goi])
         ds_ma = lay_ma(cur, nhan_goi, so_ma)
         t = time.time()
-        tk = dung_mot_goi(cur, cn, dot_id, dgid, goi_id, nhan_goi, ds_ma, khoa,
+        tk = dung_mot_goi(cur, cn, dot_id, dgid, goi_id, nhan_goi, ds_ma, khoa_goi,
                           nam, "dau_thau_rong_rai", SO_MA_EP_DU_KHOA)
         for k in tong:
             tong[k] += tk[k]
-        print(f"  {nhan_goi:14s} {tk['ma']:>4} mã · {tk['dong']:>6,} dòng · "
+        print(f"  {nhan_goi:14s} {tk['ma']:>4} mã · {len(khoa_goi):>2} khoa · {tk['dong']:>6,} dòng · "
               f"{tk['ep']:>2} mã đủ 50 khoa · {tk['vuot']:>3} mã vượt P75 · "
               f"{tk['o']:>5} ô giải trình · {time.time()-t:.0f}s"
               + (f"  (bỏ {tk['bo_qua']} mã dải quá hẹp)" if tk["bo_qua"] else ""))

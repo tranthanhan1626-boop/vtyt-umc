@@ -6,10 +6,6 @@ PATCH_S = (ROOT / "backend/sql/patch_s_workflow_ho_so_dvsd.sql").read_text()
 PATCH_T = (ROOT / "backend/sql/patch_t_tao_nhieu_bo_ho_so.sql").read_text()
 PATCH_Q = (ROOT / "backend/sql/patch_x2_de_xuat_theo_ma_quan_ly.sql").read_text()
 FUNCTION_1 = (ROOT / "frontend/src/features/Function1.jsx").read_text()
-HO_SO = (ROOT / "frontend/src/features/HoSoTrucTuyen.jsx").read_text()
-XUAT_HO_SO_KHOA = (ROOT / "frontend/src/features/XuatHoSo.jsx").read_text()
-LICH_SU = (ROOT / "frontend/src/features/LichSuXuatHoSo.jsx").read_text()
-XUAT_HO_SO = (ROOT / "frontend/src/lib/xuatHoSo.js").read_text()
 
 
 def test_patch_s_co_du_vong_trang_thai_va_audit():
@@ -77,33 +73,3 @@ def test_de_xuat_cap_ma_quan_ly_quy_doi_phan_bo_va_gio_phan_tang():
     assert "Tổng phân bổ sau quy đổi không bằng tổng của mã quản lý." in PATCH_Q
 
 
-def test_ho_so_khong_con_vong_gui_duyet_va_excel_sort_dung_ma():
-    assert 'chuyenCaBo("gui_pdd")' not in HO_SO
-    assert 'chuyenCaBo("bat_dau_xet_duyet")' not in HO_SO
-    assert 'chuyenCaBo("tu_choi")' not in HO_SO
-    assert 'chuyenCaBo("hoan_thanh")' not in HO_SO
-    assert "Word/Excel không có vòng gửi–duyệt riêng" in HO_SO
-    assert "Tạo file hiện hành" in HO_SO
-    assert "Lịch sử & xuất file" not in HO_SO
-    assert 'const SO_DONG_PREVIEW = 10' in LICH_SU
-    assert "1. Loại tài liệu" in LICH_SU
-    assert "2. Gói thầu" in LICH_SU
-    assert "<PreviewChiDoc row={dangChon}" in LICH_SU
-    assert "a.ma_quan_ly" in XUAT_HO_SO
-    assert "a.ma_hang" in XUAT_HO_SO
-
-
-def test_tao_nhieu_bo_ho_so_khong_ghi_de_lich_su():
-    assert "tao_bo_ho_so_moi" in PATCH_T
-    assert "'bo:' || gen_random_uuid()" in PATCH_T
-    assert "insert into ho_so_cong_tac_lich_su" in PATCH_T
-    assert "Tạo hồ sơ mới" in XUAT_HO_SO_KHOA
-    assert "Chọn biểu mẫu" in XUAT_HO_SO_KHOA
-    # (Bỏ) aria-label="Loại hồ sơ": nút chuyển Word/Excel đã biến mất từ
-    # 07/08/2026 khi Excel danh mục tách sang tab riêng — giờ chỉ còn Word,
-    # không còn gì để chuyển. Thay bằng ràng buộc thật sự của test này:
-    # mỗi lần bấm + phải sinh một nguon_key MỚI, không ghi đè bộ cũ.
-    assert "taoBoHoSoMoi" in XUAT_HO_SO_KHOA
-    assert "setNguonDangMo(data.nguon_key)" in XUAT_HO_SO_KHOA
-    assert "hoSoTheoLoai.map" in XUAT_HO_SO_KHOA
-    assert "nguonKey={nguonDangMo}" in XUAT_HO_SO_KHOA

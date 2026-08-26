@@ -33,6 +33,23 @@ khi site đứng yên.
 
 ---
 
+## 🔴 QUY TẮC — XÂY XONG MỘT TÍNH NĂNG LÀ PHẢI CÓ NGƯỜI KHÁC BẤM THỬ
+
+Chủ dự án chốt 26/08/2026: **mỗi lần build xong một tính năng, giao cho một
+agent ĐỘC LẬP bấm thử tính năng đó trên trình duyệt như người dùng thật** (Chrome
+qua `mcp__chrome-devtools__*`), tổng hợp lỗi rồi báo về để người xây vá.
+
+Vì sao thành quy tắc: dự án đã dính lớp lỗi "màn chết mà không ai biết"
+**bốn lần** trong ba ngày — ba bảng chết 23/08, component quên import 24/08,
+view rớt cột 24/08, chốt trình ký mất đường bấm 24/08. Cả bốn đều lọt qua
+`pytest`, `build ✓` và cả smoke. **Chỉ có bấm thật mới bắt được.**
+
+Giao việc cho agent kiểm phải nói rõ: bấm gì · kỳ vọng thấy gì · dữ liệu nào
+được phép làm bẩn · **không commit, không push**. Người xây rà lại từng bản vá
+rồi mới commit.
+
+---
+
 ## Đọc gì trước khi chạm vào code
 
 **Toàn bộ tài liệu dự án nằm trong `Hướng dẫn build project/`.** Bắt đầu từ

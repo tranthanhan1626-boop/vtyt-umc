@@ -1387,3 +1387,95 @@ nó cắt chuỗi và build gãy. Đã ghi cảnh báo ngay tại chỗ.
 Phiên Q của gói Dùng chung bộ B đã bị **mở lại với lý do "test"**
 (`hieu_luc = false`), nên gói đó mất cụm cột thầu. Không phải lỗi — ai đó bấm
 "Mở chốt để sửa". Đã chốt lại; cả 6 gói con nay đều có phiên Q hiệu lực.
+
+---
+
+## 26/08/2026 (3) — Dọn sạch, bỏ hồ sơ Word, Bàn điều hành sổ ba cấp
+
+### Dung lượng: 238 MB → 135 MB
+
+Chủ dự án hỏi vì sao Supabase báo 223/500 MB trong khi không thêm gì. Đo ra:
+
+| Bảng | Dòng | Dung lượng |
+|---|---:|---:|
+| `usage_history_current` | 141.623 | 64 MB — **nền thật** |
+| `usage_history_changelog` | 291.622 | 48 MB |
+| `proposals` · `phan_bo_khoa` · `chot_q_dong` · audit… | ~165.000 | ~95 MB — **test** |
+
+Thủ phạm là **bộ dữ liệu test dựng lại hơn mười lần** trong hai ngày. Mỗi bộ
+16.000 dòng đề xuất nhưng **nhân ra** nhiều bảng: chốt Q sao chép toàn bộ thành
+snapshot, phân bổ đẻ theo (mã × khoa), audit ghi từng ô.
+
+Và **Postgres không tự trả chỗ về cho hệ** khi xoá — đánh dấu dòng chết rồi thôi.
+Phải `VACUUM FULL`. Đó là lý do dung lượng cứ leo dù xoá đi xoá lại.
+
+`scripts/don_sach_moi_dot.py` — xoá mọi đợt, giữ nguyên nền, `VACUUM FULL` luôn.
+Chạy thật: **183.231 dòng trên 35 bảng**, database 238 → **135 MB**.
+
+### Bỏ hẳn Word cam kết và Phiếu đề nghị mua thầu
+
+QĐ 26/08/2026. Xoá **7 file, ~2.400 dòng**: `XuatHoSo` · `HoSoTrucTuyen` ·
+`PhieuDeNghi` · `LichSuXuatHoSo` · `xuatWordPhieu` · `xuatHoSo` · `coCauBieuMau`,
+cùng mọi mục menu ở cả hai vai trò và tab "Phiếu đề nghị" của Bàn điều hành.
+
+**"Đủ hồ sơ" nay đo bằng ĐÚNG MỘT THỨ: khoa đã xác nhận danh mục.** Kiểm thẳng
+định nghĩa hàm trên database trước khi cắt — `chot_danh_muc_khoa_v3` và
+`chot_so_tham_gia_thau_v3` **chưa bao giờ** nhắc tới bảng hồ sơ, nên bỏ đi không
+làm hở cổng nào.
+
+Giữ bảng `ho_so_cong_tac` · `lan_xuat_ho_so` · `phieu_de_nghi` trên database —
+xoá bảng là không hoàn tác được.
+
+### Bàn điều hành sổ BA CẤP
+
+`loại gói → đợt → gói con → dashboard`. Chưa chọn đủ ba thì không sổ bảng. Đổi
+loại gói thì buông đợt cũ. **Bỏ nút "Tất cả gói con"** — mỗi gói con đi thầu
+riêng, gộp chung ra con số không dùng được vào việc gì.
+
+🆕 **Cột "Số gói"** trong bảng theo dõi khoa: khoa này đang đề xuất ở bao nhiêu
+gói **trên toàn hệ**, bấm vào xổ ra từng gói kèm mã QL / mã hàng / tổng SL. Nền
+là `patch_zzzzzw` với hai view — `v_khoa_theo_goi_v3` và `v_ma_hang_theo_goi_v3`
+(view thứ hai dựng sẵn cho ý "lọc theo mã hàng thì khoa đó đã đề xuất ở gói nào").
+
+### Bốn chỗ chủ dự án bắt lỗi ngay sau khi build
+
+**1. Chú thích `//` lọt vào JSX, hiện thành CHỮ trên bảng.** Khi bọc hai `<tr>`
+vào `<Fragment>`, ba dòng chú thích `//` đứng trước `<tr>` trở thành **con của
+Fragment**, tức là text. Chủ dự án chụp màn hình báo. Trong Fragment phải dùng
+chú thích JSX, không dùng hai gạch chéo.
+
+**2. "Tổng SL toàn viện" — bỏ.** *"Đâu phải lúc nào tất cả các khoa đơn vị toàn
+viện đều đi thầu đâu."*
+
+**3. "Đã xác nhận bản hiện tại" lấy sai mẫu số.** Hiện `0/62` (toàn viện). Nay
+mẫu số là **số khoa ĐÃ ĐỀ XUẤT** — đo lại ra `50/50`.
+
+**4. Gói bổ sung KHÔNG có gói con.** *"Cứ đợt gói bổ sung theo 3 mốc tháng trong
+năm chính là gói con."* Bản trước lọc `GOI_ID_MAP` theo `loai_mua_sam` ra **4
+mục** cho gói bổ sung (`bo-sung` + `bs-t1/t5/t9`), trong đó `bo-sung` là bí danh
+không có nhãn — nên hàng chip hiện **bốn nút trống trơn**.
+
+Nay gói con của đợt bổ sung suy thẳng từ `thang_moc` và chỉ có **đúng một**, tự
+chọn luôn, hàng chip ẩn đi. Ô chọn đợt gom theo **năm** (`<optgroup>`), và chip
+loại gói ghi *"4 đợt · 2 năm"* thay vì *"4 đợt"* — trước đó đọc như phá luật
+3 đợt/năm trong khi T9/2026 và T1/2027 là hai năm khác nhau.
+
+### Khoa tham dự theo gói con — sửa bộ sinh dữ liệu
+
+*"Chỉ có gói dùng chung là tổng hợp gần như tất cả các khoa thôi, còn gói GMHS
+gói RHM các gói chuyên khoa khác thì số lượng khoa tham dự không nhiều bằng."*
+
+Bộ sinh trước đăng ký **cả 62 khoa vào mọi gói con**. Nay:
+
+| Gói con | Khoa dự |
+|---|---:|
+| Dùng chung | 50 |
+| GMHS | 22 |
+| CTCH-NTK | 18 |
+| Tim mạch | 14 |
+| Răng Hàm Mặt | 9 |
+
+### Nghiệm thu
+
+`pytest` **222** · `kiem_moi_man` ba vòng xanh (32 màn · 65 bảng/view) ·
+`test:formula` OK · `build` ✓ · database **135 MB**.

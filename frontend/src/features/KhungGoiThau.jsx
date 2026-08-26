@@ -64,11 +64,8 @@ export function manHinhTheoVaiTro(goi, laPdd) {
   // trên snapshot `phien_tong_hop`. Đó là workflow CŨ đã bị đảo — bản tổng hợp
   // hiện tại là Danh mục tổng hợp live sync (#tong-hop-pdd/<goiId>), mở từ Bàn
   // điều hành. Hai đường tổng hợp song song chỉ tạo cơ hội lệch số.
-  ds.push({
-    ma: "bieu_mau",
-    ten: goi === "chi_dinh_thau" ? "Hồ sơ chỉ định thầu" : "Cam kết của khoa",
-    icon: FileSearch,
-  });
+  // QĐ 26/08/2026 — bỏ "Cam kết của khoa" (Word) và "Hồ sơ chỉ định thầu".
+  // Danh mục đề xuất đã được khoa xác nhận LÀ hồ sơ, không cần bản Word riêng.
   return ds;
 }
 
@@ -209,11 +206,6 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
       ...(!laPdd && g.ma !== "chi_dinh_thau"
         ? [{ ma: "danh_muc_khoa", ten: "Danh mục đề xuất của khoa", icon: Sheet }]
         : []),
-      {
-        ma: "bieu_mau",
-        ten: g.ma === "chi_dinh_thau" ? "Hồ sơ chỉ định thầu" : "Cam kết của khoa",
-        icon: FileSearch,
-      },
     ];
 
     return (
@@ -416,15 +408,6 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
           <span>Tiến độ sử dụng</span>
         </button>
       )}
-
-      <button
-        type="button"
-        onClick={() => chuyenMan({ nhom: "chung", man: "lichsu" })}
-        className={`umc-common-button mt-2 ${chon.man === "lichsu" ? "is-active" : ""}`}
-      >
-        <History size={16} />
-        <span>Lịch sử hồ sơ đề xuất</span>
-      </button>
 
       {false && (
         <button

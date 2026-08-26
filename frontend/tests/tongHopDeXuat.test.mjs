@@ -67,8 +67,9 @@ assert.equal(cay0[0].maHang[0].khoa[0].tiTrong, 0, "tổng = 0 thì tỉ trọng
 const dsKhoa = ["Khoa A", "Khoa B", "Khoa C"]; // Khoa C chưa đề xuất gì
 const tinhHinh = tinhTinhHinhKhoa(
   dsKhoa, rows,
-  new Set(["Khoa A"]),          // chỉ Khoa A có Word cam kết
-  new Set(["Khoa A", "Khoa B"]), // A và B đã chốt danh mục
+  // QĐ 26/08/2026 — bỏ Word cam kết. Tham số thứ ba nay là "khoa đã XÁC NHẬN
+  // danh mục", và đó là điều kiện DUY NHẤT của "đủ hồ sơ".
+  new Set(["Khoa A"]),          // chỉ Khoa A đã xác nhận danh mục
 );
 
 assert.equal(tinhHinh.length, 3, "phải liệt kê ĐỦ khoa toàn viện, kể cả khoa chưa đề xuất");
@@ -79,10 +80,11 @@ const tC = tinhHinh.find((k) => k.don_vi === "Khoa C");
 assert.equal(tA.daDeXuat, true);
 assert.equal(tA.soMaHang, 2, "Khoa A đề xuất 66159 và 99999");
 assert.equal(tA.tongSoLuong, 4007, "3000 + 1000 + 7");
-assert.equal(tA.duHoSo, true, "A đủ: đã đề xuất + có Word + đã chốt");
+assert.equal(tA.duHoSo, true, "A đủ: đã đề xuất + đã xác nhận danh mục");
 
-assert.equal(tB.coWord, false);
-assert.equal(tB.duHoSo, false, "B thiếu Word thì chưa đủ hồ sơ");
+assert.equal(tB.daChot, false, "B chưa xác nhận danh mục");
+assert.equal(tB.duHoSo, false, "B chưa xác nhận thì chưa đủ hồ sơ");
+assert.equal(tB.coWord, undefined, "cột coWord đã bỏ hẳn, không được sống lại");
 
 assert.equal(tC.daDeXuat, false, "Khoa C chưa đề xuất");
 assert.equal(tC.tongSoLuong, 0);
@@ -100,8 +102,8 @@ const tq = tinhTongQuan(tinhHinh, cay);
 assert.equal(tq.soKhoaToanVien, 3);
 assert.equal(tq.soKhoaDaDeXuat, 2);
 assert.equal(tq.soKhoaChuaDeXuat, 1);
-assert.equal(tq.soKhoaCoWord, 1);
-assert.equal(tq.soKhoaDaChot, 2);
+assert.equal(tq.soKhoaCoWord, undefined, "ô đếm Word đã bỏ hẳn (QĐ 26/08/2026)");
+assert.equal(tq.soKhoaDaChot, 1, "chỉ Khoa A đã xác nhận danh mục");
 assert.equal(tq.soMaQuanLy, 2);
 assert.equal(tq.soMaHang, 3, "66159 + 74372 + 99999");
 assert.equal(tq.tongSoLuong, 5507, "tổng toàn viện phải khớp tổng từng dòng");

@@ -12,13 +12,11 @@ import DanhMucDeXuatLinks from "./features/DanhMucDeXuatLinks";
 import BanDieuHanhPdd from "./features/BanDieuHanhPdd";
 import ChoDuyet, { demViecChoDuyet } from "./features/ChoDuyet";
 import TienDoGoiThau from "./features/TienDoGoiThau";
-import XuatHoSo from "./features/XuatHoSo";
 import KhungGoiThau, { useDotDangMo } from "./features/KhungGoiThau";
 import QuanLyDot from "./features/QuanLyDot";
 import QuanLyNguoiDung from "./features/QuanLyNguoiDung";
 import PhanGoiConMaQuanLy from "./features/PhanGoiConMaQuanLy";
 import GioRotCuaKhoa from "./features/GioRotCuaKhoa";
-import LichSuXuatHoSo from "./features/LichSuXuatHoSo";
 import HopThuThongBao from "./features/HopThuThongBao";
 import TheoDoiChuyenTiep from "./features/TheoDoiChuyenTiep";
 import TongHopKetQuaThau from "./features/TongHopKetQuaThau";
@@ -26,7 +24,6 @@ import DieuChinhTieuChi from "./features/DieuChinhTieuChi";
 import TienDoSuDung from "./features/TienDoSuDung";
 import ThongBaoChamTienDo from "./features/ThongBaoChamTienDo";
 import SoThieuHang from "./features/SoThieuHang";
-import PhieuDeNghi from "./features/PhieuDeNghi";
 import TrangDungChung, { QuayLaiDungChung } from "./features/TrangDungChung";
 import NhomKyThuatCuaKhoa from "./features/NhomKyThuatCuaKhoa";
 import DuyetNhomKyThuat from "./features/DuyetNhomKyThuat";
@@ -131,10 +128,6 @@ export default function App() {
       document.removeEventListener("visibilitychange", khiQuayLai);
     };
   }, [laPdd, capNhatDem]);
-  // ?phieu=<id> — mở trang điền biểu mẫu ở tab riêng (link từ 2 tab đề xuất).
-  // Đọc 1 lần lúc mount là đủ: mỗi tab trình duyệt chỉ mở đúng 1 phiếu.
-  const [phieuId] = useState(() => new URLSearchParams(window.location.search).get("phieu"));
-
   if (loading) {
     return <ManHinhDangTai />;
   }
@@ -167,10 +160,6 @@ export default function App() {
         </div>
       </div>
     );
-  }
-
-  if (phieuId) {
-    return <PhieuDeNghi phieuId={Number(phieuId)} profile={profile} />;
   }
 
   // Tab tổng hợp chỉ dành cho admin/dieu_duong. RLS cũng đã chặn ở DB (dvsd chỉ
@@ -229,7 +218,6 @@ export default function App() {
   const TEN_TRANG_CHUNG = {
     thieuhang: "Sổ thiếu hàng",
     tiendo: "Tiến độ gói thầu",
-    lichsu: "Lịch sử hồ sơ đề xuất",
     makythuat: "Mã kỹ thuật khoa tự thêm",
     quanlydot: "Quản lý đợt đề xuất",
     nguoidung: "Quản trị người dùng",
@@ -265,7 +253,6 @@ export default function App() {
         })}
       />
     )
-    : chon.man === "lichsu" ? <LichSuXuatHoSo profile={profile} />
     : chon.man === "makythuat" ? <NhomKyThuatCuaKhoa profile={profile} />
     : chon.man === "duyetmakythuat" && xemDuocTongHop ? <DuyetNhomKyThuat />
     : chon.man === "ketquathau" && xemDuocTongHop ? <TongHopKetQuaThau profile={profile} />
@@ -293,17 +280,6 @@ export default function App() {
       <ChoDuyet
         onDoiSoLuong={capNhatDem}
         onMoManKhac={setChon}
-        onMoHoSo={(h) => setChon({
-          // Mọi gói đều mở ở "Cam kết của khoa" (XuatHoSo). Trước 09/08/2026
-          // gói 18T/bổ sung mở ở màn "Tổng hợp & xuất hồ sơ" — màn đó thuộc
-          // workflow cũ (snapshot phien_tong_hop) và đã bị gỡ.
-          nhom: "goi",
-          goi: h.loai_mua_sam,
-          man: "bieu_mau",
-          dotId: h.dot_id,
-          donVi: h.don_vi,
-          nguonKey: h.nguon_key,
-        })}
       />
     )
     : <TrangDungChung doiChon={setChon} laPdd={xemDuocTongHop} soChoDuyet={soChoDuyet} dotTheoGoi={dotTheoGoi} />;
@@ -388,38 +364,18 @@ export default function App() {
                   profile={profile}
                   goi={chon.goi}
                   goiConKhoiTao={chon.goiCon}
-                  onMoHoSo={(h) => setChon({
-                    nhom: "goi",
-                    goi: chon.goi,
-                    man: "bieu_mau",
-                    ...h,
-                  })}
                 />
               : <DeXuatCuaToi
                   profile={profile}
                   goi={chon.goi}
                   goiConKhoiTao={chon.goiCon}
-                  onMoHoSo={(h) => setChon({
-                    nhom: "goi",
-                    goi: chon.goi,
-                    man: "bieu_mau",
-                    ...h,
-                  })}
                 />)
           : chon.man === "danh_muc_khoa"
               ? <DanhMucDeXuatLinks profile={profile} goi={chon.goi} />
-          : <XuatHoSo
-              profile={profile}
-              goi={chon.goi}
-              goiConKhoiTao={chon.goiCon}
-              dot={dotTheoGoi[chon.goi]}
-              dotIdKhoiTao={chon.dotId}
-              donViKhoiTao={chon.donVi}
-              nhomKhoiTao={chon.nhomDeXuat}
-              proposalIdKhoiTao={chon.proposalId}
-              maHoSoKhoiTao={chon.maHoSo}
-              nguonKeyKhoiTao={chon.nguonKey}
-            />
+          /* QĐ 26/08/2026 — bỏ Word cam kết và Phiếu đề nghị mua thầu. Danh mục
+             đề xuất đã xác nhận LÀ hồ sơ. Nhánh này chỉ còn là lưới hứng cho
+             link cũ; đưa người dùng về đúng chỗ thay vì màn trắng. */
+          : <DanhMucDeXuatLinks profile={profile} goi={chon.goi} />
           ) : chon.nhom === "tuy_chon_mua_them"
             ? <GoiTuyChonMuaThem profile={profile} />
           : chon.man === "tongquan" || chon.man === "ban_dieu_hanh" ? noiDungChung : (

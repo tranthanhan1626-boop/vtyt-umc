@@ -35,12 +35,14 @@ NAM = 2028
 TEN_DOT = "TEST ĐẦY ĐỦ — Gói 18 tháng 1/2028 - 6/2029"
 SO_KHOA = 50
 SO_MA_MOI_GOI = 70
+# (nhãn gói, SỐ KHOA THAM DỰ) — QĐ 26/08/2026: chỉ gói Dùng chung gom gần hết
+# viện, các gói chuyên khoa ít khoa dự hơn hẳn.
 GOI_CON = {
-    "18t-dung-chung": "Dùng chung",
-    "18t-gmhs": "GMHS",
-    "18t-rhm": "Răng Hàm Mặt",
-    "18t-tim-mach": "Tim mạch",
-    "18t-ctch-ntk": "CTCH-NTK",
+    "18t-dung-chung": ("Dùng chung", 50),
+    "18t-gmhs": ("GMHS", 22),
+    "18t-rhm": ("Răng Hàm Mặt", 9),
+    "18t-tim-mach": ("Tim mạch", 14),
+    "18t-ctch-ntk": ("CTCH-NTK", 18),
 }
 MOC_BO_SUNG = [(2026, 9), (2027, 1), (2027, 5), (2027, 9)]
 
@@ -182,7 +184,10 @@ def main() -> int:
     print(f"  đợt #{dot_id} · {NAM} · {len(khoa)} khoa")
 
     tong_ma = tong_dong = 0
-    for goi_id, nhan_goi in GOI_CON.items():
+    for goi_id, (nhan_goi, so_khoa_goi) in GOI_CON.items():
+        # Khoa dự gói con này (QĐ 26/08/2026). Lấy đầu danh sách cho ổn định
+        # giữa các lần dựng.
+        khoa_goi = khoa[:so_khoa_goi]
         cur.execute("select id from dot_goi where dot_id=%s and goi_id=%s", (dot_id, goi_id))
         dg = cur.fetchone()
         if not dg:
@@ -194,7 +199,7 @@ def main() -> int:
         cur.execute("update dot_goi set trang_thai='mo', ngay_mo=now() where id=%s", (dot_goi_id,))
         cur.executemany("""insert into dot_goi_khoa (dot_goi_id, khoa, updated_by)
                            values (%s,%s,'test-day-du@umc.edu.vn')
-                           on conflict do nothing""", [(dot_goi_id, k) for k in khoa])
+                           on conflict do nothing""", [(dot_goi_id, k) for k in khoa_goi])
 
         # Ưu tiên mã thuộc nhóm CÓ NHIỀU MÃ CÙNG ĐVT để thử được đường đổ mã
         cur.execute("""
@@ -229,7 +234,7 @@ def main() -> int:
                 bo_qua += 1
                 continue
             n, muc = chon
-            for k in random.sample(khoa, n):
+            for k in random.sample(khoa_goi, min(n, len(khoa_goi))):
                 dong.append((m, k, NAM, muc, nhan_goi, dot_id, dot_goi_id))
         cur.executemany("""insert into proposals
             (ma_hang, don_vi, nam_de_xuat, so_luong, loai_mua_sam, goi,
@@ -238,14 +243,14 @@ def main() -> int:
         cur.executemany("""insert into danh_muc_khoa_chot
             (goi_id, nam_de_xuat, khoa, chot_boi, dot_goi_id)
             values (%s,%s,%s,'test-day-du@umc.edu.vn',%s) on conflict do nothing""",
-            [(goi_id, NAM, k, dot_goi_id) for k in khoa])
+            [(goi_id, NAM, k, dot_goi_id) for k in khoa_goi])
         cn.commit()
         tong_ma += len({d[0] for d in dong}); tong_dong += len(dong)
         cur.execute("""select sum(so_luong_hien_hanh) from phan_bo_khoa
                        where dot_goi_id = %s""", (dot_goi_id,))
         tong_sl = cur.fetchone()[0] or 0
         so_ma_that = len({d[0] for d in dong})
-        print(f"  {nhan_goi:16s} {so_ma_that:>3} mã · {len(dong):>5} dòng · "
+        print(f"  {nhan_goi:16s} {so_ma_that:>3} mã · {len(khoa_goi):>2} khoa · {len(dong):>5} dòng · "
               f"tổng {int(tong_sl):,} đơn vị"
               + (f"  (bỏ {bo_qua} mã dải quá hẹp)" if bo_qua else ""))
 

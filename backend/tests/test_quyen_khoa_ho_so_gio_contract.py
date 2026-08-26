@@ -7,8 +7,6 @@ PATCH_X = (
 ).read_text()
 DE_XUAT_KHOA = (ROOT / "frontend/src/features/DeXuatCuaToi.jsx").read_text()
 DE_XUAT_PDD = (ROOT / "frontend/src/features/DeXuatTongHop.jsx").read_text()
-XUAT_HO_SO = (ROOT / "frontend/src/features/XuatHoSo.jsx").read_text()
-HO_SO = (ROOT / "frontend/src/features/HoSoTrucTuyen.jsx").read_text()
 FUNCTION_1 = (ROOT / "frontend/src/features/Function1.jsx").read_text()
 
 
@@ -46,22 +44,6 @@ def test_the_gio_co_nut_word_cam_ket_va_link_excel_danh_muc():
     )
 
 
-def test_bo_ho_so_neo_dung_gio_va_tao_nguyen_tu_hai_file():
-    assert "tao_ho_so_tu_gio_da_duyet" in PATCH_X
-    assert "'gio:' || p_nhom::text" in PATCH_X
-    assert "array_agg(p.id order by p.id)" in PATCH_X
-    assert "v_doc_ids is distinct from v_source_ids" in PATCH_X
-    assert "Word cam kết và Excel danh mục" in PATCH_X
-    assert 'supabase.rpc("tao_ho_so_tu_gio_da_duyet"' in XUAT_HO_SO
-    assert "rowsDangMo" in XUAT_HO_SO
-
-
-def test_pdd_va_khoa_cung_luu_noi_dung_hien_hanh():
-    assert 'luu(laPdd ? "pdd_sua" : "luu")' in HO_SO
-    assert "Lưu nội dung hiện hành" in HO_SO
-    assert "ho_so_cong_tac_lich_su" in PATCH_X
-
-
 def test_ma_da_gui_an_den_khi_pdd_chot_da_di_thau():
     assert "maDangChoDiThau" in FUNCTION_1
     assert '.eq("da_di_thau", false)' in FUNCTION_1
@@ -70,10 +52,3 @@ def test_ma_da_gui_an_den_khi_pdd_chot_da_di_thau():
     assert "chot_danh_muc_da_di_thau" in PATCH_X
 
 
-def test_gop_excel_nhieu_gio_giu_duoc_lich_su_legacy():
-    assert "gop_excel_danh_muc_de_xuat" in PATCH_X
-    assert "'gop:' || gen_random_uuid()" in PATCH_X
-    assert "fn_khoa_danh_muc_da_di_thau" in PATCH_X
-    assert "'di_thau'" in PATCH_X
-    assert "danh_muc_di_thau_id" in PATCH_X
-    assert "Tạo file hiện hành" in HO_SO

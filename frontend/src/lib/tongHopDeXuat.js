@@ -112,7 +112,11 @@ export function gomTheoMaQuanLy(rows = []) {
  * @param {Set<string>} khoaCoWord khoa đã có hồ sơ Word cam kết
  * @param {Set<string>} khoaDaChot khoa đã bấm "Chốt danh mục"
  */
-export function tinhTinhHinhKhoa(dsKhoa = [], rows = [], khoaCoWord = new Set(), khoaDaChot = new Set()) {
+// QĐ 26/08/2026 — BỎ Word cam kết và Phiếu đề nghị mua thầu. "Đủ hồ sơ" của một
+// khoa nay đo bằng ĐÚNG MỘT THỨ: khoa đã XÁC NHẬN danh mục đề xuất của mình.
+// Cổng chốt số đi thầu và cổng chốt trình ký vốn đã KHÔNG đòi Word — kiểm thẳng
+// định nghĩa hàm trên database, không hàm nào nhắc tới bảng hồ sơ.
+export function tinhTinhHinhKhoa(dsKhoa = [], rows = [], khoaDaChot = new Set()) {
   const theoKhoa = new Map();
   rows.forEach((r) => {
     const khoa = r.don_vi || "(không rõ khoa)";
@@ -138,10 +142,9 @@ export function tinhTinhHinhKhoa(dsKhoa = [], rows = [], khoaCoWord = new Set(),
       soMaQuanLy: k ? k.maQuanLy.size : 0,
       soMaHang: k ? k.maHang.size : 0,
       tongSoLuong: k ? k.tongSoLuong : 0,
-      coWord: khoaCoWord.has(khoa),
       daChot: khoaDaChot.has(khoa),
-      // "Đủ hồ sơ" = đã đề xuất + có Word cam kết + đã chốt danh mục.
-      duHoSo: daDeXuat && khoaCoWord.has(khoa) && khoaDaChot.has(khoa),
+      // "Đủ hồ sơ" = đã đề xuất VÀ đã xác nhận danh mục. Không còn Word.
+      duHoSo: daDeXuat && khoaDaChot.has(khoa),
     };
   });
 }
@@ -153,14 +156,13 @@ export function tinhTongQuan(tinhHinhKhoa = [], cayMaQuanLy = []) {
     soKhoaToanVien: tinhHinhKhoa.length,
     soKhoaDaDeXuat: daDeXuat.length,
     soKhoaChuaDeXuat: tinhHinhKhoa.length - daDeXuat.length,
-    soKhoaCoWord: daDeXuat.filter((k) => k.coWord).length,
-    // Mẫu số là MỌI khoa tham gia gói con, không phải chỉ khoa đã đề xuất.
-    // Khoa chọn "Không phát sinh nhu cầu" vẫn phải CHỐT danh mục, mà khoa đó
-    // không có đề xuất nào — đếm theo `daDeXuat` thì nó biến mất khỏi mẫu số
-    // và PĐD thấy "2/2 đã chốt" trong khi thực tế còn khoa chưa chốt. Chính
-    // con số này là thứ PĐD nhìn để quyết thời điểm bấm cổng mềm Giai đoạn 6.
-    soKhoaDaChot: tinhHinhKhoa.filter((k) => k.daChot).length,
-    soKhoaCanChot: tinhHinhKhoa.length,
+    // QĐ 26/08/2026 — MẪU SỐ LÀ SỐ KHOA ĐÃ ĐỀ XUẤT, không phải toàn viện.
+    // Chủ dự án: *"đâu phải lúc nào tất cả các khoa đơn vị toàn viện đều đi
+    // thầu đâu"*. Gói Dùng chung gom gần hết viện, còn GMHS · RHM · các gói
+    // chuyên khoa chỉ vài khoa dự — lấy toàn viện làm mẫu số thì con số
+    // "0/62" nói sai bản chất và không dùng để quyết được việc gì.
+    soKhoaDaChot: daDeXuat.filter((k) => k.daChot).length,
+    soKhoaCanChot: daDeXuat.length,
     soMaQuanLy: cayMaQuanLy.length,
     soMaHang: cayMaQuanLy.reduce((t, mq) => t + mq.soMaHang, 0),
     tongSoLuong: cayMaQuanLy.reduce((t, mq) => t + mq.tongSoLuong, 0),

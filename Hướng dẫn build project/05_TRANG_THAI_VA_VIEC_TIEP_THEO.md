@@ -95,6 +95,21 @@ Cập nhật **24/08/2026**. Nhánh `phase-a-luong-de-xuat`.
 >
 > Full pipeline chạy hết cả hai đường (18T 5 gói con + bổ sung) trong **105 giây**.
 
+> 🟢 **26/08/2026 — DỌN SẠCH, BỎ HỒ SƠ WORD, BÀN ĐIỀU HÀNH SỔ BA CẤP.**
+> Database 238 → **135 MB** (`scripts/don_sach_moi_dot.py`, có `VACUUM FULL`).
+> Bỏ hẳn Word cam kết + Phiếu đề nghị — "đủ hồ sơ" nay là **khoa đã xác nhận
+> danh mục**. Bàn điều hành: loại gói → đợt → gói con → dashboard, thêm cột
+> **Số gói** xổ ra từng gói của khoa (`patch_zzzzzw`).
+>
+> ⚠️ **Gói bổ sung KHÔNG có gói con** — mỗi đợt theo mốc tháng CHÍNH LÀ gói con
+> (QĐ 26/08). Đừng lọc `GOI_ID_MAP` theo `loai_mua_sam` cho gói bổ sung: ra cả
+> bí danh `bo-sung` không nhãn.
+
+> 🔴 **CÒN NỢ — mã rớt đẩy sang gói bổ sung phải VÀO GIỎ, không tự tạo đề xuất.**
+> QĐ 26/08/2026 đảo QĐ 21/08: hệ đẩy mã rớt **vào giỏ** của khoa ở đợt bổ sung,
+> **khoa tự quyết số lượng rồi gửi giỏ** → đi tiếp full pipeline. Hiện
+> `xac_nhan_rot_v3` vẫn tạo thẳng `proposals`. **Chưa thi công.**
+
 > 🔴 **CHỐT TRÌNH KÝ TỪNG MẤT ĐƯỜNG BẤM** (24/08 → vá 25/08). Ba RPC nằm trong
 > tab bị gỡ khỏi Bàn điều hành. Nay là **MỘT nút trên Danh mục tổng hợp**, máy
 > tự chạy vòng lặp qua các khoa — QĐ 21/08 đã bỏ hẳn 49 nút bấm tay, đừng dựng
