@@ -2,15 +2,26 @@
 
 Hướng dẫn cho người và cho agent khi làm việc trong repo này.
 
-## 📍 BẮT ĐẦU SESSION MỚI — TÌNH HÌNH TỚI CUỐI 26/08/2026
+## 📍 BẮT ĐẦU SESSION MỚI — TÌNH HÌNH TỚI 27/08/2026
 
-Chủ dự án đã tự chạy hết vòng và báo **"tôi test ổn"**. Không có lỗi nào đang mở.
+Không có lỗi nào đang mở trong pipeline chính.
 
 ```
-commit  702d039   ·  bundle index-BzCD7WGD.js  ·  Netlify = localhost
-pytest  240 xanh  ·  build ✓  ·  Chrome hai màn 0 lỗi console
+bundle  index-aPWJg4Ps.js  ·  Netlify = localhost
+pytest  258 xanh  ·  build ✓  ·  agent độc lập bấm Chrome hai màn: ĐẠT
 staging 136/500 MB · đợt #200 (18 tháng) + #201 (bổ sung T9/2026, hệ tự tạo)
 ```
+
+🆕 **27/08 — DANH MỤC CHUẨN THEO KỲ đã thi công.** PĐD chốt trình ký là giá trị
+cột chữ xuống `danh_muc_chot_ky`, kế thừa qua các kỳ; hai màn Tổng hợp và Danh
+mục khoa nay đọc `v_danh_muc_chuan` thay cho `vat_tu`. Tám cột trước đây không
+có chỗ nào trong DB nay sống được. Chi tiết ở `01_NGHIEP_VU_HIEN_HANH.md` mục
+13.1. Patch `patch_zzzzzzd`, kiểm lại bằng
+`backend/scripts/kiem_danh_muc_chuan_theo_ky.py`.
+
+✅ **Nút "Đăng xuất" KHÔNG hỏng** — báo cáo nghiệm thu 27/08 nói nó không phản
+hồi, truy tới cùng thì đó là **hiện tượng của công cụ test**, không phải lỗi app.
+Xem mục "BẤM BẰNG CHROME" ngay dưới.
 
 **Vòng đã đo được hết, trên dữ liệu thật của chủ dự án:**
 
@@ -57,6 +68,38 @@ bấm** trên đường khoa gõ đề xuất — nó nhân với 62 khoa × hà
 
 ---
 
+---
+
+## 🔴🔴 TUYỆT ĐỐI KHÔNG BỊA — QĐ CHỦ DỰ ÁN 27/08/2026
+
+> *"tuyệt đối không bịa bất cứ thông tin gì cũng cần sự xác nhận bàn bạc với tôi"*
+
+Không được điền, suy, hay giả định **bất kỳ** thông tin nghiệp vụ nào chưa có
+trong database hoặc mã nguồn. Không rõ thì **HỎI chủ dự án**, không đoán.
+
+Ba thứ cấm cụ thể:
+
+1. **Suy nghĩa của một cột từ TÊN của nó.** Tên cột gợi ý ngữ nghĩa nhưng không
+   chứng minh nó. Muốn biết cột là gì thì đọc chỗ code **DÙNG** nó.
+2. **Trình bày suy luận bằng giọng khẳng định** — trong tài liệu, trong kế
+   hoạch, hay trong chính câu hỏi gửi chủ dự án.
+3. **Dựng phương án hay cảnh báo rủi ro trên một tiền đề tự đặt ra.**
+
+Mỗi lần viết phải tách bạch ba mức: **(a)** đọc thẳng từ DB/mã nguồn ·
+**(b)** tính ra từ (a) · **(c)** chưa xác nhận → phải hỏi, không được viết như (a).
+
+⚠️ **Vì sao thành luật.** 27/08/2026 tôi viết trong tài liệu kế hoạch rằng đợt
+"Mua sắm bổ sung đợt tháng 9/2026" **hiệu lực T9–T12/2026** — trong khi
+`dot_de_xuat` **không có cột hiệu lực nào**; tôi suy ra từ cái tên và từ
+`thang_moc = 9` (cột đó thật ra chỉ dùng để đặt nhãn "T9/2026" và sắp xếp).
+Rồi dựng nguyên một tình huống rủi ro trên tiền đề bịa đó và hỏi chủ dự án xác
+nhận. Chủ dự án phải quay lại cãi một tiền đề tôi tự đặt ra thay vì bàn việc
+thật: *"ai nói đợt bổ sung T9/2026 thì hiệu lực từ T9-T12/2026 vậy?"*
+
+Cùng loại với lỗi 17/08 ở dự án khác (bịa "37 tiêu chí" trong khi bộ công cụ có
+34). Đây là **lớp lỗi tốn thời gian nhất của chủ dự án**, vì nó bắt họ đi kiểm
+lại những thứ đáng lẽ đã đúng.
+
 ## 🔴 ĐẨY LÊN NETLIFY — TÀI KHOẢN ĐÃ HẾT CREDITS
 
 Hết credits thì Netlify **nhận commit nhưng bỏ qua không build**, site cứ phục
@@ -83,6 +126,32 @@ hỏng**, đừng đoán từ `capabilities.credits` (chỉ số đó nói chuy�
 ```bash
 netlify api listSiteDeploys --data '{"site_id":"<id>","per_page":3}'
 ```
+
+---
+
+## 🔴 BẤM BẰNG CHROME — TAB PHẢI Ở TRƯỚC MẶT, KHÔNG THÌ CÚ BẤM RƠI VÀO HƯ KHÔNG
+
+**Đo được 27/08/2026.** `mcp__chrome-devtools__click` trả về `Successfully
+clicked` **kể cả khi không có một sự kiện nào tới trang** — điều đó xảy ra khi
+tab đích không phải tab đang ở trước mặt. Triệu chứng y hệt một nút hỏng: bấm
+mãi không phản hồi, console sạch, không request nào bắn đi.
+
+Bằng chứng: cùng nút "Đăng xuất", cùng bundle, cùng toạ độ (1333–1370 / 1440,
+nằm gọn trong khung nhìn, `elementFromPoint` trả về chính nó, `pointer-events:
+auto`, không `disabled`):
+
+```
+chưa bringToFront →  0 sự kiện tới document  ·  không đăng xuất
+đã  bringToFront →  6 sự kiện tới document  ·  đăng xuất ngay, token về 0
+```
+
+**Luật:** trước MỌI cú bấm, gọi `select_page(pageId, bringToFront: true)`. Mở
+nhiều tab rồi nhảy qua lại là đúng cái bẫy này. Và trước khi kết luận "nút
+hỏng", phải gắn listener capture trên `document` rồi bấm lại — không có sự kiện
+nào tới nghĩa là lỗi ở công cụ, không phải ở app.
+
+⚠️ Đây là **lỗi báo nhầm tốn nhất tới giờ**: một vòng chẩn đoán, một bản vá 30
+dòng viết ra rồi phải gỡ bỏ, vì vá cho một lỗi không tồn tại.
 
 ---
 
@@ -194,7 +263,7 @@ Tối thiểu phải đọc trước khi sửa bất cứ thứ gì:
 | Đụng công thức số lượng | `02_CONG_THUC_SO_LUONG.md` — và **đừng đụng trước Phase G** |
 | Không hiểu vì sao code làm thế | `07_NHAT_KY_THAY_DOI.md` |
 
-## Bảy điều dễ làm sai nhất
+## Tám điều dễ làm sai nhất
 
 1. **Đừng dựng lại thứ đã bị bỏ.** Dự án đã đảo luật **29 lần**. Trước khi thêm một
    bước duyệt, một cổng chặn, một cơ chế khoá ô — mở `06_DUNG_LAM_LAI.md` xem
@@ -224,6 +293,9 @@ Tối thiểu phải đọc trước khi sửa bất cứ thứ gì:
 7. **Đổi chỗ VẼ thì soi lại `.select()` nuôi nó.** Thiếu một cột là sai lặng lẽ,
    không lỗi không cảnh báo: `Number(undefined) > 0` luôn false, `fmt(undefined)`
    ra chuỗi `"NaN"` hiện thẳng ra màn. `build ✓` và pytest đều không bắt được.
+8. **Không rõ thì HỎI, đừng điền vào chỗ trống.** Xem mục "TUYỆT ĐỐI KHÔNG BỊA"
+   ở đầu file (QĐ 27/08/2026). Đặc biệt: đừng suy nghĩa một cột từ tên của nó —
+   `thang_moc` nghe như khoảng hiệu lực, thật ra chỉ để đặt nhãn và sắp xếp.
 
 ## Ranh giới an toàn
 

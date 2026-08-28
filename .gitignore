@@ -42,3 +42,6 @@ Form biểu mẫu/
 
 # Local Netlify folder
 .netlify
+
+# Ảnh chụp màn của các đợt nghiệm thu bằng trình duyệt — dựng lại được, nặng vài MB
+frontend/.nghiemthu-*/

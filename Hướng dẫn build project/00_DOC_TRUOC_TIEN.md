@@ -1,5 +1,26 @@
 # Đọc trước tiên — hệ thống dự trù & đấu thầu VTYT (UMC)
 
+> ## 🔴🔴 TUYỆT ĐỐI KHÔNG BỊA — QĐ 27/08/2026
+>
+> *"tuyệt đối không bịa bất cứ thông tin gì cũng cần sự xác nhận bàn bạc với tôi"*
+>
+> Không được điền, suy hay giả định **bất kỳ** thông tin nghiệp vụ nào chưa có
+> trong database hoặc mã nguồn. Không rõ thì **HỎI chủ dự án**, không đoán.
+>
+> Cấm cụ thể: **(1)** suy nghĩa của một cột từ TÊN của nó — đọc chỗ code DÙNG nó
+> mới biết nó là gì; **(2)** trình bày suy luận bằng giọng khẳng định, kể cả
+> trong câu hỏi gửi chủ dự án; **(3)** dựng phương án hay cảnh báo rủi ro trên
+> một tiền đề tự đặt ra.
+>
+> Mỗi lần viết phải tách bạch: **(a)** đọc thẳng từ DB/mã nguồn · **(b)** tính ra
+> từ (a) · **(c)** chưa xác nhận → phải hỏi, không được viết như (a).
+>
+> Ca mắc lỗi làm ra luật này: 27/08/2026, viết đợt "Mua sắm bổ sung đợt tháng
+> 9/2026" là **hiệu lực T9–T12/2026** trong khi `dot_de_xuat` không có cột hiệu
+> lực nào — suy ra từ tên đợt và từ `thang_moc = 9` (cột đó chỉ dùng đặt nhãn và
+> sắp xếp). Rồi dựng một tình huống rủi ro trên tiền đề bịa đó và hỏi chủ dự án
+> xác nhận. Chi tiết ở `AGENTS.md`.
+
 > ## 🔴 CHẠY WEB ĐỂ TEST — quy tắc bất di bất dịch
 >
 > **Localhost, không dùng Netlify** (QĐ 25/08/2026 — tài khoản miễn phí hết

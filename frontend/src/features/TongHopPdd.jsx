@@ -47,14 +47,17 @@ import {
  *   Cột `sl_de_xuat_2627` là SUM từ `phan_bo_khoa`. Khi PĐD sửa tổng, RPC chia
  *   theo tỷ lệ số gốc; bảng con cho phép chỉnh tay và giữ tổng khớp tuyệt đối.
  *
- * Một số cột KHÔNG CÓ NGUỒN DỮ LIỆU THẬT trong schema hiện tại (mã HIS cũ,
- * Thông tư 04, mã kỹ thuật...) — để trống thay vì bịa, xem NGUON_KHONG_CO.
+ * Tám cột PĐD gõ tay (mã HIS cũ, Thông tư 04, mã kỹ thuật, quy cách...) trước
+ * 27/08/2026 không có chỗ nào trong DB nên luôn trống. Nay chúng sống trong
+ * DANH MỤC CHUẨN và kế thừa qua các kỳ — xem COT_TU_DANH_MUC_CHUAN.
  */
 
-// Cột trong COT_PDD chưa có nguồn dữ liệu thật trong schema hiện tại — để
-// trống, KHÔNG bịa số. Vẫn có thể là cột PĐD tự gõ tay (vd phan_nhom_tt14) —
-// việc đó vẫn đi qua cơ chế sửa ô + audit như mọi cột editable khác.
-const NGUON_KHONG_CO = new Set([
+// Tám cột PĐD gõ tay. Việc gõ vẫn đi qua cơ chế sửa ô + audit như mọi cột
+// editable khác; khác là từ 27/08/2026 giá trị KHÔNG chết theo đợt nữa.
+// (Trước đó tên biến là `NGUON_KHONG_CO` và tám cột này bị ép `null`.)
+// Nay chúng có nguồn thật: `v_danh_muc_chuan` trả về giá trị PĐD đã chốt ở đợt
+// gần nhất, kế thừa qua các kỳ. Patch: `patch_zzzzzzd_danh_muc_chuan_theo_ky`.
+const COT_TU_DANH_MUC_CHUAN = new Set([
   "co_dinh_276", "his_1599", "his_957", "ma_kt",
   "ma_tt04", "ten_tt04", "phan_nhom_tt14", "quy_cach",
 ]);
@@ -77,8 +80,9 @@ const NAM_DE_XUAT = new Date().getFullYear() + 1;
 // cũng không có cột đó" vẫn chỉ áp cho menu "Cột hiển thị".
 // Bỏ cả `ma_nhom` — mã quản lý đã hiện sẵn trong hộp "Đổ sang mã tương đương",
 // giữ trên bảng chỉ tốn 160px mà cụm cột thầu thì hụt chỗ.
-// Bỏ luôn `his_1599`: cột đó nằm trong NGUON_KHONG_CO, chưa có nguồn dữ liệu
-// nên luôn trống — giữ 100px cho một cột rỗng là phí đúng chỗ đang thiếu.
+// Bỏ luôn `his_1599`: chế độ này chỉ để gõ số rớt cho nhanh, giữ 100px cho một
+// cột không liên quan là phí đúng chỗ đang thiếu. (Từ 27/08/2026 cột đó đã có
+// nguồn thật trong danh mục chuẩn, nhưng vẫn không thuộc việc gõ rớt.)
 const COT_CHE_DO_GO_ROT = new Set([
   "stt", "ten_vt_2627", "dvt", "sl_de_xuat_2627", "dai_p50_p75",
 ]);
@@ -173,9 +177,16 @@ async function taiDuLieuGoc(goiId, dotId = null) {
   const dsMaHang = [...theoMa.keys()];
   if (dsMaHang.length === 0) return { bo, rows: [] };
 
+  // QĐ 27/08/2026 (patch_zzzzzzd) — đọc DANH MỤC CHUẨN thay cho `vat_tu`.
+  // Giá trị PĐD đã chốt ở đợt trước thắng nền HIS, và 8 cột trước đây không có
+  // nguồn nào (`NGUON_KHONG_CO`) nay có chỗ sống thật.
+  // ⚠️ `v_danh_muc_chuan` KHÔNG có cột `id` — phải giữ `order: "ma_hang"` cho
+  // `fetchAllRows`, đổi sang `order: "id"` là chết cả màn (bẫy 26/08/2026).
   const { data: vatTuRows, error: loiVatTu } = await fetchAllRows((f, t) =>
-    supabase.from("vat_tu")
-      .select("ma_hang, ten_vat_tu, dvt, ma_quan_ly, tieu_chi_ky_thuat, ten_thuong_mai, ky_ma_hieu, hang, nuoc_san_xuat")
+    supabase.from("v_danh_muc_chuan")
+      .select("ma_hang, ma_quan_ly, ten_vt_2627, tskt_2627, dvt, ten_tm_2627, "
+        + "ma_sp, hang_sx, nuoc_sx, ma_tt04, ten_tt04, his_1599, his_957, "
+        + "ma_kt, quy_cach, co_dinh_276, phan_nhom_tt14")
       .in("ma_hang", dsMaHang).range(f, t), { order: "ma_hang" });
   if (loiVatTu) throw loiVatTu;
   const vatTuTheoMa = new Map((vatTuRows || []).map((v) => [v.ma_hang, v]));
@@ -239,8 +250,8 @@ async function taiDuLieuGoc(goiId, dotId = null) {
       stt: idx + 1,
       ma_nhom: vt.ma_quan_ly || null,
       ten_nhom_ql: vt.ma_quan_ly ? (tenNhomTheoMa.get(vt.ma_quan_ly) || null) : null,
-      ten_vt_2627: vt.ten_vat_tu || maHang,
-      tskt_2627: vt.tieu_chi_ky_thuat || null,
+      ten_vt_2627: vt.ten_vt_2627 || maHang,
+      tskt_2627: vt.tskt_2627 || null,
       dvt: vt.dvt || null,
       // Cột năm sinh động theo dữ liệu thật (xem cotChuan.js) — không đóng
       // đinh 2019..2025 nữa, nếu không năm mới sẽ rơi mất khỏi bản tổng hợp.
@@ -264,10 +275,10 @@ async function taiDuLieuGoc(goiId, dotId = null) {
         ? `Tổng đề xuất ${fmt(slDeXuat)} (18 tháng) / tổng sử dụng ${fmt(thucTe18tGanNhat)} `
           + `(18 tháng gần nhất) (${Math.round((slDeXuat / thucTe18tGanNhat) * 100)}%)`
         : `Tổng đề xuất ${fmt(slDeXuat)} (18 tháng) — chưa có đủ lịch sử sử dụng để so sánh.`,
-      ten_tm_2627: vt.ten_thuong_mai || null,
-      ma_sp: vt.ky_ma_hieu || null,
-      hang_sx: vt.hang || null,
-      nuoc_sx: vt.nuoc_san_xuat || null,
+      ten_tm_2627: vt.ten_tm_2627 || null,
+      ma_sp: vt.ma_sp || null,
+      hang_sx: vt.hang_sx || null,
+      nuoc_sx: vt.nuoc_sx || null,
       ma_hang: maHang,
       khoaDeXuat: khoaDeXuat.map((k) => ({
         khoaMa: k.don_vi, khoaTen: k.don_vi, soLuong: k.so_luong,
@@ -276,7 +287,10 @@ async function taiDuLieuGoc(goiId, dotId = null) {
       khoaTuSuaSo: khoaDeXuat.filter((k) => k.suaBoiKhoa).map((k) => k.don_vi),
       tongToanVien: slDeXuat,
     };
-    NGUON_KHONG_CO.forEach((k) => { row[k] = null; });
+    // Tám cột PĐD gõ tay. Trước 27/08/2026 chúng bị ép `null` vì không có chỗ
+    // nào trong DB để sống — mỗi đợt PĐD gõ lại từ đầu. Nay đọc từ danh mục
+    // chuẩn (`danh_muc_chot_ky` qua `v_danh_muc_chuan`).
+    COT_TU_DANH_MUC_CHUAN.forEach((k) => { row[k] = vt[k] ?? null; });
     return row;
   });
 

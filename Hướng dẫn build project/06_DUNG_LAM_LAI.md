@@ -70,6 +70,12 @@ máy tính và dấu vết; Teams là nơi thương lượng*. Không hạn nộ
 cứng toán học** (xem `01`, mục 0). Ngoài ba khoá đó, hệ **cảnh báo chứ không
 chặn** — trừ hai cổng cứng đã chốt: chốt số đi thầu và chốt trình ký.
 
+**1b. "Cho PĐD ghi thẳng vào `vat_tu` cho gọn."** Cân nhắc và bỏ 27/08/2026.
+Ba lý do đo được: `seed_danh_muc.py` đè `ten_vat_tu`+`dvt` cả 3.327 mã mỗi lần
+HIS có mã mới; `seed_thong_tin_vtyt.py` đè 5 cột đặc tả gồm TSKT; RLS `vat_tu`
+chỉ cho vai `admin` UPDATE mà PĐD mang vai `dieu_duong`. Đường đúng là bảng
+riêng `danh_muc_chot_ky` — `vat_tu` làm nền HIS, bảng chốt thắng khi đọc.
+
 **2. "Cột chữ nên cho mỗi khoa một bản."** Đã thử, đã bỏ 19/08/2026. TSKT là
 thuộc tính của **mã hàng**, không phải của khoa — hai khoa mua cùng một mã thì
 không thể có hai bộ tiêu chí kỹ thuật. Cột chữ là **một giá trị chung toàn

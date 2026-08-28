@@ -1768,3 +1768,112 @@ Mẫu một mục giỏ thật — **đủ 12/12 trường** màn giỏ cần:
 
 Nghiệm thu cuối ngày: `pytest` **240** · `build` ✓ · Chrome hai màn 0 lỗi
 console · Netlify = localhost = `index-BzCD7WGD.js` (commit `702d039`).
+
+---
+
+## 27/08/2026 — QĐ nền: TUYỆT ĐỐI KHÔNG BỊA
+
+> Chủ dự án: *"tuyệt đối không bịa bất cứ thông tin gì cũng cần sự xác nhận
+> bàn bạc với tôi"*
+
+**Ca mắc lỗi làm ra luật.** Trong lúc bàn hướng ghi đè danh mục chuẩn, tôi viết
+vào tài liệu kế hoạch rằng đợt *"Mua sắm bổ sung đợt tháng 9/2026"* **hiệu lực
+T9–T12/2026**, rồi dựng nguyên một tình huống rủi ro trên đó và hỏi chủ dự án
+xác nhận.
+
+Thực tế đo được: `dot_de_xuat` có đúng 11 cột, **không cột nào mô tả khoảng hiệu
+lực**. `thang_moc = 9` chỉ được dùng để đặt nhãn `T9/2026` và để `order by` —
+xem `TienDoGoiThau.jsx:41`, `GioRotCuaKhoa.jsx:71`. Tôi suy nghĩa của cột từ tên
+của nó.
+
+Chủ dự án: *"ai nói đợt bổ sung T9/2026 thì hiệu lực từ T9-T12/2026 vậy?"*
+
+**Luật rút ra** (chép đủ ở `AGENTS.md` và `00_DOC_TRUOC_TIEN.md`):
+
+1. Không suy nghĩa một cột từ TÊN của nó — đọc chỗ code **DÙNG** nó.
+2. Không trình bày suy luận bằng giọng khẳng định, kể cả trong câu hỏi gửi chủ
+   dự án.
+3. Không dựng phương án hay cảnh báo rủi ro trên tiền đề tự đặt ra.
+4. Tách bạch (a) đọc thẳng từ DB/mã nguồn · (b) tính ra từ (a) · (c) chưa xác
+   nhận → **phải hỏi**.
+
+Tốn kém của lớp lỗi này: chủ dự án phải quay lại cãi một tiền đề do tôi tự đặt
+ra, thay vì bàn việc thật.
+
+**Quy tắc thứ tự đúng, sau khi hỏi lại:** giá trị của đợt nào **chốt trình ký
+sau** thì đợt đó hiệu lực — xét **thời gian phát sinh làm thầu**, không xét thời
+gian hiệu lực của gói.
+
+---
+
+## 27/08/2026 (2) — DANH MỤC CHUẨN THEO KỲ: PĐD chốt là ghi đè xuống database
+
+**Chủ dự án đặt vấn đề:** *"thông tin hiển thị ở tổng hợp danh mục đề xuất pdd
+nếu pdd sửa và chốt thì thông tin đó là cập nhật mới nhất sẽ lưu ghi đè lại lên
+trên database luôn (thí dụ TSKT)"*.
+
+**Sáu quyết định** — ghi lúc chốt trình ký · 15 cột · khoa sửa không đẩy xuống ·
+mở chốt không lùi · lưu theo kỳ (mã × đợt) · đợt nào chốt sau thì hiệu lực.
+
+**Đo được trước khi dựng** (không đoán):
+
+| | |
+|---|---|
+| `vat_tu` | 3.327 mã · 13 cột · **0 trigger** · RLS chỉ `admin` UPDATE, PĐD mang vai `dieu_duong` |
+| `danh_muc_tong_hop_o` | **8 trigger** — huỷ xác nhận khoa, khoá sau chốt Q, thông báo, 2 audit |
+| Kẻ xoá công gõ | `seed_danh_muc.py` đè `ten_vat_tu`+`dvt` cả 3.327 mã · `seed_thong_tin_vtyt.py` đè 5 cột đặc tả |
+| Cột không có nguồn | 8 ở màn PĐD, 14 ở màn khoa |
+
+**Thi công:** `patch_zzzzzzd` — bảng `danh_muc_chot_ky`, view `v_danh_muc_chuan`,
+hàm `day_ky_ve_danh_muc()`, nối một dòng `perform` vào `chot_trinh_ky_toan_bo_v3`
+(chép nguyên bản đang chạy, không sửa cổng chặn nào). Frontend đổi nguồn ở
+`TongHopPdd.jsx` và `DanhMucDeXuatKhoa.jsx`.
+
+**Không đụng `vat_tu`** — nhờ đó bỏ được hẳn việc phải rào hai script nạp liệu.
+
+**Nghiệm thu:** 258 pytest (18 test hợp đồng mới) · `kiem_moi_man.py` 343 cột /
+64 bảng, 0 màn lỗi · `kiem_danh_muc_chuan_theo_ky.py` chạy trên staging thật
+trong giao dịch tự huỷ, đủ 5 hành vi · **agent độc lập bấm Chrome: ĐẠT**.
+
+Đo tốc độ view (ổn định, sau lần chạy nguội): `v_danh_muc_chuan` 1,6–2,3ms so
+với `vat_tu` 0,8–1,0ms trên cả 3.327 mã.
+
+⚠️ **Điều lộ ra khi đọc hàm chốt:** cả hai hàm chốt trình ký đều đòi đủ ba giai
+đoạn thầu `hoan_thanh`, nên danh mục chuẩn chỉ nhận giá trị **sau khi gói thầu
+chạy xong** — không phải trong đợt khoa gõ đề xuất T9/2026. Trong lúc đó khoa
+vẫn thấy ngay mọi thứ PĐD sửa, bằng đường cũ (mục 13 của `01`).
+
+---
+
+## 27/08/2026 (3) — "Nút Đăng xuất hỏng" là lỗi BÁO NHẦM của công cụ test
+
+Báo cáo nghiệm thu ghi: nút Đăng xuất ở màn PĐD bấm 5 lần không phản hồi,
+console sạch, không request `/auth/v1/logout` nào. Tôi tin, và viết một bản vá
+30 dòng (hạn giờ 3 giây cho `signOut()` + dọn phiên tay + phản hồi trên nút).
+
+Truy tới cùng thì **app không hỏng**. `mcp__chrome-devtools__click` trả về
+`Successfully clicked` ngay cả khi **không một sự kiện nào tới trang** — xảy ra
+khi tab đích không phải tab trước mặt. Agent mở 3 tab và nhảy qua lại nên trúng.
+
+Đo bằng listener capture trên `document`, cùng nút, cùng bundle, cùng toạ độ:
+
+```
+chưa bringToFront →  0 sự kiện  ·  không đăng xuất
+đã  bringToFront →  6 sự kiện  ·  đăng xuất ngay, token về 0
+```
+
+**Bản vá đã GỠ BỎ hoàn toàn** — vá cho lỗi không tồn tại là thêm đường code
+thừa, ngược chỉ đạo "đừng phát sinh thêm function". `signOut` trở lại một dòng.
+
+Trong lúc vá tôi còn tự dựng ra một lỗi THẬT: cờ `dangThoat` không tự trả về,
+nên đăng xuất rồi đăng nhập lại là nút kẹt "Đang đăng xuất…" và `disabled` vĩnh
+viễn (`App` không unmount khi đăng xuất, nó chỉ đổi sang màn đăng nhập). Lỗi đó
+biến mất cùng bản vá.
+
+**Ba điều rút ra:**
+
+1. Trước mọi cú bấm bằng Chrome: `select_page(pageId, bringToFront: true)`.
+2. Trước khi kết luận "nút hỏng": gắn listener capture trên `document` rồi bấm
+   lại. Không sự kiện nào tới = lỗi công cụ, không phải lỗi app.
+3. Báo cáo của agent kiểm thử là **dữ liệu, không phải kết luận**. Phải tự tái
+   hiện trước khi vá — tôi đã vá trước khi tái hiện được, và trả giá.

@@ -42,9 +42,9 @@ import { taiDotIdCuaGoi, locTheoDot } from "../lib/dotBoSung";
  *     thành GIÁ TRỊ CHÍNH của ô bên khoa (patch_zzzzp), ô đó thành chỉ đọc.
  *     Ngoại lệ: `giai_trinh_2627` không nhận giá trị duyệt — giải trình là
  *     tiếng nói của từng khoa.
- *   - Cột KHÔNG CÓ NGUỒN DỮ LIỆU THẬT (mã HIS cũ, Thông tư 04, mã kỹ thuật,
- *     lý do rớt DC2025, thương mại tham khảo 2025-2026...) — để trống thay
- *     vì bịa, xem NGUON_KHONG_CO_KHOA.
+ *   - Từ 27/08/2026 phần lớn cột "không có nguồn" đã có nguồn thật: chúng đọc
+ *     từ DANH MỤC CHUẨN (`v_danh_muc_chuan`), gồm cả khối 2025-2026 = kỳ chốt
+ *     liền trước. Chỉ còn 3 cột thật sự trống, xem NGUON_KHONG_CO_KHOA.
  */
 
 // Cột KHÔNG nhận giá trị duyệt của PĐD — khoa giữ bản của mình.
@@ -61,10 +61,17 @@ function thangTruoc(r, cu, goiScope) {
   return String(r.updated_at) > String(cu.updated_at);
 }
 
+// Đọc thẳng từ DANH MỤC CHUẨN (patch_zzzzzzd, 27/08/2026). Sáu khoá đầu là
+// thuộc tính mã hàng do PĐD chốt; sáu khoá `*_2526` là giá trị của kỳ chốt
+// LIỀN TRƯỚC, do view tự suy ra — không ai phải gõ.
+const COT_TU_DANH_MUC_CHUAN_KHOA = new Set([
+  "his_1599", "his_957", "ma_tt04", "ten_tt04", "ma_kt", "phan_nhom_tt14",
+  "ten_vt_2526", "tskt_2526", "ten_tm_2526", "ma_sp_2526", "hang_sx_2526", "nuoc_sx_2526",
+]);
+
+// Ba cột còn lại thật sự chưa có nguồn nào trong schema — để trống, KHÔNG bịa.
 const NGUON_KHONG_CO_KHOA = new Set([
-  "his_1599", "his_957", "ma_tt04", "ten_tt04", "ma_his_2023",
-  "ten_vt_2526", "tskt_2526", "ly_do_rot_2025", "ly_do_rot_ct",
-  "ten_tm_2526", "ma_sp_2526", "hang_sx_2526", "nuoc_sx_2526", "ma_kt",
+  "ma_his_2023", "ly_do_rot_2025", "ly_do_rot_ct",
 ]);
 
 // V2 (19/08/2026) — cột số KHÔNG còn chỉ đọc ở màn này. Chủ dự án: khoa sửa
@@ -140,9 +147,16 @@ async function taiDuLieuKhoa(goiId, khoa, dotId = null) {
   const propTheoMa = new Map(propRows.map((r) => [r.ma_hang, r]));
   const dsMaHang = [...propTheoMa.keys()];
 
+  // QĐ 27/08/2026 (patch_zzzzzzd) — đọc DANH MỤC CHUẨN thay cho `vat_tu`, cùng
+  // nguồn với bảng Tổng hợp của PĐD. Kèm khối `*_2526` = giá trị của kỳ chốt
+  // liền trước, sáu cột đó trước nay trống hoàn toàn.
+  // ⚠️ View KHÔNG có cột `id` — giữ `order: "ma_hang"` cho `fetchAllRows`.
   const { data: vatTuRows, error: loiVatTu } = await fetchAllRows((f, t) =>
-    supabase.from("vat_tu")
-      .select("ma_hang, ten_vat_tu, dvt, ma_quan_ly, tieu_chi_ky_thuat, ten_thuong_mai, ky_ma_hieu, hang, nuoc_san_xuat")
+    supabase.from("v_danh_muc_chuan")
+      .select("ma_hang, ma_quan_ly, ten_vt_2627, tskt_2627, dvt, ten_tm_2627, "
+        + "ma_sp, hang_sx, nuoc_sx, ma_tt04, ten_tt04, his_1599, his_957, "
+        + "ma_kt, quy_cach, phan_nhom_tt14, "
+        + "ten_vt_2526, tskt_2526, ten_tm_2526, ma_sp_2526, hang_sx_2526, nuoc_sx_2526")
       .in("ma_hang", dsMaHang).range(f, t), { order: "ma_hang" });
   if (loiVatTu) throw loiVatTu;
   const vatTuTheoMa = new Map((vatTuRows || []).map((v) => [v.ma_hang, v]));
@@ -206,9 +220,9 @@ async function taiDuLieuKhoa(goiId, khoa, dotId = null) {
       stt: 0, stt_co_dinh: 0,
       ma_nhom: vt.ma_quan_ly || null,
       ten_nhom_ql: vt.ma_quan_ly ? (tenNhomTheoMa.get(vt.ma_quan_ly) || null) : null,
-      ten_vt_2627: vt.ten_vat_tu || maHang,
-      tskt_2627: vt.tieu_chi_ky_thuat || null,
-      quy_cach: null,
+      ten_vt_2627: vt.ten_vt_2627 || maHang,
+      tskt_2627: vt.tskt_2627 || null,
+      quy_cach: vt.quy_cach ?? null,
       dvt: vt.dvt || null,
       // QĐ 26/08/2026 — bốn trường điều chuyển PHẢI được chép sang `row`.
       // `row` dựng từng field một, không spread `prop`, nên chọn cột trong
@@ -241,15 +255,20 @@ async function taiDuLieuKhoa(goiId, khoa, dotId = null) {
       _pdd_da_sua: laPhanBoV3 && slGoc !== slDeXuat,
       mua_them_30: tinhTuyChonMuaThem30(slDeXuat),
       giai_trinh_2627: "",
-      ten_tm_2627: vt.ten_thuong_mai || null,
-      ma_sp_2627: vt.ky_ma_hieu || null,
-      hang_sx_2627: vt.hang || null,
-      nuoc_sx_2627: vt.nuoc_san_xuat || null,
+      ten_tm_2627: vt.ten_tm_2627 || null,
+      ma_sp_2627: vt.ma_sp || null,
+      hang_sx_2627: vt.hang_sx || null,
+      nuoc_sx_2627: vt.nuoc_sx || null,
       ma_hang: maHang,
       proposalId: laPhanBoV3 ? prop.proposal_id : prop.id,
       dotId: dotId ? Number(dotId) : prop.dot_id,
       rot: null,
     };
+    // Từ 27/08/2026: mười hai cột dưới đây đọc thẳng từ danh mục chuẩn. Sáu
+    // cột `*_2526` là giá trị của KỲ CHỐT LIỀN TRƯỚC — trước nay luôn trống
+    // nên không so được kỳ này với kỳ trước.
+    COT_TU_DANH_MUC_CHUAN_KHOA.forEach((k) => { row[k] = vt[k] ?? null; });
+    // Ba cột còn lại vẫn chưa có nguồn nào trong DB — để trống, KHÔNG bịa.
     NGUON_KHONG_CO_KHOA.forEach((k) => { row[k] = null; });
     return row;
   });

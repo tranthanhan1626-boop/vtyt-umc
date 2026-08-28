@@ -850,6 +850,56 @@ mục tổng hợp thì vẫn phải mặc định lưu về danh mục đề xu
 Khoa **chỉ xem** phần kết quả thầu, không sửa — đổ số rớt sang mã tương đương là
 việc của PĐD (QĐ D1, D3).
 
+### 13.1 🆕 Giá trị PĐD chốt trở thành DANH MỤC CHUẨN của mã hàng (27/08/2026)
+
+Trước 27/08 mọi thứ PĐD gõ chỉ sống trong `danh_muc_tong_hop_o`, mà bảng đó neo
+theo **một đợt** (`goi_id = '<gói>:dot:<N>'`). Hết đợt là hết: đợt sau mở ra
+đọc lại giá trị gốc từ `vat_tu`, PĐD gõ lại từ đầu. Tám cột (mã Thông tư 04,
+tên Thông tư, HIS 1599, HIS 957, mã kỹ thuật, quy cách, cố định 276, phân nhóm
+TT14) thậm chí **không có chỗ nào trong DB để sống** — mỗi kỳ gõ lại 3.327 dòng.
+
+Từ 27/08: **bấm chốt trình ký là giá trị xuống danh mục chuẩn**, kế thừa qua
+các kỳ.
+
+| | |
+|---|---|
+| Ghi lúc nào | Trong `chot_trinh_ky_toan_bo_v3` — chốt trình ký, không phải chốt Q |
+| Ghi cái gì | 15 cột **thuộc tính của mã hàng**. Cột số tính ra bị `check` chặn cứng |
+| Ghi ở đâu | `danh_muc_chot_ky` (đợt × mã × cột). **Không** ghi vào `vat_tu` |
+| Ô nào được ghi | Chỉ ô **thật sự khác** giá trị đang hiệu lực. Mã không ai sửa thì không sinh dòng, nó kế thừa |
+| Ai thắng | Đợt nào **chốt sau** thì đợt đó hiệu lực — xét *thời gian phát sinh làm thầu* |
+| Khoa sửa | **Không** đẩy xuống chuẩn. Khoa đề nghị, PĐD chốt (QĐ 27/08) |
+| Mở chốt ra sửa | Không tự lùi. Lần chốt sau đè tiếp |
+
+**Vì sao không ghi thẳng vào `vat_tu`.** Đo 27/08: `seed_danh_muc.py` upsert đè
+`ten_vat_tu` + `dvt` cho cả 3.327 mã mỗi lần HIS có mã mới, và
+`seed_thong_tin_vtyt.py` đè 5 cột đặc tả gồm TSKT. Ghi thẳng thì lần nạp HIS
+T7+T8/2026 sắp tới xoá sạch công gõ mà **không báo gì cho ai**. Thêm nữa RLS của
+`vat_tu` chỉ cho vai `admin` UPDATE, mà PĐD mang vai `dieu_duong`.
+
+Tách bảng riêng thì `vat_tu` là **nền HIS**, bảng chốt **thắng khi đọc**. Hai
+script cứ chạy như cũ.
+
+Thứ tự đọc một ô, do `v_danh_muc_chuan` lo:
+
+```
+ô PĐD đang sửa ở đợt này  →  dòng chốt mới nhất  →  nền HIS trong vat_tu
+```
+
+**Được thêm mà không ai phải gõ:** sáu cột kỳ trước trên bảng khoa
+(`TSKT 2025-2026`, `Tên vật tư 2025-2026`, `Tên TM 2025-2026`, `Mã SP`,
+`Hãng SX`, `Nước SX 2025-2026`) trước nay **trống hoàn toàn** — nay chúng là
+dòng chốt liền trước, so được kỳ này với kỳ trước.
+
+⚠️ **Chốt trình ký nằm SAU đấu thầu.** Cả `chot_trinh_ky_toan_bo_v3` lẫn
+`chot_trinh_ky_khoa_v3` đều đòi `giai_doan_thau_v3` đủ ba giai đoạn
+`hoan_thanh`. Nghĩa là trong đợt go-live T9/2026 (62 khoa gõ đề xuất), danh mục
+chuẩn **chưa nhận được gì** cho tới khi gói thầu đó chạy xong. Trong lúc đó khoa
+vẫn thấy ngay mọi thứ PĐD sửa, bằng đường cũ ở mục 13.
+
+Patch: `backend/sql/patch_zzzzzzd_danh_muc_chuan_theo_ky.sql`.
+Kiểm lại: `backend/scripts/kiem_danh_muc_chuan_theo_ky.py` (giao dịch tự huỷ).
+
 ---
 
 ## 12. 🆕 Hộp thư thông báo hai chiều (QĐ D5, 23/08/2026)
