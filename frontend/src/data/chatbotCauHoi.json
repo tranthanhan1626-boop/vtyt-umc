@@ -1,5 +1,5 @@
 {
-  "phien_ban": 1,
+  "phien_ban": 2,
   "soan_ngay": "2026-09-18",
   "quy_uoc": {
     "nguon": "HD/ = 'Hướng dẫn build project/'; features/ = frontend/src/features/; lib/ = frontend/src/lib/; sql/ = backend/sql/. Số sau dấu hai chấm là số dòng.",
@@ -279,14 +279,14 @@
       ],
       "chu_de": "k_tiep",
       "cau_hoi": "Gói con là gì? Tôi nhập ở gói con nào?",
-      "tra_loi": "Gói 18 tháng chia 5 gói con, mỗi gói con đi thầu riêng. Khi gửi, mọi mã trong giỏ được ghi vào đúng gói con bạn đang mở. Vì vậy hãy mở đúng gói con trước khi thêm mã vào giỏ.",
+      "tra_loi": "Gói 18 tháng chia 5 gói con, mỗi gói con đi thầu riêng. Khi gửi, mọi mã trong giỏ được ghi vào gói con bạn đang mở, nên hãy mở đúng gói con trước khi thêm mã. Chưa rõ mã thuộc gói con nào thì hỏi Phòng Điều dưỡng qua Teams trước khi thêm vào giỏ.",
       "bien_the_theo_trang_thai": [],
       "di_toi": null,
       "hoi_tiep": [
         "k_tiep_cac_buoc"
       ],
-      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:104-114, 259-262",
-      "can_xac_nhan": "Khoa dựa vào đâu để biết một mã quản lý thuộc gói con nào (màn tìm mã KHÔNG lọc theo gói con)? Có chỗ nào trên web cho khoa tra không, hay chatbot chỉ nên nói 'hỏi Phòng Điều dưỡng'?"
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:104-114, 259-262; QĐ o 18/09/2026 (HD/05)",
+      "can_xac_nhan": null
     },
     {
       "id": "k_tiep_khong_nhu_cau",
@@ -295,11 +295,15 @@
       ],
       "chu_de": "k_tiep",
       "cau_hoi": "Khoa tôi không cần gì trong gói này thì làm sao?",
-      "tra_loi": "Mở màn Đề xuất số lượng của gói con đó, bấm \"Xem Danh mục đề xuất của khoa\". Khi bảng chưa có mã nào, bạn sẽ thấy nút \"Không phát sinh nhu cầu\". Bấm là xong.",
+      "tra_loi": "Nên bấm \"Không phát sinh nhu cầu\" (không bắt buộc) để Phòng Điều dưỡng biết khoa không cần, khỏi tưởng khoa quên. Mở Đề xuất số lượng của gói con, bấm \"Xem Danh mục đề xuất của khoa\". Bảng chưa có mã nào thì nút này hiện ra.",
       "bien_the_theo_trang_thai": [
         {
           "khi": "Khoa đã có mã trong đợt · khoa.daGui",
-          "tra_loi": "Khoa đã gửi mã trong đợt này nên không dùng nút \"Không phát sinh nhu cầu\" được. Nếu không cần nữa, sửa số về 0 trên Danh mục đề xuất của khoa rồi xác nhận lại."
+          "tra_loi": "Khoa đã gửi mã nên nút \"Không phát sinh nhu cầu\" không hiện. Nếu không cần nữa: mở Danh mục đề xuất của khoa, sửa số các mã về 0, rồi bấm \"Xác nhận thông tin đề xuất lần …\" để xác nhận lại.",
+          "di_toi": {
+            "nhan": "Đi tới Danh mục đề xuất",
+            "man": "khoa.danh_muc_de_xuat"
+          }
         }
       ],
       "di_toi": {
@@ -309,8 +313,8 @@
       "hoi_tiep": [
         "k_xn_la_gi"
       ],
-      "nguon": "features/Function1.jsx:1657-1664; features/DanhMucDeXuatKhoa.jsx:1097-1101; HD/01_NGHIEP_VU_HIEN_HANH.md:269-274, 324-329",
-      "can_xac_nhan": "(1) Cổng chốt số đi thầu đã bỏ qua khoa chưa gửi (01:324-329). Khoa không có nhu cầu có CẦN bấm 'Không phát sinh nhu cầu' không, hay chatbot nên nói 'không cần làm gì'? (2) Biến thể 'sửa số về 0 rồi xác nhận lại' là tôi suy ra từ luật khoa được sửa số (ô nhận số nguyên không âm, DanhMucDeXuatKhoa.jsx:719-722) — có phải cách chủ dự án muốn khoa làm không, hay khoa phải rút đề xuất?"
+      "nguon": "features/Function1.jsx:1657-1664; features/DanhMucDeXuatKhoa.jsx:1097-1101; HD/01_NGHIEP_VU_HIEN_HANH.md:269-274, 324-329; QĐ g, h 18/09/2026 (HD/05)",
+      "can_xac_nhan": null
     },
     {
       "id": "k_dx_bat_dau",
@@ -468,14 +472,14 @@
       ],
       "chu_de": "k_dx",
       "cau_hoi": "Bấm gửi thì báo lỗi?",
-      "tra_loi": "\"Mã … còn thiếu kỳ sử dụng, … lý do hoặc ghi chú\": mã đó trong giỏ còn thiếu thông tin bắt buộc. \"Đợt đề xuất đã đóng\": PĐD đã đóng đợt, hỏi qua Teams. Lỗi khác xem mục \"Lỗi / không bấm được\".",
+      "tra_loi": "\"Mã … còn thiếu kỳ sử dụng, … lý do hoặc ghi chú\": mã đó thiếu thông tin bắt buộc. Bấm \"Xem giỏ\", bấm dấu X cạnh mã quản lý đó để bỏ khỏi giỏ, rồi chọn lại mã quản lý đó và nhập đủ.",
       "bien_the_theo_trang_thai": [],
       "di_toi": null,
       "hoi_tiep": [
         "k_loi_khac"
       ],
-      "nguon": "features/Function1.jsx:1361-1371; sql/*.sql raise 'Đợt đề xuất đã đóng.'",
-      "can_xac_nhan": "Khi giỏ báo 'Mã … còn thiếu … lý do hoặc ghi chú', khoa sửa bằng cách nào? Ngăn giỏ hiện tại không có ô sửa (Function1.jsx:1560-1568 chỉ hiển thị). Có phải bấm dấu X 'Bỏ cả mã quản lý khỏi giỏ' rồi nhập lại nhóm đó không?"
+      "nguon": "features/Function1.jsx:1282-1285 (boNhomKhoiGio), 1398-1406 (lỗi thiếu), 2311-2314 (Xem giỏ), 2390-2393 (X 'Bỏ cả mã quản lý khỏi giỏ'), 787-792 (bỏ khỏi giỏ thì mã hiện lại); sql/*.sql raise 'Đợt đề xuất đã đóng.'",
+      "can_xac_nhan": null
     },
     {
       "id": "k_dx_ma_bi_an",
@@ -484,7 +488,7 @@
       ],
       "chu_de": "k_dx",
       "cau_hoi": "Mã tôi vừa gửi biến mất khỏi danh sách?",
-      "tra_loi": "Bình thường. Mã đã vào giỏ hoặc đã gửi ở đợt này thì cả mã quản lý tạm ẩn khỏi danh sách tìm, để khỏi đề xuất trùng. Muốn đổi số sau khi gửi, sửa trên Danh mục đề xuất của khoa.",
+      "tra_loi": "Bình thường. Mã đã vào giỏ hoặc đã gửi ở đợt này thì cả mã quản lý bị ẩn khỏi danh sách tìm suốt đợt này, để khỏi đề xuất trùng. Mở một đợt khác (đợt bổ sung hoặc kỳ sau) thì mã hiện lại. Muốn đổi số sau khi gửi, sửa trên Danh mục đề xuất của khoa.",
       "bien_the_theo_trang_thai": [],
       "di_toi": {
         "nhan": "Đi tới Danh mục đề xuất",
@@ -493,8 +497,8 @@
       "hoi_tiep": [
         "k_dx_sua_sau_gui"
       ],
-      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:264-265; features/Function1.jsx:510-513, 1691-1697",
-      "can_xac_nhan": "Mã hiện lại khi nào? 01:264-265 nói 'sau khi PĐD đã chốt dữ liệu trình ký'; dòng chữ trên màn (Function1.jsx:1693-1695) nói 'sau khi PĐD chốt \"Đã đi thầu\"'. Chatbot nên nói mốc nào? (Hiện câu trả lời cố ý không nêu mốc.)"
+      "nguon": "features/Function1.jsx:514-571 (tập ẩn neo theo dot_id: proposals da_di_thau=false + gio_nhap cùng đợt), 785-792; sql/patch_zzzzy_dong_cua_chot_cu_tra_ma_ve_khoa.sql (20/08: gỡ đường bật da_di_thau). LỆCH QĐ i 18/09 ('hiện lại sau khi PĐD chốt số đi thầu') — câu trả lời theo code, đã báo manager.",
+      "can_xac_nhan": null
     },
     {
       "id": "k_dx_sua_sau_gui",
@@ -821,11 +825,11 @@
       ],
       "chu_de": "k_thau",
       "cau_hoi": "Mã rớt thầu thì đi đâu?",
-      "tra_loi": "Khi PĐD bấm \"Xác nhận rớt\", phần rớt chưa đổ sang mã tương đương vào GIỎ của khoa ở đợt bổ sung gần nhất (tháng 1, 5 hoặc 9), số điền sẵn bằng số rớt. Chưa phải đề xuất: khoa tự sửa số và tự gửi. Menu Gói bổ sung sẽ có nhãn đỏ \"N mã rớt\".",
+      "tra_loi": "Khi PĐD bấm \"Xác nhận rớt\", phần rớt chưa đổ sang mã tương đương vào GIỎ của khoa ở đợt bổ sung gần nhất (T1, T5 hoặc T9). Bấm \"Xem giỏ\": mã đó có nhãn vàng \"⟳ rớt thầu · gợi ý N\". Khoa tự gửi. Chuông báo khi có thông báo mới.",
       "bien_the_theo_trang_thai": [
         {
           "khi": "Có mã rớt mới trong giỏ bổ sung · khoa.soMaRotMoi > 0",
-          "tra_loi": "Khoa đang có {khoa.soMaRotMoi} mã rớt trong giỏ đợt bổ sung. Mở Gói bổ sung → đúng tháng → giỏ, kiểm số rồi bấm gửi."
+          "tra_loi": "Khoa đang có {khoa.soMaRotMoi} mã rớt trong giỏ đợt bổ sung. Mở Gói bổ sung → đúng tháng → \"Xem giỏ\", tìm nhãn \"⟳ rớt thầu · gợi ý N\", kiểm rồi bấm gửi."
         }
       ],
       "di_toi": {
@@ -836,8 +840,8 @@
         "k_th_so_goi_y",
         "k_th_khong_can_nua"
       ],
-      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:594-612, 628-637; features/KhungGoiThau.jsx:172-188, 224-228",
-      "can_xac_nhan": "Ngăn giỏ đang dùng KHÔNG hiện nhãn '⟳ rớt thầu · gợi ý N' — nhãn đó chỉ nằm ở khối giỏ cũ đang bị ẩn (Function1.jsx:2111 className=\"hidden\", nhãn ở 2101-2109). Khoa mở giỏ sẽ không phân biệt được mã nào do rớt thầu đưa về. Có cần báo cho agent giao diện không?"
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:594-612, 628-637; features/KhungGoiThau.jsx:172-188, 224-228; features/Function1.jsx ngăn giỏ (nhãn tuMaRot, QĐ l 18/09/2026)",
+      "can_xac_nhan": null
     },
     {
       "id": "k_th_so_goi_y",
@@ -846,17 +850,18 @@
       ],
       "chu_de": "k_thau",
       "cau_hoi": "Số trong giỏ bổ sung có phải gửi y nguyên không?",
-      "tra_loi": "Không. Số trong giỏ chỉ là gợi ý bằng đúng số đã rớt. Khoa quyết số cuối: nhiều hơn, ít hơn hay về 0 đều được. Đợt bổ sung không áp P50–P95 và không bắt lý do vượt ngưỡng.",
+      "tra_loi": "Không. Số trong giỏ chỉ là gợi ý bằng đúng số đã rớt. Cách làm: gửi nguyên số gợi ý, rồi mở Danh mục đề xuất của khoa sửa thành số khoa cần (nhiều hơn, ít hơn hay về 0) và bấm xác nhận lại. Đợt bổ sung không áp P50–P95 và không bắt lý do vượt ngưỡng.",
       "bien_the_theo_trang_thai": [],
       "di_toi": {
         "nhan": "Đi tới Gói bổ sung",
         "man": "khoa.bo_sung_de_xuat"
       },
       "hoi_tiep": [
-        "k_dx_sua_sau_gui"
+        "k_dx_sua_sau_gui",
+        "k_th_khong_can_nua"
       ],
-      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:150-152, 604-609, 690-697",
-      "can_xac_nhan": "Khoa sửa số của mã rớt TRƯỚC khi gửi bằng cách nào? Ngăn giỏ hiện tại chỉ hiển thị số, không có ô sửa (Function1.jsx:1560-1568); ô sửa số chỉ có ở khối giỏ cũ đã ẩn (2117-2134). Chatbot nên hướng dẫn 'gửi rồi sửa trên Danh mục đề xuất' hay 'bỏ khỏi giỏ rồi nhập lại'?"
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:150-152, 604-609, 690-697; QĐ k 18/09/2026 (HD/05)",
+      "can_xac_nhan": null
     },
     {
       "id": "k_th_khong_can_nua",
@@ -865,12 +870,17 @@
       ],
       "chu_de": "k_thau",
       "cau_hoi": "Khoa không cần mã rớt đó nữa thì làm sao?",
-      "tra_loi": "CAN_XAC_NHAN — chưa có căn cứ về chỗ bấm, chưa viết.",
+      "tra_loi": "Vào menu ③ Mã rớt (màn \"Giỏ rớt của khoa\"), tìm mã đó, bấm \"Không còn nhu cầu\" (ghi chú nếu cần). Mục chuyển sang \"Không còn nhu cầu\" và tính là đã xử lý. Nút này không tự xoá giỏ: nếu mã còn trong giỏ đợt bổ sung, bấm \"Xem giỏ\" rồi dấu X để bỏ, tránh gửi nhầm.",
       "bien_the_theo_trang_thai": [],
-      "di_toi": null,
-      "hoi_tiep": [],
-      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:146-148, 1049 (luật cho khoa 'chọn không còn nhu cầu'); features/GioRotCuaKhoa.jsx:1-25",
-      "can_xac_nhan": "Luật cho khoa 'chọn không còn nhu cầu' với mã rớt. Khoa bấm ở đâu: bỏ mã khỏi giỏ đợt bổ sung, hay màn 'Giỏ rớt của khoa' (Nghiệp vụ dùng chung)? Màn Giỏ rớt đọc v_gio_rot_v3 và ghi chú đầu file còn theo luật 19/08 ('hệ thống không tự tạo đề xuất') — màn này còn dùng cho khoa không?"
+      "di_toi": {
+        "nhan": "Đi tới Mã rớt",
+        "man": "khoa.gio_rot"
+      },
+      "hoi_tiep": [
+        "k_th_ma_rot_di_dau"
+      ],
+      "nguon": "features/GioRotCuaKhoa.jsx:20-27, 109-123, 238-242; features/KhungGoiThau.jsx:495-502 (menu ③ Mã rớt); sql/patch_zzzzc_v3_ket_qua_thau.sql cap_nhat_xu_ly_gio_rot_v3 (chỉ ghi xu_ly_gio_rot_v3, không đụng gio_nhap); QĐ m 18/09/2026",
+      "can_xac_nhan": null
     },
     {
       "id": "k_th_day_sl",
@@ -879,7 +889,7 @@
       ],
       "chu_de": "k_thau",
       "cau_hoi": "Tôi có phải tự chuyển số rớt sang mã tương đương không?",
-      "tra_loi": "Không. Việc chuyển số rớt sang mã tương đương là của Phòng Điều dưỡng, làm trên bảng Tổng hợp. Khoa thấy kết quả qua nhãn \"↪ đã đổ\" / \"↩ nhận\" trên Danh mục đề xuất và thông báo ở chuông.",
+      "tra_loi": "Không. Việc đổ sang mã tương đương do PĐD làm; khoa chỉ xem nhãn. Kết quả hiện qua nhãn \"↪ đã đổ\" / \"↩ nhận\" trên Danh mục đề xuất và thông báo ở chuông.",
       "bien_the_theo_trang_thai": [],
       "di_toi": null,
       "hoi_tiep": [
@@ -887,7 +897,7 @@
         "k_th_hop_thu"
       ],
       "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:577-580, 858-859; HD/06_DUNG_LAM_LAI.md:53, 63; features/DanhMucDeXuatKhoa.jsx:619-633",
-      "can_xac_nhan": "Trên màn khoa vẫn còn hai chữ cũ trái luật: băng đỏ 'bấm \"Đẩy SL\" ở dòng mã…' (DanhMucDeXuatKhoa.jsx:1153) trong khi nút Đẩy SL đã tắt; và nút 'Xử lý mã rớt ở Tiến độ gói thầu' (1102-1105) dẫn về màn chính, trong khi menu Tiến độ gói thầu đang ẩn (KhungGoiThau.jsx:413). Có sửa hai chữ này không? Chatbot đang trả lời theo luật."
+      "can_xac_nhan": null
     },
     {
       "id": "k_th_hop_thu",
@@ -1207,15 +1217,15 @@
       ],
       "chu_de": "p_q",
       "cau_hoi": "Đã chốt số đi thầu mà cần sửa số?",
-      "tra_loi": "Bấm \"Mở chốt để sửa\" trên bảng Tổng hợp và nhập lý do. Lưu ý mở chốt là mở cả gói con, không phải một dòng.",
+      "tra_loi": "Bấm \"Mở chốt để sửa\" trên bảng Tổng hợp và nhập lý do. Sửa số xong, bấm \"Chốt số đi thầu\" để chốt lại. Lưu ý mở chốt là mở cả gói con, không phải một dòng.",
       "bien_the_theo_trang_thai": [],
       "di_toi": {
         "nhan": "Mở bảng Tổng hợp",
         "man": "pdd.tong_hop"
       },
       "hoi_tiep": [],
-      "nguon": "features/TongHopPdd.jsx:786-803, 1180-1181; HD/01_NGHIEP_VU_HIEN_HANH.md:337-340",
-      "can_xac_nhan": "01:337-340 (QĐ 21/08) nói sau chốt Q PĐD 'gõ đè thẳng tại ô, hệ hỏi lý do', KHÔNG phải mở chốt cả gói. Trong TongHopPdd.jsx tôi chỉ thấy đường 'Mở chốt để sửa' (761-767); trigger còn chặn phan_bo_khoa sau chốt Q. Đường gõ đè tại ô đã thi công chưa? Chatbot nên chỉ đường nào?"
+      "nguon": "features/TongHopPdd.jsx:1157-1165; QĐ j 18/09/2026 (HD/05); HD/01_NGHIEP_VU_HIEN_HANH.md mục Giai đoạn 6",
+      "can_xac_nhan": null
     },
     {
       "id": "p_th_giai_doan",
@@ -1457,5 +1467,5 @@
       "can_xac_nhan": null
     }
   ],
-  "ghi_chu_ban_web": "Chép từ .scratch/chatbot/cau_hoi.json ngày 18/09/2026 (agent B5). Chỉ sửa tên/vị trí nút cho khớp code (thanh giỏ đáy màn + nút 'Gửi đề xuất (N mã quản lý)' của đợt 3); nội dung nghiệp vụ giữ nguyên."
+  "ghi_chu_ban_web": "Chép từ .scratch/chatbot/cau_hoi.json ngày 18/09/2026 (agent B5). Chỉ sửa tên/vị trí nút cho khớp code (thanh giỏ đáy màn + nút 'Gửi đề xuất (N mã quản lý)' của đợt 3); nội dung nghiệp vụ giữ nguyên. | Bản 2 (18/09/2026, agent B6): mở 9 nút chờ xác nhận theo QĐ g–o; k_dx_ma_bi_an viết theo code (lệch QĐ i, đã báo)."
 }

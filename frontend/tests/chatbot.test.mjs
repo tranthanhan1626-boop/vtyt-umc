@@ -27,22 +27,61 @@ assert.equal(vaiTroChatbot(undefined), null);
   p.nut.forEach((n) => assert.ok(n.vai_tro.includes("pdd"), n.id));
   assert.ok(!k.nut.has("p_tiep_goc"));
   assert.ok(!p.nut.has("k_tiep_goc"));
-  // Nút có can_xac_nhan → ẩn, không lộ ở đâu cả (map nút, chủ đề, hỏi tiếp).
-  const canXn = ND.nut.filter((n) => n.can_xac_nhan != null).map((n) => n.id);
-  assert.ok(canXn.length > 0);
+  // Bản 2 (18/09/2026, QĐ g–o): mọi nút đã được chủ dự án trả lời →
+  // KHÔNG còn nút nào mang can_xac_nhan; mọi nút của vai trò đều hiện.
+  assert.equal(ND.phien_ban, 2);
+  assert.deepEqual(ND.nut.filter((n) => n.can_xac_nhan != null).map((n) => n.id), []);
   for (const bo of [k, p]) {
-    canXn.forEach((id) => assert.ok(!bo.nut.has(id), `lộ nút chưa duyệt ${id}`));
+    assert.deepEqual(bo.an, [], "không nút nào bị ẩn vì can_xac_nhan");
     bo.chuDe.forEach((c) => c.nut.forEach((id) => assert.ok(bo.nut.has(id), `${c.ma} → ${id}`)));
     bo.nut.forEach((n) => n.hoi_tiep.forEach((id) => assert.ok(bo.nut.has(id), `${n.id} hỏi tiếp ${id}`)));
     bo.chuDe.forEach((c) => assert.ok(c.nut.length > 0));
   }
-  assert.ok(k.an.includes("k_tiep_goi_con"));
-  assert.ok(p.an.includes("p_q_sua_sau_chot"));
-  // k_tiep_goc hỏi tiếp không bị cắt (không nút nào trong đó bị ẩn);
-  // k_xn_nut_mo trỏ tới k_tiep_khong_nhu_cau (ẩn) → bị bỏ.
-  assert.deepEqual(k.nut.get("k_xn_nut_mo").hoi_tiep, ["k_xn_lan_2"]);
-  // Nội dung gốc không bị sửa khi lọc.
-  assert.ok(nut("k_xn_nut_mo").hoi_tiep.includes("k_tiep_khong_nhu_cau"));
+  // Nội dung GỐC (chưa lọc): mọi hoi_tiep / nut_goc trỏ tới nút TỒN TẠI, đang
+  // HIỆN, và dùng chung ít nhất một vai trò — lọc không phải cắt gì cả.
+  {
+    const theoId = new Map(ND.nut.map((n) => [n.id, n]));
+    ND.nut.forEach((n) => (n.hoi_tiep || []).forEach((id) => {
+      const dich = theoId.get(id);
+      assert.ok(dich, `${n.id} hỏi tiếp nút không tồn tại ${id}`);
+      assert.equal(dich.can_xac_nhan, null, `${n.id} hỏi tiếp nút ẩn ${id}`);
+      assert.ok(n.vai_tro.some((v) => dich.vai_tro.includes(v)), `${n.id} → ${id} khác vai trò`);
+    }));
+    (ND.chu_de || []).forEach((c) => (c.nut_goc || []).forEach((id) => {
+      assert.ok(theoId.has(id), `${c.ma} → nút không tồn tại ${id}`);
+      assert.equal(theoId.get(id).can_xac_nhan, null, `${c.ma} → nút ẩn ${id}`);
+    }));
+    ND.nut.forEach((n) => assert.ok(!/CAN_XAC_NHAN/.test(n.tra_loi), `${n.id} còn chữ giữ chỗ`));
+  }
+  // Chín nút mở ngày 18/09: có trong bộ của vai trò, câu trả lời ≤ 60 từ.
+  const MO_18_09 = ["k_tiep_goi_con", "k_tiep_khong_nhu_cau", "k_dx_gui_bao_loi", "k_dx_ma_bi_an",
+    "k_th_ma_rot_di_dau", "k_th_so_goi_y", "k_th_khong_can_nua", "k_th_day_sl"];
+  MO_18_09.forEach((id) => assert.ok(k.nut.has(id), `khoa thiếu ${id}`));
+  assert.ok(p.nut.has("p_q_sua_sau_chot"));
+  [...MO_18_09, "p_q_sua_sau_chot"].forEach((id) => {
+    const n = nut(id);
+    [n.tra_loi, ...(n.bien_the_theo_trang_thai || []).map((b) => b.tra_loi)]
+      .forEach((c) => assert.ok(c.split(/\s+/).length <= 60, `${id} quá 60 từ`));
+  });
+  // Nhãn nút trong câu trả lời khớp chữ trên màn (grep ở src).
+  assert.match(nut("k_tiep_khong_nhu_cau").tra_loi, /"Không phát sinh nhu cầu"/);
+  assert.match(nut("k_th_ma_rot_di_dau").tra_loi, /⟳ rớt thầu · gợi ý N/);
+  assert.match(nut("k_th_khong_can_nua").tra_loi, /"Không còn nhu cầu"/);
+  assert.match(nut("p_q_sua_sau_chot").tra_loi, /"Mở chốt để sửa"/);
+  assert.match(nut("k_tiep_goi_con").tra_loi, /Teams/);
+  // k_xn_nut_mo hỏi tiếp k_tiep_khong_nhu_cau nay đã hiện → giữ nguyên.
+  assert.deepEqual(k.nut.get("k_xn_nut_mo").hoi_tiep, nut("k_xn_nut_mo").hoi_tiep);
+  assert.ok(k.nut.get("k_xn_nut_mo").hoi_tiep.includes("k_tiep_khong_nhu_cau"));
+  // Cơ chế ẩn vẫn chạy khi có nút chưa duyệt (dữ liệu giả).
+  {
+    const gia = JSON.parse(JSON.stringify(ND));
+    gia.nut.find((n) => n.id === "k_tiep_goi_con").can_xac_nhan = "?";
+    const kg = locNoiDung(gia, "khoa");
+    assert.ok(kg.an.includes("k_tiep_goi_con"));
+    assert.ok(!kg.nut.has("k_tiep_goi_con"));
+    kg.nut.forEach((n) => assert.ok(!n.hoi_tiep.includes("k_tiep_goi_con"), n.id));
+    kg.chuDe.forEach((c) => assert.ok(!c.nut.includes("k_tiep_goi_con"), c.ma));
+  }
   // Chủ đề chỉ của vai trò kia không hiện.
   assert.ok(!k.chuDe.some((c) => c.ma.startsWith("p_")));
   assert.ok(!p.chuDe.some((c) => ["k_tiep", "k_dx", "k_xn", "k_thau"].includes(c.ma)));
@@ -149,6 +188,17 @@ const khoaTu = (v) => dungTrangThaiKhoa({ coDotGoi: true, giaiDoan: [], soMaRot:
   if (/\{khoa\.lyDoHuyXacNhan\}/.test(bt.tra_loi)) assert.equal(r.bienThe, null);
 }
 
+// ---- QĐ g/h: khoa đã gửi → biến thể "sửa số về 0 rồi xác nhận lại" ---------
+{
+  const r = chonCauTraLoi(nut("k_tiep_khong_nhu_cau"), { ctx: ctxKhoa(), khoa: khoaTu({ daGui: true }) });
+  assert.equal(r.bienThe, 0);
+  assert.match(r.traLoi, /về 0/);
+  assert.equal(r.diToi.man, "khoa.danh_muc_de_xuat");
+  const g = chonCauTraLoi(nut("k_tiep_khong_nhu_cau"), { ctx: ctxKhoa(), khoa: khoaTu({ daGui: false }) });
+  assert.equal(g.bienThe, null);
+  assert.match(g.traLoi, /không bắt buộc/);
+}
+
 // ---- PĐD ---------------------------------------------------------------------
 {
   const GD = [
@@ -202,6 +252,9 @@ const khoaTu = (v) => dungTrangThaiKhoa({ coDotGoi: true, giaiDoan: [], soMaRot:
   assert.equal(giaiDichDen("pdd.tong_hop", dungNguCanh({}, "pdd")).chon.man, "ban_dieu_hanh");
   assert.equal(giaiDichDen("pdd.tong_hop", dungNguCanh({ goiId: "bs-t9", dotId: 69 }, "pdd")).ham, "moTongHopPdd");
   assert.equal(giaiDichDen("khong.co", {}), null);
+  // QĐ m: nút "không còn nhu cầu" dẫn tới menu ③ Mã rớt (Giỏ rớt của khoa).
+  assert.deepEqual(giaiDichDen("khoa.gio_rot", {}), { man: "khoa.gio_rot", kieu: "chon", chon: { nhom: "chung", man: "giorot" } });
+  assert.equal(nut("k_th_khong_can_nua").di_toi.man, "khoa.gio_rot");
   // Mọi đích trong nội dung đều dịch được.
   ND.nut.forEach((n) => {
     [n.di_toi, ...(n.bien_the_theo_trang_thai || []).map((b) => b.di_toi)].filter(Boolean)
@@ -219,5 +272,6 @@ console.log("chatbot.test.mjs: OK");
   assert.equal(dangODich("goi.de_xuat", "khoa.de_xuat_so_luong", { goi: "dau_thau_rong_rai" }), true);
   assert.equal(dangODich("goi.de_xuat", "khoa.bo_sung_de_xuat", { goi: "dau_thau_rong_rai" }), false);
   assert.equal(dangODich("tong_hop_pdd", "pdd.tong_hop"), true);
+  assert.equal(dangODich("chung.giorot", "khoa.gio_rot"), true);
   console.log("chatbot.test.mjs (dangODich): OK");
 }

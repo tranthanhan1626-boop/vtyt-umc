@@ -473,6 +473,9 @@ export function giaiDichDen(manKey, ctx = {}) {
       };
     case "chung.tuy_chon_mua_them":
       return { man: manKey, kieu: "chon", chon: { nhom: "tuy_chon_mua_them", man: "tuy_chon_mua_them" } };
+    case "khoa.gio_rot":
+      // Menu ③ "Mã rớt" của khoa (KhungGoiThau.jsx) → màn Giỏ rớt của khoa (QĐ m 18/09/2026).
+      return { man: manKey, kieu: "chon", chon: { nhom: "chung", man: "giorot" } };
     case "pdd.ban_dieu_hanh":
       return { man: manKey, kieu: "chon", chon: { nhom: "chung", man: "ban_dieu_hanh" } };
     case "pdd.tong_hop":
@@ -502,6 +505,7 @@ export function dangODich(manHienTai, manKey, ctx = {}) {
     case "pdd.ban_dieu_hanh": return manHienTai === "chung.ban_dieu_hanh";
     case "pdd.chuyen_tiep": return manHienTai === "chung.chuyentiep";
     case "chung.tuy_chon_mua_them": return manHienTai === "tuy_chon_mua_them.tuy_chon_mua_them";
+    case "khoa.gio_rot": return manHienTai === "chung.giorot";
     default: return false;
   }
 }

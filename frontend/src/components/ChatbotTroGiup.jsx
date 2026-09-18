@@ -164,6 +164,9 @@ export default function ChatbotTroGiup({ profile, man = null, nguCanh = {}, nhic
     const hd = giaiDichDen(l.diToi.man, ctx);
     ghiLuot(coSo({ loai: "di_toi", nut_id: l.nutId, bien_the: l.bienTheNhan }));
     if (hd && onDiToi) onDiToi(l.diToi.man, hd);
+    // Đi tới màn khác xong thì thu khung lại — để mở, khung che đúng cột
+    // bên phải là chỗ có nút người dùng vừa được chỉ tới (kiểm thử 18/09/2026).
+    if (hd && onDiToi && hd.kieu !== "tab") setMo(false);
   };
 
   const danhGia = (l, loai) => {

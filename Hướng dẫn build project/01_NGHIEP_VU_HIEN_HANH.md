@@ -264,6 +264,20 @@ trên `vat_tu` (phân loại cũ theo dữ liệu thầu trước, có thể l�
 **Khi thêm vào giỏ hoặc gửi, cả mã quản lý bị ẩn khỏi danh sách của khoa.** Mã
 chỉ hiện lại cho kỳ sau khi PĐD đã chốt dữ liệu trình ký (mục 8).
 
+> ~~Mốc "chốt dữ liệu trình ký" ở câu trên~~ — **18/09/2026, QĐ i:** chủ dự án
+> chốt mã hiện lại **sau khi PĐD chốt số đi thầu** (chốt Q).
+>
+> ⚠️ **Code hiện KHÔNG theo mốc nào trong hai mốc đó** (rà 18/09/2026, agent B6):
+> tập ẩn ở `Function1.jsx` (`taiMaDangCho`, ~dòng 514–571) neo theo `dot_id` —
+> gồm `proposals` cùng đợt có `da_di_thau = false` cộng giỏ nháp cùng đợt. Đường
+> duy nhất bật `da_di_thau = true` đã bị gỡ ở `patch_zzzzy_dong_cua_chot_cu_tra_ma_ve_khoa.sql`
+> (20/08); staging đo 18/09: 0/24 dòng `da_di_thau = true`. Kết quả: mã đã gửi
+> **ẩn suốt đợt đang mở**, chốt Q hay chốt trình ký đều không làm nó hiện lại;
+> mã chỉ hiện lại khi khoa mở **đợt khác** (đợt bổ sung hoặc kỳ sau). Chú thích
+> trên màn (`Function1.jsx`, dòng "chỉ hiện lại sau khi PĐD chốt “Đã đi thầu”")
+> cũng lệch. Chatbot (`k_dx_ma_bi_an`) đang trả lời theo code. **Chờ chủ dự án
+> quyết:** sửa code theo QĐ i, hay giữ code và sửa QĐ.
+
 ### Giai đoạn 3 — Khoa xác nhận thông tin đề xuất (lần N)
 
 Mỗi khoa trong danh sách chọn một trong hai đường:
@@ -272,6 +286,13 @@ Mỗi khoa trong danh sách chọn một trong hai đường:
 Có nhu cầu       → nhập đủ đề xuất → CHỐT DANH MỤC
 Không có nhu cầu → xác nhận "Không phát sinh nhu cầu trong gói này" → CHỐT DANH MỤC
 ```
+
+🆕 **18/09/2026 — QĐ g, h:**
+**(g)** Khoa không có nhu cầu **nên** bấm "Không phát sinh nhu cầu" — **không bắt
+buộc** (cổng chốt Q đã bỏ qua khoa chưa gửi, Giai đoạn 6), nhưng bấm thì PĐD
+phân biệt được khoa *không cần* với khoa *quên*.
+**(h)** Khoa **đã gửi** rồi mới thấy không cần nữa: **sửa số về 0** trên Danh mục
+đề xuất của khoa rồi **xác nhận lại**. Không có thao tác "rút đề xuất" riêng.
 
 Khi đã chốt: toàn bộ phần khoa được sửa bị **khóa ở server**. Khoa không tự mở
 lại; liên hệ PĐD qua Teams. PĐD là người mở lại, có lý do và audit. **Không xây
@@ -334,10 +355,14 @@ Checkpoint này:
 - Tạo **snapshot Q bất biến** theo (DOT_GOI × mã hàng × khoa).
 - Khóa phạm vi danh mục mang đi thầu — không thêm mã, không bổ sung mã thiếu.
 - Mã thiếu phát hiện sau đó xử lý ngoài hệ thống qua Teams.
-- 🆕 Muốn sửa **số** của một dòng đã chốt: PĐD **gõ đè thẳng tại ô đó**, hệ hỏi
+- ~~🆕 Muốn sửa **số** của một dòng đã chốt: PĐD **gõ đè thẳng tại ô đó**, hệ hỏi
   lý do ngay tại chỗ rồi lưu kèm audit (QĐ 21/08/2026). **Không phải mở chốt cả
   gói con** — mở chốt cả gói làm toàn bộ DOT_GOI mất trạng thái chỉ vì sửa một
-  ô. Snapshot Q vẫn giữ nguyên làm mốc đối chiếu; số gõ đè là số hiện hành.
+  ô. Snapshot Q vẫn giữ nguyên làm mốc đối chiếu; số gõ đè là số hiện hành.~~
+  **Bỏ ngày 18/09/2026 (QĐ j)** — đường "gõ đè tại ô" chưa từng thi công.
+- 🆕 **18/09/2026, QĐ j:** muốn sửa **số** sau chốt Q, PĐD bấm **"Mở chốt để
+  sửa"** trên bảng Tổng hợp (bắt buộc lý do), sửa, rồi bấm **"Chốt số đi thầu"**
+  để chốt lại. Mở chốt là mở **cả gói con** (DOT_GOI), không phải một dòng.
 
 ```text
 Q = Số lượng PĐD đã chốt tham gia đấu thầu
@@ -607,6 +632,14 @@ PĐD bấm, với **từng khoa** đã đề xuất mã đó:
 5. Khoa nhận **thông báo đỏ**, mở giỏ, sửa số cho đúng nhu cầu rồi **tự bấm
    "Gửi giỏ"** → lúc đó mới thành `proposals` và đi tiếp **full pipeline y như
    một gói con của gói 18 tháng**.
+   🆕 **18/09/2026 — QĐ k, l:** ngăn giỏ hiện chỉ hiển thị số, không có ô sửa.
+   Khoa **gửi nguyên số gợi ý**, rồi sửa số trên **Danh mục đề xuất của khoa** và
+   xác nhận lại. Mã rớt nhận ra trong ngăn giỏ nhờ nhãn **"⟳ rớt thầu · gợi ý N"**.
+   (Nút gửi thật tên là "Gửi đề xuất (N mã quản lý)", không phải "Gửi giỏ".)
+   🆕 **QĐ m:** khoa **không còn nhu cầu** mã rớt thì bấm **"Không còn nhu cầu"**
+   ở màn **Giỏ rớt của khoa** (menu ③ Mã rớt). Nút này chỉ ghi trạng thái xử lý
+   (`cap_nhat_xu_ly_gio_rot_v3`), **không** tự xoá mã khỏi giỏ đợt bổ sung — mã
+   còn trong giỏ thì khoa bỏ bằng dấu X để khỏi gửi nhầm.
 6. 🆕 Bàn điều hành nhắc **"Còn N mã rớt nằm trong giỏ, M khoa chưa gửi"**, bấm
    xem được khoa nào. **PĐD nhắc được, KHÔNG gửi thay khoa** — RLS trên
    `proposals` chặn thật, không chỉ là quy ước.

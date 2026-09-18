@@ -1612,7 +1612,7 @@ export default function Function1({
 
           {!toanVien && soNhomDangTamAn > 0 && (
             <p className="mb-2 flex items-center gap-1.5 rounded-md border border-violet-200 bg-violet-50 px-2.5 py-1.5 text-xs text-violet-800"
-              title={`${soNhomDangTamAn} mã quản lý (${soMaDangTamAn} mã hàng) đang nằm trong giỏ/hồ sơ nên tạm ẩn. Cả mã quản lý chỉ hiện lại sau khi PĐD chốt “Đã đi thầu”.`}>
+              title={`${soNhomDangTamAn} mã quản lý (${soMaDangTamAn} mã hàng) đang nằm trong giỏ/hồ sơ nên tạm ẩn. Cả mã quản lý ẩn suốt đợt này để khỏi đề xuất trùng, và hiện lại ở đợt sau.`}>
               <span className="min-w-0 flex-1 truncate">
                 {soNhomDangTamAn} mã quản lý đang nằm trong giỏ/hồ sơ nên tạm ẩn
               </span>
@@ -2377,7 +2377,11 @@ export default function Function1({
                                         <div className="font-mono text-xs font-semibold text-umc-700">{g.ma}</div>
                                         <div className="truncate text-xs text-slate-600">{g.ten}</div>
                                         <div className="mt-1 text-xs font-medium text-umc-800">
-                                          Tổng mã quản lý: {fmt(g.tong)} {g.dvt}
+                                          {/* Mã rớt do hệ đưa vào giỏ không mang số quy đổi theo
+                                              mã quản lý — hiện "NaN" là sai; chỉ ghi tổng khi có số. */}
+                                          {Number.isFinite(Number(g.tong)) && g.tong !== null && g.tong !== ""
+                                            ? <>Tổng mã quản lý: {fmt(g.tong)} {g.dvt}</>
+                                            : <>Số tính theo ĐVT của từng mã hàng</>}
                                         </div>
                                         {g.bangQuyDoi && (
                                           <div className="mt-1 text-[11px] text-slate-400">
@@ -2396,9 +2400,22 @@ export default function Function1({
                                       {g.dong.map((n) => (
                                         <div key={n.ma_hang} className="flex items-center gap-2 text-xs">
                                           <span className="w-16 font-mono text-slate-400">{n.ma_hang}</span>
-                                          <span className="min-w-0 flex-1 truncate">{n.ten_vat_tu}</span>
+                                          <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                                            <span className="min-w-0 truncate" title={n.ten_vat_tu}>{n.ten_vat_tu}</span>
+                                            {/* QĐ l 18/09/2026 — nhãn mã rớt đưa từ khối giỏ cũ
+                                                (đang ẩn) sang ngăn giỏ. Cùng dữ liệu `tuMaRot` /
+                                                `soRotGoc` do patch_zzzzzy ghi vào giỏ; chỉ hiển thị. */}
+                                            {n.tuMaRot && (
+                                              <span className="shrink-0 whitespace-nowrap rounded-full bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-800"
+                                                title={n.ghiChu || "Mã rớt thầu kỳ trước chuyển sang đợt bổ sung"}>
+                                                ⟳ rớt thầu · gợi ý {fmt(n.soRotGoc ?? n.soLuong)}
+                                              </span>
+                                            )}
+                                          </span>
                                           <span className="font-mono text-slate-600">{fmt(n.soLuong)} {n.dvt}</span>
-                                          <span className="font-mono text-umc-700">= {fmt(n.soLuongQuyDoi)} {n.dvtMaQuanLy}</span>
+                                          {Number.isFinite(Number(n.soLuongQuyDoi)) && n.soLuongQuyDoi !== null && n.soLuongQuyDoi !== "" && (
+                                            <span className="font-mono text-umc-700">= {fmt(n.soLuongQuyDoi)} {n.dvtMaQuanLy}</span>
+                                          )}
                                         </div>
                                       ))}
                                     </div>
