@@ -20,6 +20,7 @@ import {
 } from "../lib/deXuatMaQuanLy";
 import { moDanhMucDeXuat } from "../lib/moManExcel";
 import { dichLoi } from "../lib/dichLoi";
+import { taiDeXuatKyTruoc, tooltipKyTruoc, fmtKyTruoc } from "../lib/deXuatKyTruoc";
 import ThanhTienTrinh, { diToiPhanTu } from "../components/ThanhTienTrinh";
 import { useTienTrinhKhoa } from "../lib/useTienTrinh";
 
@@ -429,6 +430,8 @@ export default function Function1({
   const [coSchemaMaQuanLy, setCoSchemaMaQuanLy] = useState(true);
   const [lichSuThang, setLichSuThang] = useState({}); // {ma_hang: {nam: number[12]}}
   const [dangTaiLichSu, setDangTaiLichSu] = useState(false);
+  // Số đề xuất kỳ trước theo mã hàng — CHỈ ĐỂ XEM (QĐ 18/09 mục p).
+  const [kyTruoc, setKyTruoc] = useState(() => new Map());
   // Phân nhóm ABC toàn viện — CHỈ để hiện mốc đối chiếu của công thức hệ số k
   // (QĐ-27). Không dùng để chọn mức phục vụ: Đề án Bảng 7 cấm gộp trục ABC vào
   // trục thiết yếu lâm sàng. 878 dòng, tải một lần cho cả phiên.
@@ -779,6 +782,17 @@ export default function Function1({
       setDangTaiLichSu(false);
     })();
   }, [nhomChon, khoaHienTai, toanVien]);
+
+  // Số đề xuất kỳ trước của các mã trong nhóm đang chọn — một truy vấn cho cả
+  // nhóm, không theo từng dòng. Chỉ khi xem MỘT khoa: số lưu theo khoa, "toàn
+  // viện" không có dòng nào. Lỗi hay bảng chưa có → Map rỗng, không báo gì.
+  useEffect(() => {
+    if (toanVien || !khoaHienTai || maHangTrongNhom.length === 0) { setKyTruoc(new Map()); return; }
+    let huy = false;
+    taiDeXuatKyTruoc(khoaHienTai, maHangTrongNhom.map((m) => m.ma_hang))
+      .then((m) => { if (!huy) setKyTruoc(m); });
+    return () => { huy = true; };
+  }, [maHangTrongNhom, khoaHienTai, toanVien]);
 
   // Mã hàng đã dùng (tại khoa đang chọn) xếp lên đầu — dễ tìm hơn dò A-Z cả
   // nhóm có khi vài chục mã hàng.
@@ -1405,6 +1419,54 @@ export default function Function1({
       );
       return;
     }
+    // 18/09/2026 — Mã rớt thầu do hệ tự đưa vào giỏ (patch_zzzzzy) không qua
+    // bước ① nên THIẾU bộ quy đổi theo mã quản lý; submit_proposal_group_v2 từ
+    // chối CẢ GIỎ ("ĐVT chuẩn hoặc hệ số quy đổi … không hợp lệ"). Chủ dự án
+    // chốt: tự điền mặc định khi cả mã quản lý chỉ có MỘT ĐVT (ĐVT chuẩn = ĐVT
+    // đó, hệ số 1). Nhiều ĐVT thì không đoán — báo khoa tự chọn ở bước ①.
+    let gioGui = gioHang;
+    const thieuQuyDoi = gioHang.filter((n) => !(Number(n.soLuongMaQuanLy) > 0));
+    if (thieuQuyDoi.length) {
+      const dsMql = [...new Set(thieuQuyDoi.map((n) => n.ma_quan_ly).filter(Boolean))];
+      if (dsMql.length !== thieuQuyDoi.length && thieuQuyDoi.some((n) => !n.ma_quan_ly)) {
+        setLoiLuu("Có mã trong giỏ chưa rõ mã quản lý. Bỏ mã đó khỏi giỏ rồi nhập lại.");
+        return;
+      }
+      const { data: dongDvt, error: loiDvt } = await supabase
+        .from("vat_tu").select("ma_quan_ly,dvt").in("ma_quan_ly", dsMql);
+      if (loiDvt) {
+        setLoiLuu(`Không gửi được giỏ đề xuất: ${dichLoi(loiDvt)}`);
+        return;
+      }
+      const dvtTheoMql = new Map();
+      (dongDvt || []).forEach((r) => {
+        const d = String(r.dvt || "").trim();
+        if (!d) return;
+        if (!dvtTheoMql.has(r.ma_quan_ly)) dvtTheoMql.set(r.ma_quan_ly, new Set());
+        dvtTheoMql.get(r.ma_quan_ly).add(d);
+      });
+      const boQuyDoi = new Map();
+      const canTuChon = [];
+      dsMql.forEach((mql) => {
+        const dsDvt = dvtTheoMql.get(mql);
+        // Cùng mã quản lý mà đã có dòng khoa tự nhập (có bộ quy đổi riêng) thì
+        // hai bộ sẽ không thống nhất — cũng để khoa tự làm lại ở bước ①.
+        const daCoBo = gioHang.some((n) => n.ma_quan_ly === mql && Number(n.soLuongMaQuanLy) > 0);
+        if (daCoBo || !dsDvt || dsDvt.size !== 1) { canTuChon.push(mql); return; }
+        const dvt = [...dsDvt][0];
+        const tong = gioHang.filter((n) => n.ma_quan_ly === mql)
+          .reduce((t, n) => t + Math.round(Number(n.soLuong) || 0), 0);
+        boQuyDoi.set(mql, { dvtMaQuanLy: dvt, heSoQuyDoi: 1, bangQuyDoi: { [dvt]: 1 }, soLuongMaQuanLy: tong });
+      });
+      if (canTuChon.length) {
+        setLoiLuu(`Mã quản lý ${canTuChon.join(", ")} cần chọn đơn vị tính chuẩn: mở mã đó ở danh sách bên trái, `
+          + "làm bước ① rồi bấm “Thêm cả mã quản lý vào giỏ” trước khi gửi.");
+        return;
+      }
+      gioGui = gioHang.map((n) => (!(Number(n.soLuongMaQuanLy) > 0) && boQuyDoi.has(n.ma_quan_ly)
+        ? { ...n, ...boQuyDoi.get(n.ma_quan_ly) } : n));
+    }
+
     setDangLuu(true);
 
     // "1 giỏ = 1 gói con" (chốt 07/08/2026): khoa gửi giỏ khi đang đứng ở tab
@@ -1416,7 +1478,7 @@ export default function Function1({
 
     // Một RPC = một transaction PostgreSQL: hoặc lưu đủ mọi mã + lý do +
     // version, hoặc rollback toàn bộ. Không còn tình trạng gửi được nửa giỏ.
-    const items = gioHang.map((nhap) => ({
+    const items = gioGui.map((nhap) => ({
       ma_hang: nhap.ma_hang,
       so_luong: Math.round(Number(nhap.soLuong)),
       loai_mua_sam: goi,
@@ -1979,6 +2041,14 @@ export default function Function1({
                               : <span className="italic text-slate-500">Chưa có lịch sử</span>
                             }
                           </span>
+                          {/* Kỳ trước — theo ĐVT của RIÊNG mã này. Không cộng lên
+                              ô tổng mã quản lý: các mã khác ĐVT không cộng được. */}
+                          {kyTruoc.has(m.ma_hang) && (
+                            <span className="mt-0.5 block text-[11px] text-slate-500"
+                              title={tooltipKyTruoc(kyTruoc.get(m.ma_hang), m.dvt)}>
+                              Kỳ trước: <b className="font-semibold text-slate-700">{fmtKyTruoc(kyTruoc.get(m.ma_hang).tong)}</b> {m.dvt}
+                            </span>
+                          )}
                         </span>
                         <input type="number" min="0" step="1"
                           value={nhapNhom.phanBo?.[m.ma_hang] || ""}

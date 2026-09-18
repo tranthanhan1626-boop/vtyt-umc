@@ -98,13 +98,15 @@ assert.equal(chenCotLichSuNhom(cotMoi, []).length, cotMoi.length);
 
 // Cột nhóm không có trong biểu mẫu -> phải rơi xuống nhanMau, không lấy tên
 // ngắn trên màn hình ("Nhóm 2024") vào file trình ký.
-const ganNhom = ganTenMau([cotNhom[0]], COT_KHOA, COT_KHOA.map((c) => `MẪU: ${c.key}`));
+const ganNhom = ganTenMau([cotNhom[0]], COT_KHOA, COT_KHOA.filter((c) => !c.ngoaiMau).map((c) => `MẪU: ${c.key}`));
 assert.equal(ganNhom[0].nhan,
   "Số lượng đã sử dụng năm 2024 - cả nhóm mã quản lý (khoa)");
 
 // --- Tên cột khi xuất Excel lấy từ biểu mẫu -----------------------------
 // Giả lập header dòng 5 của "Danh mục đề xuất khoa chuẩn.xlsx" (tên đầy đủ).
-const tenMau = COT_KHOA.map((c) => `MẪU: ${c.key}`);
+// 18/09/2026: file mẫu thật không có cột `ngoaiMau` (Dải P50–P75). Mẫu giả
+// trước đây có đủ mọi cột nên che mất lỗi lệch tiêu đề Excel.
+const tenMau = COT_KHOA.filter((c) => !c.ngoaiMau).map((c) => `MẪU: ${c.key}`);
 const daGan = ganTenMau(
   [COT_KHOA[0], cotLichSu[2], COT_KHOA[COT_KHOA.length - 1]],
   COT_KHOA, tenMau,
@@ -134,3 +136,12 @@ assert.equal(docChuTrongO(2026), "2026");
 assert.ok(!docChuTrongO({ richText: [{ text: "x" }] }).includes("object"));
 
 console.log("cotDong: OK");
+
+// 18/09/2026: cột Dải P50–P75 phải có chữ trong Excel (trước đây luôn trống).
+{
+  const { dungBang } = await import("../src/lib/xuatExcelDong.js");
+  const b = dungBang([{ key: "dai_p50_p75", nhan: "Dải" }], [{ _daiTu: 38845, _daiDen: 41656 }, {}]);
+  assert.equal(b.rows[0][0], "38.845 – 41.656");
+  assert.equal(b.rows[1][0], "");
+  console.log("cotDong (dải Excel): OK");
+}

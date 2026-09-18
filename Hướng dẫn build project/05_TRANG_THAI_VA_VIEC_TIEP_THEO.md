@@ -20,7 +20,7 @@ Cập nhật **24/08/2026**. Nhánh `phase-a-luong-de-xuat`.
 > | f | Xem nhanh giữ 2 cột lịch sử (năm đủ gần nhất + năm dở) |
 > | g | Khoa không có nhu cầu → nên bấm "Không phát sinh nhu cầu" (không bắt buộc) |
 > | h | Khoa đã gửi mà không cần nữa → sửa số về 0 rồi xác nhận lại |
-> | i | Mã quản lý bị ẩn sau khi gửi → hiện lại **sau khi PĐD chốt số đi thầu** (sửa `01` cho khớp; cần kiểm code) |
+> | i | Mã quản lý bị ẩn sau khi gửi → **ẩn suốt đợt, hiện lại ở đợt sau** (chốt lại 18/09 theo code; ban đầu chọn "sau chốt Q") |
 > | j | PĐD sửa số sau chốt Q → giữ "Mở chốt để sửa" (bỏ ý "gõ đè tại ô" trong `01`) |
 > | k | Mã rớt trong giỏ: gửi nguyên số gợi ý rồi sửa trên Danh mục khoa |
 > | l | Hiện nhãn "⟳ rớt thầu · gợi ý N" trong ngăn giỏ |

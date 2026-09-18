@@ -15,6 +15,7 @@ import { docTenCotTuMau, ganTenMau } from "../lib/tenCotBieuMau";
 import { gomTheoThang } from "../lib/lichSuSuDung";
 import { taiDotIdCuaGoi, locTheoDot } from "../lib/dotBoSung";
 import { dichLoi, thayTenCot } from "../lib/dichLoi";
+import { taiDeXuatKyTruoc, tooltipKyTruoc, fmtKyTruoc } from "../lib/deXuatKyTruoc";
 import ThanhDauUmc, { useDongKhiRaNgoai, doRongNhanNhom } from "../components/ThanhDauUmc";
 
 /*
@@ -90,6 +91,21 @@ const COT_SO_KHOA = "sl_de_xuat_18t";
 // vật tư nên vẫn hiện ở chế độ này.
 const COT_XEM_NHANH = ["stt", "ten_vt_2627", "dvt", "sl_de_xuat_18t", "dai_p50_p75", "giai_trinh_2627"];
 const KHOA_LUU_XEM_NHANH = "vtyt.danhMucKhoa.xemNhanh";
+
+// "Đề xuất kỳ trước (18T)" — CỘT XEM (QĐ 18/09/2026 mục p), đọc từ
+// `v_de_xuat_ky_truoc`. Chỉ chèn vào `cotTrenManHinh` (cột VẼ), KHÔNG vào
+// `cotDayDu`/`cotHienThi` — hai biến đó nuôi file Excel và cấu hình ẩn/khoá
+// cột trong DB, nên cột này không bao giờ đi vào Excel hay vào cấu hình.
+// Không có dữ liệu (bảng chưa có, hoặc khoa không có dòng nào) thì không chèn.
+const COT_KY_TRUOC = {
+  key: "_ky_truoc", nhan: "Đề xuất kỳ trước (18T)", width: 110,
+  kieu: "num", readonly: true, group: "de_xuat", chiXem: true,
+};
+function chenCotKyTruoc(dsCot) {
+  const i = dsCot.findIndex((c) => c.key === COT_SO_KHOA);
+  if (i < 0) return dsCot;
+  return [...dsCot.slice(0, i + 1), { ...COT_KY_TRUOC, freeze: dsCot[i].freeze }, ...dsCot.slice(i + 1)];
+}
 function docXemNhanh() {
   try {
     const v = window.localStorage.getItem(KHOA_LUU_XEM_NHANH);
@@ -385,6 +401,8 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
   const dongHienThi = useCallback(() => setMoHienThi(false), []);
   useDongKhiRaNgoai(moHienThi, dongHienThi, refHienThi);
   const [xemNhanh, setXemNhanh] = useState(docXemNhanh);
+  // Số đề xuất kỳ trước theo mã hàng — Map<ma_hang, {tong, chiTiet}>.
+  const [kyTruoc, setKyTruoc] = useState(() => new Map());
   const doiXemNhanh = (v) => {
     setXemNhanh(v);
     try { window.localStorage.setItem(KHOA_LUU_XEM_NHANH, v ? "1" : "0"); } catch { /* chế độ riêng tư: bỏ qua */ }
@@ -562,15 +580,45 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
   // Xem nhanh: bỏ ghim, vì 8 cột vừa màn hình và bảng giãn theo bề ngang —
   // ghim nhiều cột thì `left` tính theo độ rộng gốc sẽ lệch.
   const cotTrenManHinh = useMemo(() => {
-    if (!xemNhanh) return rongTrenManHinh(cotHienThi);
+    const coKyTruoc = kyTruoc.size > 0;
+    if (!xemNhanh) {
+      const ds = rongTrenManHinh(cotHienThi);
+      return coKyTruoc ? chenCotKyTruoc(ds) : ds;
+    }
     const khoaXem = new Set([
       ...COT_XEM_NHANH,
       ...dsNamCoDuLieu.slice(-2).map(({ nam }) => `sl_${nam}`),
     ]);
-    return rongTrenManHinh(cotDayDu
+    const ds = rongTrenManHinh(cotDayDu
       .filter((c) => khoaXem.has(c.key) && !(cauHinhCot[c.key]?.an ?? false))
       .map((c) => ({ ...c, freeze: false })));
-  }, [xemNhanh, cotHienThi, cotDayDu, cauHinhCot, dsNamCoDuLieu]);
+    return coKyTruoc ? chenCotKyTruoc(ds) : ds;
+  }, [xemNhanh, cotHienThi, cotDayDu, cauHinhCot, dsNamCoDuLieu, kyTruoc]);
+  // Số cột của chế độ Xem nhanh, để nhãn nút nói đúng (8, hoặc 9 khi có cột
+  // kỳ trước).
+  const soCotXemNhanh = useMemo(() => {
+    const khoaXem = new Set([
+      ...COT_XEM_NHANH,
+      ...dsNamCoDuLieu.slice(-2).map(({ nam }) => `sl_${nam}`),
+    ]);
+    const n = cotDayDu.filter((c) => khoaXem.has(c.key) && !(cauHinhCot[c.key]?.an ?? false)).length;
+    return n + (kyTruoc.size > 0 && khoaXem.has(COT_SO_KHOA) && !(cauHinhCot[COT_SO_KHOA]?.an ?? false) ? 1 : 0);
+  }, [cotDayDu, cauHinhCot, dsNamCoDuLieu, kyTruoc]);
+
+  // Tải số kỳ trước MỘT lần cho cả bộ mã đang hiện (chia lô trong
+  // taiDeXuatKyTruoc), không theo từng dòng. Khoá theo DANH SÁCH MÃ chứ không
+  // theo `rows`: sửa một ô đổi `rows` mà không đổi bộ mã, không cần tải lại.
+  const khoaDsMa = useMemo(
+    () => [...new Set(rows.map((r) => r.ma_hang))].sort().join("|"),
+    [rows]
+  );
+  useEffect(() => {
+    if (!khoaHienTai || !khoaDsMa) { setKyTruoc(new Map()); return; }
+    let huy = false;
+    taiDeXuatKyTruoc(khoaHienTai, khoaDsMa.split("|"))
+      .then((m) => { if (!huy) setKyTruoc(m); });
+    return () => { huy = true; };
+  }, [khoaHienTai, khoaDsMa]);
   const groupSegments = useMemo(
     () => tinhSegmentsGroup(cotTrenManHinh, NHOM_COT_KHOA, doRongNhanNhom),
     [cotTrenManHinh]
@@ -1063,8 +1111,8 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
             <div className="qtdx-seg" role="group" aria-label="Số cột hiển thị">
               <button type="button" aria-pressed={xemNhanh} className={xemNhanh ? "on" : ""}
                 onClick={() => doiXemNhanh(true)}
-                title="Chỉ hiện 8 cột hay dùng nhất. Chỉ đổi cách xem trên máy này; file Excel vẫn đủ cột.">
-                Xem nhanh (8 cột)
+                title={`Chỉ hiện ${soCotXemNhanh} cột hay dùng nhất. Chỉ đổi cách xem trên máy này; file Excel vẫn đủ cột.`}>
+                Xem nhanh ({soCotXemNhanh} cột)
               </button>
               <button type="button" aria-pressed={!xemNhanh} className={!xemNhanh ? "on" : ""}
                 onClick={() => doiXemNhanh(false)}
@@ -1300,7 +1348,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
                     {/* 18/09/2026: biểu tượng ẩn/khoá trên tiêu đề chỉ cho PĐD.
                         Khoa vẫn chỉnh được qua menu "Hiển thị ▾ → Ẩn/khóa cột";
                         cột đang khoá thì mọi người vẫn thấy dấu khoá. */}
-                    {laPdd ? (
+                    {c.chiXem ? null : laPdd ? (
                       <>
                         <button onClick={() => anCot(c.key)}
                           className="opacity-50 hover:opacity-100 hover:text-rose-600"
@@ -1337,7 +1385,8 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
                 xemAudit={xemAudit} oPddSuaDe={oPddSuaDe}
                 dangChonMaDay={dangChonMaDay} moFormDay={moFormDay} setDangChonMaDay={setDangChonMaDay}
                 ungVienDay={ungVienDay} formDay={formDay} setFormDay={setFormDay}
-                luuDaySL={luuDaySL} dangLuuDay={dangLuuDay} thongBaoDay={thongBaoDay} />
+                luuDaySL={luuDaySL} dangLuuDay={dangLuuDay} thongBaoDay={thongBaoDay}
+                kyTruoc={kyTruoc} />
             ))}
           </tbody>
         </table>
@@ -1404,7 +1453,7 @@ function RowKhoa({
   r, cotHienThi, oDangChon, setODangChon, oCoTheSua, capNhatO, daKhoaSua,
   ketThucSuaO, oDaSua, xemAudit, oPddSuaDe,
   dangChonMaDay, moFormDay, setDangChonMaDay, ungVienDay, formDay, setFormDay,
-  luuDaySL, dangLuuDay, thongBaoDay,
+  luuDaySL, dangLuuDay, thongBaoDay, kyTruoc,
 }) {
   const dangRot = !!r.rot;
   const dangMoForm = dangChonMaDay === r.ma_hang;
@@ -1412,6 +1461,19 @@ function RowKhoa({
     <>
       <tr className={dangRot ? "row-failed" : ""}>
         {cotHienThi.map((c) => {
+          // Cột XEM "Đề xuất kỳ trước": không sửa, không lịch sử ô, không vào Excel.
+          if (c.chiXem) {
+            const v = kyTruoc?.get(r.ma_hang);
+            return (
+              <td key={c.key} className={`qtdx-cell readonly num${c.freeze ? " freeze" : ""}`}
+                style={{
+                  minWidth: c.width, maxWidth: c.width * 1.3,
+                  ...(c.freeze ? { left: tinhLeftFreeze(cotHienThi, c.key) } : {}),
+                }}>
+                {v && <span title={tooltipKyTruoc(v, r.dvt)}>{fmtKyTruoc(v.tong)}</span>}
+              </td>
+            );
+          }
           const isEditing = oDangChon?.maHang === r.ma_hang && oDangChon?.colKey === c.key;
           const canSua = oCoTheSua(c);
           const pdd = oPddSuaDe(r.ma_hang, c.key);

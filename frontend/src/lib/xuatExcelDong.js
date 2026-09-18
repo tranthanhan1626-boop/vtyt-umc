@@ -22,12 +22,21 @@
  * @param {Array} cotKhoa  cột khoa động: [{ key, nhan }] — rỗng nếu tắt chi tiết
  * @returns {{ headers: string[], rows: (string|number)[][] }}
  */
+// Cột "Dải thường P50–P75" không có sẵn trong dòng dữ liệu: màn hình dựng chữ
+// lúc vẽ từ `_daiTu`/`_daiDen`. Trước 18/09/2026 file Excel vì thế luôn để trống
+// cột này dù màn có hiện dải. Dựng lại đúng chữ như trên màn.
+const SO_VN = new Intl.NumberFormat("vi-VN");
+function chuoiDai(r) {
+  if (r?._daiTu == null || r?._daiDen == null) return "";
+  return `${SO_VN.format(r._daiTu)} – ${SO_VN.format(r._daiDen)}`;
+}
+
 export function dungBang(cot = [], rows = [], cotKhoa = []) {
   const tatCaCot = [...cot, ...cotKhoa];
   return {
     headers: tatCaCot.map((c) => c.nhan),
     rows: rows.map((r) => tatCaCot.map((c) => {
-      const v = r[c.key];
+      const v = c.key === "dai_p50_p75" && r[c.key] == null ? chuoiDai(r) : r[c.key];
       if (v == null || v === "") return "";
       // Giữ số là SỐ để Excel cộng/lọc được, chứ không đổi hết thành chuỗi.
       return typeof v === "number" ? v : String(v);

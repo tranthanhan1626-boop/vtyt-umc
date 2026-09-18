@@ -75,7 +75,13 @@ export async function docTenCotTuMau(url) {
  * @returns {Array} cột đã thay `nhan` bằng tên biểu mẫu khi tra được
  */
 export function ganTenMau(cot = [], cotGoc = [], tenMau = []) {
-  const viTri = new Map(cotGoc.map((c, i) => [c.key, i]));
+  // Cột `ngoaiMau` (vd. "Dải thường P50–P75", thêm 19/08/2026) KHÔNG có trong
+  // file mẫu. Trước 18/09/2026 hàm đếm cả nó khi tra vị trí nên MỌI tiêu đề từ
+  // cột đó trở đi lệch sang phải một cột (số 30% nằm dưới "Lý do rớt thầu").
+  // Số liệu vẫn đúng cột vì dữ liệu đi theo `key`; chỉ tên tiêu đề sai.
+  const viTri = new Map();
+  let i = 0;
+  cotGoc.forEach((c) => { if (!c.ngoaiMau) viTri.set(c.key, i++); });
   return cot.map((c) => {
     const i = viTri.get(c.key);
     const tuMau = i != null ? tenMau[i] : null;

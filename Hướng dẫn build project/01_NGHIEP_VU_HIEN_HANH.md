@@ -275,8 +275,12 @@ chỉ hiện lại cho kỳ sau khi PĐD đã chốt dữ liệu trình ký (m�
 > **ẩn suốt đợt đang mở**, chốt Q hay chốt trình ký đều không làm nó hiện lại;
 > mã chỉ hiện lại khi khoa mở **đợt khác** (đợt bổ sung hoặc kỳ sau). Chú thích
 > trên màn (`Function1.jsx`, dòng "chỉ hiện lại sau khi PĐD chốt “Đã đi thầu”")
-> cũng lệch. Chatbot (`k_dx_ma_bi_an`) đang trả lời theo code. **Chờ chủ dự án
-> quyết:** sửa code theo QĐ i, hay giữ code và sửa QĐ.
+> cũng lệch. Chatbot (`k_dx_ma_bi_an`) đang trả lời theo code.
+>
+> ✅ **Chủ dự án chốt lại 18/09/2026: GIỮ NHƯ CODE** — mã đã gửi ẩn **suốt đợt**,
+> hiện lại ở **đợt sau**. Lý do: sau chốt Q phạm vi danh mục đã khoá, khoa không
+> thêm mã được nữa, nên cho hiện lại giữa đợt chỉ gây hiểu lầm. QĐ i ở trên thay
+> bằng câu này; tooltip trên màn đã sửa theo (commit c2a5113).
 
 ### Giai đoạn 3 — Khoa xác nhận thông tin đề xuất (lần N)
 

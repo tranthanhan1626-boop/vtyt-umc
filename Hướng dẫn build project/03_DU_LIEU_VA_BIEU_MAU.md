@@ -102,6 +102,30 @@ Mọi bảng mới phải neo `dot_goi_id` bằng **khoá ngoại thật**, khô
 Chi tiết khảo sát + schema đề xuất + **17 câu hỏi cần chủ dự án trả lời**:
 `.scratch/mot-mat-ban/DU_LIEU_SAU_THAU.md`.
 
+## 2b. Số đề xuất kỳ trước (QĐ 18/09/2026 mục p) — CHỈ ĐỂ XEM
+
+| | |
+|---|---|
+| Nguồn | `de_xuat.xlsx` ở gốc repo — 4 cột `Đơn vị` · `Quyết định` · `Mã hàng` · `Số lượng đề xuất`, 5.820 dòng, 9 số QĐ |
+| Nghĩa | Chủ dự án xác nhận 18/09: **số khoa gõ ban đầu** của kỳ thầu trước, cho **18 tháng**, theo **ĐVT của mã hàng** |
+| Bảng | `de_xuat_ky_truoc` (khoa, ma_hang, so_quyet_dinh, so_luong, nguon, nap_luc), unique (khoa, ma_hang, so_quyet_dinh) |
+| View | `v_de_xuat_ky_truoc` — gộp theo (khoa, ma_hang): `tong_so_luong` + `chi_tiet` jsonb `[{qd, so}]` |
+| Quyền | PĐD/admin đọc hết; khoa chỉ đọc dòng khoa mình. Web không ghi |
+| Patch | `backend/sql/patch_zzzzzzzg_de_xuat_ky_truoc.sql` |
+| Nạp | `backend/scripts/nap_de_xuat_ky_truoc.py ../de_xuat.xlsx --kiem` (xem trước, không ghi) → `--that-su-nap --xac-nhan-staging` (upsert, một transaction) |
+
+Làm sạch khi nạp: số QĐ đổi chữ Ð (U+00D0) thành Đ (U+0110); mã hàng ép text
+và cắt `\n`; ô số `'5\xa0'` → 5; số lẻ giữ nguyên. Tên khoa khớp đúng DB thì
+giữ, khác HOA/thường mà chỉ một ứng viên thì ghép, còn lại **bỏ và báo**. Bỏ
+theo chốt 18/09: Cơ sở 2, Cơ sở 3, Khoa GMHS - Hồi tỉnh, Khoa Tuyến vú, Đơn vị
+Hình ảnh tim mạch. `KHOA GMHS (PHÒNG MỔ 2A)` (5 dòng, QĐ 3309) không khớp tên
+nào nên đang bị bỏ.
+
+Hiện ở hai chỗ, chỉ để xem: bước ③ màn đề xuất (chữ nhỏ "Kỳ trước: N" dưới
+từng mã hàng, **không** ở ô tổng mã quản lý) và cột "Đề xuất kỳ trước (18T)"
+cạnh "SL ĐỀ XUẤT 18 tháng" trên Danh mục khoa. Cột này **không** vào file
+Excel và không có trong cấu hình ẩn/khoá cột. Bảng chưa có thì không hiện gì.
+
 ## 3. Năm biểu mẫu chính thức
 
 Folder nguồn: `Form biểu mẫu/`.
