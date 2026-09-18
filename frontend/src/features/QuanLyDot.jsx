@@ -4,6 +4,7 @@ import { supabase } from "../supabaseClient";
 import { GOI, useDotDangMo } from "./KhungGoiThau";
 import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
 import DotGoiCuaDot from "./DotGoiCuaDot";
+import { dichLoi } from "../lib/dichLoi";
 
 // H.6 — Phòng Điều dưỡng mở/đóng đợt đề xuất (QĐ-20).
 // Đợt ĐÓNG thì khoa không gửi được nữa — chặn ở DB, không chỉ ẩn nút.
@@ -39,7 +40,7 @@ export default function QuanLyDot() {
       loai_mua_sam: f.loai_mua_sam, ten: f.ten.trim(), nam: Number(f.nam),
       thang_moc: laBoSung ? Number(f.thang_moc) : null,
     });
-    if (error) { setLoi(error.code === "23505" ? "Đợt này đã tồn tại." : error.message); return; }
+    if (error) { setLoi(error.code === "23505" ? "Đợt này đã tồn tại." : dichLoi(error)); return; }
     setMoForm(false); setF({ ...f, ten: "", thang_moc: "" }); await taiLai();
   };
 
@@ -48,7 +49,7 @@ export default function QuanLyDot() {
     // Kiểm count — thiếu policy thì UPDATE trả 204 nhưng 0 dòng (bẫy 5.5).
     const { error, count } = await supabase.from("dot_de_xuat")
       .update({ trang_thai: moi }, { count: "exact" }).eq("id", d.id);
-    if (error) setLoi(error.message);
+    if (error) setLoi(dichLoi(error));
     else if (!count) setLoi("Không đổi được — kiểm tra quyền.");
     else await taiLai();
   };

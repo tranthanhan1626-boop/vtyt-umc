@@ -8,6 +8,7 @@ import { NHAN_GOI_THAU } from "./Function1";
 import { GOI_ID_MAP, goiConCuaDot } from "../lib/cotChuan";
 import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
 import { moDanhMucDeXuat } from "../lib/moManExcel";
+import { dichLoi } from "../lib/dichLoi";
 
 // Tra ngược nhãn gói con (r.goi, vd "GMHS") -> khoá goiId dùng cho route
 // #danh-muc-de-xuat/<goiId>/<khoa> (khớp GOI_ID_MAP trong cotChuan.js).
@@ -54,7 +55,7 @@ export default function DeXuatCuaToi({ profile, goi }) {
           .eq("loai_mua_sam", goi)
           .order("created_at", { ascending: false }).range(f, t)
       , { order: "id" });
-      if (error) { setLoi("Không đọc được v_de_xuat_tong_hop — kiểm tra view/RLS trong Supabase (schema hiện tại xem backend/sql/schema.sql)."); setLoading(false); return; }
+      if (error) { setLoi("Không tải được dữ liệu. Bấm Tải lại; nếu vẫn lỗi, báo Phòng Điều dưỡng."); setLoading(false); return; }
       setRows(data);
       const { data: dots } = await supabase.from("dot_de_xuat")
         .select("id, ten, thang_moc, loai_mua_sam").eq("loai_mua_sam", goi);
@@ -134,8 +135,8 @@ export default function DeXuatCuaToi({ profile, goi }) {
     if (error) {
       const chuaPatch = error.code === "PGRST202" || /rut_nhom_de_xuat/i.test(error.message || "");
       setLoiRut(chuaPatch
-        ? "Staging chưa có hàm rút đề xuất. Cần chạy backend/sql/patch_i_rut_va_tong_hop.sql."
-        : error.message);
+        ? "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_i_rut_va_tong_hop). Vui lòng báo Phòng Điều dưỡng."
+        : dichLoi(error));
       setDangRut(null);
       return;
     }
@@ -146,12 +147,12 @@ export default function DeXuatCuaToi({ profile, goi }) {
     setDangRut(null);
   };
 
-  if (loading) return <div className="text-sm text-slate-400 p-4">Đang tải đề xuất...</div>;
+  if (loading) return <div className="text-sm text-slate-500 p-4">Đang tải đề xuất...</div>;
   if (loi) return <div className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3 m-1">{loi}</div>;
 
   if (nhomLoc.length === 0) {
     return (
-      <div className="bg-white border border-slate-200 rounded-lg text-sm text-slate-400 p-6 text-center">
+      <div className="bg-white border border-slate-200 rounded-lg text-sm text-slate-500 p-6 text-center">
         Chưa gửi đề xuất nào.
       </div>
     );
@@ -159,8 +160,12 @@ export default function DeXuatCuaToi({ profile, goi }) {
 
   return (
     <div className="space-y-4">
-      <div className="text-sm text-slate-500 px-1">
-        {nhomLoc.length} đề xuất đã gửi <span className="text-slate-400">({rows.length} mã hàng)</span>
+      {/* V9 (18/09/2026): màn thiếu tiêu đề cấp 1. */}
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-1">
+        <h1 className="text-lg font-semibold text-slate-900">Đề xuất đã gửi</h1>
+        <span className="text-sm text-slate-500">
+          {nhomLoc.length} đề xuất đã gửi ({rows.length} mã hàng)
+        </span>
       </div>
       {danhMucTheoGoi.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-umc-200 bg-umc-50 px-3 py-2.5">
@@ -198,7 +203,7 @@ export default function DeXuatCuaToi({ profile, goi }) {
                   <Package size={13} className="text-umc-700" />
                   {g.items.length} mã hàng · năm {g.nam_de_xuat}
                 </span>
-                <span className="text-slate-400">{fmtNgayGio(g.created_at)}</span>
+                <span className="text-slate-500">{fmtNgayGio(g.created_at)}</span>
                 <span className="text-sky-700">{tenDot[g.dot_id] || (g.dot_id ? `Đợt #${g.dot_id}` : "Chưa gắn đợt")}</span>
                 <span className={`inline-block px-2 py-0.5 rounded-full font-medium ${MAU_TRANG_THAI[g.trangThai]}`}>
                   {g.trangThai === "hon_hop" ? "Hỗn hợp" : NHAN_TRANG_THAI[g.trangThai]}
@@ -235,16 +240,26 @@ export default function DeXuatCuaToi({ profile, goi }) {
               )}
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
+                  {/* V9: bảng thiếu <thead> — thêm tiêu đề cột (đọc từ chính
+                      các trường mỗi cột đang hiện). */}
+                  <thead>
+                    <tr className="border-b border-slate-100 text-left text-xs text-slate-500">
+                      <th className="px-4 py-1.5 font-medium">Mã hàng · tên vật tư · mã quản lý</th>
+                      <th className="px-4 py-1.5 text-right font-medium">Số lượng</th>
+                      <th className="px-4 py-1.5 font-medium">Lý do đề xuất</th>
+                      <th className="px-4 py-1.5 font-medium">Loại mua sắm · thời gian</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {g.items.map((r) => (
                       <tr key={r.id} className="border-b border-slate-50 last:border-0">
                         <td className="px-4 py-2 align-top">
                           <div className="font-mono text-xs text-slate-600">{r.ma_hang}</div>
                           <div className="text-xs text-slate-500 leading-tight max-w-md">{r.ten_vat_tu}</div>
-                          <div className="text-xs text-slate-300 font-mono mt-0.5">{r.ma_quan_ly}</div>
+                          <div className="text-xs text-slate-500 font-mono mt-0.5">{r.ma_quan_ly}</div>
                         </td>
                         <td className="px-4 py-2 text-right font-mono align-top whitespace-nowrap">
-                          {fmt(r.so_luong)} <span className="text-slate-400 text-xs">{r.dvt}</span>
+                          {fmt(r.so_luong)} <span className="text-slate-500 text-xs">{r.dvt}</span>
                         </td>
                         <td className="px-4 py-2 align-top text-xs">
                           {NHAN_LY_DO[r.loai_ly_do] || r.loai_ly_do}
@@ -255,11 +270,11 @@ export default function DeXuatCuaToi({ profile, goi }) {
                             <div>
                               <div className="text-slate-700">{NHAN_GOI_THAU[r.loai_mua_sam]}</div>
                               {r.tu_thang
-                                ? <div className="text-slate-400">T{r.tu_thang}/{r.tu_nam} – T{r.den_thang}/{r.den_nam} ({r.so_thang_du_kien} tháng)</div>
-                                : r.so_thang_du_kien ? <div className="text-slate-400">dự kiến {r.so_thang_du_kien} tháng</div> : null}
+                                ? <div className="text-slate-500">T{r.tu_thang}/{r.tu_nam} – T{r.den_thang}/{r.den_nam} ({r.so_thang_du_kien} tháng)</div>
+                                : r.so_thang_du_kien ? <div className="text-slate-500">dự kiến {r.so_thang_du_kien} tháng</div> : null}
                             </div>
                           ) : (
-                            <span className="text-slate-300 italic">— chưa chọn</span>
+                            <span className="text-slate-500 italic">— chưa chọn</span>
                           )}
                         </td>
                       </tr>
@@ -281,7 +296,7 @@ export default function DeXuatCuaToi({ profile, goi }) {
                         </p>
                       </div>
                       <button type="button" onClick={() => setXacNhanRut(null)}
-                        className="text-slate-400 hover:text-slate-700" aria-label="Đóng">
+                        className="text-slate-500 hover:text-slate-700" aria-label="Đóng">
                         <X size={16} />
                       </button>
                     </div>
@@ -310,7 +325,7 @@ export default function DeXuatCuaToi({ profile, goi }) {
                     </button>
                   </div>
                 ) : (
-                  <p className="text-right text-xs text-slate-400">
+                  <p className="text-right text-xs text-slate-500">
                     {g.trangThai === "hoan_thanh"
                       ? "Đề xuất đã hoàn thành duyệt — mở Word hoặc Excel ở phía trên."
                       : !cungKhoa ? "Chỉ tài khoản thuộc khoa này mới được điều chỉnh." : ""}

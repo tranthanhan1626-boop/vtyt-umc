@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import {
-  BAT_XOA_DU_LIEU_TEST,
+  duocThayNutXoaTest,
   xoaDuLieuKiemThu,
 } from "../lib/xoaDuLieuTest";
+import { dichLoi } from "../lib/dichLoi";
 
 export default function NutXoaDuLieuTest({
   loai,
@@ -17,7 +18,7 @@ export default function NutXoaDuLieuTest({
 }) {
   const [dangXoa, setDangXoa] = useState(false);
 
-  if (!BAT_XOA_DU_LIEU_TEST || id === null || id === undefined) return null;
+  if (!duocThayNutXoaTest() || id === null || id === undefined) return null;
 
   const xoa = async () => {
     const dongY = window.confirm(
@@ -32,7 +33,7 @@ export default function NutXoaDuLieuTest({
       const ketQua = await xoaDuLieuKiemThu(loai, id);
       await onDaXoa?.(ketQua);
     } catch (error) {
-      window.alert(error.message || "Không xóa được dữ liệu kiểm thử.");
+      window.alert(dichLoi(error) || "Không xóa được dữ liệu kiểm thử.");
     } finally {
       setDangXoa(false);
     }

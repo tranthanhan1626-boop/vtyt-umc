@@ -24,6 +24,7 @@ import {
   PackageX,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
+import { dichLoi } from "../lib/dichLoi";
 
 // QĐ-20 — Khung tổ chức theo GÓI THẦU. Gói là cấp trên cùng, không phải chức năng.
 //
@@ -114,7 +115,7 @@ export function useDotDangMo(authKey = "mounted") {
     if (error) {
       // Giữ dữ liệu tốt gần nhất. Một lỗi mạng tạm thời không được xoá trạng
       // thái gói mà người dùng vừa đọc thành công.
-      setLoi(error.message);
+      setLoi(dichLoi(error));
     } else {
       setDot(data || []);
       setLoi("");
@@ -162,11 +163,29 @@ export function useDotDangMo(authKey = "mounted") {
 
 export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, dangTaiDot, loiDot, laPdd, children }) {
   const [menuMo, setMenuMo] = useState(false);
+  const [moKhac, setMoKhac] = useState(false);
 
   const chuyenMan = (giaTri) => {
     doiChon(giaTri);
     setMenuMo(false);
   };
+
+  // VỪA-6 (QA3 18/09): menu dài hơn khung nhìn thì mục đang sáng có thể nằm
+  // ngoài vùng thấy được của thanh bên — cuộn thanh bên tới nó. Đợi nhánh
+  // gói mở xong (hiệu ứng chiều cao) rồi mới đo.
+  const khoaChon = `${chon.nhom}|${chon.goi || ""}|${chon.goiCon || ""}|${chon.man || ""}`;
+  useEffect(() => {
+    const t = setTimeout(() => {
+      document.querySelectorAll(".umc-sidebar button.is-active").forEach((el) => {
+        const khung = el.closest(".umc-sidebar");
+        if (!khung) return;
+        const a = el.getBoundingClientRect();
+        const b = khung.getBoundingClientRect();
+        if (a.top < b.top || a.bottom > b.bottom) el.scrollIntoView({ block: "nearest" });
+      });
+    }, 260);
+    return () => clearTimeout(t);
+  }, [khoaChon, menuMo]);
 
   // Badge đỏ ở mục gói bổ sung (QĐ D5, 23/08/2026): khoa phải THẤY NGAY là có
   // mã vừa rớt và vừa được chuyển tiếp về đợt bổ sung của mình. Đọc chính hộp
@@ -195,34 +214,49 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
     const Icon = g.icon;
 
     // Items luôn hiện ở cấp gói mẹ (không nằm trong gói con nào).
+    // F4a 18/09/2026: bỏ mục "Danh mục đề xuất của khoa" trong nhánh gói —
+    // nó trùng đích với mục ② "Danh mục của khoa" (cùng gói đang đứng) và làm
+    // menu có HAI chỗ cho một màn, ② không bao giờ sáng. Đường vào còn ở ②.
     const manHinhMeBao = [
       {
         ma: "cua_toi",
         ten: laPdd ? "Đề xuất các khoa" : "Đề xuất của tôi",
         icon: LayoutList,
       },
-      // Chỉ ĐVSD — PĐD xem hết mọi khoa ở Danh mục tổng hợp (Bàn điều hành);
-      // chỉ định thầu không có Danh mục đề xuất dạng 34 cột này.
-      ...(!laPdd && g.ma !== "chi_dinh_thau"
-        ? [{ ma: "danh_muc_khoa", ten: "Danh mục đề xuất của khoa", icon: Sheet }]
-        : []),
     ];
+    // ĐÚNG MỘT mục sáng: gói cha chỉ sáng khi không có mục con nào trong
+    // nhánh đang sáng (vd. bấm gói 18 tháng chưa chọn gói con). Còn lại gói
+    // cha chỉ mang dấu "đang mở nhánh" (is-open), khác kiểu với is-active.
+    const conDangSang = dangChon && (
+      (coGoiCon && chon.man === "de_xuat" && dsGoiCon.some((gc) => gc.ma === chon.goiCon))
+      || (!coGoiCon && chon.man === "de_xuat")
+      || manHinhMeBao.some((m) => m.ma === chon.man)
+      || chon.man === "danh_muc_khoa"
+    );
+    const lopGoi = dangChon ? (conDangSang ? "is-open" : "is-active") : "";
 
     return (
       <div key={g.ma} className="relative">
         <button
           type="button"
-          onClick={() => chuyenMan({ nhom: "goi", goi: g.ma, goiCon: chon.goiCon, man: chon.man || "de_xuat" })}
-          className={`umc-package-button ${dangChon ? "is-active" : ""}`}
+          // Vá đợt 3: trước đây mang nguyên `chon.man` sang — đứng ở màn đầu
+          // (`tongquan`) bấm "Gói 18 tháng" thì ra {nhom:"goi", man:"tongquan"},
+          // rơi vào nhánh dự phòng của App.jsx. Chỉ giữ màn/gói con khi đang ở
+          // CHÍNH gói này; còn lại vào thẳng Đề xuất số lượng.
+          onClick={() => chuyenMan(chon.nhom === "goi" && chon.goi === g.ma
+            ? { nhom: "goi", goi: g.ma, goiCon: chon.goiCon, man: chon.man || "de_xuat" }
+            : { nhom: "goi", goi: g.ma, goiCon: null, man: "de_xuat" })}
+          className={`umc-package-button ${lopGoi}`}
           aria-expanded={dangChon}
+          aria-current={lopGoi === "is-active" ? "page" : undefined}
         >
-          <span className={`umc-package-icon ${dangChon ? "is-active" : ""}`}><Icon size={17} /></span>
+          <span className={`umc-package-icon ${lopGoi}`}><Icon size={17} /></span>
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold leading-tight">
               {g.ten}
               {g.ma === "mua_sam_bo_sung" && soMaRotMoi > 0 && (
                 <span title="Có mã rớt vừa được đưa vào đợt bổ sung của khoa"
-                  className="ml-1.5 inline-flex items-center rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                  className="ml-1.5 inline-flex items-center whitespace-nowrap rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-bold text-white">
                   {soMaRotMoi} mã rớt
                 </span>
               )}
@@ -255,7 +289,7 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
               {/* Gói có gói con: mỗi gói con → Đề xuất số lượng */}
               {coGoiCon && (
                 <>
-                  <div className="px-3 py-1 text-[10px] uppercase tracking-wider text-slate-400">Gói con</div>
+                  <div className="px-3 py-1 text-[11px] uppercase tracking-wider text-slate-500">Gói con</div>
                   {dsGoiCon.map((gc) => (
                     <button
                       type="button"
@@ -291,7 +325,7 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
                     type="button"
                     key={m.ma}
                     onClick={() => chuyenMan({ nhom: "goi", goi: g.ma, goiCon: null, man: m.ma })}
-                    className={`umc-subnav-button ${chon.man === m.ma && !chon.goiCon ? "is-active" : ""}`}
+                    className={`umc-subnav-button ${chon.man === m.ma ? "is-active" : ""}`}
                   >
                     <SubIcon size={14} />
                     {m.ten}
@@ -305,6 +339,191 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
     );
   };
 
+  // Ba nút "nửa sau quy trình" — dùng chung cho menu PĐD (giữ nguyên chỗ cũ)
+  // và nhóm "Khác ▸" của khoa. Đích bấm y như trước.
+  const nutTuyChon = (
+    <button
+      type="button"
+      onClick={() => chuyenMan({ nhom: "tuy_chon_mua_them", man: "tuy_chon_mua_them" })}
+      className={`umc-package-button ${chon.nhom === "tuy_chon_mua_them" ? "is-active" : ""}`}
+    >
+      <span className={`umc-package-icon ${chon.nhom === "tuy_chon_mua_them" ? "is-active" : ""}`}>
+        <PackagePlus size={17} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold leading-tight">Gói tùy chọn mua thêm</span>
+        <span className="mt-1 block text-[11px] leading-tight opacity-70">Kích hoạt tối đa 30% từ gói gốc</span>
+      </span>
+      <ChevronDown size={14} className={`mt-0.5 shrink-0 -rotate-90 ${chon.nhom === "tuy_chon_mua_them" ? "text-white" : ""}`} />
+    </button>
+  );
+  const nutTieuChi = (lop = "mt-2") => (
+    <button
+      type="button"
+      onClick={() => chuyenMan({ nhom: "chung", man: "tieuchi" })}
+      className={`umc-common-button ${lop} ${chon.man === "tieuchi" ? "is-active" : ""}`}
+    >
+      <FileSearch size={16} />
+      <span>Điều chỉnh tiêu chí kỹ thuật</span>
+    </button>
+  );
+  const nutTienDoSuDung = (lop = "mt-2") => (
+    <button
+      type="button"
+      onClick={() => chuyenMan({ nhom: "chung", man: "tiendosudung" })}
+      className={`umc-common-button ${lop} ${chon.man === "tiendosudung" ? "is-active" : ""}`}
+    >
+      <Gauge size={16} />
+      <span>Tiến độ sử dụng</span>
+    </button>
+  );
+  // Vá đợt 3 ("hai mục sáng cùng lúc"): trước đây sáng khi `chon.nhom ===
+  // "chung"`, tức sáng CÙNG mọi mục chung khác (Tiêu chí, Tiến độ sử dụng…).
+  // F4a 18/09: màn chung KHÔNG có mục riêng trên menu (Sổ thiếu hàng, Mã kỹ
+  // thuật… mở từ thẻ ở trang chính) thì sáng "Trang chính" — nơi dẫn tới
+  // chúng — để menu luôn có đúng một mục sáng.
+  const MAN_CO_MUC_RIENG = laPdd
+    ? ["ban_dieu_hanh", "ketquathau", "chuyentiep", "tieuchi", "tiendosudung"]
+    : ["giorot", "tieuchi", "tiendosudung"];
+  const trangChinhSang = chon.man === "tongquan"
+    || (chon.nhom === "chung" && !MAN_CO_MUC_RIENG.includes(chon.man));
+  const nutTrangChinh = (
+    <button
+      type="button"
+      onClick={() => chuyenMan({ nhom: "chung", man: "tongquan" })}
+      className={`umc-common-button ${trangChinhSang ? "is-active" : ""}`}
+    >
+      <Grid2X2 size={16} />
+      <span>{laPdd ? "Nghiệp vụ dùng chung" : "Trang chính của khoa"}</span>
+    </button>
+  );
+
+  // ---- MENU PĐD: giữ nguyên thứ tự và các mục như trước đợt 3 ----------
+  const menuPdd = (
+    <>
+      {/* PĐD không đề xuất, nên không dùng cây "gói con → Đề xuất số lượng"
+          của khoa. Vào thẳng Bàn điều hành: chọn đợt + gói con ngay trong màn,
+          xem theo dõi khoa / danh mục tổng hợp / kết quả thầu. Các màn cũ vẫn
+          còn nguyên route, mở bằng drill-down từ Bàn điều hành. */}
+      <div className="umc-nav-label">Điều hành</div>
+      <button
+        type="button"
+        onClick={() => chuyenMan({ nhom: "chung", man: "ban_dieu_hanh" })}
+        className={`umc-package-button ${chon.man === "ban_dieu_hanh" ? "is-active" : ""}`}
+      >
+        <span className={`umc-package-icon ${chon.man === "ban_dieu_hanh" ? "is-active" : ""}`}>
+          <LayoutDashboard size={17} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold leading-tight">Bàn điều hành</span>
+          <span className="mt-1 block text-[11px] leading-tight opacity-70">
+            Theo dõi khoa theo từng gói — chỉ để xem
+          </span>
+        </span>
+      </button>
+
+      {/* L2: nhãn nhóm cách thẻ phía trên 20px, không dính vào nhau. */}
+      <div className="umc-nav-label mt-5">Gói khác</div>
+      <div className="space-y-2">
+        {nutTuyChon}
+        {/* Chỉ định thầu là việc của khoa (tự nhập số lượng và căn cứ riêng);
+            PĐD theo dõi qua Bàn điều hành nên không cần mục này trên menu. */}
+      </div>
+
+      {/* ẨN 23/08/2026 (bước 5 bản VÒNG KHÉP KÍN) — ba màn đọc
+          `goi_thau_ket_qua_ma` / `goi_thau_tien_do` / `goi_thau_moc` (mô hình
+          TRƯỚC v3) đã gỡ khỏi menu; mã vẫn giữ. Nhánh sau (QĐ D6) viết lại. */}
+      <button
+        type="button"
+        onClick={() => chuyenMan({ nhom: "chung", man: "ketquathau" })}
+        className={`umc-common-button mt-3 ${chon.man === "ketquathau" ? "is-active" : ""}`}
+      >
+        <ClipboardCheck size={16} />
+        <span>Tổng hợp kết quả thầu</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => chuyenMan({ nhom: "chung", man: "chuyentiep" })}
+        className={`umc-common-button mt-2 ${chon.man === "chuyentiep" ? "is-active" : ""}`}
+      >
+        <RotateCcw size={16} />
+        <span>Theo dõi chuyển tiếp mã rớt</span>
+      </button>
+
+      {nutTieuChi()}
+      {nutTienDoSuDung()}
+
+      <div className="umc-nav-label mt-7">Dùng chung</div>
+      {nutTrangChinh}
+    </>
+  );
+
+  // ---- MENU KHOA THEO VIỆC (đợt 3, 18/09/2026) ---------------------------
+  // "Việc chính" đánh số theo đúng thứ tự khoa làm. Mục 1 giữ nguyên cây
+  // gói → gói con → Đề xuất số lượng như cũ (nutGoi). Nửa sau quy trình gom
+  // vào "Khác ▸", thu gọn nhưng vẫn bấm được; tự mở khi đang đứng ở một mục
+  // trong đó để mục sáng luôn nhìn thấy.
+  const dangOKhac = chon.nhom === "tuy_chon_mua_them"
+    || (chon.nhom === "chung" && ["tieuchi", "tiendosudung"].includes(chon.man));
+  const khacDangMo = moKhac || dangOKhac;
+  // "Danh mục của khoa" mở đúng gói đang đứng; chưa đứng ở gói nào (hoặc
+  // đang ở chỉ định thầu — không có danh mục dạng này) thì mở gói 18 tháng.
+  const goiChoDanhMuc = chon.nhom === "goi" && chon.goi && chon.goi !== "chi_dinh_thau"
+    ? chon.goi : "dau_thau_rong_rai";
+  const soThuTu = (so) => (
+    <span aria-hidden className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-umc-600 text-[11px] font-bold text-white">
+      {so}
+    </span>
+  );
+  const menuKhoa = (
+    <>
+      <div className="umc-nav-label">Việc chính</div>
+      <div className="flex items-center gap-2 px-2 pb-2 text-sm font-semibold text-[var(--umc-navy)]">
+        {soThuTu(1)} Đề xuất số lượng
+      </div>
+      <div className="space-y-2">
+        {GOI.map(nutGoi)}
+      </div>
+      <button
+        type="button"
+        onClick={() => chuyenMan({ nhom: "goi", goi: goiChoDanhMuc, goiCon: null, man: "danh_muc_khoa" })}
+        className={`umc-common-button mt-3 ${chon.man === "danh_muc_khoa" ? "is-active" : ""}`}
+      >
+        {soThuTu(2)}
+        <span>Danh mục của khoa</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => chuyenMan({ nhom: "chung", man: "giorot" })}
+        className={`umc-common-button mt-1 ${chon.man === "giorot" ? "is-active" : ""}`}
+      >
+        {soThuTu(3)}
+        <span>Mã rớt</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setMoKhac((v) => !v)}
+        aria-expanded={khacDangMo}
+        className="umc-nav-label mt-6 flex min-h-8 w-full items-center justify-between rounded-md hover:bg-slate-50"
+      >
+        <span>Khác</span>
+        <ChevronDown size={14} className={`transition-transform ${khacDangMo ? "" : "-rotate-90"}`} />
+      </button>
+      {khacDangMo && (
+        <div className="space-y-2">
+          {nutTuyChon}
+          {nutTieuChi("")}
+          {nutTienDoSuDung("")}
+        </div>
+      )}
+
+      <div className="umc-nav-label mt-6">Dùng chung</div>
+      {nutTrangChinh}
+    </>
+  );
+
   const menu = (
     <>
       <div className="umc-sidebar-heading">
@@ -314,127 +533,13 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
         </button>
       </div>
 
-      {/* PĐD không đề xuất, nên không dùng cây "gói con → Đề xuất số lượng"
-          của khoa. Vào thẳng Bàn điều hành: chọn đợt + gói con ngay trong màn,
-          xem theo dõi khoa / danh mục tổng hợp / kết quả thầu. Các màn cũ vẫn
-          còn nguyên route, mở bằng drill-down từ Bàn điều hành. */}
-      {laPdd && (
-        <>
-          <div className="umc-nav-label">Điều hành</div>
-          <button
-            type="button"
-            onClick={() => chuyenMan({ nhom: "chung", man: "ban_dieu_hanh" })}
-            className={`umc-package-button ${chon.man === "ban_dieu_hanh" ? "is-active" : ""}`}
-          >
-            <span className={`umc-package-icon ${chon.man === "ban_dieu_hanh" ? "is-active" : ""}`}>
-              <LayoutDashboard size={17} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold leading-tight">Bàn điều hành</span>
-              <span className="mt-1 block text-[11px] leading-tight opacity-70">
-                Theo dõi khoa theo từng gói — chỉ để xem
-              </span>
-            </span>
-          </button>
-        </>
-      )}
-
-      <div className="umc-nav-label">{laPdd ? "Gói khác" : "Theo gói thầu"}</div>
-      <div className="space-y-2">
-        {!laPdd && GOI.filter((g) => g.ma !== "chi_dinh_thau").map(nutGoi)}
-        <button
-          type="button"
-          onClick={() => chuyenMan({ nhom: "tuy_chon_mua_them", man: "tuy_chon_mua_them" })}
-          className={`umc-package-button ${chon.nhom === "tuy_chon_mua_them" ? "is-active" : ""}`}
-        >
-          <span className={`umc-package-icon ${chon.nhom === "tuy_chon_mua_them" ? "is-active" : ""}`}>
-            <PackagePlus size={17} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold leading-tight">Gói tùy chọn mua thêm</span>
-            <span className="mt-1 block text-[11px] leading-tight opacity-70">Kích hoạt tối đa 30% từ gói gốc</span>
-          </span>
-          <ChevronDown size={14} className={`mt-0.5 shrink-0 -rotate-90 ${chon.nhom === "tuy_chon_mua_them" ? "text-white" : ""}`} />
-        </button>
-        {/* Chỉ định thầu là việc của khoa (tự nhập số lượng và căn cứ riêng);
-            PĐD theo dõi qua Bàn điều hành nên không cần mục này trên menu. */}
-        {!laPdd && GOI.filter((g) => g.ma === "chi_dinh_thau").map(nutGoi)}
-      </div>
-
-      {/* ẨN 23/08/2026 (bước 5 bản VÒNG KHÉP KÍN) — ba màn dưới đây đọc
-          `goi_thau_ket_qua_ma` / `goi_thau_tien_do` / `goi_thau_moc`, là bảng
-          của mô hình TRƯỚC v3. Cả ba đang 0 dòng và không có gì trong v3 ghi
-          vào nữa, nên màn KHÔNG báo lỗi mà chỉ hiện rỗng — đó là kiểu hỏng khó
-          thấy nhất. Giữ nguyên mã, chỉ gỡ khỏi menu; nhánh sau (QĐ D6: tiến độ
-          gói thầu theo số quyết định / số hợp đồng) sẽ viết lại trên nền v3. */}
-      {laPdd && (
-        <button
-          type="button"
-          onClick={() => chuyenMan({ nhom: "chung", man: "ketquathau" })}
-          className={`umc-common-button mt-3 ${chon.man === "ketquathau" ? "is-active" : ""}`}
-        >
-          <ClipboardCheck size={16} />
-          <span>Tổng hợp kết quả thầu</span>
-        </button>
-      )}
-
-      {laPdd && (
-        <button
-          type="button"
-          onClick={() => chuyenMan({ nhom: "chung", man: "chuyentiep" })}
-          className={`umc-common-button mt-2 ${chon.man === "chuyentiep" ? "is-active" : ""}`}
-        >
-          <RotateCcw size={16} />
-          <span>Theo dõi chuyển tiếp mã rớt</span>
-        </button>
-      )}
-
-      <button
-        type="button"
-        onClick={() => chuyenMan({ nhom: "chung", man: "tieuchi" })}
-        className={`umc-common-button mt-2 ${chon.man === "tieuchi" ? "is-active" : ""}`}
-      >
-        <FileSearch size={16} />
-        <span>Điều chỉnh tiêu chí kỹ thuật</span>
-      </button>
-
-      {(
-        <button
-          type="button"
-          onClick={() => chuyenMan({ nhom: "chung", man: "tiendosudung" })}
-          className={`umc-common-button mt-2 ${chon.man === "tiendosudung" ? "is-active" : ""}`}
-        >
-          <Gauge size={16} />
-          <span>Tiến độ sử dụng</span>
-        </button>
-      )}
-
-      {false && (
-        <button
-          type="button"
-          onClick={() => chuyenMan({ nhom: "chung", man: "tiendo" })}
-          className={`umc-common-button mt-2 ${chon.man === "tiendo" ? "is-active" : ""}`}
-        >
-          <ClipboardCheck size={16} />
-          <span>Tiến độ gói thầu</span>
-        </button>
-      )}
-
-      <div className="umc-nav-label mt-7">Dùng chung</div>
-      <button
-        type="button"
-        onClick={() => chuyenMan({ nhom: "chung", man: "tongquan" })}
-        className={`umc-common-button ${chon.nhom === "chung" ? "is-active" : ""}`}
-      >
-        <Grid2X2 size={16} />
-        <span>Nghiệp vụ dùng chung</span>
-      </button>
+      {laPdd ? menuPdd : menuKhoa}
 
       <div className="umc-sidebar-note">
         <img src="/brand/umc-mark.png" alt="" className="h-9 w-9 object-contain opacity-90" />
         <div>
           <p className="text-[11px] font-semibold text-[var(--umc-navy)]">Phòng Điều dưỡng</p>
-          <p className="mt-0.5 text-[10px] leading-relaxed text-slate-500">Sổ làm việc VTYT dùng chung toàn viện</p>
+          <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">Sổ làm việc VTYT dùng chung toàn viện</p>
         </div>
       </div>
     </>
@@ -487,7 +592,10 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
           key={`${chon.nhom}-${chon.goi || "chung"}-${chon.man}`}
           className="umc-content"
           initial={{ opacity: 0, transform: "translateY(6px)" }}
-          animate={{ opacity: 1, transform: "translateY(0)" }}
+          // Lỗi N3: để `transform: translateY(0)` đọng lại thì <main> thành khối
+          // chứa cho mọi `fixed` con (ngăn giỏ cao 2.317px, lớp mờ hụt thanh
+          // bên). Trả về `none` khi hiệu ứng xong.
+          animate={{ opacity: 1, transform: "translateY(0)", transitionEnd: { transform: "none" } }}
           exit={{ opacity: 0, transform: "translateY(-3px)" }}
         >
           {children}

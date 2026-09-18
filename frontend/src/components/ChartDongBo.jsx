@@ -25,6 +25,26 @@ export function fmt(n) {
   return Math.round(n).toLocaleString("vi-VN");
 }
 
+// Trục Y (đợt 3, 18/09/2026 — lỗi V1 + L5):
+//  - Đỉnh trục làm tròn LÊN số đẹp (bước 1 · 1,2 · 1,5 · 2 · 2,5 · 3 · 4 · 5 · 6 · 8 × 10^k) để
+//    vạch chia ra số tròn thay vì "182.601".
+//  - Lề trái KHÔNG cố định 60 nữa: tính theo độ dài nhãn dài nhất × cỡ chữ thật
+//    (đã quy đổi qua `co`) — nhãn 7 chữ số trong khung hẹp không còn tràn SVG.
+export function dinhTrucDep(giaTriLonNhat, soKhoang) {
+  // Bước tối thiểu 1: số lượng là số nguyên, vạch "0,25" chỉ làm tròn ra trùng nhau.
+  const tho = Math.max((Number(giaTriLonNhat) || 0) / soKhoang, 1);
+  const bac = 10 ** Math.floor(Math.log10(tho));
+  const buoc = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10].map((h) => h * bac)
+    .filter((b) => bac > 1 || Number.isInteger(b)).find((b) => b >= tho) || 10 * bac;
+  return buoc * soKhoang;
+}
+
+function lePhaiTheoNhan(nhan, co, coChu = 11) {
+  const dai = Math.max(...nhan.map((t) => String(t).length), 1);
+  // Chữ số monospace rộng ~0,62 em; +8 khoảng cách tới trục, +6 đệm mép trái.
+  return Math.max(co(36), dai * co(coChu) * 0.62 + co(8) + co(6));
+}
+
 // Năm mới nhất luôn lấy màu/ký hiệu đầu bảng (tròn — dễ nhận nhất) bất kể mấy năm.
 export function kyHieuNam(chiSo, tongSoNam) {
   return KY_HIEU[(tongSoNam - 1 - chiSo) % KY_HIEU.length];
@@ -65,24 +85,28 @@ export function LegendItem({ label, shape, dashed, color = MAU_DUONG }) {
 export function BarChartNam({ lichSu }) {
   const years = Object.keys(lichSu).sort();
   const tongNam = years.map((y) => lichSu[y].reduce((a, b) => a + b, 0));
-  const W = 820, H = 200, PAD_L = 60, PAD_R = 16, PAD_T = 24, PAD_B = 26;
+  const W = 820, H = 200, PAD_R = 16;
+  const [refBoc, co] = useCoChuSvg(W);
+  // Lề trên/dưới theo cỡ chữ thật: khung hẹp chữ to lên, nhãn năm không đè cột.
+  const PAD_T = co(24), PAD_B = co(28);
+  // Chừa ~12% trên đỉnh cột cho nhãn số rồi mới làm tròn lên số đẹp.
+  const maxVal = dinhTrucDep(Math.max(...tongNam, 1) * 1.12, 2);
+  const MOC = [0, 0.5, 1];
+  const PAD_L = lePhaiTheoNhan(MOC.map((f) => fmt(maxVal * f)), co);
   const plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
-  const maxVal = Math.max(...tongNam, 1) * 1.12;
 
   // Cột hẹp lại khi ít năm để không thành khối bự chiếm hết chart
   const slotW = plotW / years.length;
   const barW = Math.min(slotW * 0.5, 90);
 
-  const [refBoc, co] = useCoChuSvg(W);
-
   return (
     <div ref={refBoc} className="w-full">
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto select-none">
-        {[0, 0.5, 1].map((f) => (
+        {MOC.map((f) => (
           <g key={f}>
             <line x1={PAD_L} x2={W - PAD_R} y1={PAD_T + plotH * (1 - f)} y2={PAD_T + plotH * (1 - f)}
               stroke="#e2e8f0" strokeWidth={co(1)} />
-            <text x={PAD_L - 8} y={PAD_T + plotH * (1 - f) + co(4)} fontSize={co(11)}
+            <text x={PAD_L - co(8)} y={PAD_T + plotH * (1 - f) + co(4)} fontSize={co(11)}
               textAnchor="end" fill="#64748b" fontFamily="ui-monospace, monospace">
               {fmt(maxVal * f)}
             </text>
@@ -116,16 +140,19 @@ export function BarChartNam({ lichSu }) {
  */
 export default function ChartDongBo({ lichSu, deXuat = null, onDragPoint }) {
   const choXem = deXuat === null;
-  const W = 820, H = 380, PAD_L = 60, PAD_R = 16, PAD_T = 20, PAD_B = 30;
-  const plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
+  const W = 820, H = 380, PAD_R = 16;
   const svgRef = useRef(null);
   const draggingIdx = useRef(null);
 
   const years = Object.keys(lichSu).sort();
   const allValues = [...years.flatMap((y) => lichSu[y]), ...(deXuat || [])];
-  const maxVal = Math.max(...allValues, 1) * 1.15;
+  const MOC = [0, 0.25, 0.5, 0.75, 1];
+  const maxVal = dinhTrucDep(Math.max(...allValues, 1) * 1.05, MOC.length - 1);
 
   const [refBoc, co] = useCoChuSvg(W);
+  const PAD_T = co(20), PAD_B = co(30);
+  const PAD_L = lePhaiTheoNhan(MOC.map((f) => fmt(maxVal * f)), co);
+  const plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
 
   const x = (i) => PAD_L + (i / 11) * plotW;
   const y = (v) => PAD_T + plotH - (v / maxVal) * plotH;
@@ -152,11 +179,11 @@ export default function ChartDongBo({ lichSu, deXuat = null, onDragPoint }) {
         onPointerMove={choXem ? undefined : handlePointerMove}
         onPointerUp={choXem ? undefined : handlePointerUp}
         onPointerLeave={choXem ? undefined : handlePointerUp}>
-        {[0, 0.25, 0.5, 0.75, 1].map((f) => (
+        {MOC.map((f) => (
           <g key={f}>
             <line x1={PAD_L} x2={W - PAD_R} y1={PAD_T + plotH * (1 - f)} y2={PAD_T + plotH * (1 - f)}
               stroke="#e2e8f0" strokeWidth={co(1)} />
-            <text x={PAD_L - 8} y={PAD_T + plotH * (1 - f) + co(4)} fontSize={co(11)}
+            <text x={PAD_L - co(8)} y={PAD_T + plotH * (1 - f) + co(4)} fontSize={co(11)}
               textAnchor="end" fill="#64748b" fontFamily="ui-monospace, monospace">
               {fmt(maxVal * f)}
             </text>

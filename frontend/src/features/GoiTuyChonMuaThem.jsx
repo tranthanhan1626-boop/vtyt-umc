@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, ChevronRight, PackagePlus, Search } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
+import { dichLoi } from "../lib/dichLoi";
 
 const NHAN_LOAI = {
   dau_thau_rong_rai: "Gói 18 tháng",
@@ -38,7 +39,7 @@ export default function GoiTuyChonMuaThem({ profile }) {
       .order("nam", { ascending: false }).order("thang_moc", { ascending: false })
       .range(f, t), { order: ["phien_trinh_ky_id", "khoa", "ma_quan_ly"] });
     if (res.error) {
-      setLoi(`Không đọc được hạn mức mua thêm từ revision trình ký: ${res.error.message}`);
+      setLoi(`Không đọc được hạn mức mua thêm từ bản chốt trình ký: ${dichLoi(res.error)}`);
       setRows([]);
     } else {
       // Chỉ hai loại gói này có điều khoản tùy chọn mua thêm 30%.
@@ -94,13 +95,13 @@ export default function GoiTuyChonMuaThem({ profile }) {
       p_khoa: r.khoa, p_ma_quan_ly: r.ma_quan_ly, p_so_luong: so,
     });
     setDangLuu("");
-    if (error) { setLoiDong((p) => ({ ...p, [key]: error.message })); return; }
+    if (error) { setLoiDong((p) => ({ ...p, [key]: dichLoi(error) })); return; }
     setSoNhap((p) => ({ ...p, [key]: "" }));
     setThongBao(`Đã kích hoạt ${fmt(so)} cho ${r.khoa} · mã quản lý ${r.ma_quan_ly}.`);
     await tai();
   };
 
-  if (loading) return <div className="p-4 text-sm text-slate-400">Đang tải hạn mức từ revision trình ký…</div>;
+  if (loading) return <div className="p-4 text-sm text-slate-400">Đang tải hạn mức từ bản chốt trình ký…</div>;
   if (loi) return <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{loi}</div>;
 
   return <div className="space-y-5">
@@ -110,8 +111,8 @@ export default function GoiTuyChonMuaThem({ profile }) {
         <div>
           <h2 className="font-semibold text-slate-800">Gói tùy chọn mua thêm</h2>
           <p className="mt-1 max-w-3xl text-xs leading-relaxed text-slate-500">
-            Chỉ hiển thị gói đã có revision trình ký chính thức. Trần mỗi khoa × mã quản lý bằng
-            <b> 30% tổng số trúng đã phân bổ, luôn làm tròn xuống</b>. Số đã kích hoạt được giữ xuyên các revision.
+            Chỉ hiển thị gói đã có bản chốt trình ký chính thức. Trần mỗi khoa × mã quản lý bằng
+            <b> 30% tổng số trúng đã phân bổ, luôn làm tròn xuống</b>. Số đã kích hoạt được giữ qua các lần chốt lại.
           </p>
         </div>
       </div>
@@ -133,7 +134,7 @@ export default function GoiTuyChonMuaThem({ profile }) {
         </label>
       </div>
       {goiLoc.length === 0 ? <p className="rounded-lg bg-slate-50 p-6 text-center text-sm text-slate-500">
-        Chưa có revision trình ký chính thức nào phát sinh hạn mức mua thêm.
+        Chưa có bản chốt trình ký chính thức nào phát sinh hạn mức mua thêm.
       </p> : <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">{goiLoc.map((g) => {
         const mo = g.key === goiChon;
         const tran = g.rows.reduce((s, r) => s + Number(r.tran_mua_them_30 || 0), 0);

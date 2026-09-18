@@ -16,6 +16,7 @@ import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import { docGioDeXuat, ghiGioDeXuat } from "../lib/gioDeXuat";
 import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
+import { dichLoi } from "../lib/dichLoi";
 
 // Chỉ ba giai đoạn có thể làm mã rớt. Ký hợp đồng và hàng về đợt đầu không
 // còn xuất hiện trên màn ĐVSD.
@@ -94,7 +95,7 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
         .order("ma_hang").range(f, t), { order: "id" }));
     }
     const [g, k, d, m, p] = await Promise.all(tacVu);
-    if (g.error) setLoi(`Không đọc được danh sách gói thầu: ${g.error.message}`);
+    if (g.error) setLoi(`Không đọc được danh sách gói thầu: ${dichLoi(g.error)}`);
     setGoi(g.data || []);
     setKetQua(k.error ? [] : k.data || []);
     setDot(d.data || []);
@@ -139,7 +140,7 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
     const { error, count } = await supabase.from("goi_thau_moc")
       .update({ trang_thai: daXong ? "chua_bat_dau" : "hoan_thanh", ngay: daXong ? null : new Date().toISOString().slice(0, 10) }, { count: "exact" })
       .eq("id", moc.id);
-    if (error || !count) { setLoi(error?.message || "Không cập nhật được mốc tiến độ."); return; }
+    if (error || !count) { setLoi(dichLoi(error) || "Không cập nhật được mốc tiến độ."); return; }
     await tai();
   };
 
@@ -202,7 +203,7 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
       p_nam: Number(dotNguon?.nam || formGoi.nam),
       p_dot_id: Number(formGoi.dotId),
     });
-    if (error) { setLoi(error.message); return; }
+    if (error) { setLoi(dichLoi(error)); return; }
     setMoTao(false);
     setFormGoi((p) => ({ ...p, ten: "", dotId: "" }));
     await tai();
@@ -258,7 +259,7 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
       p_ly_do: formRot.lyDo.trim(),
     });
     if (error) {
-      setLoi(error.message);
+      setLoi(dichLoi(error));
       setDangLuuRot(false);
       return;
     }
@@ -286,7 +287,7 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
       .eq("dot_id", dotDich.id)
       .maybeSingle();
     if (loiDoc) {
-      setLoi(`Không đọc được giỏ gói bổ sung: ${loiDoc.message}`);
+      setLoi(`Không đọc được giỏ gói bổ sung: ${dichLoi(loiDoc)}`);
       setDangChuyen(null);
       return;
     }
@@ -339,7 +340,7 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
       noi_dung: gio,
     }, { onConflict: "don_vi,dot_id" });
     if (error) {
-      setLoi(`Không chuyển được vào giỏ: ${error.message}`);
+      setLoi(`Không chuyển được vào giỏ: ${dichLoi(error)}`);
       setDangChuyen(null);
       return;
     }

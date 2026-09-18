@@ -61,4 +61,7 @@ def test_ui_xoa_test_tu_an_o_production():
     assert "import.meta.env.DEV" in CLIENT
     assert "supabaseUrl.includes(MA_DU_AN_STAGING)" in CLIENT
     assert "VITE_ENABLE_TEST_DELETE" in CLIENT
-    assert "if (!BAT_XOA_DU_LIEU_TEST" in NUT_XOA
+    # 18/09/2026: nút còn ẩn với tài khoản khoa. Cổng môi trường vẫn phải
+    # nằm trong điều kiện — `duocThayNutXoaTest()` gộp cả hai.
+    assert "if (!duocThayNutXoaTest()" in NUT_XOA
+    assert "return BAT_XOA_DU_LIEU_TEST && (vaiTroHienTai" in CLIENT

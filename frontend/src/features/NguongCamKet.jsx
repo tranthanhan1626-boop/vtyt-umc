@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Plus, Trash2, SlidersHorizontal, ChevronDown, ChevronRight } from "lucide-react";
 import { supabase } from "../supabaseClient";
+import { dichLoi } from "../lib/dichLoi";
 
 // PĐD chỉnh ngưỡng cam kết ngay trên web (bảng `moc_cam_ket_su_dung`).
 //
@@ -85,13 +86,13 @@ export default function NguongCamKet({ moc, onLuuXong }) {
     if (boDi.length) {
       const { error, count } = await supabase.from("moc_cam_ket_su_dung")
         .delete({ count: "exact" }).in("thang_thu", boDi);
-      if (error) return hong(error.message);
+      if (error) return hong(dichLoi(error));
       if (!count) return hong("Không xoá được mốc nào — tài khoản này không có quyền sửa ngưỡng.");
     }
     if (ds.length) {
       const { error, count } = await supabase.from("moc_cam_ket_su_dung")
         .upsert(ds, { onConflict: "thang_thu", count: "exact" });
-      if (error) return hong(error.message);
+      if (error) return hong(dichLoi(error));
       if (!count) return hong("Không lưu được — tài khoản này không có quyền sửa ngưỡng.");
     }
     setDangLuu(false);

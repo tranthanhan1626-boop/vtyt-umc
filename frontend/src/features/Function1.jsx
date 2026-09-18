@@ -1,6 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { Search, ChevronDown, ChevronLeft, Check, Package, ChevronRight, AlertTriangle, ShoppingCart, X, ExternalLink } from "lucide-react";
+import { Search, ChevronDown, ChevronLeft, Check, Package, ChevronRight, AlertTriangle, ShoppingCart, X, ExternalLink, HelpCircle } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import CanhBaoMaTrungDot from "./CanhBaoMaTrungDot";
 import ChartDongBo, { BarChartNam, LegendItem, fmt, kyHieuNam, mauNam } from "../components/ChartDongBo";
@@ -18,6 +19,9 @@ import {
   tongPhanBoQuyDoi,
 } from "../lib/deXuatMaQuanLy";
 import { moDanhMucDeXuat } from "../lib/moManExcel";
+import { dichLoi } from "../lib/dichLoi";
+import ThanhTienTrinh, { diToiPhanTu } from "../components/ThanhTienTrinh";
+import { useTienTrinhKhoa } from "../lib/useTienTrinh";
 
 const LY_DO_OPTIONS = [
   { value: "theo_lich_su", label: "Theo lịch sử sử dụng" },
@@ -371,7 +375,7 @@ export function FormNhomKyThuat({ giaTri, doiGiaTri, onLuu, onHuy, dangLuu, loi,
       {loi && <p className="text-xs text-red-600">{loi}</p>}
       <div className="flex gap-2">
         <button onClick={onLuu} disabled={dangLuu}
-          className="px-3 py-1.5 text-xs rounded-md bg-umc-700 text-white hover:bg-umc-800 disabled:opacity-40 font-medium">
+          className="px-3 py-1.5 text-xs rounded-md bg-umc-600 text-white hover:bg-umc-700 disabled:opacity-40 font-medium">
           {dangLuu ? "Đang gửi..." : "Gửi đề nghị"}
         </button>
         <button onClick={onHuy} className="px-3 py-1.5 text-xs rounded-md border border-slate-300 text-slate-600 hover:bg-white">
@@ -379,6 +383,15 @@ export function FormNhomKyThuat({ giaTri, doiGiaTri, onLuu, onHuy, dangLuu, loi,
         </button>
       </div>
     </div>
+  );
+}
+
+/** Số thứ tự bước ①②③ ở đầu mỗi khối của màn đề xuất. */
+function SoBuoc({ so }) {
+  return (
+    <span aria-hidden className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-umc-600 text-sm font-bold text-white">
+      {so}
+    </span>
   );
 }
 
@@ -572,7 +585,7 @@ export default function Function1({
     } else if (!error) {
       setCoSchemaMaQuanLy(true);
     }
-    if (error) setLoiView("Không đọc được v_nhom_co_ma_hang — kiểm tra view/RLS trong Supabase (schema hiện tại xem backend/sql/schema.sql).");
+    if (error) setLoiView("Không tải được dữ liệu. Bấm Tải lại; nếu vẫn lỗi, báo Phòng Điều dưỡng.");
     else setDsNhom(data);
   }, []);
 
@@ -964,6 +977,30 @@ export default function Function1({
     maHangTrongNhom, lichSuThang,
   ]);
 
+  // ① Đơn vị tính: null = để hệ tự quyết (thu gọn khi nhóm chỉ có một ĐVT và
+  // quy đổi đã hợp lệ); người dùng bấm mở/đóng thì giữ theo ý họ cho nhóm đó.
+  const [moDvt, setMoDvt] = useState(null);
+  // ② Lịch sử sử dụng: MỞ SẴN — trước đợt 3 hai biểu đồ luôn hiện.
+  const [moLichSu, setMoLichSu] = useState(true);
+  useEffect(() => { setMoDvt(null); }, [nhomChon]);
+  const dvtDangMo = !tinhTrangQuyDoi.hopLe
+    || (moDvt ?? dsDvtNhom.length > 1);
+
+  // L7 — Escape đóng ngăn giỏ.
+  useEffect(() => {
+    if (!moGio) return undefined;
+    const khiBamPhim = (e) => { if (e.key === "Escape") setMoGio(false); };
+    window.addEventListener("keydown", khiBamPhim);
+    return () => window.removeEventListener("keydown", khiBamPhim);
+  }, [moGio]);
+  // Thanh giỏ đang hiện → báo cho <body> để thông báo góc phải (App.jsx,
+  // .umc-toast-stack) nhích lên, không đè lên thanh.
+  useEffect(() => {
+    if (toanVien) return undefined;
+    document.body.classList.add("co-thanh-gio");
+    return () => document.body.classList.remove("co-thanh-gio");
+  }, [toanVien]);
+
   const layNhap = (maHang) => banNhap[maHang] || MAC_DINH_NHAP(goi);
 
   // Mọi thay đổi giỏ đi qua đây để state và localStorage không bao giờ lệch nhau.
@@ -1107,7 +1144,7 @@ export default function Function1({
       .filter((x) => x.soLuong > 0);
     let loi = "";
     if (!coSchemaMaQuanLy)
-      loi = "Staging chưa chạy patch_x2_de_xuat_theo_ma_quan_ly.sql.";
+      loi = "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_x2_de_xuat_theo_ma_quan_ly). Vui lòng báo Phòng Điều dưỡng.";
     else if (!tinhTrangQuyDoi.hopLe)
       loi = "Mã quản lý chưa đủ hệ số quy đổi đơn vị.";
     else if (!(tongNhomDeXuat > 0))
@@ -1332,6 +1369,29 @@ export default function Function1({
     return [...map.entries()].map(([ten, nhom]) => [ten, [...nhom.values()]]);
   }, [gioHang, tenGoiHienTai]);
 
+  // ---- THANH TIẾN TRÌNH của khoa (đợt 2, 18/09/2026) ----------------------
+  // Chỉ đọc: DOT_GOI của (đợt đang gửi × gói con đang đứng). Số mã trong giỏ
+  // lấy thẳng từ `gioHang` của màn này — không đọc lại server mỗi lần thêm mã.
+  // `daGui.length` đổi ngay sau khi gửi giỏ thành công → đọc lại server.
+  const coThanhTienTrinh = !toanVien && !!khoaHienTai && !!goiIdDanhMuc && !!dotDung?.id;
+  const { tienTrinh: tienTrinhKhoa, dangTai: dangTaiTienTrinh } = useTienTrinhKhoa({
+    dotId: coThanhTienTrinh ? dotDung.id : null,
+    goiId: goiIdDanhMuc,
+    khoa: khoaHienTai,
+    soMaTrongGio: gioHang.length,
+    lamMoi: daGui.length,
+  });
+  const moDanhMucCuaKhoa = () => moDanhMucDeXuat(goiIdDanhMuc, khoaHienTai, dotDung?.id);
+  // Mỗi bước đi tới đúng chỗ làm bước đó — chỉ dùng đường đã có sẵn trên màn:
+  // ô tìm nhóm · nút giỏ · Danh mục đề xuất (tab riêng, lib/moManExcel.js).
+  const DI_TOI_KHOA = {
+    de_xuat: { nhan: "Tìm mã để đề xuất", onClick: () => diToiPhanTu("f1-tim-nhom") },
+    gui: { nhan: "Mở giỏ", onClick: () => setMoGio(true) },
+    xac_nhan: { nhan: "Mở Danh mục đề xuất", onClick: moDanhMucCuaKhoa },
+    cho_q: { nhan: "Xem Danh mục đề xuất", onClick: moDanhMucCuaKhoa },
+    ket_qua: { nhan: "Xem Danh mục đề xuất", onClick: moDanhMucCuaKhoa },
+  };
+
   const submit = async () => {
     setLoiLuu("");
     if (gioHang.length === 0) {
@@ -1401,7 +1461,7 @@ export default function Function1({
       }));
     }
     if (error) {
-      setLoiLuu(`Không gửi được giỏ đề xuất: ${error.message}`);
+      setLoiLuu(`Không gửi được giỏ đề xuất: ${dichLoi(error)}`);
       setDangLuu(false);
       return;
     }
@@ -1415,7 +1475,7 @@ export default function Function1({
         .eq("nam_de_xuat", NAM_DE_XUAT)
         .is("dot_id", null)
         .in("ma_hang", gioHang.map((n) => n.ma_hang));
-      if (eDot) setLoiLuu(`Đã gửi nhưng chưa gắn được đợt: ${eDot.message}`);
+      if (eDot) setLoiLuu(`Đã gửi nhưng chưa gắn được đợt: ${dichLoi(eDot)}`);
     }
 
     const ketQua = gioHang.map((nhap) => ({
@@ -1458,134 +1518,32 @@ export default function Function1({
 
   return (
     <>
-      {!toanVien && (
-        <>
-          <button type="button" onClick={() => setMoGio(true)}
-            className="fixed right-6 top-20 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full border border-umc-200 bg-white text-umc-800 shadow-lg hover:bg-umc-50"
-            title="Mở giỏ đề xuất" aria-label="Mở giỏ đề xuất">
-            <ShoppingCart size={21} />
-            {gioTheoNhom.length > 0 && (
-              <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-red-600 px-1 text-center text-[11px] font-bold leading-5 text-white">
-                {gioTheoNhom.length}
-              </span>
-            )}
-          </button>
-          {moGio && (
-            <div className="fixed inset-0 z-50 bg-slate-900/30" onMouseDown={() => setMoGio(false)}>
-              <aside className="absolute right-0 top-0 flex h-full w-full max-w-xl flex-col bg-white shadow-2xl"
-                onMouseDown={(e) => e.stopPropagation()}>
-                <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-                  <div>
-                    <h3 className="font-semibold text-slate-800">Giỏ đề xuất</h3>
-                    <p className="text-xs text-slate-400">
-                      {gioTheoNhom.length} mã quản lý · {gioHang.length} mã hàng
-                    </p>
-                  </div>
-                  <button type="button" onClick={() => setMoGio(false)}
-                    className="rounded p-1 text-slate-400 hover:bg-slate-100">
-                    <X size={19} />
-                  </button>
-                </div>
 
-                <div className="flex-1 overflow-y-auto p-4">
-                  {gioTheoGoi.length === 0 ? (
-                    <p className="rounded-lg border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
-                      Giỏ đang trống. Hãy chốt tổng một mã quản lý rồi thêm vào giỏ.
-                    </p>
-                  ) : (
-                    <div className="space-y-2">
-                      {gioTheoGoi.map(([tenGoi, dsNhomGoi]) => {
-                        const dangMo = goiGioMo === tenGoi;
-                        return (
-                          <div key={tenGoi} className="overflow-hidden rounded-lg border border-slate-200">
-                            <button type="button"
-                              onClick={() => setGoiGioMo(dangMo ? null : tenGoi)}
-                              className="flex w-full items-center gap-2 bg-slate-50 px-3 py-2.5 text-left">
-                              <Package size={15} className="text-umc-700" />
-                              <span className="flex-1 text-sm font-medium text-slate-700">{tenGoi}</span>
-                              <span className="text-xs text-slate-400">{dsNhomGoi.length} mã quản lý</span>
-                              <ChevronDown size={14} className={dangMo ? "rotate-180" : ""} />
-                            </button>
-                            {dangMo && (
-                              <div className="space-y-3 p-3">
-                                {dsNhomGoi.map((g) => (
-                                  <div key={g.ma} className="rounded-md border border-slate-100 p-2.5">
-                                    <div className="flex items-start gap-2">
-                                      <div className="min-w-0 flex-1">
-                                        <div className="font-mono text-xs font-semibold text-blue-700">{g.ma}</div>
-                                        <div className="truncate text-xs text-slate-600">{g.ten}</div>
-                                        <div className="mt-1 text-xs font-medium text-umc-800">
-                                          Tổng mã quản lý: {fmt(g.tong)} {g.dvt}
-                                        </div>
-                                        {g.bangQuyDoi && (
-                                          <div className="mt-1 text-[11px] text-slate-400">
-                                            Quy đổi: {Object.entries(g.bangQuyDoi)
-                                              .map(([dvt, heSo]) => `1 ${dvt} = ${fmt(heSo)} ${g.dvt}`)
-                                              .join(" · ")}
-                                          </div>
-                                        )}
-                                      </div>
-                                      <button type="button" onClick={() => boNhomKhoiGio(g.ma)}
-                                        className="text-slate-300 hover:text-red-600" title="Bỏ cả mã quản lý khỏi giỏ">
-                                        <X size={14} />
-                                      </button>
-                                    </div>
-                                    <div className="mt-2 space-y-1 border-t border-slate-100 pt-2">
-                                      {g.dong.map((n) => (
-                                        <div key={n.ma_hang} className="flex items-center gap-2 text-xs">
-                                          <span className="w-16 font-mono text-slate-400">{n.ma_hang}</span>
-                                          <span className="min-w-0 flex-1 truncate">{n.ten_vat_tu}</span>
-                                          <span className="font-mono text-slate-600">{fmt(n.soLuong)} {n.dvt}</span>
-                                          <span className="font-mono text-umc-700">= {fmt(n.soLuongQuyDoi)} {n.dvtMaQuanLy}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                <div className="border-t border-slate-200 p-4">
-                  {dsDot.length > 1 && (
-                    <select value={dotChon || ""} onChange={(e) => setDotChon(Number(e.target.value) || null)}
-                      className="mb-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-                      <option value="">— Chọn đợt gửi đề xuất —</option>
-                      {dsDot.map((d) => <option key={d.id} value={d.id}>{d.ten}</option>)}
-                    </select>
-                  )}
-                  {loiLuu && <p className="mb-2 text-xs text-red-600">{loiLuu}</p>}
-                  <div className="flex items-center gap-2">
-                    <button type="button" onClick={submit}
-                      disabled={dangLuu || dangTaiDot || gioHang.length === 0 || !dotDung}
-                      className="flex-1 rounded-md bg-umc-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-40">
-                      {dangLuu ? "Đang gửi…" : `Gửi ${gioTheoNhom.length} mã quản lý`}
-                    </button>
-                    {gioHang.length > 0 && (
-                      <button type="button" onClick={xoaCaGio}
-                        className="rounded-md border border-slate-200 px-3 py-2 text-xs text-slate-500 hover:text-red-600">
-                        Xóa giỏ
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </aside>
-            </div>
-          )}
-        </>
+      {/* Thanh tiến trình — khoa luôn biết đang ở bước nào của đợt × gói con
+          này và việc tiếp theo là gì. (Nút giỏ nổi góc trên đã bỏ ở đợt 3 —
+          thay bằng thanh giỏ dính đáy màn, nên không cần chừa lề phải nữa.) */}
+      {coThanhTienTrinh && (
+        <div className="mb-4 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+          <ThanhTienTrinh
+            dangTai={dangTaiTienTrinh}
+            buoc={(tienTrinhKhoa?.buoc || []).map((b) => ({ ...b, onDi: DI_TOI_KHOA[b.ma]?.onClick }))}
+            viecTiepTheo={tienTrinhKhoa?.viecTiepTheo || ""}
+            nutDi={tienTrinhKhoa?.buocHienTai ? DI_TOI_KHOA[tienTrinhKhoa.buocHienTai] : null}
+          />
+        </div>
       )}
 
-      <div className="grid grid-cols-12 gap-6">
-      {/* Cột trái: tìm nhóm kỹ thuật */}
-      <div className="col-span-12 lg:col-span-4 space-y-3">
+      {/* pb-28: chừa chỗ cho thanh giỏ dính đáy màn (cao ~76px, có thể xuống
+          hai dòng ở màn hẹp), dòng cuối không bị che. */}
+      <div className={`grid grid-cols-12 gap-6 ${toanVien ? "" : "pb-28"}`}>
+      {/* Cột trái: tìm nhóm kỹ thuật. Lỗi N1: cột này DÍNH khi cuộn và tự co
+          theo khung nhìn, thay vì bị kéo dài bằng cột phải (trắng >1.000px). */}
+      {/* VỪA-5 (QA3): cả cột co theo khung nhìn (trừ thanh trên 6rem + thanh
+          giỏ ~5.5rem), danh sách nhóm ăn hết phần còn lại thay vì max-h cứng. */}
+      <div className={`col-span-12 lg:col-span-4 space-y-3 lg:sticky lg:top-24 lg:self-start lg:flex lg:flex-col ${toanVien ? "lg:max-h-[calc(100vh-7rem)]" : "lg:max-h-[calc(100vh-11.5rem)]"}`}>
         {chonDuocDonVi && (
           <div className="bg-white border border-slate-200 rounded-lg p-3">
-            <label className="text-xs text-slate-400 block mb-1.5">Khoa đề xuất</label>
+            <label className="text-xs text-slate-500 block mb-1.5">Khoa đề xuất</label>
             <div className="relative">
               <select value={donVi} onChange={(e) => setDonVi(e.target.value)}
                 className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-umc-500">
@@ -1624,46 +1582,54 @@ export default function Function1({
           </button>
         )}
 
-        <div className="bg-white border border-slate-200 rounded-lg p-3">
-          <label className="text-xs text-slate-400 block mb-1.5">Tìm nhóm kỹ thuật hoặc mã hàng</label>
-          <div className="relative mb-3">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)}
-              placeholder="vd K00.22.000.04, tên nhóm, mã hàng hoặc tên vật tư"
-              className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-umc-500" />
+        <div className="bg-white border border-slate-200 rounded-lg p-3 lg:flex lg:min-h-0 lg:flex-initial lg:flex-col">
+          <label htmlFor="f1-tim-nhom" className="sr-only">Tìm nhóm kỹ thuật hoặc mã hàng</label>
+          {/* VỪA-5: ô "Hiện cả mã chưa từng dùng" lên CÙNG DÒNG ô tìm — lời
+              giải thích đầy đủ nằm ở title. */}
+          <div className="mb-2 flex items-center gap-2">
+            <div className="relative min-w-0 flex-1">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input id="f1-tim-nhom" value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)}
+                placeholder="Tìm nhóm, mã hàng" title="Gõ mã nhóm, tên nhóm hoặc mã hàng"
+                className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-umc-500" />
+            </div>
+            {!toanVien && (
+              <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-xs leading-tight text-slate-600"
+                title="Hiện cả mã chưa từng dùng ở khoa này (để đề xuất kỹ thuật mới)">
+                <input type="checkbox" checked={hienCaChuaDung} onChange={(e) => setHienCaChuaDung(e.target.checked)}
+                  aria-label="Hiện cả mã chưa từng dùng ở khoa này (để đề xuất kỹ thuật mới)"
+                  className="rounded border-slate-300 text-umc-700 focus:ring-umc-500" />
+                <span>Cả mã<br />chưa dùng</span>
+              </label>
+            )}
           </div>
-          <p className="text-xs text-slate-400 mb-2">
-            {tuKhoa.trim() ? `${nhomLoc.length} nhóm khớp` : `${dsNhomHienThi.length} nhóm — gõ để tìm`}
-            <span className="text-slate-300"> · 50 nhóm/trang</span>
+          <p className="text-xs text-slate-500 mb-2">
+            {tuKhoa.trim() ? `${nhomLoc.length} nhóm khớp` : `${dsNhomHienThi.length} nhóm`}
             {!toanVien && nhomCuaKhoa && !hienCaChuaDung && (
-              <span className="text-slate-300"> · đã lọc theo khoa (tổng {dsNhom.length})</span>
+              <span title="Chỉ hiện nhóm khoa đã từng dùng — 50 nhóm/trang"> · lọc theo khoa (tổng {dsNhom.length})</span>
             )}
           </p>
 
-          {/* Chỉ có nghĩa khi đang lọc theo 1 khoa — toàn viện vốn đã hiện đủ */}
-          {!toanVien && (
-            <label className="flex items-start gap-2 mb-3 text-xs text-slate-500 cursor-pointer">
-              <input type="checkbox" checked={hienCaChuaDung} onChange={(e) => setHienCaChuaDung(e.target.checked)}
-                className="mt-0.5 rounded border-slate-300 text-umc-700 focus:ring-umc-500" />
-              <span>Hiện cả mã chưa từng dùng ở khoa này <span className="text-slate-400">(để đề xuất kỹ thuật mới)</span></span>
-            </label>
-          )}
           {!toanVien && soNhomDangTamAn > 0 && (
-            <p className="mb-3 rounded-md border border-violet-200 bg-violet-50 px-2.5 py-2 text-xs text-violet-800">
-              {soNhomDangTamAn} mã quản lý đang nằm trong giỏ/hồ sơ nên tạm ẩn
-              ({soMaDangTamAn} mã hàng). Cả mã quản lý chỉ hiện lại sau khi PĐD
-              chốt “Đã đi thầu”.
+            <p className="mb-2 flex items-center gap-1.5 rounded-md border border-violet-200 bg-violet-50 px-2.5 py-1.5 text-xs text-violet-800"
+              title={`${soNhomDangTamAn} mã quản lý (${soMaDangTamAn} mã hàng) đang nằm trong giỏ/hồ sơ nên tạm ẩn. Cả mã quản lý chỉ hiện lại sau khi PĐD chốt “Đã đi thầu”.`}>
+              <span className="min-w-0 flex-1 truncate">
+                {soNhomDangTamAn} mã quản lý đang nằm trong giỏ/hồ sơ nên tạm ẩn
+              </span>
+              <HelpCircle size={14} aria-label="Vì sao tạm ẩn" className="shrink-0 text-violet-600" />
             </p>
           )}
-          <div className="space-y-1 max-h-[60vh] overflow-y-auto">
+          <div className="space-y-1 max-h-[60vh] overflow-y-auto lg:max-h-none lg:min-h-[9rem] lg:flex-initial">
             {nhomTrang.map((n) => (
               <button key={n.ma_quan_ly} onClick={() => setNhomChon(n.ma_quan_ly)}
-                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                className={`w-full text-left px-3 py-1.5 rounded-lg text-[13px] transition-colors ${
                   n.ma_quan_ly === nhomChon ? "bg-umc-50 text-umc-900 border border-umc-200" : "hover:bg-slate-50 border border-transparent"
                 }`}>
-                <div className="font-mono text-[15px] font-bold tracking-wide text-blue-700">{n.ma_quan_ly}</div>
-                <div className="mt-0.5 leading-snug text-slate-800">{n.ten_quan_ly}</div>
-                <div className="text-xs text-slate-400 mt-0.5">{n.so_ma_hang} mã hàng</div>
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="font-mono text-[15px] font-bold tracking-wide text-umc-700">{n.ma_quan_ly}</span>
+                  <span className="shrink-0 text-xs text-slate-500">{n.so_ma_hang} mã hàng</span>
+                </div>
+                <div className="line-clamp-2 leading-snug text-slate-800" title={n.ten_quan_ly}>{n.ten_quan_ly}</div>
                 {n.maHangKhop && (
                   <div className="text-xs text-umc-700 mt-1 border-t border-umc-100 pt-1">
                     Khớp mã hàng: {n.maHangKhop.map((v) => v.ma_hang).join(", ")}
@@ -1682,7 +1648,7 @@ export default function Function1({
               <label className="flex items-center gap-2 text-xs text-slate-500">
                 Trang
                 <select value={Math.min(trangNhom, tongTrangNhom)} onChange={(e) => setTrangNhom(Number(e.target.value))}
-                  className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-blue-700">
+                  className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-umc-700">
                   {Array.from({ length: tongTrangNhom }, (_, i) => i + 1).map((p) => (
                     <option key={p} value={p}>{p}</option>
                   ))}
@@ -1699,12 +1665,30 @@ export default function Function1({
         </div>
       </div>
 
-      {/* Cột phải: nhập số lượng cho từng mã hàng trong nhóm */}
+      {/* Cột phải: đề xuất MỘT mã quản lý, chia 3 bước có đánh số (đợt 3,
+          18/09/2026). Chỉ SẮP LẠI chỗ vẽ — mọi ô, điều kiện bật/tắt và hàm ghi
+          giữ nguyên như bản trước. */}
       <div className="col-span-12 lg:col-span-8 space-y-4">
         {!nhomChon ? (
-          <div className="text-sm text-slate-400 p-4">Chọn một nhóm kỹ thuật ở bên trái để bắt đầu đề xuất.</div>
+          <div className="flex min-h-[18rem] flex-col justify-center rounded-lg border border-dashed border-slate-300 bg-white/70 px-6 py-8 lg:min-h-[calc(100vh-15rem)]">
+            <p className="text-base font-semibold text-slate-800">Chọn một nhóm kỹ thuật ở bên trái để bắt đầu đề xuất.</p>
+            <p className="mt-1 text-sm text-slate-500">Mỗi mã quản lý đi qua ba bước, rồi vào giỏ:</p>
+            <ol className="mt-4 grid gap-3 sm:grid-cols-3">
+              {[
+                ["1", "Đơn vị tính", "Chọn ĐVT chuẩn và hệ số quy đổi (nhóm chỉ có một ĐVT thì bỏ qua)."],
+                ["2", "Tổng số", "Nhập tổng cho cả mã quản lý, xem gợi ý và lịch sử sử dụng."],
+                ["3", "Chia cho mã hàng", "Chia tổng xuống các mã hàng tương đương, nêu lý do nếu cần."],
+              ].map(([so, ten, moTa]) => (
+                <li key={so} className="rounded-lg border border-slate-200 bg-white p-3">
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-umc-50 text-xs font-bold text-umc-800">{so}</span>
+                  <p className="mt-2 text-sm font-semibold text-slate-800">{ten}</p>
+                  <p className="mt-0.5 text-xs leading-snug text-slate-500">{moTa}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
         ) : (
-          <>
+          <div className="space-y-4">
             <div className="bg-white border border-slate-200 rounded-lg p-4">
               <div className="flex items-baseline gap-2 mb-1">
                 <Package size={16} className="text-umc-700 shrink-0" />
@@ -1724,8 +1708,27 @@ export default function Function1({
               )}
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-lg overflow-x-auto">
-              <div className="m-3 rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+            {/* ① ĐƠN VỊ TÍNH — tự thu gọn khi nhóm chỉ có một ĐVT (không có gì để
+                quy đổi), nhưng vẫn mở ra xem được. Chưa hợp lệ thì luôn mở. */}
+            <section className="rounded-lg border border-slate-200 bg-white">
+              <button type="button" onClick={() => setMoDvt(!dvtDangMo)}
+                aria-expanded={dvtDangMo}
+                className="flex w-full items-center gap-3 px-4 py-3 text-left">
+                <SoBuoc so={1} />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-slate-800">Đơn vị tính</span>
+                  <span className="block truncate text-xs text-slate-500">
+                    ĐVT chuẩn: <b className="font-semibold text-slate-700">{dvtChuan || "chưa có"}</b>
+                    {dsDvtNhom.length < 2
+                      ? " · nhóm chỉ có một ĐVT, không cần quy đổi"
+                      : ` · ${dsDvtNhom.length} ĐVT trong nhóm`}
+                    {!tinhTrangQuyDoi.hopLe && " · còn thiếu hệ số quy đổi"}
+                  </span>
+                </span>
+                <ChevronDown size={16} className={`shrink-0 text-slate-500 transition-transform ${dvtDangMo ? "rotate-180" : ""}`} />
+              </button>
+              {dvtDangMo && (
+              <div className="mx-4 mb-4 rounded-lg border border-amber-200 bg-amber-50/60 p-3">
                 <div className="flex items-start gap-1.5">
                   <AlertTriangle size={13} className="mt-0.5 shrink-0 text-amber-700" />
                   <div>
@@ -1783,135 +1786,171 @@ export default function Function1({
                   </p>
                 )}
               </div>
+              )}
+            </section>
 
-              {tongNhom.nam.length > 0 && (
-                <div className="mb-3 border border-umc-200 bg-umc-50/50 rounded-lg p-3">
-                  <div className="flex items-baseline gap-2 flex-wrap mb-2">
-                    <span className="text-sm font-medium text-umc-900">
-                      Tổng theo mã quản lý {nhomChon}
-                    </span>
-                    <span className="text-xs text-slate-600">
-                      {tongNhom.soMaCoDung}/{tongNhom.soMaHang} mã hàng có phát sinh
-                      {toanVien ? " · toàn viện" : ` · ${khoaHienTai}`}
-                    </span>
-                  </div>
-
-                  <div className="flex gap-4 flex-wrap">
-                    {tongNhom.nam.map((n) => (
-                      <div key={n}>
-                        <div className="text-xs text-slate-500">{n}</div>
-                        <div className="text-lg font-semibold text-umc-900 tabular-nums leading-tight">
-                          {fmt(tongNhom.theoNam[n])}
-                          <span className="text-xs font-normal text-slate-500 ml-1">{tongNhom.dvtChuan}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Chart theo mã quản lý (đã cộng quy đổi mọi mã hàng trong
-                      nhóm) — trước đây vẽ theo từng mã hàng riêng, giờ số
-                      lượng chỉ nhập ở cấp mã quản lý nên chart cũng gộp lên
-                      cấp này để khớp đúng con số đang chốt. */}
-                  <div className="mt-3 bg-white border border-slate-200 rounded-lg p-3">
-                    <p className="text-xs text-slate-500 mb-2">
-                      Tổng số lượng sử dụng theo năm ({tongNhom.dvtChuan})
-                    </p>
-                    <BarChartNam lichSu={lichSuNhom} />
-                  </div>
-                  <div className="mt-3 bg-white border border-slate-200 rounded-lg p-3">
-                    <p className="text-xs text-slate-500 mb-2">
-                      Xu hướng sử dụng theo tháng (chỉ để tham khảo)
-                    </p>
-                    <ChartDongBo lichSu={lichSuNhom} />
-                    <div className="flex flex-wrap gap-4 mt-2 px-1">
-                      {tongNhom.nam.map((yr, i) => (
-                        <LegendItem key={yr} shape={kyHieuNam(i, tongNhom.nam.length)}
-                          color={mauNam(i, tongNhom.nam.length)} label={`Thực dùng ${yr}`} />
-                      ))}
-                    </div>
-                  </div>
+            {/* ② TỔNG SỐ — hàng đầu chỉ gồm các ô ngắn (lỗi N2); khối gợi ý mức
+                nằm toàn bề ngang ngay dưới; lịch sử gấp gọn, MỞ SẴN vì trước
+                đây hai biểu đồ luôn hiện. */}
+            <section className="rounded-lg border border-slate-200 bg-white p-4">
+              <div className="flex items-start gap-3">
+                <SoBuoc so={2} />
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-semibold text-slate-800">
+                    Chốt tổng số lượng cho mã quản lý {nhomChon}
+                  </h3>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Đề xuất một tổng chung bằng {dvtChuan || "đơn vị chuẩn"}, sau đó
+                    khoa tự chia xuống các mã hàng tương đương.
+                  </p>
                 </div>
+              </div>
+              {!coSchemaMaQuanLy && (
+                <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  Chưa thể thêm vào giỏ: hệ thống chưa được cập nhật đủ (mã patch_x2).
+                  Vui lòng báo Phòng Điều dưỡng.
+                </p>
               )}
 
-              <div className="border-t border-slate-200 p-4">
-                <h3 className="text-sm font-semibold text-slate-800">
-                  Chốt tổng số lượng cho mã quản lý {nhomChon}
-                </h3>
-                <p className="mt-1 text-xs text-slate-500">
-                  Đề xuất một tổng chung bằng {dvtChuan || "đơn vị chuẩn"}, sau đó
-                  khoa tự chia xuống các mã hàng tương đương.
-                </p>
-                {!coSchemaMaQuanLy && (
-                  <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                    Chưa thể thêm vào giỏ: Supabase staging cần chạy
-                    <span className="font-mono"> patch_x2_de_xuat_theo_ma_quan_ly.sql</span>.
-                  </p>
-                )}
-
-                <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+              <div className={`mt-4 grid grid-cols-1 gap-4 ${CO_TUY_CHON_30 ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600">
+                    Tổng số lượng đề xuất ({dvtChuan || "chưa có ĐVT chuẩn"})
+                    <span className="text-red-500"> *</span>
+                  </label>
+                  <input type="number" min="1" step="any" value={nhapNhom.soLuong}
+                    disabled={!tinhTrangQuyDoi.hopLe}
+                    onChange={(e) => capNhatNhapNhom("soLuong", e.target.value)}
+                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-right font-mono text-sm disabled:bg-slate-100"
+                  />
+                </div>
+                {CO_TUY_CHON_30 && (
                   <div>
-                    <label className="mb-1 block text-xs text-slate-500">
-                      Tổng số lượng đề xuất ({dvtChuan || "chưa có ĐVT chuẩn"})
-                      <span className="text-red-500"> *</span>
+                    <label className="mb-1 block text-xs font-medium text-slate-600">
+                      Trần tùy chọn mua thêm 30% ({dvtChuan || "ĐVT chuẩn"})
                     </label>
-                    <input type="number" min="1" step="any" value={nhapNhom.soLuong}
-                      disabled={!tinhTrangQuyDoi.hopLe}
-                      onChange={(e) => capNhatNhapNhom("soLuong", e.target.value)}
-                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-right font-mono text-sm disabled:bg-slate-100"
-                    />
-                    {tinhTrangQuyDoi.hopLe && CO_GOI_Y_SO_LUONG(goi) && (
-                      <GoiYSoLuong
-                        lichSu={lichSuNhom}
-                        thieu={thieuNhom}
-                        H={doDaiKy(nhapNhom)}
-                        giaTri={nhapNhom.soLuong}
-                        thangCuoiHIS={thangCuoiHIS}
-                        onChon={(v) => capNhatNhapNhom("soLuong", String(v))}
-                      />
-                    )}
+                    <motion.div
+                      key={tinhTuyChonMuaThem30(Math.round(Number(nhapNhom.soLuong) || 0))}
+                      initial={{ opacity: 0.5, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ type: "spring", bounce: 0.2, visualDuration: 0.25 }}
+                      className="w-full rounded-md border border-umc-200 bg-umc-50 px-3 py-2 text-right font-mono text-sm font-semibold text-umc-900"
+                    >
+                      {fmt(tinhTuyChonMuaThem30(Math.round(Number(nhapNhom.soLuong) || 0)))}
+                    </motion.div>
+                    <p className="mt-1 text-[11px] leading-snug text-slate-500">
+                      <b>30% của tổng, làm tròn xuống</b> — mức mua thêm tối đa sau đấu thầu, không tự động cộng vào số đề xuất.
+                    </p>
                   </div>
-                  {CO_TUY_CHON_30 && (
-                    <div>
-                      <label className="mb-1 block text-xs text-slate-500">
-                        Trần tùy chọn mua thêm 30% ({dvtChuan || "ĐVT chuẩn"})
-                      </label>
-                      <motion.div
-                        key={tinhTuyChonMuaThem30(Math.round(Number(nhapNhom.soLuong) || 0))}
-                        initial={{ opacity: 0.5, scale: 0.98 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ type: "spring", bounce: 0.2, visualDuration: 0.25 }}
-                        className="w-full rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-right font-mono text-sm font-semibold text-sky-900"
-                      >
-                        {fmt(tinhTuyChonMuaThem30(Math.round(Number(nhapNhom.soLuong) || 0)))}
-                      </motion.div>
-                      <p className="mt-1 text-[11px] leading-snug text-slate-400">
-                        <b>floor(30% × tổng)</b> — trần mua thêm sau đấu thầu, không tự động cộng vào số đề xuất.
-                      </p>
-                    </div>
-                  )}
-                  <div>
-                    <label className="mb-1 block text-xs text-slate-500">
-                      Dùng từ → đến <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex flex-wrap items-center gap-1">
+                )}
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600">
+                    Dùng từ → đến <span className="text-red-500">*</span>
+                  </label>
+                  {/* Lỗi V2: hai mốc xếp HAI DÒNG có nhãn, không để mũi tên rơi lẻ. */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-7 shrink-0 text-xs text-slate-500">Từ</span>
                       <ChonKyThang gtThang={nhapNhom.tuThang} gtNam={nhapNhom.tuNam}
                         doiThang={(v) => capNhatNhapNhom("tuThang", v)}
                         doiNam={(v) => capNhatNhapNhom("tuNam", v)} />
-                      <span className="text-slate-400">→</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-7 shrink-0 text-xs text-slate-500">Đến</span>
                       <ChonKyThang gtThang={nhapNhom.denThang} gtNam={nhapNhom.denNam}
                         doiThang={(v) => capNhatNhapNhom("denThang", v)}
                         doiNam={(v) => capNhatNhapNhom("denNam", v)} />
                     </div>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {doDaiKy(nhapNhom) > 0
-                        ? `${doDaiKy(nhapNhom)} tháng`
-                        : "Mốc kết thúc phải sau mốc bắt đầu"}
-                    </p>
                   </div>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {doDaiKy(nhapNhom) > 0
+                      ? `${doDaiKy(nhapNhom)} tháng`
+                      : "Mốc kết thúc phải sau mốc bắt đầu"}
+                  </p>
                 </div>
+              </div>
 
-                <div className="mt-4 rounded-lg border border-slate-200">
-                  <div className="grid grid-cols-[90px_1fr_110px_150px] gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+              {tinhTrangQuyDoi.hopLe && CO_GOI_Y_SO_LUONG(goi) && (
+                <div className="mt-4">
+                  <GoiYSoLuong
+                    lichSu={lichSuNhom}
+                    thieu={thieuNhom}
+                    H={doDaiKy(nhapNhom)}
+                    giaTri={nhapNhom.soLuong}
+                    thangCuoiHIS={thangCuoiHIS}
+                    onChon={(v) => capNhatNhapNhom("soLuong", String(v))}
+                  />
+                </div>
+              )}
+
+              {tongNhom.nam.length > 0 && (
+                <details className="group mt-4 rounded-lg border border-umc-200 bg-umc-50/50"
+                  open={moLichSu} onToggle={(e) => setMoLichSu(e.currentTarget.open)}>
+                  <summary className="flex cursor-pointer select-none items-center gap-2 px-3 py-2.5 text-sm font-medium text-umc-900">
+                    <ChevronRight size={15} className="shrink-0 transition-transform group-open:rotate-90" />
+                    Xem lịch sử sử dụng
+                    <span className="text-xs font-normal text-slate-600">
+                      · {tongNhom.soMaCoDung}/{tongNhom.soMaHang} mã hàng có phát sinh
+                      {toanVien ? " · toàn viện" : ` · ${khoaHienTai}`}
+                    </span>
+                  </summary>
+                  <div className="px-3 pb-3">
+                    <p className="text-xs text-slate-600">Tổng theo mã quản lý {nhomChon}</p>
+                    <div className="mt-1 flex gap-4 flex-wrap">
+                      {tongNhom.nam.map((n) => (
+                        <div key={n}>
+                          <div className="text-xs text-slate-500">{n}</div>
+                          <div className="text-lg font-semibold text-umc-900 tabular-nums leading-tight">
+                            {fmt(tongNhom.theoNam[n])}
+                            <span className="text-xs font-normal text-slate-500 ml-1">{tongNhom.dvtChuan}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Chart theo mã quản lý (đã cộng quy đổi mọi mã hàng trong
+                        nhóm) — số lượng chỉ nhập ở cấp mã quản lý nên chart cũng
+                        gộp lên cấp này để khớp đúng con số đang chốt. */}
+                    <div className="mt-3 space-y-3">
+                      <div className="bg-white border border-slate-200 rounded-lg p-3">
+                        <p className="text-xs text-slate-500 mb-2">
+                          Tổng số lượng sử dụng theo năm ({tongNhom.dvtChuan})
+                        </p>
+                        <BarChartNam lichSu={lichSuNhom} />
+                      </div>
+                      <div className="bg-white border border-slate-200 rounded-lg p-3">
+                        <p className="text-xs text-slate-500 mb-2">
+                          Xu hướng sử dụng theo tháng (chỉ để tham khảo)
+                        </p>
+                        <ChartDongBo lichSu={lichSuNhom} />
+                        <div className="flex flex-wrap gap-4 mt-2 px-1">
+                          {tongNhom.nam.map((yr, i) => (
+                            <LegendItem key={yr} shape={kyHieuNam(i, tongNhom.nam.length)}
+                              color={mauNam(i, tongNhom.nam.length)} label={`Thực dùng ${yr}`} />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </details>
+              )}
+            </section>
+
+            {/* ③ CHIA CHO MÃ HÀNG, rồi lý do. */}
+            <section className="rounded-lg border border-slate-200 bg-white p-4">
+              <div className="flex items-start gap-3">
+                <SoBuoc so={3} />
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-semibold text-slate-800">Chia cho mã hàng</h3>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Chia tổng ở bước 2 xuống các mã hàng tương đương; tổng sau quy đổi phải bằng tổng mã quản lý.
+                  </p>
+                </div>
+              </div>
+
+                <div className="mt-4 overflow-x-auto rounded-lg border border-slate-200">
+                  <div className="min-w-[560px]">
+                  <div className="grid grid-cols-[90px_1fr_110px_150px] gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
                     <span>Mã hàng</span>
                     <span>Khoa chọn mã tương đương · <span className="italic">Lịch sử (3 năm gần nhất)</span></span>
                     <span className="text-right">Số lượng mã hàng</span>
@@ -1927,17 +1966,17 @@ export default function Function1({
                         <span className="font-mono text-slate-500 pt-0.5">{m.ma_hang}</span>
                         <span>
                           <span className="block">{m.ten_vat_tu}</span>
-                          <span className="text-slate-400">{m.dvt} · 1 {m.dvt} = {heSo || "?"} {dvtChuan || "ĐVT chuẩn"}</span>
+                          <span className="text-slate-500">{m.dvt} · 1 {m.dvt} = {heSo || "?"} {dvtChuan || "ĐVT chuẩn"}</span>
                           {/* Lịch sử xuất kho từng năm của riêng mã hàng này */}
                           <span className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
                             {tongTheoNamLS(lichSuThang[m.ma_hang]).length > 0
                               ? tongTheoNamLS(lichSuThang[m.ma_hang]).map(({ nam, tong }) => (
                                   <span key={nam} className="text-slate-500">
-                                    <span className="text-slate-400">{nam}:</span>{" "}
-                                    <b className="font-semibold text-slate-600">{fmt(tong)}</b>{" "}{m.dvt}
+                                    <span className="text-slate-500">{nam}:</span>{" "}
+                                    <b className="font-semibold text-slate-700">{fmt(tong)}</b>{" "}{m.dvt}
                                   </span>
                                 ))
-                              : <span className="italic text-slate-400">Chưa có lịch sử</span>
+                              : <span className="italic text-slate-500">Chưa có lịch sử</span>
                             }
                           </span>
                         </span>
@@ -1971,7 +2010,7 @@ export default function Function1({
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ type: "spring", bounce: 0.15, visualDuration: 0.25 }}
-                        className={`flex items-start gap-1.5 px-3 py-2 text-[11px] border-t ${
+                        className={`flex items-start gap-1.5 px-3 py-2 text-xs border-t ${
                           ngoaiKhoangPhanBo
                             ? "border-red-200 bg-red-50 text-red-800"
                             : "border-umc-100 bg-white text-umc-700"
@@ -1996,11 +2035,12 @@ export default function Function1({
                       </motion.div>
                     )}
                   </AnimatePresence>
+                  </div>
                 </div>
 
                 <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-xs text-slate-500">
+                    <label className="mb-1 block text-xs font-medium text-slate-600">
                       Lý do đề xuất {ngoaiKhoangNhom && <span className="text-red-500">*</span>}
                     </label>
                     {!ngoaiKhoangNhom && CO_GOI_Y_SO_LUONG(goi) ? (
@@ -2019,7 +2059,7 @@ export default function Function1({
                   </div>
                   {(ngoaiKhoangNhom || !CO_GOI_Y_SO_LUONG(goi)) && (
                     <div>
-                      <label className="mb-1 block text-xs text-slate-500">
+                      <label className="mb-1 block text-xs font-medium text-slate-600">
                         Ghi chú thêm {ngoaiKhoangNhom && <span className="text-red-500">*</span>}
                       </label>
                       <textarea rows={2} value={nhapNhom.ghiChu}
@@ -2049,18 +2089,23 @@ export default function Function1({
                     className="mt-3 w-full rounded-md border border-amber-300 px-3 py-2 text-sm"
                     placeholder="Nội dung và căn cứ chỉ định thầu *" />
                 )}
+            </section>
 
-                <div className="mt-4 flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-3">
-                  {loiNhapNhom && <span className="text-xs text-red-600">{loiNhapNhom}</span>}
-                  <button type="button" onClick={themMaQuanLyVaoGio}
-                    disabled={!coSchemaMaQuanLy || !tinhTrangQuyDoi.hopLe}
-                    className="inline-flex items-center gap-1.5 rounded-md bg-umc-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-40">
-                    <ShoppingCart size={15} /> Thêm cả mã quản lý vào giỏ
-                  </button>
-                </div>
+            {/* NẶNG-1 (QA3 18/09): khối nút DÍNH ĐÁY cũ che 4 nút mức gợi ý và
+                câu cảnh báo. Nút "Thêm cả mã quản lý vào giỏ" nay nằm TRONG thanh
+                giỏ (portal cuối file), cùng hàm, cùng điều kiện tắt. Chỉ còn khối
+                thường ở đây khi xem Toàn viện — lúc đó không có thanh giỏ. */}
+            {toanVien && (
+              <div className="flex flex-wrap items-center justify-end gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
+                {loiNhapNhom && <span className="min-w-0 flex-1 text-xs text-red-600">{loiNhapNhom}</span>}
+                <button type="button" onClick={themMaQuanLyVaoGio}
+                  disabled={!coSchemaMaQuanLy || !tinhTrangQuyDoi.hopLe}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-umc-600 px-4 py-2 text-sm font-medium text-white hover:bg-umc-700 disabled:opacity-40">
+                  <ShoppingCart size={15} /> Thêm cả mã quản lý vào giỏ
+                </button>
               </div>
-            </div>
-          </>
+            )}
+          </div>
         )}
 
         {/* GIỎ ĐỀ XUẤT — gom mọi mã hàng đã nhập, kể cả ở nhóm kỹ thuật khác.
@@ -2101,7 +2146,7 @@ export default function Function1({
                                     Phải nói rõ số đang hiện là GỢI Ý: khoa dễ tưởng mình
                                     đã gõ số này rồi và gửi luôn con số của máy. */}
                                 {n.tuMaRot && (
-                                  <span className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800"
+                                  <span className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-800"
                                     title={n.ghiChu || "Mã rớt thầu kỳ trước chuyển sang đợt bổ sung"}>
                                     ⟳ rớt thầu · gợi ý {fmt(n.soRotGoc ?? n.soLuong)}
                                   </span>
@@ -2176,7 +2221,7 @@ export default function Function1({
                   </div>
                 )}
                 <button onClick={submit} disabled={dangLuu || dangTaiDot || gioHang.length === 0 || chuaMoDot || !dotDung}
-                  className="px-4 py-2 bg-umc-700 text-white text-sm rounded-md hover:bg-umc-800 disabled:opacity-40 font-medium">
+                  className="px-4 py-2 bg-umc-600 text-white text-sm rounded-md hover:bg-umc-700 disabled:opacity-40 font-medium">
                   {dangLuu ? "Đang lưu..." : `Gửi đề xuất (${gioHang.length} mã hàng)`}
                 </button>
                 {gioHang.length > 0 && !dangLuu && (
@@ -2234,6 +2279,171 @@ export default function Function1({
         )}
       </div>
       </div>
+      {/* THANH GIỎ + NGĂN GIỎ — render qua PORTAL vào <body> (lỗi N3): màn này
+          nằm trong <motion.main> có transform, nên `fixed` bên trong sẽ bám
+          <main> chứ không bám cửa sổ. Thanh giỏ thay cho nút giỏ nổi cũ (đè
+          thẻ tiêu đề). CHỪA 72px góc dưới phải cho bong bóng chatbot sau này:
+          thanh KHÔNG phủ phần đó (xem .umc-thanh-gio trong index.css). */}
+      {!toanVien && typeof document !== "undefined" && createPortal(
+        <>
+          {/* Nền của thanh phủ HẾT chiều ngang tới mép phải và tới đáy màn
+              (không còn chữ lộ qua khe/dải 72px); bong bóng chatbot z 45 vẫn
+              nằm trên nền này (z 40), trong dải 72px chừa sẵn. */}
+          <div className="umc-thanh-gio" role="region" aria-label="Giỏ đề xuất">
+            <div className="flex min-h-[3.5rem] flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-[0_8px_28px_rgba(15,23,42,0.16)]">
+              <ShoppingCart size={18} className="shrink-0 text-umc-700" />
+              <p className="min-w-0 flex-1 text-sm text-slate-700">
+                <b className="font-semibold text-slate-900">Giỏ: {gioTheoNhom.length} mã quản lý</b>
+                <span className="text-slate-500"> · {gioHang.length} mã hàng</span>
+                {!dotDung && dsDot.length > 1 && gioHang.length > 0 && (
+                  <span className="text-amber-700"> · chưa chọn đợt gửi (mở giỏ để chọn)</span>
+                )}
+                {daGui.length > 0 && gioHang.length === 0 && (
+                  <span className="text-umc-700"> · vừa gửi {daGui.length} đề xuất</span>
+                )}
+              </p>
+              {loiLuu && !moGio && (
+                <span className="order-last w-full truncate text-xs text-red-600" title={loiLuu}>{loiLuu}</span>
+              )}
+              {nhomChon && loiNhapNhom && (
+                <span className="order-last w-full text-xs text-red-600">{loiNhapNhom}</span>
+              )}
+              <button type="button" onClick={() => setMoGio(true)}
+                className="inline-flex h-9 items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                Xem giỏ
+              </button>
+              {/* Đang soạn một mã quản lý → "Thêm" là nút chính, "Gửi" lùi về
+                  dạng viền; không soạn gì thì "Gửi" là nút chính. Hai nút giữ
+                  đúng hàm và điều kiện tắt như trước. */}
+              {nhomChon && (
+                <button type="button" onClick={themMaQuanLyVaoGio}
+                  disabled={!coSchemaMaQuanLy || !tinhTrangQuyDoi.hopLe}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-md bg-umc-600 px-4 text-sm font-medium text-white hover:bg-umc-700 disabled:opacity-40">
+                  <ShoppingCart size={15} /> Thêm cả mã quản lý vào giỏ
+                </button>
+              )}
+              <button type="button" onClick={submit}
+                disabled={dangLuu || dangTaiDot || gioHang.length === 0 || !dotDung}
+                className={nhomChon
+                  ? "inline-flex h-9 items-center rounded-md border border-umc-300 bg-white px-4 text-sm font-medium text-umc-800 hover:bg-umc-50 disabled:opacity-40"
+                  : "inline-flex h-9 items-center rounded-md bg-umc-600 px-4 text-sm font-medium text-white hover:bg-umc-700 disabled:opacity-40"}>
+                {dangLuu ? "Đang gửi…" : `Gửi đề xuất (${gioTheoNhom.length} mã quản lý)`}
+              </button>
+            </div>
+          </div>
+          {moGio && (
+            <div className="fixed inset-0 z-50 bg-slate-900/30" onMouseDown={() => setMoGio(false)}>
+              <aside className="absolute right-0 top-0 flex h-full w-full max-w-xl flex-col bg-white shadow-2xl"
+                role="dialog" aria-modal="true" aria-label="Giỏ đề xuất"
+                onMouseDown={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                  <div>
+                    <h3 className="font-semibold text-slate-800">Giỏ đề xuất</h3>
+                    <p className="text-xs text-slate-400">
+                      {gioTheoNhom.length} mã quản lý · {gioHang.length} mã hàng
+                    </p>
+                  </div>
+                  <button type="button" onClick={() => setMoGio(false)} aria-label="Đóng giỏ" title="Đóng giỏ (Esc)"
+                    className="rounded p-1 text-slate-500 hover:bg-slate-100">
+                    <X size={19} />
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4">
+                  {gioTheoGoi.length === 0 ? (
+                    <p className="rounded-lg border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
+                      Giỏ đang trống. Hãy chốt tổng một mã quản lý rồi thêm vào giỏ.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {gioTheoGoi.map(([tenGoi, dsNhomGoi]) => {
+                        const dangMo = goiGioMo === tenGoi;
+                        return (
+                          <div key={tenGoi} className="overflow-hidden rounded-lg border border-slate-200">
+                            <button type="button"
+                              onClick={() => setGoiGioMo(dangMo ? null : tenGoi)}
+                              className="flex w-full items-center gap-2 bg-slate-50 px-3 py-2.5 text-left">
+                              <Package size={15} className="text-umc-700" />
+                              <span className="flex-1 text-sm font-medium text-slate-700">{tenGoi}</span>
+                              <span className="text-xs text-slate-400">{dsNhomGoi.length} mã quản lý</span>
+                              <ChevronDown size={14} className={dangMo ? "rotate-180" : ""} />
+                            </button>
+                            {dangMo && (
+                              <div className="space-y-3 p-3">
+                                {dsNhomGoi.map((g) => (
+                                  <div key={g.ma} className="rounded-md border border-slate-100 p-2.5">
+                                    <div className="flex items-start gap-2">
+                                      <div className="min-w-0 flex-1">
+                                        <div className="font-mono text-xs font-semibold text-umc-700">{g.ma}</div>
+                                        <div className="truncate text-xs text-slate-600">{g.ten}</div>
+                                        <div className="mt-1 text-xs font-medium text-umc-800">
+                                          Tổng mã quản lý: {fmt(g.tong)} {g.dvt}
+                                        </div>
+                                        {g.bangQuyDoi && (
+                                          <div className="mt-1 text-[11px] text-slate-400">
+                                            Quy đổi: {Object.entries(g.bangQuyDoi)
+                                              .map(([dvt, heSo]) => `1 ${dvt} = ${fmt(heSo)} ${g.dvt}`)
+                                              .join(" · ")}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <button type="button" onClick={() => boNhomKhoiGio(g.ma)}
+                                        className="text-slate-300 hover:text-red-600" title="Bỏ cả mã quản lý khỏi giỏ">
+                                        <X size={14} />
+                                      </button>
+                                    </div>
+                                    <div className="mt-2 space-y-1 border-t border-slate-100 pt-2">
+                                      {g.dong.map((n) => (
+                                        <div key={n.ma_hang} className="flex items-center gap-2 text-xs">
+                                          <span className="w-16 font-mono text-slate-400">{n.ma_hang}</span>
+                                          <span className="min-w-0 flex-1 truncate">{n.ten_vat_tu}</span>
+                                          <span className="font-mono text-slate-600">{fmt(n.soLuong)} {n.dvt}</span>
+                                          <span className="font-mono text-umc-700">= {fmt(n.soLuongQuyDoi)} {n.dvtMaQuanLy}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-slate-200 p-4">
+                  {dsDot.length > 1 && (
+                    <select value={dotChon || ""} onChange={(e) => setDotChon(Number(e.target.value) || null)}
+                      className="mb-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+                      <option value="">— Chọn đợt gửi đề xuất —</option>
+                      {dsDot.map((d) => <option key={d.id} value={d.id}>{d.ten}</option>)}
+                    </select>
+                  )}
+                  {loiLuu && <p className="mb-2 text-xs text-red-600">{loiLuu}</p>}
+                  {/* VỪA-7: "Xóa giỏ" tách xa nút Gửi (đẩy sang trái, khoảng
+                      trống ở giữa), kiểu nguy hiểm chữ + viền đỏ. */}
+                  <div className="flex items-center gap-3">
+                    {gioHang.length > 0 && (
+                      <button type="button" onClick={xoaCaGio}
+                        className="rounded-md border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50">
+                        Xóa giỏ
+                      </button>
+                    )}
+                    <button type="button" onClick={submit}
+                      disabled={dangLuu || dangTaiDot || gioHang.length === 0 || !dotDung}
+                      className="ml-auto min-w-[55%] rounded-md bg-umc-600 px-4 py-2 text-sm font-medium text-white hover:bg-umc-700 disabled:opacity-40">
+                      {dangLuu ? "Đang gửi…" : `Gửi đề xuất (${gioTheoNhom.length} mã quản lý)`}
+                    </button>
+                  </div>
+                </div>
+              </aside>
+            </div>
+          )}
+        </>,
+        document.body,
+      )}
     </>
   );
 }

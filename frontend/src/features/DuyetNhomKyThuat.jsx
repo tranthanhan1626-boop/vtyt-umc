@@ -3,6 +3,7 @@ import { Check, X, ChevronDown, AlertTriangle } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { NHAN_TT_NHOM } from "./Function1";
 import { fmtNgayGio } from "./DeXuatTongHop";
+import { dichLoi } from "../lib/dichLoi";
 
 // Tab "Duyệt mã kỹ thuật" — chỉ dieu_duong/admin. Khoa gửi đề nghị bổ sung nhóm
 // kỹ thuật vào danh mục của khoa mình (bảng khoa_nhom_ky_thuat), ở đây duyệt.
@@ -46,7 +47,7 @@ export default function DuyetNhomKyThuat() {
     const { data, error } = await fetchAllRows((f, t) =>
       supabase.from("khoa_nhom_ky_thuat").select("*").order("created_at", { ascending: false }).range(f, t)
     , { order: "id" });
-    if (error) setLoi("Không đọc được khoa_nhom_ky_thuat — kiểm tra bảng/RLS trong Supabase (schema xem backend/sql/schema.sql).");
+    if (error) setLoi("Không tải được dữ liệu. Bấm Tải lại; nếu vẫn lỗi, báo Phòng Điều dưỡng.");
     else { setRows(data); setLoi(""); }
     setLoading(false);
   };
@@ -92,7 +93,7 @@ export default function DuyetNhomKyThuat() {
       p_ma_quan_ly: formDuyet.ma_quan_ly.trim(),
       p_ten_quan_ly: formDuyet.ten_quan_ly.trim(),
     });
-    if (error) setLoiDong((p) => ({ ...p, [id]: error.message }));
+    if (error) setLoiDong((p) => ({ ...p, [id]: dichLoi(error) }));
     else { setDangDuyet(null); setFormDuyet(FORM_TRONG); await taiDuLieu(); }
     setDangXuLy(null);
   };
@@ -100,26 +101,26 @@ export default function DuyetNhomKyThuat() {
   const tuChoi = async (id) => {
     setDangXuLy(id); setLoiDong((p) => ({ ...p, [id]: "" }));
     const { error } = await supabase.rpc("tu_choi_nhom_ky_thuat", { p_id: id, p_ly_do: lyDo.trim() || null });
-    if (error) setLoiDong((p) => ({ ...p, [id]: error.message }));
+    if (error) setLoiDong((p) => ({ ...p, [id]: dichLoi(error) }));
     else { setDangTuChoi(null); setLyDo(""); await taiDuLieu(); }
     setDangXuLy(null);
   };
 
-  if (loading) return <div className="text-sm text-slate-400 p-4">Đang tải đề nghị...</div>;
+  if (loading) return <div className="text-sm text-slate-500 p-4">Đang tải đề nghị...</div>;
   if (loi) return <div className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3 m-1">{loi}</div>;
 
   return (
     <div className="space-y-4">
       <div className="bg-white border border-slate-200 rounded-lg p-3 flex flex-wrap gap-3 items-end">
         <div className="min-w-[180px]">
-          <label className="text-xs text-slate-400 block mb-1.5">Trạng thái</label>
+          <label className="text-xs text-slate-500 block mb-1.5">Trạng thái</label>
           <div className="relative">
             <select value={trangThaiLoc} onChange={(e) => setTrangThaiLoc(e.target.value)}
               className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-umc-500">
               <option value="">Tất cả</option>
               {Object.entries(NHAN_TT_NHOM).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
-            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
           </div>
         </div>
         {soChoDuyet > 0 && (
@@ -134,14 +135,14 @@ export default function DuyetNhomKyThuat() {
           {rowsLoc.length} đề nghị{rowsLoc.length !== rows.length && ` (lọc từ ${rows.length})`}
         </div>
         {rowsLoc.length === 0 ? (
-          <div className="text-sm text-slate-400 p-6 text-center">
+          <div className="text-sm text-slate-500 p-6 text-center">
             {rows.length === 0 ? "Chưa khoa nào đề nghị thêm mã kỹ thuật." : "Không có dòng nào khớp bộ lọc."}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-slate-400 text-xs border-b border-slate-100">
+                <tr className="text-slate-500 text-xs border-b border-slate-100">
                   <th className="text-left font-normal px-4 py-2">Vật tư đề nghị</th>
                   <th className="text-left font-normal px-4 py-2">Đặc tả</th>
                   <th className="text-left font-normal px-4 py-2">Khoa</th>
@@ -155,15 +156,15 @@ export default function DuyetNhomKyThuat() {
                     <td className="px-4 py-2 align-top max-w-xs">
                       <div className="text-sm text-slate-700 leading-tight">{r.ten_vat_tu_moi}</div>
                       {r.ten_thuong_mai && <div className="text-xs text-slate-500">TM: {r.ten_thuong_mai}</div>}
-                      <div className="text-xs text-slate-400 mt-0.5">
+                      <div className="text-xs text-slate-500 mt-0.5">
                         {r.so_luong ? `SL ${r.so_luong}${r.dvt_moi ? " " + r.dvt_moi : ""}` : ""}
                         {r.goi ? ` · Gói: ${r.goi}` : ""}
                       </div>
                       {r.tu_thang && (
-                        <div className="text-xs text-slate-400">Kỳ: T{r.tu_thang}/{r.tu_nam} – T{r.den_thang}/{r.den_nam}</div>
+                        <div className="text-xs text-slate-500">Kỳ: T{r.tu_thang}/{r.tu_nam} – T{r.den_thang}/{r.den_nam}</div>
                       )}
                       {r.trang_thai !== "cho_duyet" && (r.ma_hang_moi || r.ma_quan_ly) && (
-                        <div className="text-xs text-slate-300 font-mono mt-0.5">
+                        <div className="text-xs text-slate-500 font-mono mt-0.5">
                           {r.ma_hang_moi} · {r.ma_quan_ly}
                         </div>
                       )}
@@ -171,17 +172,17 @@ export default function DuyetNhomKyThuat() {
                     <td className="px-4 py-2 align-top text-xs text-slate-500 max-w-xs">
                       {r.tieu_chi_ky_thuat}
                       {(r.ky_ma_hieu || r.hang || r.nuoc_san_xuat) && (
-                        <div className="text-slate-400 mt-1">
+                        <div className="text-slate-500 mt-1">
                           {[r.ky_ma_hieu, r.hang, r.nuoc_san_xuat].filter(Boolean).join(" · ")}
                         </div>
                       )}
-                      {r.ghi_chu && <div className="text-slate-400 italic mt-1">{r.ghi_chu}</div>}
+                      {r.ghi_chu && <div className="text-slate-500 italic mt-1">{r.ghi_chu}</div>}
                     </td>
                     <td className="px-4 py-2 align-top">{r.don_vi}</td>
                     <td className="px-4 py-2 align-top text-xs">
-                      <div>{r.created_by_ho_ten || <span className="text-slate-400 italic">chưa có tên</span>}</div>
-                      <div className="text-slate-400">{r.created_by}</div>
-                      <div className="text-slate-400">{fmtNgayGio(r.created_at)}</div>
+                      <div>{r.created_by_ho_ten || <span className="text-slate-500 italic">chưa có tên</span>}</div>
+                      <div className="text-slate-500">{r.created_by}</div>
+                      <div className="text-slate-500">{fmtNgayGio(r.created_at)}</div>
                     </td>
                     <td className="px-4 py-2 align-top">
                       <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${MAU_TT[r.trang_thai]}`}>

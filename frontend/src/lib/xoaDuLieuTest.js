@@ -1,4 +1,5 @@
 import { supabase } from "../supabaseClient";
+import { dichLoi } from "./dichLoi";
 
 export const MA_DU_AN_STAGING = "ihgfafubwyxnbubmppbj";
 
@@ -17,6 +18,16 @@ export const BAT_XOA_DU_LIEU_TEST =
   import.meta.env.DEV
   || supabaseUrl.includes(MA_DU_AN_STAGING)
   || import.meta.env.VITE_ENABLE_TEST_DELETE === "true";
+
+// 18/09/2026 — chủ dự án chốt: nút xoá dữ liệu test ẨN với tài khoản khoa,
+// PĐD vẫn thấy. App.jsx báo vai trò vào đây ngay khi biết hồ sơ; các nút xoá
+// đọc lại qua `duocThayNutXoaTest()`. Chỉ là ẩn nút — quyền thật vẫn do RPC
+// phía database quyết.
+let vaiTroHienTai = null;
+export function datVaiTroChoNutXoaTest(role) { vaiTroHienTai = role || null; }
+export function duocThayNutXoaTest() {
+  return BAT_XOA_DU_LIEU_TEST && (vaiTroHienTai === "admin" || vaiTroHienTai === "dieu_duong");
+}
 
 export async function xoaDuLieuKiemThu(loai, id) {
   if (!BAT_XOA_DU_LIEU_TEST) {
@@ -53,8 +64,8 @@ export async function xoaDuLieuKiemThu(loai, id) {
     const chuaPatch = error.code === "PGRST202"
       || /xoa_du_lieu_kiem_thu|xoa_dot_kiem_thu_v3|xoa_de_xuat_kiem_thu_v3/i.test(error.message || "");
     throw new Error(chuaPatch
-      ? "Staging chưa có chức năng xóa test. Cần chạy backend/sql/patch_za_xoa_du_lieu_kiem_thu.sql."
-      : error.message);
+      ? "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_za_xoa_du_lieu_kiem_thu). Vui lòng báo Phòng Điều dưỡng."
+      : dichLoi(error));
   }
   return data;
 }

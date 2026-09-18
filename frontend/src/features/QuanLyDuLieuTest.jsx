@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Database,
   RefreshCw,
@@ -9,6 +10,7 @@ import {
 import { supabase, fetchAllRows } from "../supabaseClient";
 import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
 import { BAT_XOA_DU_LIEU_TEST } from "../lib/xoaDuLieuTest";
+import { dichLoi } from "../lib/dichLoi";
 
 const fmtNgay = (x) => x ? new Date(x).toLocaleString("vi-VN") : "";
 // Ba nhóm dưới đây thuộc TÍNH NĂNG ĐÃ BỎ (Word cam kết / Phiếu đề nghị mua,
@@ -44,7 +46,7 @@ function nhomDeXuat(rows) {
   return [...map.values()];
 }
 
-export default function QuanLyDuLieuTest({ profile }) {
+export default function QuanLyDuLieuTest({ profile, kieu = "icon", onMo }) {
   const [mo, setMo] = useState(false);
   const [dangTai, setDangTai] = useState(false);
   const [nhom, setNhom] = useState([]);
@@ -187,7 +189,7 @@ export default function QuanLyDuLieuTest({ profile }) {
         const rows = s.chuyen ? s.chuyen(r.data || []) : r.data || [];
         return { ...s, rows, error: "" };
       } catch (error) {
-        return { ...s, rows: [], error: error.message || "Không đọc được dữ liệu." };
+        return { ...s, rows: [], error: dichLoi(error) || "Không đọc được dữ liệu." };
       }
     }));
     setNhom(ketQua);
@@ -215,17 +217,32 @@ export default function QuanLyDuLieuTest({ profile }) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setMo(true)}
-        className="umc-icon-button border-red-200 text-red-600 hover:bg-red-50"
-        title="Dọn dữ liệu kiểm thử"
-        aria-label="Dọn dữ liệu kiểm thử"
-      >
-        <Trash2 size={17} />
-      </button>
+      {/* V7 (đợt 3): nút nguy hiểm không đứng cạnh Đăng xuất nữa — App.jsx đặt
+          nó trong menu "⋯" (kieu="menu"). Chức năng giữ nguyên: mở bảng dọn. */}
+      {kieu === "menu" ? (
+        <button
+          type="button"
+          role="menuitem"
+          onClick={() => { setMo(true); onMo?.(); }}
+          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50"
+        >
+          <Trash2 size={16} />
+          Dọn dữ liệu kiểm thử
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setMo(true)}
+          className="umc-icon-button border-red-200 text-red-600 hover:bg-red-50"
+          title="Dọn dữ liệu kiểm thử"
+          aria-label="Dọn dữ liệu kiểm thử"
+        >
+          <Trash2 size={17} />
+        </button>
+      )}
 
-      {mo && (
+      {/* Portal: bảng dọn không phụ thuộc chỗ đặt nút (menu "⋯" có thể đang ẩn). */}
+      {mo && createPortal(
         <div className="fixed inset-0 z-[100] flex items-stretch justify-end bg-slate-950/45" role="dialog" aria-modal="true">
           <button type="button" className="min-w-0 flex-1 cursor-default" onClick={() => setMo(false)}
             aria-label="Đóng bảng dọn dữ liệu" />
@@ -307,7 +324,8 @@ export default function QuanLyDuLieuTest({ profile }) {
               ))}
             </div>
           </section>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

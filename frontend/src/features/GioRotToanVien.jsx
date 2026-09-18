@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, ClipboardCopy, RotateCcw, Users } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { DA_XU_LY, NHAN_TRANG_THAI, soNgayCho, templateNhac } from "./GioRotCuaKhoa";
+import { dichLoi } from "../lib/dichLoi";
 
 // Mục VII.3 — "PĐD có tab Giỏ rớt toàn viện: theo dõi khoa nào chưa xử lý, bao
 // nhiêu ngày. Nút Nhắc nhở sinh template tin nhắn để copy sang Teams."
@@ -33,7 +34,7 @@ export default function GioRotToanVien({ dotGoiIds = [] }) {
     let q = supabase.from("v_gio_rot_v3").select("*").order("khoa").order("ma_quan_ly");
     if (dotGoiIds.length) q = q.in("dot_goi_id", dotGoiIds);
     const { data, error } = await q;
-    if (error) setLoi(error.message);
+    if (error) setLoi(dichLoi(error));
     else setRows((data || []).filter((r) => Number(r.so_luong_thieu) > 0));
     setDangTai(false);
   }, [dotGoiIds]);
@@ -100,7 +101,7 @@ export default function GioRotToanVien({ dotGoiIds = [] }) {
       p_ghi_chu: "PĐD thao tác thay khoa",
     });
     setDangLuu("");
-    if (error) { setLoi(error.message); return; }
+    if (error) { setLoi(dichLoi(error)); return; }
     await tai();
   };
 

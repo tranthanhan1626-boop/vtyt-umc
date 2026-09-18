@@ -4,6 +4,7 @@ import { supabase, fetchAllRows } from "../supabaseClient";
 import {
   docWorksheetExport, kiemDichVaLamSach, FileLevelRejection,
 } from "../lib/napDuLieuSuDung";
+import { dichLoi } from "../lib/dichLoi";
 
 // H. mới (06/08/2026) — Phòng Điều dưỡng tự nạp file HIS mỗi tháng, không phụ
 // thuộc ai chạy script tay. Chạy hoàn toàn ở trình duyệt (đọc + kiểm dịch +
@@ -72,7 +73,7 @@ export default function NapDuLieuSuDung({ profile }) {
 
       setKetQua(kiemDichVaLamSach(rowsTho, knownMaHang));
     } catch (err) {
-      setLoiDoc(err instanceof FileLevelRejection ? err.message : `Không đọc được file: ${err.message}`);
+      setLoiDoc(err instanceof FileLevelRejection ? dichLoi(err) : `Không đọc được file: ${dichLoi(err)}`);
     } finally {
       setDangDoc(false);
     }
@@ -102,7 +103,7 @@ export default function NapDuLieuSuDung({ profile }) {
       .select()
       .single();
     if (loiBatch || !batch) {
-      setLoiNap(loiBatch?.message || "Không tạo được bản ghi mẻ nạp.");
+      setLoiNap(dichLoi(loiBatch) || "Không tạo được bản ghi mẻ nạp.");
       setDangNap(false);
       return;
     }
@@ -115,7 +116,7 @@ export default function NapDuLieuSuDung({ profile }) {
         .upsert(doan, { onConflict: "don_vi,kho_xuat,ma_hang,nam,thang" });
       if (error) {
         setLoiNap(
-          `Dừng ở dòng ${i}/${rows.length}: ${error.message}. `
+          `Dừng ở dòng ${i}/${rows.length}: ${dichLoi(error)}. `
           + "Upsert nên chạy lại an toàn — chọn lại file rồi bấm Nạp dữ liệu lần nữa.",
         );
         setDangNap(false);

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search, AlertTriangle, Check, X, Clock, CheckCircle2 } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
+import { dichLoi } from "../lib/dichLoi";
 
 // Phase C — SỔ THIẾU HÀNG. Sổ quan trọng nhất của cả dự án: đây là biến duy
 // nhất phá được Y = min(nhu cầu, khả năng cấp).
@@ -94,7 +95,7 @@ export default function SoThieuHang({ profile }) {
       co_hoan_ca: hoanCa,
     });
     setDangGui(false);
-    if (error) { setLoi(error.message); return; }
+    if (error) { setLoi(dichLoi(error)); return; }
     datLai(); setMoForm(false); setXong(true);
     setTimeout(() => setXong(false), 3500);
     await tai();
@@ -104,7 +105,7 @@ export default function SoThieuHang({ profile }) {
     const { error, count } = await supabase.from("su_kien_thieu_hang")
       .update({ trang_thai_xu_ly: tt, nguoi_xac_nhan: profile.email,
                 ngay_xac_nhan: new Date().toISOString() }, { count: "exact" }).eq("id", r.id);
-    if (error) setLoi(error.message);
+    if (error) setLoi(dichLoi(error));
     else if (!count) setLoi("Không đổi được — kiểm tra quyền.");
     else await tai();
   };
@@ -114,7 +115,7 @@ export default function SoThieuHang({ profile }) {
     const { error } = await supabase.from("xac_nhan_thang").insert({
       don_vi: profile.khoa, thang: nay.getMonth() + 1, nam: nay.getFullYear(),
     });
-    if (error) setLoi(error.message);
+    if (error) setLoi(dichLoi(error));
     else { setDaXacNhanThang(true); setXong(true); setTimeout(() => setXong(false), 3500); }
   };
 

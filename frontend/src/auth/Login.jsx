@@ -223,7 +223,7 @@ export default function Login({ signIn, signUp, sendPasswordReset }) {
               </div>
             </div>
           )}
-          <p className="mt-9 text-center text-[11px] text-slate-400">Chỉ dành cho nhân sự được phân quyền của UMC</p>
+          <p className="mt-9 text-center text-[11px] text-slate-500">Chỉ dành cho nhân sự được phân quyền của UMC</p>
         </div>
       </section>
     </main>

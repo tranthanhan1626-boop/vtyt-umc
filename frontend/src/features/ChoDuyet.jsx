@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ExternalLink, Inbox, Package } from "lucide-react";
 import { supabase } from "../supabaseClient";
+import { dichLoi } from "../lib/dichLoi";
 
 // Word/Excel không còn vòng đời gửi-duyệt. Hàng chờ PĐD chỉ đếm đúng yêu cầu
 // cần quyết định thật: đề nghị mã kỹ thuật khoa tự thêm.
@@ -19,7 +20,7 @@ export default function ChoDuyet({ onDoiSoLuong, onMoManKhac }) {
     setDangTai(true); setLoi("");
     const { data, error } = await supabase.from("khoa_nhom_ky_thuat")
       .select("*").eq("trang_thai", "cho_duyet").order("created_at", { ascending: false });
-    if (error) { setLoi(error.message); setRows([]); } else setRows(data || []);
+    if (error) { setLoi(dichLoi(error)); setRows([]); } else setRows(data || []);
     setDangTai(false); onDoiSoLuong?.();
   }, [onDoiSoLuong]);
   useEffect(() => { tai(); }, [tai]);

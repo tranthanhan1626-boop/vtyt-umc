@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Lock, Unlock, RefreshCw, Download, ChevronLeft, ChevronRight, ChevronDown, History, Users, EyeOff, AlertTriangle, AlignLeft, Columns3 } from "lucide-react";
+import { Lock, Unlock, RefreshCw, Download, ChevronRight, ChevronDown, History, Users, EyeOff, AlertTriangle, AlignLeft, Columns3, SlidersHorizontal } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import { tinhTuyChonMuaThem30 } from "../lib/tuyChonMuaThem";
 import {
   COT_PDD, NHOM_COT_PDD, GOI_ID_MAP, sapXepFreezeTruoc, tinhLeftFreeze,
-  tinhSegmentsGroup, taoCotLichSu, thayCotLichSu, suyRaNamCoDuLieu,
-  taoCotLichSuNhom, chenCotLichSuNhom, cotKhoaSangPdd,
+  tinhSegmentsGroup, chonNhanVua, taoCotLichSu, thayCotLichSu, suyRaNamCoDuLieu,
+  taoCotLichSuNhom, chenCotLichSuNhom, cotKhoaSangPdd, rongTrenManHinh,
 } from "../lib/cotChuan";
 import { docTenCotTuMau, ganTenMau } from "../lib/tenCotBieuMau";
 import { taiLichSuTheoThang, gomTheoThang } from "../lib/lichSuSuDung";
@@ -26,6 +26,11 @@ import {
   // (ReferenceError lúc chạy), chỉ lộ ra khi bấm thật trên trình duyệt.
   BangSoTrungTheoKhoa,
 } from "./CumThauTongHop";
+import { dichLoi } from "../lib/dichLoi";
+import ThanhTienTrinh, { diToiPhanTu } from "../components/ThanhTienTrinh";
+import ThanhDauUmc, { useDongKhiRaNgoai, doRongNhanNhom } from "../components/ThanhDauUmc";
+import { tinhTienTrinhPdd } from "../lib/tienTrinh";
+import { dauVaoPdd, useKhoaThamGiaVaDaGui } from "../lib/useTienTrinh";
 
 /*
  * TongHopPdd — Excel Tổng hợp Danh mục đề xuất cấp PĐD.
@@ -86,6 +91,16 @@ const NAM_DE_XUAT = new Date().getFullYear() + 1;
 const COT_CHE_DO_GO_ROT = new Set([
   "stt", "ten_vt_2627", "dvt", "sl_de_xuat_2627", "dai_p50_p75",
 ]);
+
+// Độ rộng VẼ riêng cho chế độ gõ rớt (18/09/2026): ở 1280px cột "Xử lý rớt"
+// bị cắt mất ~160px (đo: cột nằm 1262–1438). Thu năm cột đầu + cụm thầu để cả
+// bảng ≈ 1.248px. Chỉ là độ rộng hiển thị — Excel dùng `cotDayDu` gốc.
+const RONG_GO_ROT = {
+  stt: 40, ten_vt_2627: 182, dvt: 60, sl_de_xuat_2627: 104, dai_p50_p75: 104,
+};
+// Bảy cột cụm "Khoa đề xuất" + thầu: [khoa, Q, R1, R2, R3, Trúng, Đã chia, Xử lý rớt]
+const RONG_CUM_THAU = [160, 84, 76, 76, 76, 88, 104, 200];
+const RONG_CUM_THAU_GO_ROT = [100, 76, 64, 64, 64, 88, 96, 176];
 
 function monthId(nam, thang) { return nam * 12 + thang - 1; }
 
@@ -175,7 +190,10 @@ async function taiDuLieuGoc(goiId, dotId = null) {
     });
   });
   const dsMaHang = [...theoMa.keys()];
-  if (dsMaHang.length === 0) return { bo, rows: [] };
+  // 18/09/2026: PHẢI trả kèm `dotGoiId`. Bản cũ trả `{ bo, rows: [] }` nên gói
+  // con chưa có đề xuất mất luôn DOT_GOI — không có thanh tiến trình, và dải
+  // thầu báo "Chưa chọn đợt" dù URL đã có đợt.
+  if (dsMaHang.length === 0) return { bo, rows: [], dsNamCoDuLieu: [], dotGoiId };
 
   // QĐ 27/08/2026 (patch_zzzzzzd) — đọc DANH MỤC CHUẨN thay cho `vat_tu`.
   // Giá trị PĐD đã chốt ở đợt trước thắng nền HIS, và 8 cột trước đây không có
@@ -433,6 +451,9 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   const [dangChiaTiLe, setDangChiaTiLe] = useState("");
   const [cheDoGoRot, setCheDoGoRot] = useState(false);
   const [daTuBat, setDaTuBat] = useState(false);
+  // Thanh tiến trình (18/09/2026): nguồn nào đọc LỖI thì bước dùng nó phải hiện
+  // "chưa rõ". Chỉ ghi nhận lỗi ở đây — KHÔNG đổi giá trị mà các nút đang dùng.
+  const [loiNguonTienTrinh, setLoiNguonTienTrinh] = useState({});
 
   const taiLai = useCallback(async () => {
     setDangTai(true);
@@ -446,8 +467,9 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
         dongLocked: dl, cotAn: ca, oKhoaTheoMa: okm } = khoaVaOverride;
       // Danh sách khoa chưa xác nhận — tải cùng lúc với trạng thái chốt.
       if (dgId) {
-        const { data: chuaXn } = await supabase.rpc("khoa_chua_xac_nhan", { p_dot_goi_id: dgId });
+        const { data: chuaXn, error: loiChuaXn } = await supabase.rpc("khoa_chua_xac_nhan", { p_dot_goi_id: dgId });
         setKhoaChuaXacNhan((chuaXn || []).map((x) => (typeof x === "string" ? x : x.khoa)));
+        setLoiNguonTienTrinh((cu) => ({ ...cu, chuaXacNhan: !!loiChuaXn }));
       } else {
         setKhoaChuaXacNhan([]);
       }
@@ -468,6 +490,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       ]);
       setChot(chotRes.error ? null : (chotRes.data || null));
       setRevTrinhKy(trinhKyRes.error ? null : (trinhKyRes.data?.revision ?? null));
+      setLoiNguonTienTrinh((cu) => ({ ...cu, q: !!chotRes.error, trinhKy: !!trinhKyRes.error }));
       setBoThau(bo);
       setDotGoiId(dgId || null);
       setRowsGoc(rows);
@@ -479,7 +502,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       setCotAn(ca);
       setOKhoaTheoMa(okm || new Map());
     } catch (e) {
-      setLoi(e.message || "Không tải được dữ liệu.");
+      setLoi(dichLoi(e) || "Không tải được dữ liệu.");
     } finally {
       setDangTai(false);
     }
@@ -501,6 +524,11 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   const [rowMoRong, setRowMoRong] = useState(new Set());
   const [cotAn, setCotAn] = useState(new Set());
   const [openMenuCot, setOpenMenuCot] = useState(false);
+  const [moHienThi, setMoHienThi] = useState(false);
+  // QA3 (d): Esc và bấm ra ngoài đóng menu "Hiển thị".
+  const refHienThi = useRef(null);
+  const dongHienThi = useCallback(() => setMoHienThi(false), []);
+  useDongKhiRaNgoai(moHienThi, dongHienThi, refHienThi);
   // Công tắc chung cho "bảng con" (chi tiết từng khoa). Tắt thì không bung
   // được trên web VÀ Excel cũng không có các cột khoa — chốt 07/08/2026.
   const [hienChiTietKhoa, setHienChiTietKhoa] = useState(true);
@@ -539,6 +567,35 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
     () => new Set([...thau.phanBo.values()].filter((p) => !p.da_khop).map((p) => p.ma_hang)),
     [thau.phanBo]
   );
+  // ---- Thanh tiến trình PĐD cho gói con này ------------------------------
+  // Tận dụng dữ liệu màn đã tải: danh sách chưa xác nhận (RPC), phiên Q, ba
+  // giai đoạn (useDuLieuThau), phiên trình ký. Chỉ đọc thêm hai tập khoa
+  // (tham gia / đã gửi) — màn này vốn không có.
+  const khoaThamGiaVaGui = useKhoaThamGiaVaDaGui(dotGoiId, khoaChuaXacNhan);
+  const tienTrinhGoi = useMemo(() => {
+    if (!dotGoiId) return null;
+    return tinhTienTrinhPdd(dauVaoPdd({
+      thamGia: khoaThamGiaVaGui.thamGia,
+      daGui: khoaThamGiaVaGui.daGui,
+      khoaChuaXacNhan: loiNguonTienTrinh.chuaXacNhan ? null : khoaChuaXacNhan,
+      coPhienQ: loiNguonTienTrinh.q ? null : !!chot,
+      giaiDoan: thau.dangTai ? null : thau.giaiDoan,
+      coPhienTrinhKy: loiNguonTienTrinh.trinhKy ? null : revTrinhKy != null,
+    }));
+  }, [dotGoiId, khoaThamGiaVaGui, khoaChuaXacNhan, chot, thau.dangTai, thau.giaiDoan,
+    revTrinhKy, loiNguonTienTrinh]);
+  // Mọi bước đều làm NGAY TRÊN màn này — bấm bước là đưa mắt tới đúng chỗ.
+  const CHO_CUA_BUOC = {
+    khoa_de_xuat: "th-dai-trang-thai",
+    khoa_xac_nhan: "th-dai-trang-thai",
+    chot_q: "th-nut-chot-q",
+    chao_gia: "th-giai-doan-thau",
+    mo_thau: "th-giai-doan-thau",
+    danh_gia: "th-giai-doan-thau",
+    // 18/09/2026: nút Chốt trình ký dời lên thanh công cụ, cạnh Chốt số đi thầu.
+    trinh_ky: "th-chot-trinh-ky",
+  };
+
   const rowsHien = useMemo(
     () => (locChuaChiaDu ? rows.filter((r) => maChuaChiaDu.has(r.ma_hang)) : rows),
     [rows, locChuaChiaDu, maChuaChiaDu]
@@ -553,17 +610,26 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
 
   // Đã chốt Q nghĩa là đang ở khúc làm việc với cụm cột thầu — tự bật chế độ
   // gõ rớt MỘT LẦN, sau đó tôn trọng lựa chọn của người dùng.
+  // QA3 (b) 18/09/2026: đổi gói bằng hash thì component KHÔNG dựng lại, nên
+  // chế độ gõ rớt của gói trước dính sang gói sau. Đổi DOT_GOI là trả cả hai
+  // cờ về ban đầu; chỉ tự bật lại khi dữ liệu thầu của gói MỚI đã tải xong
+  // (`!thau.dangTai`), không bật theo `coPhienQ` còn sót của gói cũ.
+  useEffect(() => { setCheDoGoRot(false); setDaTuBat(false); }, [dotGoiId]);
   useEffect(() => {
-    if (thau.coPhienQ && !daTuBat) { setCheDoGoRot(true); setDaTuBat(true); }
-  }, [thau.coPhienQ, daTuBat]);
+    if (thau.coPhienQ && !daTuBat && !thau.dangTai) { setCheDoGoRot(true); setDaTuBat(true); }
+  }, [thau.coPhienQ, daTuBat, thau.dangTai]);
 
   const cotHienThi = useMemo(
-    () => sapXepFreezeTruoc(cotDayDu.filter((c) => !cotAn.has(c.key)
-      && (!cheDoGoRot || COT_CHE_DO_GO_ROT.has(c.key)))),
+    // Độ rộng đổi ở đây là độ rộng VẼ (TSKT nới 560, chế độ gõ rớt thu hẹp).
+    // Excel không đọc biến này — xem `cotChoExcel` trong xuatExcel.
+    () => rongTrenManHinh(
+      sapXepFreezeTruoc(cotDayDu.filter((c) => !cotAn.has(c.key)
+        && (!cheDoGoRot || COT_CHE_DO_GO_ROT.has(c.key)))),
+      cheDoGoRot ? RONG_GO_ROT : {}),
     [cotAn, cotDayDu, cheDoGoRot]
   );
   const groupSegments = useMemo(
-    () => tinhSegmentsGroup(cotHienThi, NHOM_COT_PDD),
+    () => tinhSegmentsGroup(cotHienThi, NHOM_COT_PDD, doRongNhanNhom),
     [cotHienThi]
   );
   // Mã "anh em" của mã đang mở hộp đổ: cùng mã quản lý, khác chính nó, và
@@ -620,9 +686,9 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   // lỗi check constraint khó hiểu — dịch sang câu người dùng làm được gì.
   const thongBaoLoiKhoa = (error, loai) => {
     if (loai === "an_cot" && /check constraint|loai_check|violates/i.test(error.message || "")) {
-      return "Staging chưa cho phép lưu ẩn cột. Cần chạy backend/sql/patch_zk_an_cot_tong_hop.sql.";
+      return "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_zk_an_cot_tong_hop). Vui lòng báo Phòng Điều dưỡng.";
     }
-    return error.message;
+    return dichLoi(error);
   };
 
   // Chốt 07/08/2026: PĐD sửa được MỌI ô trên bản tổng hợp, kể cả cột lịch sử
@@ -739,7 +805,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
         tenSheet: "Tổng hợp",
       });
     } catch (e) {
-      setLoiO(e.message || "Không xuất được Excel.");
+      setLoiO(dichLoi(e) || "Không xuất được Excel.");
     } finally {
       setDangXuat(false);
     }
@@ -753,13 +819,13 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
     const dangChot = !!chot;
     if (!dotGoiId) {
       setDangChot(false);
-      setLoiO("Chưa xác định được DOT_GOI để tạo snapshot Q.");
+      setLoiO("Chưa xác định được gói con của đợt này nên chưa chốt được. Bấm Tải lại rồi thử lần nữa.");
       return;
     }
     let data;
     let error;
     if (dangChot) {
-      const lyDo = window.prompt("Nhập lý do mở snapshot Q:", "") || "";
+      const lyDo = window.prompt("Nhập lý do mở lại bản chốt số đi thầu:", "") || "";
       if (!lyDo.trim()) { setDangChot(false); return; }
       ({ data, error } = await supabase.rpc("mo_chot_so_tham_gia_thau_v3", {
         p_dot_goi_id: dotGoiId, p_ly_do: lyDo,
@@ -771,7 +837,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
     }
     setDangChot(false);
     if (error) {
-      setLoiO(error.message);
+      setLoiO(dichLoi(error));
       return;
     }
     // Chốt/mở chốt Q đổi hẳn cụm cột thầu (Q · R1 · R2 · R3 · Trúng). Không tải
@@ -839,7 +905,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
     if (error) {
       // Lỗi từ trigger fn_chan_o_da_lock (cột/dòng vừa bị khoá bởi người khác
       // trong lúc mình đang sửa) hiện nguyên văn — không cần dịch lại.
-      setLoiO(error.message);
+      setLoiO(dichLoi(error));
       return;
     }
     setOverrideTheoMa((prev) => {
@@ -919,7 +985,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       p_ly_do: phanBoDangSua.lyDo || null,
     });
     setDangLuu(false);
-    if (error) { setLoiO(error.message); return; }
+    if (error) { setLoiO(dichLoi(error)); return; }
     setPhanBoDangSua(null);
     await taiLai();
   };
@@ -934,9 +1000,9 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       .eq("goi_id", goiScope).eq("nam_de_xuat", NAM_DE_XUAT)
       .eq("ma_hang", maHang).eq("cot", colKey)
       .select();
-    if (error) { setLoiO(error.message); return; }
+    if (error) { setLoiO(dichLoi(error)); return; }
     if (!data?.length) {
-      setLoiO("Không bỏ được sửa đè — staging chưa có quyền xoá ô. Cần chạy backend/sql/patch_zl_khoi_phuc_o_goc.sql.");
+      setLoiO("Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_zl_khoi_phuc_o_goc). Vui lòng báo Phòng Điều dưỡng.");
       return;
     }
     setOverrideTheoMa((prev) => {
@@ -965,7 +1031,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       .select("gia_tri_cu, gia_tri_moi, nguoi_sua, thoi_gian")
       .eq("goi_id", goiScope).eq("nam_de_xuat", NAM_DE_XUAT).eq("ma_hang", maHang).eq("cot", colKey)
       .order("thoi_gian", { ascending: false }).limit(20);
-    setAudit({ maHang, cot: colKey, dsAudit: error ? [] : (data || []), dangTai: false, loi: error?.message });
+    setAudit({ maHang, cot: colKey, dsAudit: error ? [] : (data || []), dangTai: false, loi: dichLoi(error) });
   };
 
   const tongMaHang = rows.length;
@@ -990,88 +1056,43 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
     <div className="fixed inset-0 flex flex-col bg-slate-100">
       <StyleTable />
 
-      {/* Top bar */}
-      <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-1.5 text-xs text-slate-500">
-          <span>VTYT</span><span>›</span>
-          <span>Năm đề xuất {NAM_DE_XUAT}</span><span>›</span>
-          <span>{boThau.nhan}</span><span>›</span>
-          <span className="font-semibold text-slate-800">Danh mục tổng hợp PĐD</span>
-        </div>
-        <a href="#" onClick={(e) => { e.preventDefault(); window.location.hash = ""; }}
-          className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-umc-700">
-          <ChevronLeft size={13} /> Về màn chính
-        </a>
-      </div>
+      {/* Thanh đầu trang UMC (đợt 4, 18/09/2026) — thay dòng breadcrumb cũ. */}
+      <ThanhDauUmc
+        duongDan={["VTYT", `Năm đề xuất ${NAM_DE_XUAT}`, boThau.nhan]}
+        tenMan="Danh mục tổng hợp PĐD"
+        profile={profile} />
 
-      {/* Header + toolbar */}
-      <div className="bg-white px-4 py-3 border-b border-slate-200 shrink-0">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-lg font-semibold text-slate-900">
+      {/* Thanh tiến trình của gói con — một dòng, đứng đầu bảng (18/09/2026).
+          Không thay dải giai đoạn thầu bên dưới: các nút Bắt đầu / Hoàn thành /
+          mở lại / Xác nhận rớt vẫn nằm nguyên ở đó. Thanh chỉ cho biết đang ở
+          bước nào; bấm bước là cuộn tới đúng chỗ làm bước đó. */}
+      {tienTrinhGoi && (
+        <div className="bg-white border-b border-slate-200 px-4 py-1.5 shrink-0">
+          <ThanhTienTrinh gon viecCungDong
+            buoc={tienTrinhGoi.buoc.map((b) => ({ ...b, onDi: () => diToiPhanTu(CHO_CUA_BUOC[b.ma]) }))}
+            viecTiepTheo={tienTrinhGoi.viecTiepTheo}
+            nutDi={tienTrinhGoi.buocHienTai
+              ? { nhan: "Tới chỗ làm", onClick: () => diToiPhanTu(CHO_CUA_BUOC[tienTrinhGoi.buocHienTai]) }
+              : null} />
+        </div>
+      )}
+
+      {/* Header + toolbar — gọn lại 18/09/2026 (đợt 3 bố cục) để bảng bắt đầu
+          cao hơn. Dòng 1: tiêu đề + nút. Nút theo bước để lộ ra (Chốt số đi
+          thầu · Chốt trình ký · Xuất Excel); nút phụ (Tải lại, Cột hiển thị,
+          Chi tiết theo khoa, Nội dung ô) gom vào menu "Hiển thị ▾" — vẫn đủ,
+          gọi đúng hàm cũ. Dòng 2: dải giai đoạn thầu + băng trạng thái. */}
+      <div className="bg-white px-4 py-2 border-b border-slate-200 shrink-0">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <h1 className="text-base font-semibold text-slate-900 leading-tight">
               Danh mục tổng hợp — Gói {boThau.nhan}
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              30 cột chuẩn bệnh viện · Tổng hợp {tongMaHang} mã hàng từ {tongKhoaThamGia} khoa đã đề xuất · Cột "Khoa đề xuất" sổ xuống để xem breakdown
+              {tongMaHang} mã hàng · {tongKhoaThamGia} khoa đã đề xuất · Bấm ▸ ở cột "Khoa đề xuất" để xem số của từng khoa
             </p>
-            <div className="mt-2">
-              <ThanhGiaiDoanThau
-                dotGoiId={dotGoiId}
-                giaiDoan={thau.giaiDoan}
-                giaiDoanDangChay={thau.giaiDoanDangChay}
-                tongChuaXuLy={thau.tongChuaXuLy}
-                coPhienQ={thau.coPhienQ}
-                soChuaChia={thau.soChuaChia}
-                onLoi={(m) => setLoi(m)}
-                onXong={async (m) => {
-                  setThongBaoThau(m || "");
-                  await thau.taiLaiThau();
-                  await taiLai();
-                }}
-              />
-              {thau.coPhienQ && (
-                <ChotTrinhKyTongHop
-                  dotGoiId={dotGoiId}
-                  onXong={async (m) => {
-                    setThongBaoThau(m || "");
-                    await thau.taiLaiThau();
-                    await taiLai();
-                  }}
-                />
-              )}
-
-              {/* Băng đếm mã chưa chia đủ số trúng — đường vào duy nhất để dọn
-                  nốt các bản nháp còn thiếu (miếng 1c). */}
-              {thau.coPhienQ && maChuaChiaDu.size > 0 && (
-                <button type="button" onClick={() => setLocChuaChiaDu((v) => !v)}
-                  className={`mt-1.5 inline-flex items-center gap-1.5 rounded border px-2.5 py-1 text-[11px] font-medium ${
-                    locChuaChiaDu
-                      ? "border-amber-500 bg-amber-500 text-white"
-                      : "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"}`}>
-                  <AlertTriangle size={12} />
-                  Còn <b>{maChuaChiaDu.size}</b> mã chưa chia đủ số trúng về khoa
-                  <span className={locChuaChiaDu ? "opacity-90" : "opacity-60"}>
-                    · {locChuaChiaDu ? "bấm để xem lại tất cả" : "bấm để lọc ra"}
-                  </span>
-                </button>
-              )}
-              {locChuaChiaDu && maChuaChiaDu.size === 0 && (
-                <button type="button" onClick={() => setLocChuaChiaDu(false)}
-                  className="mt-1.5 inline-flex items-center gap-1.5 rounded border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-[11px] text-emerald-800">
-                  Đã chia đủ hết — bấm để xem lại tất cả
-                </button>
-              )}
-              {thongBaoThau && (
-                <div className="mt-1.5 rounded bg-emerald-50 px-2.5 py-1 text-[11px] text-emerald-800">
-                  {thongBaoThau}
-                  <button type="button" onClick={() => setThongBaoThau("")}
-                    className="ml-2 text-emerald-600 hover:underline">ẩn</button>
-                </div>
-              )}
-            </div>
           </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button className="qtdx-tb" onClick={taiLai}><RefreshCw size={13} /> Tải lại</button>
+          <div className="flex items-center gap-2 flex-wrap">
             <button type="button"
               className={`qtdx-tb ${cheDoGoRot ? "!bg-umc-700 !text-white !border-umc-700" : ""}`}
               onClick={() => { setCheDoGoRot((v) => !v); setDaTuBat(true); }}
@@ -1080,99 +1101,185 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                 : "Ẩn bớt cột để Q · R1 · R2 · R3 · Trúng · Đã chia · Xử lý rớt lọt màn hình, khỏi cuộn ngang"}>
               <Columns3 size={13} /> {cheDoGoRot ? "Chế độ gõ rớt: BẬT" : "Chế độ gõ rớt"}
             </button>
-            <div className="relative">
-              <button className="qtdx-tb" onClick={() => setOpenMenuCot((v) => !v)}>
-                <EyeOff size={13} /> Cột hiển thị ({cotHienThi.length}/{cotDayDu.length})
+            <div className="relative" ref={refHienThi}>
+              <button type="button" className="qtdx-tb" onClick={() => setMoHienThi((v) => !v)} aria-expanded={moHienThi}>
+                <SlidersHorizontal size={13} /> Hiển thị <ChevronDown size={11} />
               </button>
-              {openMenuCot && (
-                <div className="absolute right-0 top-full mt-1 w-72 max-h-96 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg z-40">
-                  <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-700">Chọn cột hiển thị</span>
-                    <button className="text-xs text-umc-700 hover:underline" onClick={() => setCotAn(new Set())}>Hiện tất cả</button>
-                  </div>
-                  {NHOM_COT_PDD.map((n) => {
-                    const dsCot = cotDayDu.filter((c) => c.group === n.key);
-                    if (!dsCot.length) return null;
-                    return (
-                      <div key={n.key} className="border-b border-slate-100 last:border-0">
-                        <div className="px-3 py-1 text-[10.5px] uppercase tracking-wide text-slate-400 bg-slate-50">{n.nhan}</div>
-                        {dsCot.map((c) => (
-                          <label key={c.key} className="flex items-center gap-2 px-3 py-1 hover:bg-slate-50 cursor-pointer text-xs">
-                            <input type="checkbox" checked={!cotAn.has(c.key)}
-                              onChange={() => cotAn.has(c.key) ? hienCot(c.key) : anCot(c.key)} />
-                            <span className={cotAn.has(c.key) ? "text-slate-400" : "text-slate-700"}>{c.nhan}</span>
-                          </label>
-                        ))}
+              {moHienThi && (
+                <div className="absolute right-0 top-full mt-1 w-80 max-h-[70vh] overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg z-40 py-1">
+                  <button type="button" className="qtdx-menu-item" onClick={() => { setMoHienThi(false); taiLai(); }}>
+                    <RefreshCw size={13} /> Tải lại
+                  </button>
+                  <button type="button" className="qtdx-menu-item" onClick={() => setHienChiTietKhoa((v) => !v)}
+                    title="Bật/tắt bảng con chi tiết theo khoa — tắt thì Excel cũng không có cột khoa">
+                    <Users size={13} /> Chi tiết theo khoa: {hienChiTietKhoa ? "BẬT" : "TẮT"}
+                  </button>
+                  <button type="button" className="qtdx-menu-item" onClick={() => setDongGon((v) => !v)}
+                    title="Đầy đủ = mọi ô hiện trọn nội dung (dòng cao). Gọn = cắt còn 4 dòng cho dễ cuộn; bấm vào ô vẫn xem/sửa được đủ.">
+                    <AlignLeft size={13} /> Nội dung ô: {dongGon ? "GỌN" : "ĐẦY ĐỦ"}
+                  </button>
+                  <button type="button" className="qtdx-menu-item" onClick={() => setOpenMenuCot((v) => !v)} aria-expanded={openMenuCot}>
+                    <EyeOff size={13} /> Cột hiển thị ({cotHienThi.length}/{cotDayDu.length})
+                    <ChevronDown size={11} className="ml-auto" />
+                  </button>
+                  {openMenuCot && (
+                    <div className="border-t border-slate-100">
+                      <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
+                        <span className="text-xs font-semibold text-slate-700">Chọn cột hiển thị</span>
+                        <button className="text-xs text-umc-700 hover:underline" onClick={() => setCotAn(new Set())}>Hiện tất cả</button>
                       </div>
-                    );
-                  })}
+                      {NHOM_COT_PDD.map((n) => {
+                        const dsCot = cotDayDu.filter((c) => c.group === n.key);
+                        if (!dsCot.length) return null;
+                        return (
+                          <div key={n.key} className="border-b border-slate-100 last:border-0">
+                            <div className="px-3 py-1 text-[11px] uppercase tracking-wide text-slate-500 bg-slate-50">{n.nhan}</div>
+                            {dsCot.map((c) => (
+                              <label key={c.key} className="flex items-center gap-2 px-3 py-1 hover:bg-slate-50 cursor-pointer text-xs">
+                                <input type="checkbox" checked={!cotAn.has(c.key)}
+                                  onChange={() => cotAn.has(c.key) ? hienCot(c.key) : anCot(c.key)} />
+                                <span className={cotAn.has(c.key) ? "text-slate-500 line-through" : "text-slate-700"}>{c.nhan}</span>
+                              </label>
+                            ))}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-            <button className="qtdx-tb" onClick={() => setHienChiTietKhoa((v) => !v)}
-              title="Bật/tắt bảng con chi tiết theo khoa — tắt thì Excel cũng không có cột khoa">
-              <Users size={13} /> Chi tiết theo khoa: {hienChiTietKhoa ? "BẬT" : "TẮT"}
-            </button>
-            <button className="qtdx-tb" onClick={() => setDongGon((v) => !v)}
-              title="Đầy đủ = mọi ô hiện trọn nội dung (dòng cao). Gọn = cắt còn 4 dòng cho dễ cuộn; bấm vào ô vẫn xem/sửa được đủ.">
-              <AlignLeft size={13} /> Nội dung ô: {dongGon ? "GỌN" : "ĐẦY ĐỦ"}
-            </button>
-            <button className={`qtdx-tb ${chot ? "" : "primary"}`}
+            <span aria-hidden className="mx-1 h-6 w-px bg-slate-200" />
+            <button id="th-nut-chot-q" className={`qtdx-tb ${chot ? "" : "primary"}`}
               onClick={doiChot}
               disabled={dangChot || !rows.length || (!chot && khoaChuaXacNhan.length > 0)}
               title={chot
                 ? "Bản tổng hợp đang KHOÁ. Mở chốt để sửa tiếp."
+                : !rows.length
+                ? "Chưa khoa nào gửi đề xuất cho gói này — chưa có số để chốt."
                 : khoaChuaXacNhan.length > 0
                   ? `Còn ${khoaChuaXacNhan.length} khoa chưa xác nhận bản hiện tại: `
                     + `${khoaChuaXacNhan.join(", ")}. Nhắn Teams để khoa vào bấm xác nhận.`
-                  : "Chốt số để mang đi thầu — khoá mọi ô, không ai sửa được nữa."}>
+                  : "Chốt số để mang đi thầu — khoá cột số lượng; cột chữ vẫn sửa được tới khi chốt trình ký."}>
               {chot ? <Unlock size={13} /> : <Lock size={13} />}
               {dangChot ? "Đang lưu…" : chot ? "Mở chốt để sửa" : "Chốt số đi thầu"}
             </button>
+            {thau.coPhienQ && (
+              <div id="th-chot-trinh-ky" className="rounded">
+                <ChotTrinhKyTongHop
+                  trongThanhCongCu
+                  dotGoiId={dotGoiId}
+                  onXong={async (m) => {
+                    setThongBaoThau(m || "");
+                    await thau.taiLaiThau();
+                    await taiLai();
+                  }}
+                />
+              </div>
+            )}
             <button className="qtdx-tb" onClick={xuatExcel} disabled={dangXuat || !rows.length}
-              title={revTrinhKy
-                ? `Số lượng trong file là SỐ TRÚNG đã phân bổ sau thầu, theo revision ${revTrinhKy}.`
+              title={!rows.length
+                ? "Chưa có mã nào trong bảng tổng hợp — không có gì để xuất."
+                : revTrinhKy
+                ? `Số lượng trong file là SỐ TRÚNG đã phân bổ sau thầu, theo bản chốt trình ký số ${revTrinhKy}.`
                 : "Chưa chốt dữ liệu trình ký — file xuất ra là bản nháp, số lượng là số đi thầu."}>
               <Download size={13} />
               {dangXuat ? "Đang xuất…"
-                : revTrinhKy ? `Xuất Excel CHÍNH THỨC (rev ${revTrinhKy})`
+                : revTrinhKy ? `Xuất Excel CHÍNH THỨC (bản chốt số ${revTrinhKy})`
                 : "Xuất Excel bản nháp"}
             </button>
           </div>
         </div>
-        <div className="mt-2 flex items-center gap-1.5 text-[11px] flex-wrap">
-          <span className="qtdx-badge blue">Tổng mã hàng: {tongMaHang}</span>
-          <span className="qtdx-badge green">{tongKhoaThamGia} khoa đã đề xuất</span>
-          {/* V2 — điều kiện chốt, nên phải nằm ngay đầu bảng chứ không giấu
-              trong tooltip của nút. Liệt kê tên để PĐD biết nhắn Teams cho ai. */}
-          <span className={`qtdx-badge ${khoaChuaXacNhan.length ? "amber" : "green"}`}>
-            {khoaChuaXacNhan.length
-              ? `${khoaChuaXacNhan.length} khoa chưa xác nhận: ${khoaChuaXacNhan.join(", ")} — chưa chốt số đi thầu được`
-              : "Mọi khoa đã xác nhận bản hiện tại"}
-          </span>
-          {chot && (
-            <span className="qtdx-badge amber">
-              {/* Nói đúng cái đang bị khoá: chốt Q chỉ đóng băng CỘT SỐ. Cột
-                  chữ còn sửa được tới khi chốt trình ký — băng cũ ghi "mọi ô
-                  đang khoá" nên PĐD tưởng mình phải mở chốt Q mới sửa được
-                  TSKT, mà mở chốt Q thì cả DOT_GOI mất trạng thái. */}
-              ĐÃ CHỐT SỐ ĐI THẦU — cột số đang khoá · {chot.chot_boi}
-              {" · "}{new Date(chot.chot_luc).toLocaleString("vi-VN")}
-              {` · revision Q${chot.revision} · chốt khi còn ${chot.so_khoa_chua_chot} khoa chưa nộp`}
-            </span>
-          )}
-          {cotLocked.size > 0 && <span className="qtdx-badge amber">{cotLocked.size} cột đang khoá</span>}
-          {dongLocked.size > 0 && <span className="qtdx-badge amber">{dongLocked.size} dòng đang khoá</span>}
-          {loiO && (
-            <span className="qtdx-badge red inline-flex items-center gap-1">
-              <AlertTriangle size={11} />{loiO}
-            </span>
-          )}
+
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+          <div id="th-giai-doan-thau" className="flex flex-wrap items-center gap-1.5 rounded">
+            <ThanhGiaiDoanThau
+              dotGoiId={dotGoiId}
+              giaiDoan={thau.giaiDoan}
+              giaiDoanDangChay={thau.giaiDoanDangChay}
+              tongChuaXuLy={thau.tongChuaXuLy}
+              coPhienQ={thau.coPhienQ}
+              soChuaChia={thau.soChuaChia}
+              dotIdTrenUrl={dotId}
+              onLoi={(m) => setLoi(m)}
+              onXong={async (m) => {
+                setThongBaoThau(m || "");
+                await thau.taiLaiThau();
+                await taiLai();
+              }}
+            />
+
+            {/* Băng đếm mã chưa chia đủ số trúng — đường vào duy nhất để dọn
+                nốt các bản nháp còn thiếu (miếng 1c). */}
+            {thau.coPhienQ && maChuaChiaDu.size > 0 && (
+              <button type="button" onClick={() => setLocChuaChiaDu((v) => !v)}
+                className={`inline-flex items-center gap-1.5 rounded border px-2.5 py-1 text-[11px] font-medium ${
+                  locChuaChiaDu
+                    ? "border-amber-500 bg-amber-500 text-white"
+                    : "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"}`}>
+                <AlertTriangle size={12} />
+                Còn <b>{maChuaChiaDu.size}</b> mã chưa chia đủ số trúng về khoa
+                <span className={locChuaChiaDu ? "opacity-90" : "opacity-75"}>
+                  · {locChuaChiaDu ? "bấm để xem lại tất cả" : "bấm để lọc ra"}
+                </span>
+              </button>
+            )}
+            {locChuaChiaDu && maChuaChiaDu.size === 0 && (
+              <button type="button" onClick={() => setLocChuaChiaDu(false)}
+                className="inline-flex items-center gap-1.5 rounded border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-[11px] text-emerald-800">
+                Đã chia đủ hết — bấm để xem lại tất cả
+              </button>
+            )}
+          </div>
+
+          <div id="th-dai-trang-thai" className="flex items-center gap-1.5 text-[11px] flex-wrap rounded">
+            {/* V2 — điều kiện chốt, nên phải nằm ngay đầu bảng chứ không giấu
+                trong tooltip của nút. Liệt kê tên để PĐD biết nhắn Teams cho ai. */}
+            {/* 18/09/2026: đã chốt số đi thầu thì băng "chưa chốt được" nói ngược
+                với băng "ĐÃ CHỐT" đứng ngay cạnh — chỉ để một băng trạng thái. */}
+            {/* QA3 (c): gói 0 khoa gửi thì KHÔNG được nói "mọi khoa đã xác nhận". */}
+            {!chot && !khoaChuaXacNhan.length && tongKhoaThamGia === 0 && (
+              <span className="qtdx-badge blue">Chưa khoa nào gửi đề xuất cho gói này</span>
+            )}
+            {!chot && (khoaChuaXacNhan.length > 0 || tongKhoaThamGia > 0) && (
+              <span className={`qtdx-badge ${khoaChuaXacNhan.length ? "amber" : "green"}`}>
+                {khoaChuaXacNhan.length
+                  ? `${khoaChuaXacNhan.length} khoa chưa xác nhận: ${khoaChuaXacNhan.join(", ")} — chưa chốt số đi thầu được`
+                  : "Mọi khoa đã xác nhận bản hiện tại"}
+              </span>
+            )}
+            {chot && (
+              <span className="qtdx-badge amber">
+                {/* Nói đúng cái đang bị khoá: chốt Q chỉ đóng băng CỘT SỐ. Cột
+                    chữ còn sửa được tới khi chốt trình ký — băng cũ ghi "mọi ô
+                    đang khoá" nên PĐD tưởng mình phải mở chốt Q mới sửa được
+                    TSKT, mà mở chốt Q thì cả DOT_GOI mất trạng thái. */}
+                Đã chốt số đi thầu — cột số lượng đang khoá · {chot.chot_boi}
+                {" · "}{new Date(chot.chot_luc).toLocaleString("vi-VN")}
+                {` · bản chốt số ${chot.revision}`}
+                {chot.so_khoa_chua_chot > 0 ? ` · lúc chốt còn ${chot.so_khoa_chua_chot} khoa chưa gửi` : ""}
+              </span>
+            )}
+            {cotLocked.size > 0 && <span className="qtdx-badge amber">{cotLocked.size} cột đang khoá</span>}
+            {dongLocked.size > 0 && <span className="qtdx-badge amber">{dongLocked.size} dòng đang khoá</span>}
+            {loiO && (
+              <span className="qtdx-badge red inline-flex items-center gap-1">
+                <AlertTriangle size={11} />{loiO}
+              </span>
+            )}
+          </div>
         </div>
+        {thongBaoThau && (
+          <div className="mt-1.5 rounded bg-emerald-50 px-2.5 py-1 text-[11px] text-emerald-800">
+            {thongBaoThau}
+            <button type="button" onClick={() => setThongBaoThau("")}
+              className="ml-2 text-emerald-700 hover:underline">ẩn</button>
+          </div>
+        )}
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-auto bg-white">
+      <div className={`flex-1 overflow-auto bg-white ${rows.length === 0 ? "flex flex-col" : ""}`}>
         <table className={`qtdx-table border-collapse w-max ${dongGon ? "dong-gon" : ""}`}>
           {/* Bắt buộc table-layout: fixed (xem StyleTable) mới ăn colgroup —
               không có colgroup, cột auto-layout theo nội dung DÀI NHẤT trong
@@ -1182,21 +1289,15 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
           <colgroup>
             <col style={{ width: 30 }} />
             {cotHienThi.map((c) => <col key={c.key} style={{ width: c.width }} />)}
-            <col style={{ width: cheDoGoRot ? 104 : 160 }} />
+            {(cheDoGoRot ? RONG_CUM_THAU_GO_ROT : RONG_CUM_THAU).slice(0, 1).map((w, i) => <col key={`k${i}`} style={{ width: w }} />)}
             {/* Sáu cột cụm thầu. Thiếu <col> ở đây thì bảng `w-max` bóp chúng
                 còn ~16px và ô bên cạnh đè lên — đo thật bằng trình duyệt
                 23/08/2026 (elementFromPoint trả về ô khác, không phải nút). */}
-            <col style={{ width: 84 }} />
-            <col style={{ width: 76 }} />
-            <col style={{ width: 76 }} />
-            <col style={{ width: 76 }} />
-            <col style={{ width: 88 }} />
-            <col style={{ width: 104 }} />
-            <col style={{ width: cheDoGoRot ? 176 : 200 }} />
+            {(cheDoGoRot ? RONG_CUM_THAU_GO_ROT : RONG_CUM_THAU).slice(1).map((w, i) => <col key={`t${i}`} style={{ width: w }} />)}
           </colgroup>
           <thead>
             <tr className="group-row">
-              <th className="freeze" style={{ background: "#0f172a", width: 30, left: 0 }}></th>
+              <th className="freeze" style={{ width: 30, left: 0 }}></th>
               {groupSegments.map((s, idx) => {
                 let leftOffset = 30;
                 if (s.freeze) {
@@ -1211,14 +1312,19 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                 }
                 return (
                   <th key={s.keyId} colSpan={s.span}
-                    className={`${s.mau} ${s.freeze ? "freeze" : ""}`}
+                    className={s.freeze ? "freeze" : ""}
+                    title={s.nhan}
                     style={s.freeze ? { left: leftOffset } : {}}>
-                    {s.nhan}
+                    {s.nhanHien}
                   </th>
                 );
               })}
-              <th className="bg-emerald-800">Khoa đề xuất</th>
-              <th className="bg-red-900" colSpan={7}>Kết quả đấu thầu</th>
+              {/* NẶNG-2: ở chế độ gõ rớt cột này chỉ 100px — "KHOA ĐỀ X…". */}
+              <th title="Khoa đề xuất">
+                {chonNhanVua(["Khoa đề xuất", "Khoa"],
+                  (cheDoGoRot ? RONG_CUM_THAU_GO_ROT : RONG_CUM_THAU)[0], doRongNhanNhom)}
+              </th>
+              <th colSpan={7} title="Kết quả đấu thầu">Kết quả đấu thầu</th>
             </tr>
             <tr className="col-row">
               <th className="freeze" style={{ width: 30, left: 0 }}></th>
@@ -1231,7 +1337,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                     style={c.freeze ? { left: leftFreezeCell(c.key) } : {}}>
                     <span className="inline-flex items-center gap-1">
                       {c.nhan}
-                      {c.freeze && <span title="Cột đang được cố định (freeze)" className="text-amber-300">📌</span>}
+                      {c.freeze && <span title="Cột này luôn hiện khi cuộn ngang">📌</span>}
                       {coTheKhoa && (
                         <button onClick={() => toggleKhoa("cot", c.key, cotLocked.has(c.key))}
                           className="opacity-50 hover:opacity-100"
@@ -1240,7 +1346,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                         </button>
                       )}
                       <button onClick={() => anCot(c.key)}
-                        className="opacity-50 hover:opacity-100 hover:text-rose-300"
+                        className="opacity-50 hover:opacity-100 hover:text-rose-600"
                         title="Ẩn cột này">
                         <EyeOff size={10} />
                       </button>
@@ -1248,14 +1354,14 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                   </th>
                 );
               })}
-              <th style={{ minWidth: cheDoGoRot ? 104 : 160 }}>{cheDoGoRot ? "Khoa · tổng" : "Số khoa · sổ chi tiết"}</th>
-              <th style={{ minWidth: 76 }} title="Số đã chốt đi thầu — bất biến">Q</th>
-              <th style={{ minWidth: 68 }} title="Rớt ở giai đoạn Chào giá">R1</th>
-              <th style={{ minWidth: 68 }} title="Rớt ở giai đoạn Mở thầu">R2</th>
-              <th style={{ minWidth: 68 }} title="Rớt ở giai đoạn Đánh giá">R3</th>
-              <th style={{ minWidth: 80 }} title="Q trừ R1 R2 R3">Trúng</th>
-              <th style={{ minWidth: 96 }} title="Tổng đã chia về các khoa — phải bằng Trúng thì mới xác nhận rớt được">Đã chia</th>
-              <th style={{ minWidth: cheDoGoRot ? 176 : 190 }}>Xử lý rớt</th>
+              <th style={{ minWidth: cheDoGoRot ? 100 : 160 }}>{cheDoGoRot ? "Khoa · tổng" : "Số khoa · sổ chi tiết"}</th>
+              <th title="Số đã chốt đi thầu — bất biến">Q</th>
+              <th title="Rớt ở giai đoạn Chào giá">R1</th>
+              <th title="Rớt ở giai đoạn Mở thầu">R2</th>
+              <th title="Rớt ở giai đoạn Đánh giá">R3</th>
+              <th title="Q trừ R1 R2 R3">Trúng</th>
+              <th title="Tổng đã chia về các khoa — phải bằng Trúng thì mới xác nhận rớt được">Đã chia</th>
+              <th>Xử lý rớt</th>
             </tr>
           </thead>
           <tbody>
@@ -1313,6 +1419,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                       isLocked ? "locked" : "",
                       isEditing ? "editing" : "",
                       c.kieu === "num" ? "num" : "",
+                      c.key === "stt" ? "stt" : "",
                       c.freeze ? "freeze" : "",
                     ].filter(Boolean).join(" ");
                     return (
@@ -1357,11 +1464,11 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                             <div className="flex items-center gap-2 mt-1">
                               <button type="button" disabled={dangLuu}
                                 onClick={luuO}
-                                className="text-[10px] rounded bg-umc-700 text-white px-1.5 py-0.5">
+                                className="text-[11px] rounded bg-umc-700 text-white px-1.5 py-0.5">
                                 {dangLuu ? "Đang lưu..." : "Lưu"}
                               </button>
                               <button type="button" onClick={() => setODangChon(null)}
-                                className="text-[10px] text-slate-500">Huỷ</button>
+                                className="text-[11px] text-slate-500">Huỷ</button>
                             </div>
                           </div>
                         ) : (
@@ -1370,7 +1477,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                             {daSuaDe && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); khoiPhucOGoc(r.ma_hang, c.key); }}
-                                className="ml-1 text-[9px] font-semibold text-amber-700 hover:text-amber-900"
+                                className="ml-1 text-[11px] font-semibold text-amber-700 hover:text-amber-900"
                                 title={`Đã sửa đè (số gốc: ${chuThuanCuaO(giaTriGoc(r.ma_hang, c.key), c.kieu) || "trống"}) — bấm để bỏ sửa đè, trả về số gốc`}>
                                 ✎
                               </button>
@@ -1397,7 +1504,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                             {dsKhoaGhi.length > 0 && !daSuaDe && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); setKhoaGhiDangXem({ maHang: r.ma_hang, cot: c.key, nhan: c.nhan, ds: dsKhoaGhi }); }}
-                                className={`ml-1 rounded px-1 text-[9px] font-semibold ${
+                                className={`ml-1 rounded px-1 text-[11px] font-semibold ${
                                   khoaLech ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600"}`}
                                 title={khoaLech
                                   ? `${dsKhoaGhi.length} khoa ghi ${soGiaTriKhac} giá trị khác nhau — bấm để xem`
@@ -1411,7 +1518,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                                 trigger đặt tại nguồn, không đoán từ email. */}
                             {c.key === "sl_de_xuat_2627" && r.khoaTuSuaSo?.length > 0 && (
                               <span
-                                className="ml-1 rounded bg-amber-100 px-1 text-[9px] font-semibold text-amber-800"
+                                className="ml-1 inline-block whitespace-nowrap rounded bg-amber-100 px-1 text-[11px] font-semibold text-amber-800"
                                 title={`Tổng này đã đổi vì khoa tự sửa số: ${r.khoaTuSuaSo.join(", ")}. `
                                   + "Gõ lại tổng ở đây để chia lại theo tỉ lệ."}>
                                 {r.khoaTuSuaSo.length} khoa tự sửa
@@ -1439,11 +1546,11 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                   <td className="qtdx-cell readonly" style={{ minWidth: cheDoGoRot ? 92 : 160 }}>
                     <span className="flex flex-col leading-tight">
                       <span className="whitespace-nowrap">
-                        <span className="font-mono font-semibold text-emerald-800">{r.khoaDeXuat.length}</span>
+                        <span className="tabular-nums font-semibold text-emerald-800">{r.khoaDeXuat.length}</span>
                         <span className="ml-1 text-slate-500">khoa</span>
                       </span>
                       <span className="whitespace-nowrap">
-                        <span className="font-mono font-semibold">{fmt(r.tongToanVien)}</span>
+                        <span className="tabular-nums font-semibold">{fmt(r.tongToanVien)}</span>
                         <span className="ml-1 text-slate-500">tổng</span>
                       </span>
                     </span>
@@ -1462,7 +1569,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                         p_dot_goi_id: dotGoiId, p_ma_hang: r.ma_hang,
                       });
                       setDangChiaTiLe("");
-                      if (error) { setLoi(error.message); return; }
+                      if (error) { setLoi(dichLoi(error)); return; }
                       await thau.taiLaiThau();
                     }}
                     onSuaRot={(row, giaiDoan, giaTri) =>
@@ -1494,11 +1601,11 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                           <table className="w-auto">
                             <thead>
                               <tr>
-                                <th className="text-left text-[10.5px] font-normal text-slate-500 px-3 py-1.5" style={{ background: "transparent", color: "#64748b", position: "static" }}>Khoa</th>
-                                <th className="text-right text-[10.5px] font-normal text-slate-500 px-3 py-1.5" style={{ background: "transparent", color: "#64748b", position: "static" }}>SL gốc</th>
-                                <th className="text-right text-[10.5px] font-normal text-slate-500 px-3 py-1.5" style={{ background: "transparent", color: "#64748b", position: "static" }}>SL hiện hành</th>
-                                <th className="text-right text-[10.5px] font-normal text-slate-500 px-3 py-1.5" style={{ background: "transparent", color: "#64748b", position: "static" }}>Tỉ trọng</th>
-                                <th className="text-left text-[10.5px] font-normal text-slate-500 px-3 py-1.5" style={{ background: "transparent", color: "#64748b", position: "static" }}>Trạng thái</th>
+                                <th className="text-left text-[11px] font-normal text-slate-500 px-3 py-1.5" style={{ background: "transparent", color: "#64748b", position: "static" }}>Khoa</th>
+                                <th className="text-right text-[11px] font-normal text-slate-500 px-3 py-1.5" style={{ background: "transparent", color: "#64748b", position: "static" }}>SL gốc</th>
+                                <th className="text-right text-[11px] font-normal text-slate-500 px-3 py-1.5" style={{ background: "transparent", color: "#64748b", position: "static" }}>SL hiện hành</th>
+                                <th className="text-right text-[11px] font-normal text-slate-500 px-3 py-1.5" style={{ background: "transparent", color: "#64748b", position: "static" }}>Tỉ trọng</th>
+                                <th className="text-left text-[11px] font-normal text-slate-500 px-3 py-1.5" style={{ background: "transparent", color: "#64748b", position: "static" }}>Trạng thái</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1520,7 +1627,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                                     {r.tongToanVien > 0 ? Math.round((k.soLuong / r.tongToanVien) * 100) : 0}%
                                   </td>
                                   <td className="px-3 py-1 text-xs">
-                                    <span className="qtdx-badge green">Đã submit</span>
+                                    <span className="qtdx-badge green">Đã gửi</span>
                                   </td>
                                 </tr>
                               ))}
@@ -1572,11 +1679,24 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
             })}
           </tbody>
         </table>
+        {/* NẶNG-3 (QA3): gói chưa có đề xuất từng để trắng ~610px dưới tiêu
+            đề, không một câu báo. Nay có câu báo, căn giữa vùng trống. */}
+        {rows.length === 0 && (
+          <div className="flex flex-1 items-center justify-center bg-slate-50/70 px-4 py-10">
+            <div className="max-w-md rounded-lg border border-umc-100 bg-white px-6 py-5 text-center shadow-sm">
+              <p className="text-sm font-semibold text-umc-900">Chưa có khoa nào gửi đề xuất cho gói này</p>
+              <p className="mt-1.5 text-xs text-slate-600">
+                Bảng tổng hợp tự hiện mã hàng ngay khi có khoa gửi đề xuất trong gói {boThau.nhan}.
+                Theo dõi khoa nào đã gửi ở Bàn điều hành.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="bg-slate-800 text-slate-300 text-xs px-4 py-1.5 flex items-center justify-between shrink-0">
-        <div>{locChuaChiaDu ? `Đang lọc ${rowsHien.length}/${tongMaHang} mã chưa chia đủ` : `${tongMaHang} mã hàng`} · {rowMoRong.size} dòng đang mở · {cotLocked.size} cột lock · {dongLocked.size} dòng lock</div>
-        <div>Số liệu + sửa ô/khoá đều lưu thật (Supabase) · audit theo ô · Cột theo "Tổng hợp danh mục đề xuất chuẩn pdd.xlsx"</div>
+        <div>{locChuaChiaDu ? `Đang lọc ${rowsHien.length}/${tongMaHang} mã chưa chia đủ` : `${tongMaHang} mã hàng`} · {rowMoRong.size} dòng đang mở · {cotLocked.size} cột đang khoá · {dongLocked.size} dòng đang khoá</div>
+        <div>Mọi ô sửa đều được lưu kèm lịch sử người sửa · Cột theo mẫu "Tổng hợp danh mục đề xuất chuẩn" của bệnh viện</div>
       </div>
 
       <StyleToolbar />
@@ -1609,7 +1729,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                   <p className="mt-0.5 text-[11px] text-slate-900 whitespace-pre-wrap">{x.giaTri}</p>
                 </div>
               ))}
-              <p className="text-[10px] text-slate-500">
+              <p className="text-[11px] text-slate-500">
                 Gõ giá trị duyệt thẳng vào ô trên bảng. Sau khi duyệt, mọi khoa
                 nhận giá trị đó và ô bên khoa thành chỉ đọc.
               </p>

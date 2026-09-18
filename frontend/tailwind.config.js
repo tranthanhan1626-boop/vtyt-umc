@@ -10,6 +10,11 @@ export default {
   content: ["./index.html", "./src/**/*.{js,jsx}"],
   theme: {
     extend: {
+      // Be Vietnam Pro nạp từ Google Fonts (index.html); phần sau là fallback
+      // hệ thống khi không tải được font.
+      fontFamily: {
+        sans: ['"Be Vietnam Pro"', "Inter", '"Segoe UI"', "Roboto", '"Helvetica Neue"', "Arial", "sans-serif"],
+      },
       colors: {
         umc: {
           50: "#eff6fd",

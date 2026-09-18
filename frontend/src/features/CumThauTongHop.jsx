@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, ArrowRightLeft, Check, Play, X } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
+import { dichLoi } from "../lib/dichLoi";
+import { useDongKhiRaNgoai } from "../components/ThanhDauUmc";
 
 /*
  * CumThauTongHop — cụm cột đấu thầu nằm NGAY TRONG bảng Tổng hợp danh mục PĐD.
@@ -136,13 +138,18 @@ export function useDuLieuThau(dotGoiId) {
 /** Thanh giai đoạn + nút xác nhận rớt, đặt trên thanh công cụ của Tổng hợp. */
 export function ThanhGiaiDoanThau({
   dotGoiId, giaiDoan, giaiDoanDangChay, tongChuaXuLy, coPhienQ, soChuaChia = 0,
-  onXong, onLoi,
+  onXong, onLoi, dotIdTrenUrl = null,
 }) {
   const [dangChay, setDangChay] = useState("");
   // Không dùng window.confirm/prompt: hộp thoại của trình duyệt khoá cả trang,
   // không ghi được dấu vết, và người dùng hay bấm nhầm vì nó bật ra giữa màn.
   const [hoiMoLai, setHoiMoLai] = useState(null);   // { ma, lyDo }
   const [hoiXacNhan, setHoiXacNhan] = useState(false);
+  const [moMenuMoLai, setMoMenuMoLai] = useState(false);
+  // QA3 (d): Esc và bấm ra ngoài đóng menu "Mở lại…".
+  const refMoLai = useRef(null);
+  const dongMoLai = useCallback(() => setMoMenuMoLai(false), []);
+  useDongKhiRaNgoai(moMenuMoLai, dongMoLai, refMoLai);
 
   const doiTrangThai = async (ma, trangThai, lyDo = "") => {
     if (trangThai === "dang_thuc_hien"
@@ -156,7 +163,7 @@ export function ThanhGiaiDoanThau({
       p_dot_goi_id: dotGoiId, p_giai_doan: ma, p_trang_thai: trangThai, p_ly_do: lyDo || null,
     });
     setDangChay("");
-    if (error) { onLoi?.(error.message); return; }
+    if (error) { onLoi?.(dichLoi(error)); return; }
     await onXong?.();
   };
 
@@ -169,7 +176,7 @@ export function ThanhGiaiDoanThau({
       p_ma_hang: null,
     });
     setDangChay("");
-    if (error) { onLoi?.(error.message); return; }
+    if (error) { onLoi?.(dichLoi(error)); return; }
     // RPC nay trả TÓM TẮT, không phải một dòng cho mỗi (mã × khoa): bản cũ trả
     // bảng dài nên PostgREST cắt ở 1.000 và màn báo hụt (đo thật 24/08: cần
     // 1.608, báo 1.000).
@@ -180,7 +187,7 @@ export function ThanhGiaiDoanThau({
     await onXong?.(d.so_dong
       ? `Đã đẩy ${d.so_dong} dòng (${d.so_ma} mã × ${d.so_khoa} khoa) vào GIỎ của khoa ở `
         + `${d.ten_dot || "đợt bổ sung"} tháng ${d.thang}/${d.nam}. `
-        + `Số lượng mới là gợi ý — khoa phải tự sửa rồi bấm “Gửi giỏ” thì mới thành đề xuất. `
+        + `Số lượng mới là gợi ý — khoa phải tự sửa rồi bấm Gửi đề xuất trong giỏ thì mới thành đề xuất. `
         + `Theo dõi phần chưa gửi ở Bàn điều hành.`
       : "Không còn phần rớt nào cần chuyển tiếp.");
   };
@@ -188,9 +195,13 @@ export function ThanhGiaiDoanThau({
   // Cụm cột thầu rỗng thì phải NÓI VÌ SAO. Bài học 23/08/2026: ba màn nằm chết
   // hai tuần chỉ vì chúng hiện rỗng mà không báo gì cả.
   if (!dotGoiId) {
+    // 18/09/2026: URL đã có đợt mà vẫn không có DOT_GOI thì đừng nói "chưa
+    // chọn đợt" — nói đúng là không tìm thấy gói con này trong đợt đó.
     return (
       <div className="rounded bg-slate-100 px-2.5 py-1 text-[11px] text-slate-600">
-        Chưa chọn đợt — cụm cột đấu thầu chỉ hiện khi mở bảng theo một đợt cụ thể.
+        {dotIdTrenUrl
+          ? `Không tìm thấy gói con này trong đợt #${dotIdTrenUrl} — cụm cột đấu thầu chưa có dữ liệu.`
+          : "Chưa chọn đợt — cụm cột đấu thầu chỉ hiện khi mở bảng theo một đợt cụ thể."}
       </div>
     );
   }
@@ -257,14 +268,10 @@ export function ThanhGiaiDoanThau({
                 <Check size={10} /> Hoàn thành
               </button>
             )}
-            {tt === "hoan_thanh" && (
-              <button type="button" disabled={!!dangChay}
-                onClick={() => doiTrangThai(g.ma, "dang_thuc_hien")}
-                title="Mở lại giai đoạn này — kết quả từ đây trở đi sẽ hết hiệu lực"
-                className="text-emerald-700 underline decoration-dotted hover:text-emerald-900">
-                mở lại
-              </button>
-            )}
+            {/* 18/09/2026: link "mở lại" (nguy hiểm — kết quả từ đó trở đi hết
+                hiệu lực) không còn nằm trong thẻ giai đoạn, cạnh nút thường;
+                nó dời vào menu "Mở lại…" ở cuối dải. Cùng lời gọi
+                doiTrangThai(g.ma, "dang_thuc_hien") như trước. */}
           </span>
         );
       })}
@@ -284,11 +291,35 @@ export function ThanhGiaiDoanThau({
         </button>
       )}
 
+      {GIAI_DOAN.some((g) => giaiDoan.find((x) => x.giai_doan === g.ma)?.trang_thai === "hoan_thanh") && (
+        <span className="relative ml-2 border-l border-slate-200 pl-2" ref={refMoLai}>
+          <button type="button" onClick={() => setMoMenuMoLai((v) => !v)} disabled={!!dangChay}
+            aria-expanded={moMenuMoLai}
+            title="Mở lại một giai đoạn đã hoàn thành — kết quả từ đó trở đi sẽ hết hiệu lực"
+            className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-[11px] font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">
+            Mở lại… <span className="opacity-70">{moMenuMoLai ? "▲" : "▼"}</span>
+          </button>
+          {moMenuMoLai && (
+            <span className="absolute left-2 top-full z-40 mt-1 flex w-56 flex-col rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+              {GIAI_DOAN.filter((g) => giaiDoan.find((x) => x.giai_doan === g.ma)?.trang_thai === "hoan_thanh")
+                .map((g) => (
+                  <button key={g.ma} type="button" disabled={!!dangChay}
+                    onClick={() => { setMoMenuMoLai(false); doiTrangThai(g.ma, "dang_thuc_hien"); }}
+                    title="Mở lại giai đoạn này — kết quả từ đây trở đi sẽ hết hiệu lực"
+                    className="px-3 py-1.5 text-left text-xs text-red-600 hover:bg-red-50 disabled:opacity-50">
+                    Mở lại {g.nhan}
+                  </button>
+                ))}
+            </span>
+          )}
+        </span>
+      )}
+
       {hoiXacNhan && (
         <span className="inline-flex flex-wrap items-center gap-2 rounded border border-red-300 bg-red-50 px-2.5 py-1.5 text-[11px] text-red-900">
           <b>{fmt(tongChuaXuLy)}</b> chưa đổ sang mã nào sẽ vào <b>GIỎ</b> của từng khoa ở đợt bổ
           sung gần nhất, kèm số lượng <b>gợi ý</b> — <b>chưa phải đề xuất</b>. Khoa được báo đỏ,
-          tự sửa số rồi tự bấm “Gửi giỏ”. Phần đã đổ sang mã tương đương không bị đưa vào.
+          tự sửa số rồi tự bấm Gửi đề xuất trong giỏ. Phần đã đổ sang mã tương đương không bị đưa vào.
           <button type="button" onClick={xacNhanRot} disabled={!!dangChay}
             className="rounded bg-red-600 px-2 py-0.5 font-semibold text-white hover:bg-red-700 disabled:opacity-50">
             {dangChay === "xac_nhan" ? "Đang xử lý…" : "Đồng ý, đẩy vào giỏ"}
@@ -330,7 +361,9 @@ export function OThauCuaDong({
   onSuaRot, onDoMa, onChiaTiLe, dangChia,
 }) {
   const kq = ketQua.get(row.ma_hang);
-  const oSo = "px-2 py-1 text-right font-mono text-[12px] tabular-nums";
+  // Đợt 4: cùng dáng ô Excel với phần bảng bên trái — chữ 13px, số căn phải
+  // tabular-nums (không dùng font-mono nữa), kẻ ô mảnh.
+  const oSo = "px-2 py-1 text-right text-[13px] tabular-nums border-r border-b border-[#e3eaf3]";
 
   if (!kq) {
     return (
@@ -387,31 +420,31 @@ export function OThauCuaDong({
           : undefined}>
         {fmt(kq.so_luong_trung)}
         {nhan && (
-          <span className="ml-1 font-normal text-sky-700">+{fmt(nhan.da_nhan)}</span>
+          <span className="block font-normal text-umc-700">+{fmt(nhan.da_nhan)}</span>
         )}
       </td>
       {/* QĐ D14 (24/08/2026): hệ không tự chia số trúng về khoa nữa. Cột này là
           chỗ duy nhất thấy dòng nào PĐD còn phải gõ — khoá cứng 2. */}
-      <td className="px-2 py-1 text-right text-[12px]" style={{ background: pb && !pb.da_khop ? "#fef2f2" : "#fff" }}>
+      <td className="px-2 py-1 text-right text-[13px] border-r border-b border-[#e3eaf3]" style={{ background: pb && !pb.da_khop ? "#fef2f2" : "#fff" }}>
         {!pb ? <span className="text-slate-300">—</span>
           : pb.da_khop
-            ? <span className="font-mono tabular-nums text-slate-600">{fmt(pb.da_chia)}</span>
+            ? <span className="tabular-nums text-slate-600">{fmt(pb.da_chia)}</span>
             : (
               <span className="inline-flex items-center gap-1">
-                <span className="font-mono tabular-nums font-semibold text-red-700">{fmt(pb.da_chia)}</span>
+                <span className="tabular-nums font-semibold text-red-700">{fmt(pb.da_chia)}</span>
                 <button type="button" disabled={dangChia === row.ma_hang}
                   onClick={() => onChiaTiLe(row)}
                   title={`Còn lệch ${fmt(pb.lech)} — bấm để chia ${fmt(pb.phai_chia)} về ${pb.so_khoa} khoa theo tỉ lệ Q`
                     + (Number(pb.da_nhan) > 0
                        ? ` (gồm ${fmt(pb.da_nhan)} nhận từ mã rớt). Muốn tự chia thì sổ dòng ra.`
                        : ". Muốn tự chia thì sổ dòng ra.")}
-                  className="rounded border border-umc-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-umc-700 hover:bg-umc-50 disabled:opacity-50">
+                  className="rounded border border-umc-300 bg-white px-1.5 py-0.5 text-[11px] font-medium text-umc-700 hover:bg-umc-50 disabled:opacity-50">
                   {dangChia === row.ma_hang ? "…" : "Chia"}
                 </button>
               </span>
             )}
       </td>
-      <td className="px-2 py-1 text-[11px]" style={{ minWidth: 190 }}>
+      <td className="px-2 py-1 text-[11px] border-b border-[#e3eaf3]" style={{ minWidth: 190 }}>
         {conLai > 0 && (
           <button type="button" onClick={() => onDoMa(row, conLai)}
             title="Đổ phần rớt này sang mã tương đương cùng mã quản lý"
@@ -470,7 +503,7 @@ export function HopNhapRot({ mo, onDong, onXong }) {
       p_rot_toan_bo: toanBo, p_ly_do: lyDo.trim(),
     });
     setDangLuu(false);
-    if (error) { setLoi(error.message); return; }
+    if (error) { setLoi(dichLoi(error)); return; }
     await onXong?.();
     onDong();
   };
@@ -529,7 +562,7 @@ export function HopDoSangMa({ mo, dsAnhEm, onDong, onXong }) {
       p_ma_hang_nhan: maNhan, p_ly_do: lyDo.trim(),
     });
     setDangLuu(false);
-    if (error) { setLoi(error.message); return; }
+    if (error) { setLoi(dichLoi(error)); return; }
     await onXong?.();
     onDong();
   };
@@ -642,7 +675,7 @@ export function BangSoTrungTheoKhoa({ dotGoiId, maHang, phaiChia, onLuuXong }) {
       p_ly_do: lyDo.trim() || null,
     });
     setDangLuu(false);
-    if (error) { setLoi(error.message); return; }
+    if (error) { setLoi(dichLoi(error)); return; }
     await tai();
     await onLuuXong?.();
   }, [dotGoiId, maHang, go, lyDo, tai, onLuuXong]);
@@ -679,15 +712,15 @@ export function BangSoTrungTheoKhoa({ dotGoiId, maHang, phaiChia, onLuuXong }) {
           {lech > 0 && <span className="text-amber-700"> · còn thiếu {fmt(lech)}</span>}
           {lech < 0 && <span className="text-red-700"> · dư {fmt(-lech)}</span>}
         </span>
-        <span className="ml-auto text-[10px] text-slate-400">
+        <span className="ml-auto text-[11px] text-slate-400">
           Enter xuống khoa kế · Shift+Enter lên · Esc trả về số cũ · Ctrl+Enter lưu
         </span>
       </div>
       <table className="w-auto">
         <thead>
-          <tr className="text-[10.5px] text-slate-500">
+          <tr className="text-[11px] text-slate-500">
             <th className="px-3 py-1 text-left" style={{ background: "transparent", color: "#64748b", position: "static" }}>Khoa</th>
-            <th className="px-3 py-1 text-right" style={{ background: "transparent", color: "#64748b", position: "static" }}  title="Q của khoa theo snapshot đi thầu">Q của khoa</th>
+            <th className="px-3 py-1 text-right" style={{ background: "transparent", color: "#64748b", position: "static" }}  title="Số đi thầu (Q) của khoa, theo bản đã chốt">Q của khoa</th>
             <th className="px-3 py-1 text-right" style={{ background: "transparent", color: "#64748b", position: "static" }}
               title="Phần của khoa ở mã này đã đổ sang mã tương đương hoặc đã chuyển tiếp về đợt bổ sung">Đã đưa đi</th>
             <th className="px-3 py-1 text-right" style={{ background: "transparent", color: "#64748b", position: "static" }}>Nhận từ mã rớt</th>
@@ -772,7 +805,7 @@ export function BangSoTrungTheoKhoa({ dotGoiId, maHang, phaiChia, onLuuXong }) {
  *  Mở lại một khoa (revision 2 tầng) vẫn giữ, nhưng là MỘT ô chọn khoa chứ
  *  không phải 50 nút.
  * ─────────────────────────────────────────────────────────────────────────── */
-export function ChotTrinhKyTongHop({ dotGoiId, onXong }) {
+export function ChotTrinhKyTongHop({ dotGoiId, onXong, trongThanhCongCu = false }) {
   const [mo, setMo] = useState(false);
   const [tai, setTai] = useState(false);
   const [khoaThieu, setKhoaThieu] = useState(null);   // null = chưa đọc được
@@ -799,7 +832,7 @@ export function ChotTrinhKyTongHop({ dotGoiId, onXong }) {
     if (thieu.error) {
       // Không đọc được cổng ⇒ coi như CHƯA BIẾT ⇒ khoá nút. Đoán "chắc là đủ"
       // ở đây là cách nhanh nhất để chốt một bản trình ký thiếu khoa.
-      setKhoaThieu(null); setLoi(thieu.error.message); return;
+      setKhoaThieu(null); setLoi(dichLoi(thieu.error)); return;
     }
     setKhoaThieu((thieu.data || []).map((r) => r.khoa));
     setDaChot([...new Set((chot.data || []).map((r) => r.khoa))].sort((a, b) => a.localeCompare(b, "vi")));
@@ -825,7 +858,7 @@ export function ChotTrinhKyTongHop({ dotGoiId, onXong }) {
       });
       if (error) {
         setDangChay(""); setTienDo("");
-        setLoi(`Dừng ở khoa "${k}": ${error.message}`);
+        setLoi(`Dừng ở khoa "${k}": ${dichLoi(error)}`);
         await doc();
         return;
       }
@@ -833,7 +866,7 @@ export function ChotTrinhKyTongHop({ dotGoiId, onXong }) {
     setTienDo("đang đóng băng bản trình ký…");
     const { error } = await supabase.rpc("chot_trinh_ky_toan_bo_v3", { p_dot_goi_id: dotGoiId });
     setDangChay(""); setTienDo("");
-    if (error) { setLoi(error.message); await doc(); return; }
+    if (error) { setLoi(dichLoi(error)); await doc(); return; }
     await doc();
     await onXong?.("Đã chốt trình ký toàn bộ — bản Excel chính thức dùng số này.");
   };
@@ -845,10 +878,10 @@ export function ChotTrinhKyTongHop({ dotGoiId, onXong }) {
       p_dot_goi_id: dotGoiId, p_khoa: moLai.khoa, p_ly_do: moLai.lyDo.trim(),
     });
     setDangChay("");
-    if (error) { setLoi(error.message); return; }
+    if (error) { setLoi(dichLoi(error)); return; }
     setMoLai({ khoa: "", lyDo: "" });
     await doc();
-    await onXong?.(`Đã mở lại bảng trình ký khoa ${moLai.khoa} — revision cũ hết hiệu lực.`);
+    await onXong?.(`Đã mở lại bảng trình ký khoa ${moLai.khoa} — bản chốt cũ hết hiệu lực.`);
   };
 
   const soThieu = khoaThieu?.length ?? null;
@@ -857,19 +890,25 @@ export function ChotTrinhKyTongHop({ dotGoiId, onXong }) {
   if (!dotGoiId) return null;
 
   return (
-    <div className="mt-1.5">
-      <button type="button" onClick={() => setMo((v) => !v)}
-        className={`inline-flex items-center gap-1.5 rounded border px-2.5 py-1 text-[11px] font-medium ${
+    // `trongThanhCongCu` (18/09/2026): nút đứng trên thanh công cụ bảng Tổng
+    // hợp cạnh "Chốt số đi thầu", nên panel phải NỔI (absolute) thay vì đẩy cả
+    // phần đầu trang xuống. Nội dung panel và mọi lời gọi RPC giữ nguyên.
+    <div className={trongThanhCongCu ? "relative" : "mt-1.5"}>
+      <button type="button" onClick={() => setMo((v) => !v)} aria-expanded={mo}
+        className={`inline-flex items-center gap-1.5 rounded border px-2.5 font-medium ${
+          trongThanhCongCu ? "min-h-[32px] py-1 text-xs" : "py-1 text-[11px]"} ${
           phien ? "border-emerald-300 bg-emerald-50 text-emerald-800"
-                : "border-umc-300 bg-umc-50 text-umc-900 hover:bg-umc-100"}`}>
+                : "border-umc-300 bg-white text-umc-800 hover:bg-umc-50"}`}>
         <Check size={12} />
-        {phien ? `Đã chốt trình ký — revision ${phien.revision}` : "Chốt trình ký"}
+        {phien ? `Đã chốt trình ký — bản số ${phien.revision}` : "Chốt trình ký"}
         <span className="opacity-60">{mo ? "▲" : "▼"}</span>
       </button>
 
       {mo && (
-        <div className="mt-1.5 rounded border border-slate-200 bg-white p-2.5 text-[11px]">
-          {tai && <p className="text-slate-400">Đang đọc trạng thái chốt…</p>}
+        <div className={trongThanhCongCu
+          ? "absolute right-0 top-full z-40 mt-1 w-[34rem] max-w-[90vw] rounded-lg border border-slate-200 bg-white p-2.5 text-xs shadow-lg"
+          : "mt-1.5 rounded border border-slate-200 bg-white p-2.5 text-[11px]"}>
+          {tai && <p className="text-slate-500">Đang đọc trạng thái chốt…</p>}
 
           {!tai && khoaThieu === null && (
             <p className="text-red-700">Không đọc được cổng chốt — nút bị khoá cho tới khi đọc được. {loi}</p>
@@ -884,7 +923,7 @@ export function ChotTrinhKyTongHop({ dotGoiId, onXong }) {
                 </span>
                 {phien && (
                   <span className="rounded bg-emerald-100 px-2 py-0.5 text-emerald-800">
-                    revision {phien.revision} · {phien.chot_boi}
+                    bản số {phien.revision} · {phien.chot_boi}
                   </span>
                 )}
                 <button type="button" onClick={doc} className="ml-auto text-slate-500 hover:underline">Đọc lại</button>
@@ -897,7 +936,7 @@ export function ChotTrinhKyTongHop({ dotGoiId, onXong }) {
                   <button type="button" disabled={!sanSang || !!dangChay} onClick={chotHet}
                     title={dsKhoa.length === 0 ? "Chưa khoa nào gửi đề xuất"
                       : soThieu > 0 ? `Hệ sẽ chốt lần lượt ${soThieu} khoa còn thiếu rồi đóng băng cả gói con`
-                      : "Đóng băng số của cả gói con thành revision chính thức"}
+                      : "Đóng băng số của cả gói con thành bản chốt chính thức"}
                     className="rounded bg-umc-700 px-3 py-1 font-semibold text-white hover:bg-umc-800 disabled:opacity-40">
                     {dangChay === "toan_bo" ? "Đang chốt…" : "CHỐT TRÌNH KÝ TOÀN BỘ"}
                   </button>
@@ -932,7 +971,7 @@ export function ChotTrinhKyTongHop({ dotGoiId, onXong }) {
                         className="rounded bg-amber-600 px-2 py-0.5 font-semibold text-white disabled:opacity-40">
                         {dangChay === "mo_lai" ? "…" : "Mở lại"}
                       </button>
-                      <span className="text-amber-700">revision chính thức hiện tại sẽ hết hiệu lực</span>
+                      <span className="text-amber-700">bản chốt chính thức hiện tại sẽ hết hiệu lực</span>
                     </>
                   )}
                 </div>

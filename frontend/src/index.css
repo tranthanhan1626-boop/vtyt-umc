@@ -60,8 +60,7 @@
       radial-gradient(circle at 88% 5%, rgba(82, 195, 233, 0.08), transparent 28rem),
       var(--umc-surface);
     color: var(--umc-ink);
-    font-family: Inter, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-family: "Be Vietnam Pro", Inter, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
 
@@ -208,7 +207,7 @@
     border-radius: 99px;
     background: #dc2626;
     color: white;
-    font-size: 0.64rem;
+    font-size: 0.6875rem;
     line-height: 1;
   }
 
@@ -223,7 +222,7 @@
     border-radius: 50%;
     background: linear-gradient(145deg, #edf9fe, #dceffc);
     color: var(--umc-blue-dark);
-    font-size: 0.68rem;
+    font-size: 0.6875rem;
     font-weight: 800;
   }
 
@@ -295,7 +294,7 @@
     margin-bottom: 0.55rem;
     padding: 0 0.55rem;
     color: #8a9aaf;
-    font-size: 0.63rem;
+    font-size: 0.6875rem;
     font-weight: 800;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -325,6 +324,12 @@
     color: var(--umc-navy);
   }
 
+  /* Gói cha đang MỞ NHÁNH nhưng mục sáng nằm ở mục con bên dưới — chỉ đánh
+     dấu nhẹ, không cùng kiểu is-active (QA3: đúng MỘT mục sáng). */
+  .umc-package-button.is-open {
+    color: var(--umc-navy);
+  }
+
   .umc-package-icon {
     display: inline-flex;
     width: 1.9rem;
@@ -343,6 +348,11 @@
     box-shadow: 0 5px 12px rgba(34, 96, 170, 0.18);
   }
 
+  .umc-package-icon.is-open {
+    background: #dbeafb;
+    color: var(--umc-blue);
+  }
+
   .umc-round-status {
     display: inline-flex;
     margin-top: -0.3rem;
@@ -351,7 +361,7 @@
     border-radius: 99px;
     background: #f1f5f9;
     color: #758397;
-    font-size: 0.61rem;
+    font-size: 0.6875rem;
     font-weight: 650;
   }
 
@@ -596,7 +606,7 @@
     display: block;
     margin-top: 0.45rem;
     color: #8290a3;
-    font-size: 0.67rem;
+    font-size: 0.6875rem;
     font-weight: 400;
     line-height: 1.45;
   }
@@ -745,7 +755,7 @@
 
   .umc-eyebrow {
     color: var(--umc-blue);
-    font-size: 0.66rem;
+    font-size: 0.6875rem;
     font-weight: 800;
     letter-spacing: 0.17em;
     text-transform: uppercase;
@@ -799,7 +809,7 @@
   .umc-common-stats span {
     margin-top: 0.4rem;
     color: rgba(232, 246, 255, 0.78);
-    font-size: 0.62rem;
+    font-size: 0.6875rem;
   }
 
   .umc-common-grid {
@@ -850,7 +860,7 @@
     display: block;
     margin-top: 0.35rem;
     color: #708095;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     line-height: 1.5;
   }
 
@@ -871,7 +881,7 @@
     align-items: center;
     gap: 0.55rem;
     color: #94a3b8;
-    font-size: 0.71rem;
+    font-size: 0.75rem;
   }
 
   .umc-page-crumb button {
@@ -959,7 +969,7 @@
 
   .umc-data-summary span {
     color: #64748b;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
   }
 }
 
@@ -1036,7 +1046,7 @@
     padding: 0.55rem 0.75rem;
     border-bottom: 1px solid #cfe0f0;
     color: var(--umc-navy);
-    font-size: 0.68rem;
+    font-size: 0.6875rem;
     font-weight: 700;
     letter-spacing: 0.07em;
     text-align: left;
@@ -1178,4 +1188,50 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+
+/* ---------- Đợt 3 (18/09/2026): bố cục ---------- */
+
+/* L3 — thẻ chức năng: 3 cột từ 1280px (màn chào khoa có đúng 3 thẻ). */
+@media (min-width: 1280px) {
+  .umc-common-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* THANH GIỎ dính đáy màn (màn Đề xuất số lượng). Render qua portal vào
+   <body> nên `fixed` bám cửa sổ thật.
+   F4a 18/09/2026 (QA3 NẶNG-1): phần tử ngoài là DẢI NỀN đặc phủ từ mép cột
+   nội dung tới mép phải cửa sổ và xuống tới đáy — trước đây thanh nổi cách
+   đáy 12px và chừa trống 72px bên phải nên chữ nội dung lộ ra ở cả hai khe.
+   Thẻ thanh giỏ bên trong vẫn chừa 72px bên phải: đó là chỗ của bong bóng
+   chatbot (z 45 > 40, nên bong bóng nằm TRÊN dải nền, không bị che, và không
+   đè lên nút nào của thanh). Dải nền cao ~76px; nội dung đệm dưới pb-28. */
+.umc-thanh-gio {
+  position: fixed;
+  z-index: 40;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.5rem 72px 0.75rem 0.75rem;
+  background: var(--umc-surface);
+  box-shadow: 0 -10px 16px -8px rgba(15, 23, 42, 0.08);
+}
+
+@media (min-width: 1024px) {
+  .umc-thanh-gio {
+    left: calc(max(0px, (100vw - 1600px) / 2) + 18.5rem);
+    padding-left: 0.75rem;
+  }
+}
+
+/* Thông báo góc phải (App.jsx) nhích lên khi có thanh giỏ, khỏi đè nhau. */
+/* Góc dưới phải là chỗ của bong bóng chatbot (18/09/2026) — thông báo xếp
+   TRÊN bong bóng; có thanh giỏ thì trên cả bong bóng đã nhích lên. */
+.umc-toast-stack {
+  bottom: 5.5rem;
+}
+
+body.co-thanh-gio .umc-toast-stack {
+  bottom: 9.5rem;
 }

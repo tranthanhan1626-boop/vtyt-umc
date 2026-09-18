@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronRight, ChevronDown, Search, Check, X, Clock } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
+import { dichLoi } from "../lib/dichLoi";
 
 // Điều chỉnh tiêu chí kỹ thuật — màn hình 2 CỘT.
 //   TRÁI  = nội dung hiện tại trong danh mục (chỉ đọc)
@@ -107,21 +108,21 @@ export default function DieuChinhTieuChi({ profile }) {
       noi_dung_moi: form,
       ly_do: lyDo.trim() || null,
     });
-    if (error) { setLoi(error.message); return; }
+    if (error) { setLoi(dichLoi(error)); return; }
     setSua(null); await tai();
   };
 
   const duyet = async (d) => {
     setLoi("");
     const { error } = await supabase.rpc("duyet_sua_tieu_chi", { p_id: d.id });
-    if (error) { setLoi(error.message); return; }
+    if (error) { setLoi(dichLoi(error)); return; }
     await tai(); if (bung) await moNhom(bung), setBung(d.ma_quan_ly);
   };
 
   const tuChoiDeNghi = async (d, ly) => {
     const { error, count } = await supabase.from("de_nghi_sua_tieu_chi")
       .update({ trang_thai: "tu_choi", ly_do_tu_choi: ly }, { count: "exact" }).eq("id", d.id);
-    if (error) setLoi(error.message);
+    if (error) setLoi(dichLoi(error));
     else if (!count) setLoi("Không đổi được — kiểm tra quyền.");
     else { setTuChoi(null); await tai(); }
   };

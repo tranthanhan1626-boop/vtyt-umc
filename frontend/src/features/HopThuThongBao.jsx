@@ -45,8 +45,14 @@ export default function HopThuThongBao({ profile }) {
   useEffect(() => {
     if (!mo) return;
     const ngoai = (e) => { if (hopRef.current && !hopRef.current.contains(e.target)) setMo(false); };
+    // Esc đóng hộp thư (QA3 18/09), giống mọi lớp nổi khác.
+    const phim = (e) => { if (e.key === "Escape") setMo(false); };
     document.addEventListener("mousedown", ngoai);
-    return () => document.removeEventListener("mousedown", ngoai);
+    document.addEventListener("keydown", phim);
+    return () => {
+      document.removeEventListener("mousedown", ngoai);
+      document.removeEventListener("keydown", phim);
+    };
   }, [mo]);
 
   const daXem = async (ids) => {
@@ -72,54 +78,57 @@ export default function HopThuThongBao({ profile }) {
       {mo && (
         <div className="absolute right-0 top-full z-50 mt-1 w-[26rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
           <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2">
-            <span className="text-xs font-semibold text-slate-700">
+            <span className="text-sm font-semibold text-slate-800">
               Hộp thư {laPdd ? "Phòng Điều dưỡng" : profile.khoa}
             </span>
             <div className="flex items-center gap-2">
               {rows.length > 0 && (
                 <button type="button" disabled={dangXoa} onClick={() => daXem(null)}
-                  className="inline-flex items-center gap-1 text-[11px] text-umc-700 hover:underline disabled:opacity-50">
+                  className="inline-flex min-h-8 items-center gap-1 rounded-md px-2 text-xs font-medium text-umc-700 hover:bg-umc-50 disabled:opacity-50">
                   <Check size={12} /> Đã xem tất cả
                 </button>
               )}
-              <button type="button" onClick={() => setMo(false)} className="text-slate-400 hover:text-slate-700">
-                <X size={14} />
+              <button type="button" onClick={() => setMo(false)} aria-label="Đóng hộp thư"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+                <X size={15} />
               </button>
             </div>
           </div>
 
           <div className="max-h-96 overflow-auto">
             {rows.length === 0 ? (
-              <p className="px-3 py-6 text-center text-xs text-slate-400">Không có thông báo nào.</p>
+              <p className="px-3 py-6 text-center text-sm text-slate-500">Không có thông báo nào.</p>
             ) : rows.map((r) => (
               <div key={r.id}
                 className={`border-b border-slate-50 px-3 py-2 ${r.mau === "do" ? "bg-red-50/60" : ""}`}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className={`text-xs font-semibold ${r.mau === "do" ? "text-red-800" : "text-slate-800"}`}>
+                    <p className={`text-[13px] font-semibold ${r.mau === "do" ? "text-red-800" : "text-slate-800"}`}>
                       {r.tieu_de}
                       {r.so_lan > 1 && (
-                        <span className="ml-1.5 rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
+                        <span className="ml-1.5 rounded bg-slate-200 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">
                           ×{r.so_lan}
                         </span>
                       )}
                     </p>
-                    {r.noi_dung && <p className="mt-0.5 text-[11px] leading-relaxed text-slate-600">{r.noi_dung}</p>}
-                    <p className="mt-0.5 text-[10px] text-slate-400">
+                    {r.noi_dung && <p className="mt-0.5 text-xs leading-relaxed text-slate-600">{r.noi_dung}</p>}
+                    <p className="mt-0.5 text-[11px] text-slate-500">
                       {new Date(r.updated_at || r.created_at).toLocaleString("vi-VN")}
                     </p>
                   </div>
                   <button type="button" onClick={() => daXem([r.id])}
                     title="Đã xem — xoá dòng này"
-                    className="shrink-0 text-slate-300 hover:text-slate-600"><Check size={14} /></button>
+                    className="-mr-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"><Check size={14} /></button>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="border-t border-slate-100 bg-slate-50 px-3 py-1.5 text-[10px] text-slate-500">
-            Xác nhận đã xem là xoá hẳn. Dấu vết đầy đủ vẫn nằm ở lịch sử sửa của từng ô.
-          </div>
+          {rows.length > 0 && (
+            <div className="border-t border-slate-100 bg-slate-50 px-3 py-1.5 text-[11px] text-slate-500">
+              Xác nhận đã xem là xoá hẳn. Dấu vết đầy đủ vẫn nằm ở lịch sử sửa của từng ô.
+            </div>
+          )}
         </div>
       )}
     </div>

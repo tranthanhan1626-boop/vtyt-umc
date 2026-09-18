@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { EyeOff, ChevronLeft, ChevronDown as ChevronDownIcon, Download, Search, ExternalLink, XCircle, PackagePlus, RefreshCw, AlertTriangle, Lock, LockOpen, Pin, CheckCircle2, Unlock, History, AlignLeft } from "lucide-react";
+import { EyeOff, ChevronDown as ChevronDownIcon, Download, XCircle, PackagePlus, RefreshCw, AlertTriangle, Lock, LockOpen, Pin, CheckCircle2, History, AlignLeft, SlidersHorizontal } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import { tinhTuyChonMuaThem30 } from "../lib/tuyChonMuaThem";
@@ -8,12 +8,14 @@ import { daiP50P75, doDaiKyMacDinh } from "../lib/congThucSoLuong";
 import {
   COT_KHOA, NHOM_COT_KHOA, GOI_ID_MAP, sapXepFreezeTruoc, tinhLeftFreeze,
   tinhSegmentsGroup, taoCotLichSu, thayCotLichSu, suyRaNamCoDuLieu,
-  taoCotLichSuNhom, chenCotLichSuNhom, cotKhoaSangPdd, cotPddSangKhoa,
+  taoCotLichSuNhom, chenCotLichSuNhom, cotKhoaSangPdd, cotPddSangKhoa, rongTrenManHinh,
 } from "../lib/cotChuan";
 import { xuatExcelDong, tenFileAnToan } from "../lib/xuatExcelDong";
 import { docTenCotTuMau, ganTenMau } from "../lib/tenCotBieuMau";
 import { gomTheoThang } from "../lib/lichSuSuDung";
 import { taiDotIdCuaGoi, locTheoDot } from "../lib/dotBoSung";
+import { dichLoi, thayTenCot } from "../lib/dichLoi";
+import ThanhDauUmc, { useDongKhiRaNgoai, doRongNhanNhom } from "../components/ThanhDauUmc";
 
 /*
  * DanhMucDeXuatKhoa — Bản chính thức 34 cột của MỘT khoa (mục 3.2 tài liệu
@@ -79,6 +81,21 @@ const NGUON_KHONG_CO_KHOA = new Set([
 // khoa. Vẫn phải có `dot_goi_id` mới sửa được: chỉ đường v3 (`phan_bo_khoa`)
 // mới có RPC ghi số; đợt cũ đọc từ `proposals` thì không có chỗ ghi.
 const COT_SO_KHOA = "sl_de_xuat_18t";
+
+// "Xem nhanh" (18/09/2026, đợt 3 bố cục) — lăng kính XEM, lưu ở trình duyệt.
+// Không đụng cấu hình cột dùng chung trong DB và không đổi file Excel.
+// Cột lịch sử lấy 2 năm gần nhất có dữ liệu (thêm ở chỗ dựng danh sách) vì
+// năm cuối thường còn dở (vd "SL 6 tháng 2026"), đứng một mình khó đọc.
+// Nhãn kết quả thầu (rớt/đổ/nhận) không phải cột riêng: nó nằm trong ô Tên
+// vật tư nên vẫn hiện ở chế độ này.
+const COT_XEM_NHANH = ["stt", "ten_vt_2627", "dvt", "sl_de_xuat_18t", "dai_p50_p75", "giai_trinh_2627"];
+const KHOA_LUU_XEM_NHANH = "vtyt.danhMucKhoa.xemNhanh";
+function docXemNhanh() {
+  try {
+    const v = window.localStorage.getItem(KHOA_LUU_XEM_NHANH);
+    return v == null ? true : v === "1";
+  } catch { return true; }
+}
 
 const NHAN_GIAI_DOAN = { chao_gia: "Chào giá", mo_thau: "Mở thầu", danh_gia: "Đánh giá" };
 
@@ -362,6 +379,16 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
 
   const [oDangChon, setODangChon] = useState(null);
   const [openMenuCot, setOpenMenuCot] = useState(false);
+  const [moHienThi, setMoHienThi] = useState(false);
+  // QA3 (d): Esc và bấm ra ngoài đóng menu "Hiển thị".
+  const refHienThi = useRef(null);
+  const dongHienThi = useCallback(() => setMoHienThi(false), []);
+  useDongKhiRaNgoai(moHienThi, dongHienThi, refHienThi);
+  const [xemNhanh, setXemNhanh] = useState(docXemNhanh);
+  const doiXemNhanh = (v) => {
+    setXemNhanh(v);
+    try { window.localStorage.setItem(KHOA_LUU_XEM_NHANH, v ? "1" : "0"); } catch { /* chế độ riêng tư: bỏ qua */ }
+  };
   // Lịch sử sửa từng ô — giống Danh mục tổng hợp PĐD (TongHopPdd.jsx). Bảng
   // audit `danh_muc_khoa_o_audit` đã có sẵn từ patch_zm (trigger tự ghi mỗi
   // lần giá trị một ô THỰC SỰ đổi), trước giờ chỉ chưa có chỗ nào xem được.
@@ -389,12 +416,12 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
 
   const thongBaoLoiCauHinhCot = (error) => {
     if (error.code === "42P01" || /danh_muc_khoa_cot_cau_hinh/i.test(error.message || "")) {
-      return "Staging chưa có bảng ẩn/khóa cột dùng chung. Cần chạy backend/sql/patch_zh_danh_muc_khoa_cot_cau_hinh.sql.";
+      return "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_zh_danh_muc_khoa_cot_cau_hinh). Vui lòng báo Phòng Điều dưỡng.";
     }
     if (/khoa_sua/i.test(error.message || "")) {
-      return "Staging chưa có chức năng khóa sửa cột. Cần chạy backend/sql/patch_zi_khoa_sua_cot.sql.";
+      return "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_zi_khoa_sua_cot). Vui lòng báo Phòng Điều dưỡng.";
     }
-    return error.message;
+    return dichLoi(error);
   };
 
   const taiCauHinhCot = useCallback(async () => {
@@ -426,7 +453,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
     // Chưa chạy patch_zi mà bấm khóa sửa: KHÔNG âm thầm bỏ qua (người dùng
     // thấy ô đổi màu, tưởng đã khóa, F5 lại mất) — báo rõ và không đụng state.
     if (patch.khoa_sua !== undefined && !coCotKhoaSua) {
-      setLoiCauHinhCot("Staging chưa có chức năng khóa sửa cột. Cần chạy backend/sql/patch_zi_khoa_sua_cot.sql.");
+      setLoiCauHinhCot("Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_zi_khoa_sua_cot). Vui lòng báo Phòng Điều dưỡng.");
       return;
     }
     const hienTai = cauHinhCot[colKey] || {};
@@ -474,8 +501,8 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
     if (error) {
       const chuaCoBang = error.code === "42P01" || /danh_muc_khoa_chot/i.test(error.message || "");
       setLoiChot(chuaCoBang
-        ? "Staging chưa có chức năng chốt danh mục v3. Cần chạy patch_zzzzb_v3_chot_q.sql."
-        : error.message);
+        ? "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_zzzzb_v3_chot_q). Vui lòng báo Phòng Điều dưỡng."
+        : dichLoi(error));
       return;
     }
     setLoiChot("");
@@ -499,8 +526,8 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
     if (error) {
       const chuaCoBang = error.code === "42P01" || /danh_muc_khoa_chot/i.test(error.message || "");
       setLoiChot(chuaCoBang
-        ? "Staging chưa có chức năng xác nhận. Cần chạy patch_zzzzu_v2_vong_xac_nhan.sql."
-        : error.message);
+        ? "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_zzzzu_v2_vong_xac_nhan). Vui lòng báo Phòng Điều dưỡng."
+        : dichLoi(error));
     } else {
       await taiTrangThaiChot();
     }
@@ -530,9 +557,23 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
     ),
     [cauHinhCot, cotDayDu]
   );
+  // Cột VẼ trên màn hình. `cotHienThi` vẫn là nguồn của file Excel (đủ cột
+  // đang bật, độ rộng gốc) — đừng đổi chỗ xuất sang biến này.
+  // Xem nhanh: bỏ ghim, vì 8 cột vừa màn hình và bảng giãn theo bề ngang —
+  // ghim nhiều cột thì `left` tính theo độ rộng gốc sẽ lệch.
+  const cotTrenManHinh = useMemo(() => {
+    if (!xemNhanh) return rongTrenManHinh(cotHienThi);
+    const khoaXem = new Set([
+      ...COT_XEM_NHANH,
+      ...dsNamCoDuLieu.slice(-2).map(({ nam }) => `sl_${nam}`),
+    ]);
+    return rongTrenManHinh(cotDayDu
+      .filter((c) => khoaXem.has(c.key) && !(cauHinhCot[c.key]?.an ?? false))
+      .map((c) => ({ ...c, freeze: false })));
+  }, [xemNhanh, cotHienThi, cotDayDu, cauHinhCot, dsNamCoDuLieu]);
   const groupSegments = useMemo(
-    () => tinhSegmentsGroup(cotHienThi, NHOM_COT_KHOA),
-    [cotHienThi]
+    () => tinhSegmentsGroup(cotTrenManHinh, NHOM_COT_KHOA, doRongNhanNhom),
+    [cotTrenManHinh]
   );
 
   // ---- Lưu THẬT giá trị ô (patch_zm) --------------------------------------
@@ -553,8 +594,8 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
     if (error) {
       const chuaCoBang = error.code === "42P01" || /danh_muc_khoa_o/i.test(error.message || "");
       setLoiLuuO(chuaCoBang
-        ? "Staging chưa có chức năng lưu ô. Cần chạy backend/sql/patch_zm_luu_o_danh_muc_khoa.sql — sửa ô lúc này sẽ MẤT khi đóng tab."
-        : error.message);
+        ? "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_zm_luu_o_danh_muc_khoa). Vui lòng báo Phòng Điều dưỡng."
+        : dichLoi(error));
       return new Map();
     }
     setLoiLuuO("");
@@ -692,7 +733,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
       }
       setODaSua(daSua);
     } catch (e) {
-      setLoi(e.message || "Không tải được dữ liệu.");
+      setLoi(dichLoi(e) || "Không tải được dữ liệu.");
     } finally {
       setDangTai(false);
     }
@@ -725,8 +766,8 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
       });
       if (loiSo) {
         setLoiLuuO(loiSo.code === "PGRST202"
-          ? "Staging chưa có chức năng khoa sửa số. Cần chạy backend/sql/patch_zzzzs_v2_khoa_sua_so.sql."
-          : `Không lưu được số: ${loiSo.message}`);
+          ? "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_zzzzs_v2_khoa_sua_so). Vui lòng báo Phòng Điều dưỡng."
+          : `Không lưu được số: ${dichLoi(loiSo)}`);
         return;
       }
       setLoiLuuO("");
@@ -761,8 +802,8 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
     if (error) {
       const chuaPatch = error.code === "PGRST202" || /luu_o_danh_muc_khoa/i.test(error.message || "");
       setLoiLuuO(chuaPatch
-        ? "Staging chưa có chức năng lưu ô. Cần chạy backend/sql/patch_zm_luu_o_danh_muc_khoa.sql — thay đổi vừa rồi CHƯA được lưu."
-        : `Không lưu được ô: ${error.message}`);
+        ? "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_zm_luu_o_danh_muc_khoa). Vui lòng báo Phòng Điều dưỡng."
+        : `Không lưu được ô: ${dichLoi(error)}`);
       return;
     }
     setLoiLuuO("");
@@ -819,13 +860,13 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
   // sẽ báo "PĐD sửa 3 ô" trong khi trên bảng chỉ có 1 ô viền tím — người dùng
   // sẽ đi tìm 2 ô không tồn tại.
   const soOPddSuaDe = useMemo(() => {
-    const cotDangHien = new Set(cotHienThi.map((c) => cotKhoaSangPdd(c.key)));
+    const cotDangHien = new Set(cotTrenManHinh.map((c) => cotKhoaSangPdd(c.key)));
     return rows.reduce((n, r) => {
       const cua = suaDeCuaPdd.get(r.ma_hang);
       if (!cua) return n;
       return n + [...cua.keys()].filter((k) => cotDangHien.has(k)).length;
     }, 0);
-  }, [rows, suaDeCuaPdd, cotHienThi]);
+  }, [rows, suaDeCuaPdd, cotTrenManHinh]);
 
   // Lịch sử một ô = lịch sử khoa sửa + lịch sử PĐD sửa đè ô tương ứng trên bản
   // tổng hợp, trộn theo thời gian. Tách hai bảng ra hai panel thì khoa phải tự
@@ -858,8 +899,8 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
       maHang, cot: colKey, dangTai: false,
       dsAudit: khoaRes.error ? [] : ds,
       loi: chuaCoBang
-        ? "Staging chưa có bảng lịch sử sửa ô. Cần chạy backend/sql/patch_zm_luu_o_danh_muc_khoa.sql."
-        : khoaRes.error?.message,
+        ? "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_zm_luu_o_danh_muc_khoa). Vui lòng báo Phòng Điều dưỡng."
+        : dichLoi(khoaRes.error),
     });
   };
 
@@ -969,7 +1010,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
         tenSheet: "Danh mục đề xuất",
       });
     } catch (e) {
-      setLoiXuatExcel(e.message || "Không xuất được Excel.");
+      setLoiXuatExcel(dichLoi(e) || "Không xuất được Excel.");
     } finally {
       setDangXuatExcel(false);
     }
@@ -994,99 +1035,120 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
     <div className="fixed inset-0 flex flex-col bg-slate-100">
       <StyleTable />
 
-      {/* Top bar */}
-      <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-1.5 text-xs text-slate-500">
-          <span>VTYT</span><span>›</span>
-          <span>Năm đề xuất {NAM_DE_XUAT}</span><span>›</span>
-          <span>{boThau.nhan}</span><span>›</span>
-          <span className="font-semibold text-slate-800">{khoaHienTai || "Danh mục đề xuất"}</span>
-        </div>
-        <a href="#" onClick={(e) => { e.preventDefault(); window.location.hash = ""; }}
-          className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-umc-700">
-          <ChevronLeft size={13} /> Về màn chính
-        </a>
-      </div>
+      {/* Thanh đầu trang UMC (đợt 4, 18/09/2026) — thay dòng breadcrumb cũ:
+          logo · đường dẫn · tên màn · người dùng · nút về. Cùng một tầng. */}
+      <ThanhDauUmc
+        duongDan={["VTYT", `Năm đề xuất ${NAM_DE_XUAT}`, boThau.nhan]}
+        tenMan="Danh mục đề xuất của khoa"
+        profile={profile} />
 
-      {/* Header + toolbar */}
-      <div className="bg-white px-4 py-3 border-b border-slate-200 shrink-0">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-lg font-semibold text-slate-900">
+      {/* Header + toolbar — gọn lại 18/09/2026 (đợt 3 bố cục): một dòng tiêu
+          đề + công cụ, một dòng băng trạng thái. Chỉ còn MỘT nút chính (xác
+          nhận). Mọi nút cũ vẫn còn: Tải lại · Ẩn/khóa cột · Nội dung ô nằm
+          trong menu "Hiển thị ▾"; Xuất Excel đứng ngoài. */}
+      <div className="bg-white px-4 py-2 border-b border-slate-200 shrink-0">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <h1 className="text-base font-semibold text-slate-900 leading-tight">
               Danh mục đề xuất — {khoaHienTai || "(chưa rõ khoa)"}
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              34 cột chuẩn bệnh viện · Gói {boThau.nhan} · {rows.length} mã hàng
+              Cột theo mẫu bệnh viện · Gói {boThau.nhan} · {rows.length} mã hàng
               {soMaRot > 0 && <> · <span className="text-red-700 font-medium">{soMaRot} mã đang rớt thầu</span></>}
             </p>
           </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button className="qtdx-tb" onClick={taiLai}><RefreshCw size={13} /> Tải lại</button>
-            <button className="qtdx-tb"><Search size={13} /> Tìm / Lọc</button>
-            <div className="relative">
-              <button className="qtdx-tb" onClick={() => setOpenMenuCot((v) => !v)}>
-                <EyeOff size={13} /> Ẩn/khóa cột ({cotHienThi.length}/{cotDayDu.length})
-                <ChevronDownIcon size={11} />
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Lăng kính XEM, lưu ở trình duyệt — không ghi DB, không đổi file
+                Excel (Excel luôn xuất đủ các cột đang bật trong cấu hình). */}
+            <div className="qtdx-seg" role="group" aria-label="Số cột hiển thị">
+              <button type="button" aria-pressed={xemNhanh} className={xemNhanh ? "on" : ""}
+                onClick={() => doiXemNhanh(true)}
+                title="Chỉ hiện 8 cột hay dùng nhất. Chỉ đổi cách xem trên máy này; file Excel vẫn đủ cột.">
+                Xem nhanh (8 cột)
               </button>
-              {openMenuCot && (
-                <div className="absolute right-0 top-full mt-1 w-80 max-h-96 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg z-40">
-                  <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-700">Ẩn/khóa cột — dùng chung cho khoa này</span>
-                    <button className="text-xs text-umc-700 hover:underline" onClick={hienTatCaCot}>Hiện tất cả</button>
-                  </div>
-                  {loiCauHinhCot && (
-                    <p className="px-3 py-2 text-[11px] text-red-600 border-b border-slate-100">{loiCauHinhCot}</p>
-                  )}
-                  {NHOM_COT_KHOA.map((n) => {
-                    const dsCot = cotDayDu.filter((c) => c.group === n.key);
-                    if (!dsCot.length) return null;
-                    return (
-                      <div key={n.key} className="border-b border-slate-100 last:border-0">
-                        <div className="px-3 py-1 text-[10.5px] uppercase tracking-wide text-slate-400 bg-slate-50">{n.nhan}</div>
-                        {dsCot.map((c) => {
-                          const anCotNay = cauHinhCot[c.key]?.an ?? false;
-                          const khoaCotNay = cauHinhCot[c.key]?.khoa_cot ?? c.freeze;
-                          const khoaSuaNay = cauHinhCot[c.key]?.khoa_sua ?? false;
-                          return (
-                            <div key={c.key} className="flex items-center gap-2 px-3 py-1 hover:bg-slate-50 text-xs">
-                              <label className="flex flex-1 items-center gap-2 cursor-pointer">
-                                <input type="checkbox" checked={!anCotNay}
-                                  onChange={() => luuCauHinhCot(c.key, { an: !anCotNay })} />
-                                <span className={anCotNay ? "text-slate-400" : "text-slate-700"}>{c.nhan}</span>
-                              </label>
-                              <label className="flex items-center gap-1 cursor-pointer text-slate-500" title="Khóa sửa — không ai sửa được ô trong cột này">
-                                <input type="checkbox" checked={khoaSuaNay}
-                                  onChange={() => luuCauHinhCot(c.key, { khoa_sua: !khoaSuaNay })} />
-                                {khoaSuaNay
-                                  ? <Lock size={11} className="text-amber-600" />
-                                  : <LockOpen size={11} className="text-slate-300" />}
-                              </label>
-                              <label className="flex items-center gap-1 cursor-pointer text-slate-500" title="Ghim cột khi cuộn ngang (vẫn sửa được)">
-                                <input type="checkbox" checked={khoaCotNay}
-                                  onChange={() => luuCauHinhCot(c.key, { khoa_cot: !khoaCotNay })} />
-                                <Pin size={11} className={khoaCotNay ? "text-amber-600" : "text-slate-300"} />
-                              </label>
-                            </div>
-                          );
-                        })}
+              <button type="button" aria-pressed={!xemNhanh} className={!xemNhanh ? "on" : ""}
+                onClick={() => doiXemNhanh(false)}
+                title="Hiện mọi cột đang bật trong cấu hình cột của khoa.">
+                Đủ {cotHienThi.length} cột
+              </button>
+            </div>
+            <div className="relative" ref={refHienThi}>
+              <button className="qtdx-tb" onClick={() => setMoHienThi((v) => !v)} aria-expanded={moHienThi}>
+                <SlidersHorizontal size={13} /> Hiển thị <ChevronDownIcon size={11} />
+              </button>
+              {moHienThi && (
+                <div className="absolute right-0 top-full mt-1 w-80 max-h-[70vh] overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg z-40 py-1">
+                  <button className="qtdx-menu-item" onClick={() => { setMoHienThi(false); taiLai(); }}>
+                    <RefreshCw size={13} /> Tải lại
+                  </button>
+                  <button className="qtdx-menu-item" onClick={() => setDongGon((v) => !v)}
+                    title="Đầy đủ = mọi ô hiện trọn nội dung (dòng cao). Gọn = cắt còn 4 dòng cho dễ cuộn; bấm vào ô vẫn xem/sửa được đủ.">
+                    <AlignLeft size={13} /> Nội dung ô: {dongGon ? "GỌN" : "ĐẦY ĐỦ"}
+                  </button>
+                  <button className="qtdx-menu-item" onClick={() => setOpenMenuCot((v) => !v)} aria-expanded={openMenuCot}>
+                    <EyeOff size={13} /> Ẩn/khóa cột ({cotHienThi.length}/{cotDayDu.length})
+                    <ChevronDownIcon size={11} className="ml-auto" />
+                  </button>
+                  {openMenuCot && (
+                    <div className="border-t border-slate-100">
+                      <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
+                        <span className="text-xs font-semibold text-slate-700">Ẩn/khóa cột — dùng chung cho khoa này</span>
+                        <button className="text-xs text-umc-700 hover:underline" onClick={hienTatCaCot}>Hiện tất cả</button>
                       </div>
-                    );
-                  })}
+                      {loiCauHinhCot && (
+                        <p className="px-3 py-2 text-[11px] text-red-600 border-b border-slate-100">{loiCauHinhCot}</p>
+                      )}
+                      {NHOM_COT_KHOA.map((n) => {
+                        const dsCot = cotDayDu.filter((c) => c.group === n.key);
+                        if (!dsCot.length) return null;
+                        return (
+                          <div key={n.key} className="border-b border-slate-100 last:border-0">
+                            <div className="px-3 py-1 text-[11px] uppercase tracking-wide text-slate-500 bg-slate-50">{n.nhan}</div>
+                            {dsCot.map((c) => {
+                              const anCotNay = cauHinhCot[c.key]?.an ?? false;
+                              const khoaCotNay = cauHinhCot[c.key]?.khoa_cot ?? c.freeze;
+                              const khoaSuaNay = cauHinhCot[c.key]?.khoa_sua ?? false;
+                              return (
+                                <div key={c.key} className="flex items-center gap-2 px-3 py-1 hover:bg-slate-50 text-xs">
+                                  <label className="flex flex-1 items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" checked={!anCotNay}
+                                      onChange={() => luuCauHinhCot(c.key, { an: !anCotNay })} />
+                                    <span className={anCotNay ? "text-slate-500 line-through" : "text-slate-700"}>{c.nhan}</span>
+                                  </label>
+                                  <label className="flex items-center gap-1 cursor-pointer text-slate-500" title="Khóa sửa — không ai sửa được ô trong cột này">
+                                    <input type="checkbox" checked={khoaSuaNay}
+                                      onChange={() => luuCauHinhCot(c.key, { khoa_sua: !khoaSuaNay })} />
+                                    {khoaSuaNay
+                                      ? <Lock size={11} className="text-amber-600" />
+                                      : <LockOpen size={11} className="text-slate-400" />}
+                                  </label>
+                                  <label className="flex items-center gap-1 cursor-pointer text-slate-500" title="Ghim cột khi cuộn ngang (vẫn sửa được)">
+                                    <input type="checkbox" checked={khoaCotNay}
+                                      onChange={() => luuCauHinhCot(c.key, { khoa_cot: !khoaCotNay })} />
+                                    <Pin size={11} className={khoaCotNay ? "text-amber-600" : "text-slate-400"} />
+                                  </label>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-            <button className="qtdx-tb" onClick={() => setDongGon((v) => !v)}
-              title="Đầy đủ = mọi ô hiện trọn nội dung (dòng cao). Gọn = cắt còn 4 dòng cho dễ cuộn; bấm vào ô vẫn xem/sửa được đủ.">
-              <AlignLeft size={13} /> Nội dung ô: {dongGon ? "GỌN" : "ĐẦY ĐỦ"}
-            </button>
-            <button className="qtdx-tb" onClick={xuatExcel} disabled={dangXuatExcel || !rows.length}>
+            <button className="qtdx-tb" onClick={xuatExcel} disabled={dangXuatExcel || !rows.length}
+              title={!rows.length ? "Chưa có mã nào trong danh mục — không có gì để xuất." : undefined}>
               <Download size={13} /> {dangXuatExcel ? "Đang xuất…" : "Xuất Excel in trình ký"}
             </button>
-            <button className={`qtdx-tb ${daXacNhan ? "" : "primary"}`}
+            <button className={`qtdx-tb ${daXacNhan || !rows.length ? "" : "primary"}`}
               onClick={() => xacNhanDeXuat(false)}
               disabled={dangChot || daXacNhan || !rows.length}
               title={daXacNhan
-                ? "Bản hiện tại đã được khoa xác nhận. Ai sửa gì thì nút này sáng lại."
+                ? "Bản hiện tại đã được khoa xác nhận. Khoa tự sửa số hoặc ô thì cần xác nhận lại; Phòng Điều dưỡng sửa thì không cần."
+                : !rows.length
+                ? "Chưa có mã nào trong danh mục — chưa có gì để xác nhận."
                 : "Xác nhận rằng khoa đã xem và đồng ý với bản đang hiển thị. Không khoá ô nào."}>
               <CheckCircle2 size={13} />
               {dangChot ? "Đang lưu…" : daXacNhan
@@ -1098,20 +1160,21 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
                 <CheckCircle2 size={13} /> Không phát sinh nhu cầu
               </button>
             )}
-            <a href="#tien-do-goi-thau" onClick={(e) => { e.preventDefault(); window.location.hash = ""; }}
-              className="qtdx-tb primary">
-              <ExternalLink size={13} /> Xử lý mã rớt ở Tiến độ gói thầu
-            </a>
+            {/* 18/09/2026: bỏ nút "Xử lý mã rớt ở Tiến độ gói thầu". Nút đó chỉ
+                đưa về màn chính, còn màn Tiến độ gói thầu đã ẩn khỏi menu — khoa
+                bấm vào là vào ngõ cụt. Mã rớt nay tự vào GIỎ đợt bổ sung của
+                khoa (01_NGHIEP_VU mục 6.1); ở màn này chưa có đường dẫn thẳng
+                tới đúng giỏ đó nên không đặt nút đoán đích. */}
           </div>
         </div>
-        {loiXuatExcel && <p className="mt-2 text-xs text-red-600">{loiXuatExcel}</p>}
+        {loiXuatExcel && <p className="mt-1.5 text-xs text-red-600">{loiXuatExcel}</p>}
         {/* Cũng hiện ngoài đây, không chỉ trong menu — nút ẩn/khóa nằm ngay
             trên đầu mỗi cột, bấm ở đó mà lỗi chỉ nằm trong menu thì không ai
             thấy. */}
-        {loiCauHinhCot && <p className="mt-2 text-xs text-red-600">{loiCauHinhCot}</p>}
-        {loiChot && <p className="mt-2 text-xs text-red-600">{loiChot}</p>}
-        {loiLuuO && <p className="mt-2 text-xs text-red-600">{loiLuuO}</p>}
-        <div className="mt-2 flex items-center gap-1.5 text-[11px] flex-wrap">
+        {loiCauHinhCot && <p className="mt-1.5 text-xs text-red-600">{loiCauHinhCot}</p>}
+        {loiChot && <p className="mt-1.5 text-xs text-red-600">{loiChot}</p>}
+        {loiLuuO && <p className="mt-1.5 text-xs text-red-600">{loiLuuO}</p>}
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] flex-wrap">
           {daXacNhan && (
             <span className="qtdx-badge green">
               <CheckCircle2 size={11} className="mr-1" />
@@ -1127,40 +1190,42 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
             <span className="qtdx-badge amber">
               <AlertTriangle size={11} className="mr-1" />
               Xác nhận lần {trangThaiChot.lan} đã hết hiệu lực
-              {trangThaiChot.huy_do ? ` — ${trangThaiChot.huy_do}` : ""}
+              {trangThaiChot.huy_do ? ` — ${thayTenCot(trangThaiChot.huy_do)}` : ""}
               {trangThaiChot.huy_luc ? ` (${new Date(trangThaiChot.huy_luc).toLocaleString("vi-VN")})` : ""}
               {" "}· kiểm lại rồi bấm “Xác nhận thông tin đề xuất lần {trangThaiChot.lan + 1}”
             </span>
           )}
-          {dieuChinhPdd.length > 0 && (
-            <span className="qtdx-badge violet">
-              Phòng Điều dưỡng đã điều chỉnh số lượng {dieuChinhPdd.length} lần
-              {" "}— xem chi tiết bên dưới
-            </span>
-          )}
           {soOPddSuaDe > 0 && (
-            <span className="qtdx-badge violet">
+            <span className="qtdx-badge violet"
+              title="Ô viền tím sửa được, nhưng sửa là mọi khoa đổi theo.">
               {soOPddSuaDe} ô đang mang giá trị DÙNG CHUNG toàn viện
-              {" "}— ô viền tím sửa được, nhưng sửa là mọi khoa đổi theo
             </span>
           )}
-          <span className="qtdx-badge green">
-            {dotGoiId
+          <span className="qtdx-badge green"
+            title={dotGoiId
               ? "Số lượng khoa đề xuất: sửa được tại đây — tổng đi thầu là tổng của các khoa, sửa là tổng đổi theo"
-              : "Số lượng khoa đề xuất: đợt này chưa đi đường v3, chỉ sửa được ở màn Nhập đề xuất"}
+              : "Số lượng khoa đề xuất: đợt này chưa đi đường v3, chỉ sửa được ở màn Nhập đề xuất"}>
+            {dotGoiId ? "Số lượng: sửa được tại đây" : "Số lượng: sửa ở màn Nhập đề xuất"}
           </span>
-          {soMaRot > 0 && <span className="qtdx-badge red">{soMaRot} mã rớt — bấm "Đẩy SL" ở dòng mã để chuyển sang mã tương đương còn trúng</span>}
+          {soMaRot > 0 && (
+            <span className="qtdx-badge red">
+              {soMaRot} mã rớt — Phòng Điều dưỡng sẽ đổ phần rớt sang mã tương đương nếu có;
+              phần còn lại vào giỏ đợt bổ sung của khoa
+            </span>
+          )}
           {laPdd && <span className="qtdx-badge blue">Đang xem với quyền PĐD</span>}
         </div>
 
         {/* Giai đoạn 4 — "Khoa thấy số cũ, số mới, người sửa và lý do ngay
             trên bảng của mình. Khoa không cần xác nhận lại." Bảng này chỉ
-            hiển thị, không có nút nào; trao đổi chi tiết vẫn qua Teams. */}
+            hiển thị, không có nút nào; trao đổi chi tiết vẫn qua Teams.
+            18/09/2026: gập lại mặc định để bảng chính bắt đầu cao hơn; dòng
+            tóm tắt vẫn luôn hiện. */}
         {dieuChinhPdd.length > 0 && (
-          <div className="mt-2 rounded-md border border-violet-200 bg-violet-50/60 px-3 py-2">
-            <p className="text-[11px] font-semibold text-violet-900">
-              Phòng Điều dưỡng đã điều chỉnh số lượng của khoa
-            </p>
+          <details className="mt-1.5 rounded-md border border-violet-200 bg-violet-50/60 px-3 py-1.5">
+            <summary className="cursor-pointer text-[11px] font-semibold text-violet-900">
+              Phòng Điều dưỡng đã điều chỉnh số lượng của khoa {dieuChinhPdd.length} lần — bấm để xem chi tiết
+            </summary>
             <table className="mt-1.5 w-auto text-[11px]">
               <thead>
                 <tr className="text-violet-700">
@@ -1191,15 +1256,14 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
                 ))}
               </tbody>
             </table>
-          </div>
+          </details>
         )}
       </div>
-
       {/* Table */}
       <div className="flex-1 overflow-auto bg-white">
         <table className={`qtdx-table border-collapse w-max ${dongGon ? "dong-gon" : ""}`}>
           <colgroup>
-            {cotHienThi.map((c) => <col key={c.key} style={{ width: c.width }} />)}
+            {cotTrenManHinh.map((c) => <col key={c.key} style={{ width: c.width }} />)}
           </colgroup>
           <thead>
             <tr className="group-row">
@@ -1211,41 +1275,51 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
                     const prev = groupSegments[i];
                     if (!prev.freeze) break;
                     let colIdx = groupSegments.slice(0, i).reduce((a, x) => a + x.span, 0);
-                    for (let k = 0; k < prev.span; k++) acc += cotHienThi[colIdx + k].width;
+                    for (let k = 0; k < prev.span; k++) acc += cotTrenManHinh[colIdx + k].width;
                   }
                   leftOffset = acc;
                 }
                 return (
                   <th key={s.keyId} colSpan={s.span}
-                    className={`${s.mau} ${s.freeze ? "freeze" : ""}`}
+                    className={s.freeze ? "freeze" : ""}
+                    title={s.nhan}
                     style={s.freeze ? { left: leftOffset } : {}}>
-                    {s.nhan}
+                    {s.nhanHien}
                   </th>
                 );
               })}
             </tr>
             <tr className="col-row">
-              {cotHienThi.map((c) => (
+              {cotTrenManHinh.map((c) => (
                 <th key={c.key}
                   className={c.freeze ? "freeze" : ""}
-                  style={c.freeze ? { left: tinhLeftFreeze(cotHienThi, c.key) } : {}}>
+                  style={c.freeze ? { left: tinhLeftFreeze(cotTrenManHinh, c.key) } : {}}>
                   <span className="inline-flex items-center gap-1">
                     {c.nhan}
-                    {c.freeze && <span title="Cột đang được cố định (freeze)" className="text-amber-300">📌</span>}
-                    <button onClick={() => anCot(c.key)}
-                      className="opacity-50 hover:opacity-100 hover:text-rose-300"
-                      title="Ẩn cột này">
-                      <EyeOff size={10} />
-                    </button>
-                    <button onClick={() => doiKhoaSua(c.key)}
-                      className={daKhoaSua(c.key)
-                        ? "text-amber-300 hover:text-amber-200"
-                        : "opacity-50 hover:opacity-100 hover:text-amber-300"}
-                      title={daKhoaSua(c.key)
-                        ? "Cột đang KHÓA — bấm để mở cho sửa lại"
-                        : "Khóa cột này, không ai sửa được nội dung"}>
-                      {daKhoaSua(c.key) ? <Lock size={10} /> : <LockOpen size={10} />}
-                    </button>
+                    {c.freeze && <span title="Cột này luôn hiện khi cuộn ngang">📌</span>}
+                    {/* 18/09/2026: biểu tượng ẩn/khoá trên tiêu đề chỉ cho PĐD.
+                        Khoa vẫn chỉnh được qua menu "Hiển thị ▾ → Ẩn/khóa cột";
+                        cột đang khoá thì mọi người vẫn thấy dấu khoá. */}
+                    {laPdd ? (
+                      <>
+                        <button onClick={() => anCot(c.key)}
+                          className="opacity-50 hover:opacity-100 hover:text-rose-600"
+                          title="Ẩn cột này">
+                          <EyeOff size={10} />
+                        </button>
+                        <button onClick={() => doiKhoaSua(c.key)}
+                          className={daKhoaSua(c.key)
+                            ? "text-amber-600 hover:text-amber-700"
+                            : "opacity-50 hover:opacity-100 hover:text-amber-600"}
+                          title={daKhoaSua(c.key)
+                            ? "Cột đang KHÓA — bấm để mở cho sửa lại"
+                            : "Khóa cột này, không ai sửa được nội dung"}>
+                          {daKhoaSua(c.key) ? <Lock size={10} /> : <LockOpen size={10} />}
+                        </button>
+                      </>
+                    ) : daKhoaSua(c.key) && (
+                      <Lock size={10} className="text-amber-600" aria-label="Cột đang khoá sửa" />
+                    )}
                   </span>
                 </th>
               ))}
@@ -1253,11 +1327,11 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={cotHienThi.length} className="qtdx-cell text-center text-slate-400 py-8">
+              <tr><td colSpan={cotTrenManHinh.length} className="qtdx-cell text-center text-slate-400 py-8">
                 {khoaHienTai ? "Khoa chưa đề xuất mã nào trong gói này." : "Chưa xác định được khoa để tải dữ liệu."}
               </td></tr>
             ) : rows.map((r) => (
-              <RowKhoa key={r.ma_hang} r={r} cotHienThi={cotHienThi} oDangChon={oDangChon}
+              <RowKhoa key={r.ma_hang} r={r} cotHienThi={cotTrenManHinh} oDangChon={oDangChon}
                 setODangChon={setODangChon} oCoTheSua={oCoTheSua} capNhatO={capNhatO}
                 daKhoaSua={daKhoaSua} ketThucSuaO={ketThucSuaO} oDaSua={oDaSua}
                 xemAudit={xemAudit} oPddSuaDe={oPddSuaDe}
@@ -1271,7 +1345,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
 
       <div className="bg-slate-800 text-slate-300 text-xs px-4 py-1.5 flex items-center justify-between shrink-0">
         <div>{rows.length} mã hàng · {soMaRot} mã rớt</div>
-        <div>SL đề xuất + kết quả thầu: dữ liệu thật (Supabase) · Cột theo file "Danh mục đề xuất khoa chuẩn.xlsx"</div>
+        <div>Cột theo mẫu "Danh mục đề xuất khoa chuẩn" của bệnh viện</div>
       </div>
 
       <StyleToolbar />
@@ -1303,7 +1377,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
                 audit.dsAudit.map((a, i) => (
                   <div key={i} className="text-xs border-b border-slate-100 pb-2">
                     <div className="flex items-center gap-1.5 text-slate-400">
-                      <span className={`rounded px-1 py-0.5 text-[10px] font-semibold ${
+                      <span className={`rounded px-1 py-0.5 text-[11px] font-semibold ${
                         a.ben === "pdd" ? "bg-violet-100 text-violet-800" : "bg-slate-100 text-slate-600"
                       }`}>
                         {a.ben === "pdd" ? "PĐD" : "Khoa"}
@@ -1364,6 +1438,7 @@ function RowKhoa({
           const cn = [
             "qtdx-cell",
             c.readonly || !canSua ? "readonly" : "",
+            c.key === "stt" ? "stt" : "",
             daKhoaSua(c.key) ? "col-locked" : "",
             oDaSua.has(`${r.ma_hang}|${c.key}`) ? "sua-de" : "",
             oChung ? "pdd-sua" : "",
@@ -1411,13 +1486,13 @@ function RowKhoa({
                       mình mất đề xuất. Cả chiều nhận cũng vậy. */}
                   {c.key === "ten_vt_2627" && Number(r.da_do_di) > 0 && (
                     <span title={`Số đề xuất của khoa cho mã này đã chuyển sang mã ${r.do_sang_ma}. Số gốc vẫn giữ trong hồ sơ thầu.`}
-                      className="ml-1.5 inline-flex items-center gap-1 rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-medium align-middle text-slate-700">
+                      className="ml-1.5 inline-flex items-center gap-1 rounded bg-slate-200 px-1.5 py-0.5 text-[11px] font-medium align-middle text-slate-700">
                       ↪ đã đổ {fmt(r.da_do_di)} sang {r.do_sang_ma}
                     </span>
                   )}
                   {c.key === "ten_vt_2627" && Number(r.nhan_ve) > 0 && (
                     <span title={`Mã ${r.nhan_tu_ma} rớt thầu, phần của khoa được chuyển sang mã này.`}
-                      className="ml-1.5 inline-flex items-center gap-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium align-middle text-emerald-800">
+                      className="ml-1.5 inline-flex items-center gap-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] font-medium align-middle text-emerald-800">
                       ↩ nhận {fmt(r.nhan_ve)} từ {r.nhan_tu_ma}
                     </span>
                   )}
@@ -1427,13 +1502,16 @@ function RowKhoa({
                     <span title={`Kết quả thầu: mang đi thầu ${fmt(r.rot.so_luong_de_xuat)}, `
                         + `trúng ${fmt(r.rot.so_luong_trung)}, thiếu ${fmt(r.rot.so_luong_thieu)}`
                         + (r.rot.ly_do_khong_trung ? ` · ${r.rot.ly_do_khong_trung}` : "")}
-                      className={`ml-1.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium align-middle ${
+                      className={`ml-1.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium align-middle ${
                         Number(r.rot.so_luong_trung) > 0
                           ? "bg-amber-100 text-amber-900" : "bg-red-600 text-white"}`}>
                       <XCircle size={10} />
                       {Number(r.rot.so_luong_trung) > 0
                         ? `Rớt ${fmt(r.rot.so_luong_thieu)} ở ${NHAN_GIAI_DOAN[r.rot.ma_moc_rot] || r.rot.ma_moc_rot} · trúng ${fmt(r.rot.so_luong_trung)}`
-                        : `Rớt toàn bộ ở ${NHAN_GIAI_DOAN[r.rot.ma_moc_rot] || r.rot.ma_moc_rot}`}
+                        // Chưa ghi mốc rớt thì đừng in chữ "null" ra nhãn (thấy 18/09/2026).
+                        : r.rot.ma_moc_rot
+                          ? `Rớt toàn bộ ở ${NHAN_GIAI_DOAN[r.rot.ma_moc_rot] || r.rot.ma_moc_rot}`
+                          : "Rớt toàn bộ"}
                     </span>
                   )}
                   {/* Lịch sử sửa ô — hiện ở MỌI ô như bên Tổng hợp PĐD, kể cả
@@ -1479,7 +1557,7 @@ function RowKhoa({
               {ungVienDay.dangTai ? (
                 <p className="text-xs text-slate-400">Đang tìm mã tương đương còn trúng...</p>
               ) : ungVienDay.ds.length === 0 ? (
-                <p className="text-xs text-slate-400">Không có mã tương đương còn trúng trong mã quản lý {r.ma_nhom}. Dùng "Xử lý mã rớt ở Tiến độ gói thầu" để chuyển sang đợt bổ sung.</p>
+                <p className="text-xs text-slate-400">Không có mã tương đương còn trúng trong mã quản lý {r.ma_nhom}. Phần rớt còn lại sẽ vào giỏ đợt bổ sung của khoa.</p>
               ) : (
                 <div className="flex flex-wrap items-center gap-2">
                   <select value={formDay.maHangNhan}
@@ -1579,7 +1657,7 @@ export function DauVetSuaCuoi({ updatedBy, updatedAt, moTaThem = "" }) {
     : "không rõ thời điểm";
   return (
     <span
-      className="ml-1.5 inline-flex items-center whitespace-nowrap rounded bg-violet-100 px-1 py-0.5 align-middle text-[10px] font-semibold text-violet-800"
+      className="ml-1.5 inline-flex items-center whitespace-nowrap rounded bg-violet-100 px-1 py-0.5 align-middle text-[11px] font-semibold text-violet-800"
       title={`Sửa cuối bởi ${updatedBy || "không rõ"} lúc ${dayDu}.`
         + (moTaThem ? ` ${moTaThem}` : "")}>
       {gio ? `${tenNguoiSuaNgan(updatedBy)} · ${gio}` : tenNguoiSuaNgan(updatedBy)}
@@ -1621,14 +1699,25 @@ export function StyleTable() {
          Vẫn giữ table-layout:fixed + colgroup: wrap chỉ làm dòng CAO lên, độ
          rộng cột không đổi, nên tinhLeftFreeze() vẫn tính đúng left của cột
          freeze (xem lý do dài ở trên).
-         pre-wrap giữ nguyên xuống dòng người dùng gõ trong textarea; break-word
+         pre-line giữ nguyên xuống dòng người dùng gõ trong textarea nhưng gộp
+         khoảng trắng thừa đầu dòng trong dữ liệu (lỗi L4 18/09/2026: pre-wrap
+         làm ô thụt lề lung tung); break-word
          + anywhere xử lý chuỗi dài không có khoảng trắng (mã, ký mã hiệu).
          vertical-align: top để ô ngắn không bị "trôi" xuống giữa dòng cao. */
-      .qtdx-cell { padding: 6px 10px; font-size: 12.5px; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; vertical-align: top; overflow: hidden; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; }
-      .qtdx-cell input, .qtdx-cell textarea { background: transparent; outline: none; width: 100%; border: 0; font-size: 12.5px; font-family: inherit; resize: vertical; }
+      /* ĐỢT 4 (18/09/2026) — dáng bảng kiểu Excel theo hệ màu UMC: chữ ô
+         13px, kẻ ô mảnh xám xanh, hàng chẵn nền rất nhạt, ô đang sửa có khung
+         xanh umc-600 dày 2px như ô đang chọn của Excel. */
+      .qtdx-cell { padding: 6px 10px; font-size: 13px; line-height: 1.45; border-right: 1px solid #e3eaf3; border-bottom: 1px solid #e3eaf3; vertical-align: top; overflow: hidden; white-space: pre-line; word-break: break-word; overflow-wrap: anywhere; }
+      .qtdx-cell input, .qtdx-cell textarea { background: transparent; outline: none; width: 100%; border: 0; font-size: 13px; font-family: inherit; resize: vertical; }
+      /* Hàng xen kẽ: bọc :where() để độ đặc hiệu THẤP NHẤT — mọi màu trạng
+         thái (chỉ đọc, đã sửa đè, vượt P75, rớt thầu, cột khoá…) luôn thắng. */
+      :where(table.qtdx-table > tbody > tr:nth-child(even)) > td.qtdx-cell { background: #f8fbfe; }
       .qtdx-cell:hover { background: #fefce8; }
-      .qtdx-cell.editing { outline: 2px solid var(--umc-blue); outline-offset: -2px; background: #eff6fd !important; }
+      .qtdx-cell.editing { outline: 2px solid #2260aa; outline-offset: -2px; background: #ffffff !important; }
+      .qtdx-cell:focus-within { outline: 2px solid #2260aa; outline-offset: -2px; }
       .qtdx-cell.readonly { background: #f8fafc; color: #475569; }
+      /* Cột STT đóng vai "số dòng" của Excel: nền xám xanh, số giữa ô, chữ nhạt. */
+      .qtdx-cell.stt { background: #f1f5fa; color: #52627a; text-align: center; font-variant-numeric: tabular-nums; }
       .qtdx-cell.locked { background: #eef2ff; }
       /* Ô PĐD đã sửa đè lên số gốc (Danh mục tổng hợp) — phải phân biệt được
          với số máy tính ra, vì bản này dùng để đi thầu. Số gốc xem ở tooltip,
@@ -1639,10 +1728,14 @@ export function StyleTable() {
       tr.row-failed td.qtdx-cell { background: #fef2f2; }
       tr.row-partial td.qtdx-cell { background: #fff7ed; }
       tr.row-expand td.qtdx-cell { background: #f8fafc; font-size: 11.5px; }
-      thead th { position: sticky; top: 0; background: var(--umc-navy); color: #f1f7fd; z-index: 20; font-weight: 600; font-size: 11.5px; padding: 6px 10px; border-right: 1px solid rgba(255,255,255,0.13); border-bottom: 1px solid rgba(255,255,255,0.13); text-align: left; }
-      /* Dải nhóm cột dùng navy đậm hơn 1 bậc để phân tầng header 2 dòng mà
-         không cần thêm đường kẻ — mắt đọc theo mảng màu, đỡ rối. */
-      thead tr.group-row th { background: #0f3364; text-transform: uppercase; letter-spacing: 0.04em; font-size: 10.5px; top: 0; }
+      /* Tiêu đề cột kiểu Excel (đợt 4): nền umc-100, chữ đậm umc-900. Kẻ ô
+         bằng box-shadow chứ không bằng border: với border-collapse, viền của
+         ô sticky KHÔNG đi theo ô khi cuộn, để lộ khe. */
+      thead th { position: sticky; top: 0; background: #dbeafb; color: #143462; z-index: 20; font-weight: 700; font-size: 12px; line-height: 1.35; padding: 6px 10px; border: 0; box-shadow: inset -1px 0 0 #bfdbf7, inset 0 -1px 0 #a9cdf3; text-align: left; }
+      /* Dòng nhóm: umc-200, đậm hơn dòng tên cột một bậc. Khoá đúng 30px, một
+         dòng (lỗi N5); nhãn được CHỌN cho vừa ô ở tinhSegmentsGroup (NẶNG-2),
+         nên không còn "…" — tên đủ nằm ở tooltip. */
+      thead tr.group-row th { background: #bfdbf7; color: #143462; text-transform: uppercase; letter-spacing: 0.03em; font-size: 11px; font-weight: 600; top: 0; height: 30px; box-sizing: border-box; padding: 0 6px; line-height: 30px; white-space: nowrap; overflow: hidden; text-overflow: clip; box-shadow: inset -1px 0 0 #92c3f1, inset 0 -1px 0 #92c3f1; }
       thead tr.col-row th { top: 30px; z-index: 22; }
       /* Cột đang KHÓA SỬA (patch_zi) — nền vàng nhạt để phân biệt với ô chỉ
          đọc do bản chất dữ liệu (readonly, nền xám). */
@@ -1656,11 +1749,12 @@ export function StyleTable() {
          giá trị dùng chung. */
       td.qtdx-cell.vuot-p75 { background: #fef2f2; color: #991b1b; font-weight: 700; }
       th.freeze, td.freeze { position: sticky; z-index: 15; }
-      th.freeze { background: var(--umc-navy); color: #f1f7fd; z-index: 30; }
+      th.freeze { background: #dbeafb; color: #143462; z-index: 30; }
+      thead tr.group-row th.freeze { background: #bfdbf7; }
       /* Cột ghim: nền xanh rất nhạt + vạch phải để người dùng thấy rõ ranh
          giới "vùng đứng yên" khi cuộn ngang qua vài chục cột. */
       td.freeze { background: #eef5fb; color: var(--umc-ink); z-index: 10; }
-      table.qtdx-table td.freeze:last-of-type, table.qtdx-table th.freeze:last-of-type { box-shadow: inset -1px 0 0 #c3d9ee, 6px 0 12px -6px rgba(18,61,121,0.16); }
+      table.qtdx-table td.freeze:last-of-type, table.qtdx-table th.freeze:last-of-type { box-shadow: inset -1px 0 0 #a9cdf3, 6px 0 12px -6px rgba(18,61,121,0.16); }
       /* "thead tr.col-row th" (3 phần tử) đặc hiệu hơn "th.freeze" (1 phần
          tử + 1 lớp) nên z-index:22 của nó thắng z-index:30 của freeze —
          cột freeze thứ 2/3 trở đi bị cột thường cuộn qua đè lên header.
@@ -1683,16 +1777,27 @@ export function StyleTable() {
 export function StyleToolbar() {
   return (
     <style>{`
-      .qtdx-tb { display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; border: 1px solid #cbd9e8; background: white; color: var(--umc-ink); transition: background-color 150ms ease, border-color 150ms ease; }
+      .qtdx-tb { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; border: 1px solid #cbd9e8; background: white; color: var(--umc-ink); transition: background-color 150ms ease, border-color 150ms ease; }
       .qtdx-tb:hover { background: #eff5fb; border-color: #a9c6e2; }
       .qtdx-tb:focus-visible { outline: 2px solid var(--umc-cyan); outline-offset: 1px; }
+      /* VỪA-4 (QA3): nút tắt phải NHÌN RA là tắt — mờ hẳn, con trỏ cấm, rê
+         chuột không đổi màu. Lý do tắt nằm ở title của từng nút. */
+      .qtdx-tb:disabled, .qtdx-tb:disabled:hover { opacity: .45; cursor: not-allowed; background: white; border-color: #cbd9e8; }
+      .qtdx-tb.primary:disabled, .qtdx-tb.primary:disabled:hover { background: var(--umc-blue); border-color: var(--umc-blue); }
       /* Nút chính đổi từ teal #0f766e (không thuộc bộ nhận diện) sang xanh UMC. */
       .qtdx-tb.primary { background: var(--umc-blue); color: white; border-color: var(--umc-blue); }
       .qtdx-tb.primary:hover { background: var(--umc-blue-dark); border-color: var(--umc-blue-dark); }
       .qtdx-badge { display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 9999px; font-weight: 500; }
       .qtdx-badge.green { background: #d1fae5; color: #065f46; }
       .qtdx-badge.amber { background: #fef3c7; color: #92400e; }
-      .qtdx-badge.blue { background: #dbeafe; color: #1e40af; }
+      .qtdx-badge.blue { background: #eff5fb; color: var(--umc-blue-dark); }
+      /* Công tắc hai nấc (Xem nhanh / Đủ cột) và mục trong menu Hiển thị. */
+      .qtdx-seg { display: inline-flex; border: 1px solid #cbd9e8; border-radius: 6px; overflow: hidden; }
+      .qtdx-seg button { padding: 5px 10px; font-size: 12px; font-weight: 500; background: white; color: var(--umc-ink); min-height: 32px; }
+      .qtdx-seg button + button { border-left: 1px solid #cbd9e8; }
+      .qtdx-seg button.on { background: #eff5fb; color: var(--umc-blue-dark); font-weight: 600; box-shadow: inset 0 -2px 0 var(--umc-blue); }
+      .qtdx-menu-item { display: flex; width: 100%; align-items: center; gap: 8px; padding: 7px 12px; font-size: 12px; color: #334155; text-align: left; }
+      .qtdx-menu-item:hover { background: #f1f5f9; }
       .qtdx-badge.red { background: #fee2e2; color: #991b1b; }
       .qtdx-badge.violet { background: #ede9fe; color: #5b21b6; }
     `}</style>

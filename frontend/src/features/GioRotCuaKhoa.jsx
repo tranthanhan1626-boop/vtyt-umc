@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CalendarClock, Check, Copy, PackageX, RotateCcw } from "lucide-react";
 import { supabase } from "../supabaseClient";
+import { dichLoi } from "../lib/dichLoi";
 
 // Mục VII của workflow v3 — "Xử lý phần rớt".
 //
@@ -18,7 +19,7 @@ import { supabase } from "../supabaseClient";
 export const NHAN_TRANG_THAI = {
   cho_xu_ly: { nhan: "Chờ xử lý", mau: "bg-amber-50 text-amber-800 border-amber-200" },
   da_vao_gio_nhap: { nhan: "Đã vào giỏ nháp", mau: "bg-sky-50 text-sky-800 border-sky-200" },
-  da_submit_bo_sung: { nhan: "Đã submit bổ sung", mau: "bg-emerald-50 text-emerald-800 border-emerald-200" },
+  da_submit_bo_sung: { nhan: "Đã gửi bổ sung", mau: "bg-emerald-50 text-emerald-800 border-emerald-200" },
   khong_con_nhu_cau: { nhan: "Không còn nhu cầu", mau: "bg-slate-100 text-slate-600 border-slate-200" },
 };
 
@@ -54,8 +55,8 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
       .order("ma_quan_ly");
     if (error) {
       setLoi(error.code === "42P01" || /gio_rot_v3/i.test(error.message || "")
-        ? "Staging chưa có pipeline kết quả v3. Cần chạy backend/sql/patch_zzzzc_v3_ket_qua_thau.sql."
-        : error.message);
+        ? "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_zzzzc_v3_ket_qua_thau). Vui lòng báo Phòng Điều dưỡng."
+        : dichLoi(error));
     } else {
       // Chỉ hiện mục THỰC SỰ thiếu. Mã trúng đủ vẫn nằm trong view (thiếu = 0)
       // nhưng không phải việc của khoa.
@@ -117,7 +118,7 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
       p_ghi_chu: (ghiChu[khoa] || "").trim() || null,
     });
     setDangLuu("");
-    if (error) { setLoi(error.message); return; }
+    if (error) { setLoi(dichLoi(error)); return; }
     await tai();
   };
 
@@ -154,7 +155,7 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
               </div>
             ))}
             <button type="button" onClick={tai}
-              className="self-start flex items-center gap-1 px-2.5 py-1 mt-1 text-xs rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50">
+              className="self-start flex items-center gap-1 px-3 py-1.5 mt-1 text-xs rounded-md border border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
               <RotateCcw size={12} /> Tải lại
             </button>
           </div>
@@ -202,7 +203,7 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
                           Đợt bổ sung gần nhất đang mở: <b>{dotBoSungMo.ten}</b>
                           {dotBoSungMo.thang_moc ? ` (T${dotBoSungMo.thang_moc}/${dotBoSungMo.nam})` : ""}
                           <button type="button" onClick={() => moDotBoSung?.(dotBoSungMo.id)}
-                            className="rounded border border-umc-300 bg-white px-1.5 py-0.5 font-medium text-umc-800 hover:bg-umc-50">
+                            className="rounded-md bg-umc-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-umc-700">
                             Sang đợt này để đề xuất lại
                           </button>
                         </p>
@@ -228,15 +229,15 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
                         value={ghiChu[key] || ""}
                         onChange={(e) => setGhiChu((p) => ({ ...p, [key]: e.target.value }))}
                         placeholder="Ghi chú (không bắt buộc)"
-                        className="flex-1 min-w-[12rem] rounded-md border border-slate-300 px-2 py-1 text-xs" />
+                        className="flex-1 min-w-[12rem] rounded-md border border-slate-300 px-2 py-1.5 text-xs" />
                       <button type="button" disabled={dangLuu === key}
                         onClick={() => doiTrangThai(r, "da_vao_gio_nhap")}
-                        className="px-2.5 py-1 text-[11px] rounded-md border border-sky-300 text-sky-800 hover:bg-sky-50 disabled:opacity-60">
+                        className="px-3 py-1.5 text-xs rounded-md border border-umc-300 bg-white text-umc-800 hover:bg-umc-50 disabled:opacity-60">
                         Đang lập đề xuất bổ sung
                       </button>
                       <button type="button" disabled={dangLuu === key}
                         onClick={() => doiTrangThai(r, "khong_con_nhu_cau")}
-                        className="px-2.5 py-1 text-[11px] rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50 disabled:opacity-60">
+                        className="px-3 py-1.5 text-xs rounded-md border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-60">
                         Không còn nhu cầu
                       </button>
                     </div>

@@ -2,6 +2,35 @@
 
 Cập nhật **24/08/2026**. Nhánh `phase-a-luong-de-xuat`.
 
+
+> 🆕 **18/09/2026 — GÓI GIAO DIỆN 5 ĐỢT + 17 QUYẾT ĐỊNH (dự án không còn mốc thời gian).**
+>
+> Đã xong (chưa đổi chức năng nào): chữ dễ hiểu + dịch lỗi · thanh tiến trình khoa 5 bước / PĐD 7 bước ·
+> màn chào khoa, menu khoa theo việc, màn đề xuất 3 bước, thanh giỏ đáy (Thêm + Gửi) · Danh mục khoa
+> "Xem nhanh 8 cột" · bảng kiểu Excel tông UMC, font Be Vietnam Pro · chatbot trợ giúp theo LUẬT
+> (bấm chọn, không AI). Chuẩn thị giác: `.scratch/giao-dien/CHUAN_THI_GIAC.md`.
+>
+> | QĐ 18/09 | Nội dung |
+> |---|---|
+> | a | PĐD sửa số → khoa KHÔNG mất xác nhận (`patch_zzzzzzze`, đã chạy) |
+> | b | Khoa được sửa đè cột chữ PĐD vừa chỉnh |
+> | c | Khoa mất xác nhận SAU chốt Q → không cần xác nhận lại |
+> | d | Thanh PĐD: "Khoa đề xuất" xong khi ≥1 khoa gửi, tô vàng khi thiếu |
+> | e | Bỏ hẳn nút "Xử lý mã rớt" trên Danh mục khoa (đã có menu ③ Mã rớt) |
+> | f | Xem nhanh giữ 2 cột lịch sử (năm đủ gần nhất + năm dở) |
+> | g | Khoa không có nhu cầu → nên bấm "Không phát sinh nhu cầu" (không bắt buộc) |
+> | h | Khoa đã gửi mà không cần nữa → sửa số về 0 rồi xác nhận lại |
+> | i | Mã quản lý bị ẩn sau khi gửi → hiện lại **sau khi PĐD chốt số đi thầu** (sửa `01` cho khớp; cần kiểm code) |
+> | j | PĐD sửa số sau chốt Q → giữ "Mở chốt để sửa" (bỏ ý "gõ đè tại ô" trong `01`) |
+> | k | Mã rớt trong giỏ: gửi nguyên số gợi ý rồi sửa trên Danh mục khoa |
+> | l | Hiện nhãn "⟳ rớt thầu · gợi ý N" trong ngăn giỏ |
+> | m | Khoa báo "không còn nhu cầu" mã rớt ở màn **Giỏ rớt của khoa** |
+> | n | Chatbot chưa soạn cho 4 màn tạm dừng + chỉ định thầu |
+> | o | Mã thuộc gói con nào → chatbot bảo hỏi PĐD qua Teams |
+> | p | `de_xuat.xlsx` = số **khoa gõ ban đầu**, **18 tháng**; bỏ Cơ sở 2/3 + 3 đơn vị lạ; thêm cột xem "Số đề xuất kỳ trước" (CHƯA làm) |
+>
+> Còn chờ: chạy `patch_zzzzzzzf_chatbot_luot.sql` (bảng lưu lượt chat) · việc tiếp: sửa nội dung chatbot theo QĐ g–o,
+> dọn dữ liệu test + nạp HIS T7–T8, rồi cột kỳ trước.
 > 🔴 **ĐỔI HƯỚNG 21/08/2026 — đọc trước mọi thứ khác trong file này.**
 >
 > Chủ dự án báo hướng cũ **đi chệch**. Chốt lại bằng 17 quyết định, gọi chung là
@@ -477,7 +506,7 @@ Hai cổng chặn (`patch_zzzzzn` + `patch_zzzzzs`) giữ nguyên làm **lưới
 | **14 câu hỏi dữ liệu còn lại** | Mục 8 của `.scratch/mot-mat-ban/DU_LIEU_SAU_THAU.md` — nhóm hợp đồng, giao hàng, cam kết, nạp dữ liệu. Trả lời khi làm miếng 0 |
 | **PĐD sửa tổng mã hàng trước thầu** | Một mặt bàn chốt "gõ tay" cho phần **sau** rớt. Phần **trước** thầu vẫn giữ đường "gõ vào ô tổng → hệ chia theo tỉ lệ", chỉ thêm đường gõ thẳng ô từng khoa. Đây là **suy ra**, chưa hỏi — xem `01` mục 3 |
 | **3 mã quản lý vắt ngang gói con** | `N03.03.050.07` · `N05.02.030.14` · `N07.03.020.01`. Invariant 2 chưa đạt. Để nguyên theo ý chủ dự án — tự phân trên web |
-| **Khoa A sửa TSKT làm khoa B mất xác nhận** | Đã đo 20/08: đúng là vậy. Cần xác nhận đây là ý muốn |
+| ~~**Khoa A sửa TSKT làm khoa B mất xác nhận**~~ | Đã xử lý bằng patch_zzzzx (20/08): chỉ khoa vừa sửa mất xác nhận. 18/09 chủ dự án chốt thêm: PĐD sửa số cũng không huỷ xác nhận (`patch_zzzzzzze`), khoa được sửa đè chữ PĐD vừa chỉnh — `01` Giai đoạn 4 |
 
 ---
 

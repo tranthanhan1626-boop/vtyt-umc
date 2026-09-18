@@ -66,17 +66,17 @@ export const COT_KHOA = [
 ];
 
 export const NHOM_COT_KHOA = [
-  { key: "dinh_danh",  nhan: "Định danh",                            mau: "bg-slate-800" },
-  { key: "phan_nhom",  nhan: "Phân nhóm quản lý",                    mau: "bg-slate-700" },
-  { key: "vat_tu",     nhan: "Vật tư & TSKT",                        mau: "bg-umc-800" },
-  { key: "lich_su",    nhan: "Lịch sử sử dụng của khoa",             mau: "bg-slate-600" },
-  { key: "lich_su_nhom", nhan: "Lịch sử cả nhóm mã quản lý (khoa)",  mau: "bg-indigo-800" },
-  { key: "de_xuat",    nhan: "Số lượng khoa đề xuất",                mau: "bg-umc-700" },
-  { key: "rot_thau",   nhan: "Rớt thầu DC 2025",                     mau: "bg-rose-800" },
-  { key: "giai_trinh", nhan: "Giải trình đề xuất",                   mau: "bg-amber-800" },
-  { key: "tm_2526",    nhan: "Thương mại tham khảo 2025-2026",       mau: "bg-sky-800" },
-  { key: "tm_2627",    nhan: "Thương mại tham khảo 2026-2027",       mau: "bg-sky-900" },
-  { key: "ma_kt",      nhan: "Mã kỹ thuật",                          mau: "bg-slate-500" },
+  { key: "dinh_danh",  nhan: "Định danh",                            nhanNgan: "Đ.danh",     mau: "bg-slate-800" },
+  { key: "phan_nhom",  nhan: "Phân nhóm quản lý",                    nhanNgan: "Phân nhóm",  mau: "bg-slate-700" },
+  { key: "vat_tu",     nhan: "Vật tư & TSKT",                        nhanNgan: "Vật tư",     mau: "bg-umc-800" },
+  { key: "lich_su",    nhan: "Lịch sử sử dụng của khoa",             nhanNgan: "Lịch sử SD", mau: "bg-slate-600" },
+  { key: "lich_su_nhom", nhan: "Lịch sử cả nhóm mã quản lý (khoa)",  nhanNgan: "LS cả nhóm", mau: "bg-indigo-800" },
+  { key: "de_xuat",    nhan: "Số lượng khoa đề xuất",                nhanNgan: "Đề xuất",    mau: "bg-umc-700" },
+  { key: "rot_thau",   nhan: "Rớt thầu DC 2025",                     nhanNgan: "Rớt thầu",   mau: "bg-rose-800" },
+  { key: "giai_trinh", nhan: "Giải trình đề xuất",                   nhanNgan: "Giải trình", mau: "bg-amber-800" },
+  { key: "tm_2526",    nhan: "Thương mại tham khảo 2025-2026",       nhanNgan: "TM 2025-26", mau: "bg-sky-800" },
+  { key: "tm_2627",    nhan: "Thương mại tham khảo 2026-2027",       nhanNgan: "TM 2026-27", mau: "bg-sky-900" },
+  { key: "ma_kt",      nhan: "Mã kỹ thuật",                          nhanNgan: "Mã KT",      mau: "bg-slate-500" },
 ];
 
 // -------- 30 cột chuẩn của Tổng hợp PĐD ---------------------------------
@@ -123,13 +123,13 @@ export const COT_PDD = [
 ];
 
 export const NHOM_COT_PDD = [
-  { key: "dinh_danh",  nhan: "Định danh",                            mau: "bg-slate-800" },
-  { key: "phan_nhom",  nhan: "Phân nhóm quản lý",                    mau: "bg-slate-700" },
-  { key: "vat_tu",     nhan: "Vật tư & TSKT",                        mau: "bg-umc-800" },
-  { key: "lich_su",    nhan: "Lịch sử sử dụng toàn viện (mã hàng)",  mau: "bg-slate-600" },
-  { key: "lich_su_nhom", nhan: "Lịch sử toàn viện cả nhóm mã quản lý", mau: "bg-indigo-800" },
-  { key: "de_xuat",    nhan: "Đề xuất tổng hợp toàn viện",           mau: "bg-umc-700" },
-  { key: "tm_2627",    nhan: "Thương mại tham khảo 2026-2027",       mau: "bg-sky-800" },
+  { key: "dinh_danh",  nhan: "Định danh",                            nhanNgan: "Đ.danh",     mau: "bg-slate-800" },
+  { key: "phan_nhom",  nhan: "Phân nhóm quản lý",                    nhanNgan: "Phân nhóm",  mau: "bg-slate-700" },
+  { key: "vat_tu",     nhan: "Vật tư & TSKT",                        nhanNgan: "Vật tư",     mau: "bg-umc-800" },
+  { key: "lich_su",    nhan: "Lịch sử sử dụng toàn viện (mã hàng)",  nhanNgan: "Lịch sử SD", mau: "bg-slate-600" },
+  { key: "lich_su_nhom", nhan: "Lịch sử toàn viện cả nhóm mã quản lý", nhanNgan: "LS cả nhóm", mau: "bg-indigo-800" },
+  { key: "de_xuat",    nhan: "Đề xuất tổng hợp toàn viện",           nhanNgan: "Đề xuất",    mau: "bg-umc-700" },
+  { key: "tm_2627",    nhan: "Thương mại tham khảo 2026-2027",       nhanNgan: "TM 2026-27", mau: "bg-sky-800" },
 ];
 
 // -------- Quá trình đề xuất = COT_KHOA + phần cộng tác --------------------
@@ -162,10 +162,10 @@ export const COT_QUA_TRINH_MO_RONG = [
 
 export const NHOM_COT_QUA_TRINH = [
   ...NHOM_COT_KHOA,
-  { key: "tskt_cong_tac",    nhan: "TSKT cộng tác (khoa ↔ PĐD)",    mau: "bg-indigo-800" },
-  { key: "cong_thuc",        nhan: "Công thức TSB & mức chọn",      mau: "bg-slate-600" },
-  { key: "ket_qua_thau",     nhan: "Kết quả thầu 3 giai đoạn",      mau: "bg-rose-800" },
-  { key: "ghi_chu",          nhan: "Ghi chú & cờ",                  mau: "bg-slate-500" },
+  { key: "tskt_cong_tac",    nhan: "TSKT cộng tác (khoa ↔ PĐD)",    nhanNgan: "TSKT cộng tác", mau: "bg-indigo-800" },
+  { key: "cong_thuc",        nhan: "Công thức TSB & mức chọn",      nhanNgan: "Công thức",     mau: "bg-slate-600" },
+  { key: "ket_qua_thau",     nhan: "Kết quả thầu 3 giai đoạn",      nhanNgan: "Kết quả thầu",  mau: "bg-rose-800" },
+  { key: "ghi_chu",          nhan: "Ghi chú & cờ",                  nhanNgan: "Ghi chú",       mau: "bg-slate-500" },
 ];
 
 export const COT_QUA_TRINH = [...COT_KHOA, ...COT_QUA_TRINH_MO_RONG];
@@ -373,6 +373,25 @@ export function suyRaNamCoDuLieu(rows = [], soNam = 4) {
     .slice(-soNam);
 }
 
+// -------- Độ rộng CHỈ DÙNG TRÊN MÀN HÌNH (18/09/2026, lỗi N4) --------------
+// `width` trong COT_KHOA/COT_PDD còn đi vào file Excel xuất ra
+// (xuatExcelDong: width/7 = độ rộng cột Excel). Nới cột TSKT ở đó sẽ đổi luôn
+// file trình ký, nên nới ở một lớp riêng, chỉ áp lúc vẽ bảng.
+// Vì sao 560: TSKT 320px làm một dòng cao 385–464px (đo 18/09/2026); gần gấp
+// đôi bề ngang thì chiều cao dòng giảm tương ứng.
+export const RONG_MAN_HINH = {
+  tskt_2526: 560,
+  tskt_2627: 560,
+};
+
+/** Trả bản sao danh sách cột với độ rộng dùng để VẼ. Không dùng cho Excel. */
+export function rongTrenManHinh(danhSachCot, ghiDe = {}) {
+  return danhSachCot.map((c) => {
+    const w = ghiDe[c.key] ?? RONG_MAN_HINH[c.key];
+    return w ? { ...c, width: w } : c;
+  });
+}
+
 // -------- Helper tính left offset cho các cột freeze ----------------------
 // Sắp xếp lại danh sách cột: các cột `freeze` được kéo lên đầu (giữ thứ tự
 // tương đối gốc), sau đó là các cột còn lại. Cần cho render vì freeze bằng
@@ -399,23 +418,40 @@ export function tinhLeftFreeze(danhSachDaSapXep, colKey) {
 // Tính segments group header dựa trên cotHienThi đã sort. Các cột freeze gộp
 // thành 1 group "sticky", các cột còn lại giữ theo group gốc. Nếu 1 group bị
 // tách ra do cột giữa bị ẩn, sẽ có nhiều segments cùng group key.
-export function tinhSegmentsGroup(cotHienThi, nhomCot) {
+//
+// NẶNG-2 (QA3 18/09/2026): dòng nhóm khoá một dòng, nên nhóm hẹp bị cắt còn
+// "Đ…", "VẬT…". Mỗi segment nay mang `nhanHien` — nhãn DÀI NHẤT vừa ô trong
+// [nhan, nhanNgan]; không nhãn nào vừa thì để trống (tên đủ vẫn ở `nhan`,
+// dùng cho tooltip). `doRong(chu)` đo bề ngang chữ (px); không truyền thì
+// giữ nguyên `nhan` như trước. Chỉ là nhãn HIỂN THỊ, Excel không đọc.
+export const NHAN_NHOM_CO_DINH = "📌 Cố định";
+
+export function chonNhanVua(dsNhan, rong, doRong) {
+  if (!doRong) return dsNhan[0] || "";
+  // Đệm trái phải 6px mỗi bên + 2px viền/dư.
+  const cho = rong - 14;
+  return dsNhan.filter(Boolean).find((n) => doRong(n) <= cho) || "";
+}
+
+export function tinhSegmentsGroup(cotHienThi, nhomCot, doRong = null) {
   const nhomMap = Object.fromEntries(nhomCot.map((n) => [n.key, n]));
   const segments = [];
   let cur = null;
   cotHienThi.forEach((c) => {
     const groupKey = c.freeze ? "sticky" : c.group;
     if (!cur || cur.groupKey !== groupKey) {
-      cur = { groupKey, span: 1, freeze: c.freeze, keyId: `${groupKey}-${segments.length}` };
+      cur = { groupKey, span: 1, rong: c.width || 0, freeze: c.freeze, keyId: `${groupKey}-${segments.length}` };
       segments.push(cur);
     } else {
       cur.span += 1;
+      cur.rong += c.width || 0;
     }
   });
-  return segments.map((s) => ({
-    ...s,
-    ...(s.groupKey === "sticky"
-      ? { nhan: "Cột cố định (freeze)", mau: "bg-amber-800" }
-      : nhomMap[s.groupKey] || { nhan: s.groupKey, mau: "bg-slate-500" }),
-  }));
+  return segments.map((s) => {
+    const nhom = s.groupKey === "sticky"
+      ? { nhan: "Luôn hiện khi cuộn ngang", nhanNgan: NHAN_NHOM_CO_DINH, mau: "bg-amber-800" }
+      : nhomMap[s.groupKey] || { nhan: s.groupKey, mau: "bg-slate-500" };
+    const dsNhan = s.groupKey === "sticky" ? [NHAN_NHOM_CO_DINH] : [nhom.nhan, nhom.nhanNgan];
+    return { ...s, ...nhom, nhanHien: chonNhanVua(dsNhan, s.rong, doRong) };
+  });
 }

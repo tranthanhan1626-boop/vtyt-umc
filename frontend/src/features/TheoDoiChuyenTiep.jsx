@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
+import { dichLoi } from "../lib/dichLoi";
 
 /*
  * TheoDoiChuyenTiep — màn theo dõi của PĐD sau khi xác nhận rớt (QĐ B3/B8).
@@ -49,7 +50,7 @@ export default function TheoDoiChuyenTiep({ profile, dotGoiId = null }) {
       if (dotGoiId) q = q.eq("dot_goi_id", dotGoiId);
       return q;
     }, { order: "ma_hang" });
-    if (error) setLoi(error.message);
+    if (error) setLoi(dichLoi(error));
     setRows(data || []);
     setDangTai(false);
   }, [dotGoiId]);
@@ -111,7 +112,7 @@ export default function TheoDoiChuyenTiep({ profile, dotGoiId = null }) {
       p_dot_goi_id: dgId, p_giai_doan: null, p_ma_hang: maHang,
     });
     setDangChay("");
-    if (error) { setLoi(error.message); return; }
+    if (error) { setLoi(dichLoi(error)); return; }
     if (!data?.so_dong) {
       setLoi(`Mã ${maHang} không còn phần rớt nào chưa xử lý — không có gì để chạy lại.`);
     }

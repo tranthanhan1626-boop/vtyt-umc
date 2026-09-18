@@ -33,6 +33,7 @@ Ký hiệu: **[C]** còn hiệu lực · **[X]** đã bị đảo, xem `06_DUNG_
 | 19/08 chiều | **Luật V2 — một giá trị chung, ai sửa sau đè** | Luật đang chạy |
 | 20/08 | Test full qua trình duyệt: **tìm và vá 3 lỗi** | Bản vá gần nhất |
 | **21/08** | **ĐỔI HƯỚNG — bản MỘT MẶT BÀN, 17 quyết định, 7 luật bị đảo** | Chưa đọng gì trong code: mới chốt luật, **chưa thi công** |
+| 18/09 | Bỏ mốc thời gian (vừa học vừa làm). **Gói giao diện 5 đợt**: đợt 1 đổi chữ kỹ thuật + dịch lỗi (`lib/dichLoi.js`), gộp nút P50 trùng, ẩn nút Tìm/Lọc hỏng, ẩn nút xoá test với khoa · QĐ (a)(b) về xác nhận | `patch_zzzzzzze` đã chạy staging; đợt 2–5: thanh tiến trình, bố cục, dáng UMC, chatbot theo luật |
 
 ---
 

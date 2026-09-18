@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Save, Search, ShieldCheck, UserCog } from "lucide-react";
 import { supabase } from "../supabaseClient";
+import { dichLoi } from "../lib/dichLoi";
 
 const NHAN_QUYEN = { dvsd: "Đơn vị sử dụng", dieu_duong: "Phòng Điều dưỡng", admin: "Quản trị" };
 
@@ -20,7 +21,7 @@ export default function QuanLyNguoiDung({ profile }) {
       supabase.from("users").select("id,email,ho_ten,role,khoa,created_at").order("email"),
       supabase.from("v_don_vi").select("don_vi").order("don_vi"),
     ]);
-    if (u.error) setLoi(u.error.message); else setRows(u.data || []);
+    if (u.error) setLoi(dichLoi(u.error)); else setRows(u.data || []);
     setDsKhoa((k.data || []).map((x) => x.don_vi));
     setDangTai(false);
   }, []);
@@ -44,7 +45,7 @@ export default function QuanLyNguoiDung({ profile }) {
       ho_ten: form.ho_ten.trim() || null, role: form.role,
       khoa: form.role === "dvsd" ? form.khoa : null,
     }, { count: "exact" }).eq("id", r.id);
-    if (error || !count) { setLoi(error?.message || "Không cập nhật được tài khoản."); return; }
+    if (error || !count) { setLoi(dichLoi(error) || "Không cập nhật được tài khoản."); return; }
     setThongBao(`Đã cập nhật ${r.email}.`); setDangSua(null); setForm(null); await tai();
   };
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "../supabaseClient";
+import { dichLoi } from "../lib/dichLoi";
 
 const ALLOWED_DOMAIN = "@umc.edu.vn";
 
@@ -84,7 +85,7 @@ export function useAuth() {
 
   const signIn = useCallback(async (email, password) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message };
+    return { error: dichLoi(error) };
   }, []);
 
   // Đăng ký: tạo tài khoản auth + 1 dòng public.users kèm khoa đã chọn (CỐ
@@ -97,7 +98,7 @@ export function useAuth() {
     if (!khoa) return { error: "Chưa chọn khoa/đơn vị." };
 
     const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) return { error: error.message };
+    if (error) return { error: dichLoi(error) };
 
     // Nếu Dashboard còn bật "Confirm email" thì signUp() KHÔNG trả về session
     // ngay — không insert được (chưa có auth.email() để RLS/trigger nhận diện
@@ -113,7 +114,7 @@ export function useAuth() {
     const { error: eInsert } = await supabase.from("users").insert({
       email, ho_ten: hoTen, khoa, role: "dvsd", // role chỉ để điền cột NOT NULL — trigger ghi đè
     });
-    if (eInsert) return { error: `Tạo tài khoản xong nhưng không lưu được hồ sơ: ${eInsert.message}` };
+    if (eInsert) return { error: `Tạo tài khoản xong nhưng không lưu được hồ sơ: ${dichLoi(eInsert)}` };
 
     // RACE: signUp() tạo session -> onAuthStateChange(SIGNED_IN) bắn NGAY và gọi
     // loadProfile TRƯỚC KHI insert ở trên kịp xong -> profileError "chưa có hồ
@@ -128,14 +129,14 @@ export function useAuth() {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin,
     });
-    return { error: error?.message };
+    return { error: dichLoi(error) };
   }, []);
 
   // Dùng ở màn hình đặt lại mật khẩu (sau khi bấm link trong email, recoveryMode=true).
   const updatePassword = useCallback(async (newPassword) => {
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (!error) setRecoveryMode(false);
-    return { error: error?.message };
+    return { error: dichLoi(error) };
   }, []);
 
   const signOut = useCallback(() => supabase.auth.signOut(), []);

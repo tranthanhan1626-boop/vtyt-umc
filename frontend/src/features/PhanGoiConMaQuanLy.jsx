@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Check, Layers, RotateCcw, Search } from "lucide-react";
 import { fetchAllRows, supabase } from "../supabaseClient";
 import { GOI_CON } from "./KhungGoiThau";
+import { dichLoi } from "../lib/dichLoi";
 
 // Giai đoạn 1, bước 3 của workflow v3 — "PĐD phân mã quản lý vào từng gói con".
 //
@@ -51,7 +52,7 @@ export default function PhanGoiConMaQuanLy() {
       (f, t) => supabase.from("v_phan_goi_ma_quan_ly").select("*").range(f, t),
       { order: "ma_quan_ly" },
     );
-    if (error) setLoi(error.message);
+    if (error) setLoi(dichLoi(error));
     else setRows(data || []);
     setDangTai(false);
   }, []);
@@ -87,7 +88,7 @@ export default function PhanGoiConMaQuanLy() {
       p_goi: goi || null,
     });
     setDangLuu("");
-    if (error) { setLoi(`${ma}: ${error.message}`); return; }
+    if (error) { setLoi(`${ma}: ${dichLoi(error)}`); return; }
     // Cập nhật tại chỗ để dòng không nhảy khỏi bộ lọc ngay khi vừa bấm —
     // người dùng cần thấy dấu tích xác nhận trước khi dòng biến mất.
     setRows((p) => p.map((r) => r.ma_quan_ly === ma

@@ -9,6 +9,7 @@ import {
   NHAN_TT_NHOM,
 } from "./Function1";
 import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
+import { dichLoi } from "../lib/dichLoi";
 
 export default function NhomKyThuatCuaKhoa({ profile }) {
   const chonDuocDonVi = profile.role === "admin" || profile.role === "dieu_duong";
@@ -40,7 +41,7 @@ export default function NhomKyThuatCuaKhoa({ profile }) {
       .select("*")
       .eq("don_vi", khoa)
       .order("created_at", { ascending: false });
-    if (error) setLoi(error.message);
+    if (error) setLoi(dichLoi(error));
     else {
       setDsDeNghi(data || []);
       setLoi("");
@@ -106,7 +107,7 @@ export default function NhomKyThuatCuaKhoa({ profile }) {
     });
     setDangGui(false);
     if (error) {
-      setLoi(error.code === "23505" ? "Khoa đã đề nghị mã này rồi." : error.message);
+      setLoi(error.code === "23505" ? "Khoa đã đề nghị mã này rồi." : dichLoi(error));
       return;
     }
     setForm(FORM_NHOM_TRONG);
@@ -118,7 +119,7 @@ export default function NhomKyThuatCuaKhoa({ profile }) {
   const xoa = async (id) => {
     const { error, count } = await supabase
       .from("khoa_nhom_ky_thuat").delete({ count: "exact" }).eq("id", id);
-    if (error) { setLoi(error.message); return; }
+    if (error) { setLoi(dichLoi(error)); return; }
     if (!count) { setLoi("Không xoá được (thiếu quyền hoặc đề nghị đã được duyệt)."); return; }
     await taiDeNghi(donVi);
   };

@@ -1,13 +1,14 @@
 import { motion } from "motion/react";
 import { ArrowLeft, ArrowUpRight, CalendarPlus, Inbox } from "lucide-react";
 import { MUC_CHUNG } from "./KhungGoiThau";
+import ManChaoKhoa from "../components/ManChaoKhoa";
 
-export function QuayLaiDungChung({ onBack, tenTrang }) {
+export function QuayLaiDungChung({ onBack, tenTrang, tenGoc = "Nghiệp vụ dùng chung" }) {
   return (
     <div className="umc-page-crumb">
       <button type="button" onClick={onBack}>
         <ArrowLeft size={15} />
-        Nghiệp vụ dùng chung
+        {tenGoc}
       </button>
       <span aria-hidden="true">/</span>
       <strong>{tenTrang}</strong>
@@ -15,7 +16,20 @@ export function QuayLaiDungChung({ onBack, tenTrang }) {
   );
 }
 
-export default function TrangDungChung({ doiChon, laPdd, soChoDuyet = 0, dotTheoGoi = {} }) {
+export default function TrangDungChung({
+  doiChon, laPdd, soChoDuyet = 0, dotTheoGoi = {},
+  profile = null, dsDotTheoGoi = {}, dangTaiDot = false, loiDot = "",
+}) {
+  // Đợt 3 (18/09/2026): khoa vào MÀN CHÀO theo vai trò (đợt đang mở · tiến
+  // trình · 3 việc chính · thẻ Sổ thiếu hàng / Mã kỹ thuật; Giỏ rớt đi qua nút
+  // lớn "Mã rớt cần xử lý" — bỏ thẻ trùng 18/09).
+  // PĐD giữ nguyên trang nghiệp vụ dùng chung dưới đây.
+  if (!laPdd && profile) {
+    return (
+      <ManChaoKhoa profile={profile} doiChon={doiChon} dsDotTheoGoi={dsDotTheoGoi}
+        dangTaiDot={dangTaiDot} loiDot={loiDot} />
+    );
+  }
   const soDotMo = Object.keys(dotTheoGoi).length;
   const muc = [
     // Mục gắn cờ chiPdd chỉ hiện với Phòng Điều dưỡng/admin — khoa không thấy.

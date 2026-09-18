@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, ChevronRight, Lock, Unlock, Users } from "lucide-react";
 import { supabase } from "../supabaseClient";
+import { dichLoi } from "../lib/dichLoi";
 
 // Giai đoạn 1, bước 4 và 5 của workflow v3.
 //
@@ -35,7 +36,7 @@ export default function DotGoiCuaDot({ dot, dsKhoa }) {
       supabase.from("dot_goi").select("id,goi_id,trang_thai,ngay_mo,ngay_dong")
         .eq("dot_id", dot.id).order("id"),
     ]);
-    if (rDotGoi.error) { setLoi(rDotGoi.error.message); setDangTai(false); return; }
+    if (rDotGoi.error) { setLoi(dichLoi(rDotGoi.error)); setDangTai(false); return; }
     setNhanGoi(Object.fromEntries((rGoiCon.data || []).map((g) => [g.goi_id, g.nhan])));
     const ds = rDotGoi.data || [];
     setRows(ds);
@@ -46,7 +47,7 @@ export default function DotGoiCuaDot({ dot, dsKhoa }) {
         .in("dot_goi_id", ds.map((x) => x.id))
         .eq("tham_gia", true)
         .limit(20000);
-      if (error) setLoi(error.message);
+      if (error) setLoi(dichLoi(error));
       else {
         const gom = {};
         for (const r of data || []) {
@@ -70,7 +71,7 @@ export default function DotGoiCuaDot({ dot, dsKhoa }) {
         ? { ngay_mo: new Date().toISOString(), ngay_dong: null }
         : { ngay_dong: new Date().toISOString() }),
     }, { count: "exact" }).eq("id", dg.id);
-    if (error) { setLoi(error.message); return; }
+    if (error) { setLoi(dichLoi(error)); return; }
     if (!count) { setLoi("Không đổi được — kiểm tra quyền."); return; }
     await tai();
   };
@@ -96,7 +97,7 @@ export default function DotGoiCuaDot({ dot, dsKhoa }) {
     if (ghi.length) {
       const { error } = await supabase.from("dot_goi_khoa")
         .upsert(ghi, { onConflict: "dot_goi_id,khoa" });
-      if (error) { setLoi(error.message); setDangLuu(false); return; }
+      if (error) { setLoi(dichLoi(error)); setDangLuu(false); return; }
     }
     setDangLuu(false);
     setMoKhoa(null);

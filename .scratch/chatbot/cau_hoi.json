@@ -1,0 +1,1459 @@
+{
+  "phien_ban": 1,
+  "soan_ngay": "2026-09-18",
+  "quy_uoc": {
+    "nguon": "HD/ = 'Hướng dẫn build project/'; features/ = frontend/src/features/; lib/ = frontend/src/lib/; sql/ = backend/sql/. Số sau dấu hai chấm là số dòng.",
+    "bien_the": "Xét biến thể từ trên xuống, gặp điều kiện đúng ĐẦU TIÊN thì dùng câu đó thay cho tra_loi gốc. Không khớp biến thể nào thì dùng tra_loi gốc. Biến thể có thể kèm di_toi riêng (trường thêm, không bắt buộc); không có thì dùng di_toi của nút.",
+    "cho_trong": "{khoa.xxx} / {pdd.xxx} / {dot.xxx} / {ctx.xxx} là chỗ điền giá trị từ hook tiến trình — tên khoá xem khoa_trang_thai.md.",
+    "can_xac_nhan": "Nút có can_xac_nhan khác null thì chatbot CHƯA được bật câu trả lời đó cho tới khi chủ dự án trả lời (hoặc chỉ bật phần tra_loi nếu chủ dự án đồng ý phần đó đúng).",
+    "so_dong": "Số dòng dò lại lúc 11:08 ngày 18/09. Function1/TongHopPdd/BanDieuHanhPdd đang được agent khác sửa song song nên có thể lệch; grep theo nhãn nút trong câu trả lời.",
+    "di_toi_bien_the": "Trường di_toi trong biến thể là THÊM so với khung gốc — bỏ qua được."
+  },
+  "chu_de": [
+    {
+      "ma": "k_tiep",
+      "vai_tro": [
+        "khoa"
+      ],
+      "ten": "Tôi phải làm gì tiếp?",
+      "nut_goc": [
+        "k_tiep_goc",
+        "k_tiep_cac_buoc",
+        "k_tiep_chua_mo_dot",
+        "k_tiep_goi_con",
+        "k_tiep_khong_nhu_cau"
+      ]
+    },
+    {
+      "ma": "k_dx",
+      "vai_tro": [
+        "khoa"
+      ],
+      "ten": "Đề xuất số lượng",
+      "nut_goc": [
+        "k_dx_bat_dau",
+        "k_dx_khong_thay_ma",
+        "k_dx_dvt",
+        "k_dx_nut_them_gio",
+        "k_dx_ly_do_p75",
+        "k_dx_gio_o_dau",
+        "k_dx_nut_gui",
+        "k_dx_gui_bao_loi",
+        "k_dx_ma_bi_an",
+        "k_dx_sua_sau_gui"
+      ]
+    },
+    {
+      "ma": "k_xn",
+      "vai_tro": [
+        "khoa"
+      ],
+      "ten": "Xác nhận danh mục",
+      "nut_goc": [
+        "k_xn_la_gi",
+        "k_xn_nut_mo",
+        "k_xn_lan_2",
+        "k_xn_pdd_sua",
+        "k_xn_o_chung",
+        "k_xn_khoa_ghim"
+      ]
+    },
+    {
+      "ma": "k_so",
+      "vai_tro": [
+        "khoa",
+        "pdd"
+      ],
+      "ten": "Hiểu các con số (P50…)",
+      "nut_goc": [
+        "k_so_p50",
+        "k_so_p75",
+        "k_so_p90_p95",
+        "k_so_khong_goi_y",
+        "k_so_tran_30",
+        "k_so_dai_p50_p75",
+        "p_so_xac_nhan"
+      ]
+    },
+    {
+      "ma": "k_thau",
+      "vai_tro": [
+        "khoa"
+      ],
+      "ten": "Kết quả thầu & mã rớt",
+      "nut_goc": [
+        "k_th_nhan_rot",
+        "k_th_da_do_nhan",
+        "k_th_ma_rot_di_dau",
+        "k_th_so_goi_y",
+        "k_th_khong_can_nua",
+        "k_th_day_sl",
+        "k_th_hop_thu",
+        "k_th_kich_hoat_30"
+      ]
+    },
+    {
+      "ma": "k_loi",
+      "vai_tro": [
+        "khoa",
+        "pdd"
+      ],
+      "ten": "Lỗi / không bấm được",
+      "nut_goc": [
+        "k_loi_da_chot_q",
+        "k_loi_phien_mang",
+        "k_loi_he_thong",
+        "k_loi_quyen",
+        "k_loi_khac"
+      ]
+    },
+    {
+      "ma": "p_tiep",
+      "vai_tro": [
+        "pdd"
+      ],
+      "ten": "Tôi phải làm gì tiếp?",
+      "nut_goc": [
+        "p_tiep_goc",
+        "p_tiep_lam_o_dau",
+        "p_tiep_nhac_khoa",
+        "k_th_hop_thu"
+      ]
+    },
+    {
+      "ma": "p_q",
+      "vai_tro": [
+        "pdd"
+      ],
+      "ten": "Sửa số & chốt số đi thầu",
+      "nut_goc": [
+        "p_q_sua_tong",
+        "p_q_nut_mo",
+        "p_q_khoa_chua_gui",
+        "p_q_sau_chot",
+        "p_q_sua_sau_chot",
+        "k_xn_khoa_ghim"
+      ]
+    },
+    {
+      "ma": "p_thau",
+      "vai_tro": [
+        "pdd"
+      ],
+      "ten": "Thầu, rớt & chia số trúng",
+      "nut_goc": [
+        "p_th_giai_doan",
+        "p_th_nhap_rot",
+        "p_th_chia",
+        "p_th_do_ma",
+        "p_th_xac_nhan_rot",
+        "p_th_xnr_lam_gi",
+        "p_td_rot_trong_gio",
+        "p_td_chuyen_tiep_hong"
+      ]
+    },
+    {
+      "ma": "p_tk",
+      "vai_tro": [
+        "pdd"
+      ],
+      "ten": "Chốt trình ký & Excel",
+      "nut_goc": [
+        "p_tk_khi_nao",
+        "p_tk_mo_lai",
+        "p_tk_excel"
+      ]
+    }
+  ],
+  "nut": [
+    {
+      "id": "k_tiep_goc",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_tiep",
+      "cau_hoi": "Tôi phải làm gì tiếp?",
+      "tra_loi": "Việc của khoa có ba bước. Một: ở màn Đề xuất số lượng, nhập số rồi bấm \"Thêm cả mã quản lý vào giỏ\". Hai: mở giỏ, bấm \"Gửi … mã quản lý\". Ba: mở Danh mục đề xuất của khoa, kiểm lại rồi bấm \"Xác nhận thông tin đề xuất lần N\".",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Gói đang xem chưa có đợt mở · !ctx.dotDangMo",
+          "tra_loi": "Gói này chưa mở đợt. Bạn vẫn nhập và để trong giỏ được, nhưng chưa gửi được. Đợt do Phòng Điều dưỡng mở; hỏi qua Teams."
+        },
+        {
+          "khi": "Có mã rớt vừa được đưa vào giỏ đợt bổ sung · khoa.soMaRotMoi > 0",
+          "tra_loi": "Có {khoa.soMaRotMoi} mã rớt vừa được đưa vào giỏ đợt bổ sung của khoa. Mở Gói bổ sung, xem số gợi ý, sửa cho đúng nhu cầu rồi tự bấm gửi. Chưa gửi thì chưa thành đề xuất.",
+          "di_toi": {
+            "nhan": "Đi tới Gói bổ sung",
+            "man": "khoa.bo_sung_de_xuat"
+          }
+        },
+        {
+          "khi": "Giỏ còn mã chưa gửi · khoa.soMaTrongGio > 0",
+          "tra_loi": "Giỏ của bạn đang có {khoa.soMaTrongGio} mã hàng chưa gửi. Bấm nút tròn hình giỏ hàng ở góc trên bên phải, rồi bấm \"Gửi … mã quản lý\" ở đáy giỏ."
+        },
+        {
+          "khi": "Đã từng xác nhận nhưng xác nhận bị huỷ · khoa.xacNhanHetHieuLuc",
+          "tra_loi": "Xác nhận lần {khoa.lanXacNhan} đã hết hiệu lực vì dữ liệu vừa được sửa. Mở Danh mục đề xuất của khoa, kiểm lại rồi bấm \"Xác nhận thông tin đề xuất lần {khoa.lanXacNhanKe}\".",
+          "di_toi": {
+            "nhan": "Đi tới Danh mục đề xuất",
+            "man": "khoa.danh_muc_de_xuat"
+          }
+        },
+        {
+          "khi": "Đã gửi, chưa xác nhận, PĐD chưa chốt số đi thầu · khoa.daGui && !khoa.daXacNhan && !khoa.coPhienQ",
+          "tra_loi": "Bạn đã gửi đề xuất. Còn một việc: mở Danh mục đề xuất của khoa, kiểm lại số và nội dung, rồi bấm \"Xác nhận thông tin đề xuất lần {khoa.lanXacNhanKe}\". Khoa chưa xác nhận thì PĐD chưa chốt số đi thầu được.",
+          "di_toi": {
+            "nhan": "Đi tới Danh mục đề xuất",
+            "man": "khoa.danh_muc_de_xuat"
+          }
+        },
+        {
+          "khi": "PĐD đã chốt số đi thầu, chưa chốt trình ký · khoa.coPhienQ && !khoa.coPhienTrinhKy",
+          "tra_loi": "PĐD đã chốt số đi thầu. Cột số lượng đã khoá, không thêm mã được nữa. Đợt đang đấu thầu; kết quả sẽ hiện thành nhãn trên Danh mục đề xuất của khoa."
+        },
+        {
+          "khi": "Đã xác nhận bản hiện tại, PĐD chưa chốt số đi thầu · khoa.daXacNhan && !khoa.coPhienQ",
+          "tra_loi": "Phần của khoa đã xong. Đang chờ PĐD chốt số đi thầu. Bạn vẫn sửa được, nhưng tự sửa thì phải bấm xác nhận lại."
+        }
+      ],
+      "di_toi": {
+        "nhan": "Đi tới Đề xuất số lượng",
+        "man": "khoa.de_xuat_so_luong"
+      },
+      "hoi_tiep": [
+        "k_tiep_cac_buoc",
+        "k_dx_gio_o_dau",
+        "k_xn_la_gi"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:239-278, 291-297, 322-336, 594-612; features/Function1.jsx:2094-2099, 1589-1593; features/DanhMucDeXuatKhoa.jsx:1086-1096, 1125-1134",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_tiep_cac_buoc",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_tiep",
+      "cau_hoi": "Đề xuất từ đầu đến cuối gồm những bước nào?",
+      "tra_loi": "Menu trái: Gói 18 tháng → bấm tên gói con (Dùng chung, GMHS, RHM, Tim mạch, CTCH-NTK) → màn Đề xuất số lượng. Chọn nhóm kỹ thuật, nhập tổng, chia xuống từng mã hàng, thêm vào giỏ, gửi giỏ. Sau đó vào \"Danh mục đề xuất của khoa\" để kiểm lại và xác nhận.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": {
+        "nhan": "Đi tới Đề xuất số lượng",
+        "man": "khoa.de_xuat_so_luong"
+      },
+      "hoi_tiep": [
+        "k_dx_bat_dau",
+        "k_dx_dvt",
+        "k_xn_la_gi"
+      ],
+      "nguon": "features/KhungGoiThau.jsx:35-54, 199-210, 256-273; HD/01_NGHIEP_VU_HIEN_HANH.md:239-252",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_tiep_chua_mo_dot",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_tiep",
+      "cau_hoi": "Menu ghi \"Chưa mở đợt\" nghĩa là gì?",
+      "tra_loi": "Dòng nhỏ dưới tên gói cho biết trạng thái: \"Đang mở: <tên đợt>\" hoặc \"Chưa mở đợt\". Chưa mở đợt thì bạn vẫn nhập và giữ giỏ được, nhưng nút gửi bị mờ. Đợt do Phòng Điều dưỡng mở; hỏi qua Teams.",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Hệ không đọc được trạng thái đợt · ctx.loiDocDot",
+          "tra_loi": "Menu đang ghi \"Không đọc được trạng thái\": hệ chưa đọc được trạng thái đợt, không có nghĩa là đợt đã đóng. Chuyển sang cửa sổ khác rồi quay lại để hệ đọc lại; vẫn vậy thì đăng xuất rồi đăng nhập lại."
+        }
+      ],
+      "di_toi": null,
+      "hoi_tiep": [
+        "k_dx_nut_gui",
+        "k_loi_phien_mang"
+      ],
+      "nguon": "features/KhungGoiThau.jsx:97, 136-145, 241-244; features/Function1.jsx:458-459, 2210-2216",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_tiep_goi_con",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_tiep",
+      "cau_hoi": "Gói con là gì? Tôi nhập ở gói con nào?",
+      "tra_loi": "Gói 18 tháng chia 5 gói con, mỗi gói con đi thầu riêng. Khi gửi, mọi mã trong giỏ được ghi vào đúng gói con bạn đang mở. Vì vậy hãy mở đúng gói con trước khi thêm mã vào giỏ.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [
+        "k_tiep_cac_buoc"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:104-114, 259-262",
+      "can_xac_nhan": "Khoa dựa vào đâu để biết một mã quản lý thuộc gói con nào (màn tìm mã KHÔNG lọc theo gói con)? Có chỗ nào trên web cho khoa tra không, hay chatbot chỉ nên nói 'hỏi Phòng Điều dưỡng'?"
+    },
+    {
+      "id": "k_tiep_khong_nhu_cau",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_tiep",
+      "cau_hoi": "Khoa tôi không cần gì trong gói này thì làm sao?",
+      "tra_loi": "Mở màn Đề xuất số lượng của gói con đó, bấm \"Xem Danh mục đề xuất của khoa\". Khi bảng chưa có mã nào, bạn sẽ thấy nút \"Không phát sinh nhu cầu\". Bấm là xong.",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Khoa đã có mã trong đợt · khoa.daGui",
+          "tra_loi": "Khoa đã gửi mã trong đợt này nên không dùng nút \"Không phát sinh nhu cầu\" được. Nếu không cần nữa, sửa số về 0 trên Danh mục đề xuất của khoa rồi xác nhận lại."
+        }
+      ],
+      "di_toi": {
+        "nhan": "Đi tới Đề xuất số lượng",
+        "man": "khoa.de_xuat_so_luong"
+      },
+      "hoi_tiep": [
+        "k_xn_la_gi"
+      ],
+      "nguon": "features/Function1.jsx:1657-1664; features/DanhMucDeXuatKhoa.jsx:1097-1101; HD/01_NGHIEP_VU_HIEN_HANH.md:269-274, 324-329",
+      "can_xac_nhan": "(1) Cổng chốt số đi thầu đã bỏ qua khoa chưa gửi (01:324-329). Khoa không có nhu cầu có CẦN bấm 'Không phát sinh nhu cầu' không, hay chatbot nên nói 'không cần làm gì'? (2) Biến thể 'sửa số về 0 rồi xác nhận lại' là tôi suy ra từ luật khoa được sửa số (ô nhận số nguyên không âm, DanhMucDeXuatKhoa.jsx:719-722) — có phải cách chủ dự án muốn khoa làm không, hay khoa phải rút đề xuất?"
+    },
+    {
+      "id": "k_dx_bat_dau",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_dx",
+      "cau_hoi": "Tôi bắt đầu nhập đề xuất ở đâu?",
+      "tra_loi": "Menu trái: Gói 18 tháng (hoặc Gói bổ sung) → bấm tên gói con → màn Đề xuất số lượng. Cột trái: gõ tên nhóm, mã quản lý hoặc mã hàng vào ô tìm. Chọn một nhóm, cột phải hiện lịch sử dùng và ô nhập số.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": {
+        "nhan": "Đi tới Đề xuất số lượng",
+        "man": "khoa.de_xuat_so_luong"
+      },
+      "hoi_tiep": [
+        "k_dx_khong_thay_ma",
+        "k_dx_dvt",
+        "k_so_p50"
+      ],
+      "nguon": "features/KhungGoiThau.jsx:256-273; features/Function1.jsx:1667-1673, 1745",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_dx_khong_thay_ma",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_dx",
+      "cau_hoi": "Tôi không tìm thấy mã cần đề xuất?",
+      "tra_loi": "Hai lý do hay gặp. Một: danh sách chỉ hiện nhóm khoa đã từng dùng; tích ô \"Hiện cả mã chưa từng dùng ở khoa này\" để thấy hết. Hai: mã quản lý đã nằm trong giỏ hoặc đã gửi ở đợt này thì tạm ẩn; dòng chữ tím ngay dưới cho biết đang ẩn bao nhiêu mã.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": {
+        "nhan": "Đi tới Đề xuất số lượng",
+        "man": "khoa.de_xuat_so_luong"
+      },
+      "hoi_tiep": [
+        "k_dx_ma_bi_an",
+        "k_dx_sua_sau_gui"
+      ],
+      "nguon": "features/Function1.jsx:441-444, 510-513, 1682-1697",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_dx_dvt",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_dx",
+      "cau_hoi": "\"ĐVT chuẩn\" và hệ số quy đổi là gì?",
+      "tra_loi": "Một mã quản lý có thể gồm nhiều mã hàng khác đơn vị tính, ví dụ Bộ và Cái. Chọn một \"ĐVT chuẩn\", rồi nhập \"1 <ĐVT khác> = ? <ĐVT chuẩn>\" cho từng ĐVT còn lại. Chưa đủ hệ số thì chưa nhập được số và chưa thêm vào giỏ được. Nhóm chỉ có một ĐVT thì tự xong.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [
+        "k_dx_nut_them_gio"
+      ],
+      "nguon": "features/Function1.jsx:1779-1825, 1894-1899; HD/01_NGHIEP_VU_HIEN_HANH.md:241-257, 422",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_dx_nut_them_gio",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_dx",
+      "cau_hoi": "Vì sao không thêm được vào giỏ?",
+      "tra_loi": "Nút \"Thêm cả mã quản lý vào giỏ\" mờ khi còn ĐVT chưa có hệ số quy đổi. Nếu bấm được mà hiện chữ đỏ bên cạnh, thường là: chưa nhập tổng; tổng chia xuống các mã hàng chưa bằng tổng; số chia không phải số nguyên; hoặc vượt P75 mà chưa chọn lý do và ghi chú.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [
+        "k_dx_dvt",
+        "k_dx_ly_do_p75"
+      ],
+      "nguon": "features/Function1.jsx:1105-1138, 2094-2099",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_dx_ly_do_p75",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_dx",
+      "cau_hoi": "Khi nào bắt chọn lý do và ghi chú?",
+      "tra_loi": "Chỉ khi tổng bạn nhập cao hơn P75 (\"Cao hơn thường lệ\"). Khi đó phải chọn lý do đề xuất và ghi chú căn cứ. Số từ P75 trở xuống, kể cả thấp hơn P50, không phải giải trình. Đợt bổ sung không áp luật này.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [
+        "k_so_p75",
+        "k_so_p90_p95"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:714-720; HD/02_CONG_THUC_SO_LUONG.md:91-95; features/Function1.jsx:154, 1132-1136",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_dx_gio_o_dau",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_dx",
+      "cau_hoi": "Giỏ đề xuất nằm ở đâu?",
+      "tra_loi": "Giỏ là nút tròn hình giỏ hàng ở góc trên bên phải màn Đề xuất số lượng. Số đỏ trên nút là số mã quản lý đang có trong giỏ. Bấm vào sẽ mở ngăn \"Giỏ đề xuất\", nút gửi nằm ở đáy ngăn.",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Giỏ đang có mã · khoa.soMaTrongGio > 0",
+          "tra_loi": "Giỏ của bạn đang có {khoa.soMaTrongGio} mã hàng ({khoa.soMaQuanLyTrongGio} mã quản lý). Bấm nút tròn hình giỏ hàng ở góc trên bên phải, kiểm lại rồi bấm \"Gửi {khoa.soMaQuanLyTrongGio} mã quản lý\"."
+        },
+        {
+          "khi": "Giỏ trống · khoa.soMaTrongGio == 0",
+          "tra_loi": "Giỏ đang trống. Chọn một nhóm, chốt tổng, chia xuống mã hàng rồi bấm \"Thêm cả mã quản lý vào giỏ\"."
+        }
+      ],
+      "di_toi": {
+        "nhan": "Đi tới Đề xuất số lượng",
+        "man": "khoa.de_xuat_so_luong"
+      },
+      "hoi_tiep": [
+        "k_dx_nut_gui"
+      ],
+      "nguon": "features/Function1.jsx:1488-1519, 1589-1593",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_dx_nut_gui",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_dx",
+      "cau_hoi": "Vì sao nút gửi trong giỏ bị mờ?",
+      "tra_loi": "Nút \"Gửi … mã quản lý\" ở đáy giỏ mờ khi: giỏ trống; gói chưa mở đợt; có nhiều đợt đang mở mà bạn chưa chọn ở ô \"— Chọn đợt gửi đề xuất —\"; hoặc hệ đang tải trạng thái đợt.",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Gói chưa mở đợt · !ctx.dotDangMo",
+          "tra_loi": "Gói này chưa mở đợt nên chưa gửi được. Giỏ vẫn giữ nguyên. Hỏi Phòng Điều dưỡng qua Teams khi nào mở đợt."
+        },
+        {
+          "khi": "Có nhiều đợt hợp lệ mà chưa chọn · ctx.soDotHopLe > 1 && !ctx.dotDaChon",
+          "tra_loi": "Đang mở {ctx.soDotHopLe} đợt. Chọn đợt ở ô \"— Chọn đợt gửi đề xuất —\" ngay trên nút gửi, nút sẽ sáng."
+        },
+        {
+          "khi": "Giỏ trống · khoa.soMaTrongGio == 0",
+          "tra_loi": "Giỏ đang trống nên chưa có gì để gửi. Thêm ít nhất một mã quản lý vào giỏ trước."
+        }
+      ],
+      "di_toi": null,
+      "hoi_tiep": [
+        "k_tiep_chua_mo_dot",
+        "k_dx_gui_bao_loi"
+      ],
+      "nguon": "features/Function1.jsx:458-481, 1580-1593",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_dx_gui_bao_loi",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_dx",
+      "cau_hoi": "Bấm gửi thì báo lỗi?",
+      "tra_loi": "\"Mã … còn thiếu kỳ sử dụng, … lý do hoặc ghi chú\": mã đó trong giỏ còn thiếu thông tin bắt buộc. \"Đợt đề xuất đã đóng\": PĐD đã đóng đợt, hỏi qua Teams. Lỗi khác xem mục \"Lỗi / không bấm được\".",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [
+        "k_loi_khac"
+      ],
+      "nguon": "features/Function1.jsx:1361-1371; sql/*.sql raise 'Đợt đề xuất đã đóng.'",
+      "can_xac_nhan": "Khi giỏ báo 'Mã … còn thiếu … lý do hoặc ghi chú', khoa sửa bằng cách nào? Ngăn giỏ hiện tại không có ô sửa (Function1.jsx:1560-1568 chỉ hiển thị). Có phải bấm dấu X 'Bỏ cả mã quản lý khỏi giỏ' rồi nhập lại nhóm đó không?"
+    },
+    {
+      "id": "k_dx_ma_bi_an",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_dx",
+      "cau_hoi": "Mã tôi vừa gửi biến mất khỏi danh sách?",
+      "tra_loi": "Bình thường. Mã đã vào giỏ hoặc đã gửi ở đợt này thì cả mã quản lý tạm ẩn khỏi danh sách tìm, để khỏi đề xuất trùng. Muốn đổi số sau khi gửi, sửa trên Danh mục đề xuất của khoa.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": {
+        "nhan": "Đi tới Danh mục đề xuất",
+        "man": "khoa.danh_muc_de_xuat"
+      },
+      "hoi_tiep": [
+        "k_dx_sua_sau_gui"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:264-265; features/Function1.jsx:510-513, 1691-1697",
+      "can_xac_nhan": "Mã hiện lại khi nào? 01:264-265 nói 'sau khi PĐD đã chốt dữ liệu trình ký'; dòng chữ trên màn (Function1.jsx:1693-1695) nói 'sau khi PĐD chốt \"Đã đi thầu\"'. Chatbot nên nói mốc nào? (Hiện câu trả lời cố ý không nêu mốc.)"
+    },
+    {
+      "id": "k_dx_sua_sau_gui",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_dx",
+      "cau_hoi": "Gửi rồi có sửa số được nữa không?",
+      "tra_loi": "Được, tới khi PĐD chốt số đi thầu. Mở Danh mục đề xuất của khoa, bấm vào ô số lượng, gõ số mới rồi bấm ra ngoài để lưu. Tổng đi thầu đổi theo. Tự sửa xong thì phải bấm xác nhận lại.",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "PĐD đã chốt số đi thầu · khoa.coPhienQ",
+          "tra_loi": "PĐD đã chốt số đi thầu nên cột số lượng đã khoá. Cần đổi số, nhắn Phòng Điều dưỡng qua Teams. Cột chữ như tiêu chí kỹ thuật vẫn sửa được tới khi chốt trình ký."
+        }
+      ],
+      "di_toi": {
+        "nhan": "Đi tới Danh mục đề xuất",
+        "man": "khoa.danh_muc_de_xuat"
+      },
+      "hoi_tiep": [
+        "k_xn_lan_2",
+        "k_loi_da_chot_q"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:144-157, 1086-1089; features/DanhMucDeXuatKhoa.jsx:740-745, 806-812, 1144-1148",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_xn_la_gi",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_xn",
+      "cau_hoi": "Xác nhận thông tin đề xuất là gì, bấm ở đâu?",
+      "tra_loi": "Là bấm để báo \"khoa đã xem và đồng ý với bản đang hiện\". Không khoá ô nào. Nút \"Xác nhận thông tin đề xuất lần N\" nằm trên thanh công cụ của Danh mục đề xuất của khoa. PĐD chỉ chốt số đi thầu được khi mọi khoa đã gửi đều xác nhận.",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Đã xác nhận bản hiện tại · khoa.daXacNhan",
+          "tra_loi": "Khoa đã xác nhận lần {khoa.lanXacNhan}. Không cần bấm thêm, trừ khi khoa tự sửa số hoặc nội dung."
+        }
+      ],
+      "di_toi": {
+        "nhan": "Đi tới Danh mục đề xuất",
+        "man": "khoa.danh_muc_de_xuat"
+      },
+      "hoi_tiep": [
+        "k_xn_nut_mo",
+        "k_xn_lan_2",
+        "k_xn_pdd_sua"
+      ],
+      "nguon": "features/DanhMucDeXuatKhoa.jsx:461-465, 1086-1096; HD/01_NGHIEP_VU_HIEN_HANH.md:324-329, 1074-1075",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_xn_nut_mo",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_xn",
+      "cau_hoi": "Vì sao nút xác nhận bị mờ?",
+      "tra_loi": "Nút mờ khi: bản hiện tại đã được xác nhận (nút ghi \"Đã xác nhận lần N\"); bảng chưa có mã nào; hoặc đang lưu. Khoa tự sửa số hay nội dung thì nút sáng lại để xác nhận lần mới.",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Đã xác nhận · khoa.daXacNhan",
+          "tra_loi": "Khoa đã xác nhận lần {khoa.lanXacNhan} lúc {khoa.xacNhanLuc}, nên nút mờ là đúng. Không cần bấm thêm."
+        },
+        {
+          "khi": "Bảng chưa có mã · khoa.soMaTrenDanhMuc == 0",
+          "tra_loi": "Danh mục chưa có mã nào nên không có gì để xác nhận. Nếu khoa không có nhu cầu, bấm \"Không phát sinh nhu cầu\"."
+        }
+      ],
+      "di_toi": null,
+      "hoi_tiep": [
+        "k_xn_lan_2",
+        "k_tiep_khong_nhu_cau"
+      ],
+      "nguon": "features/DanhMucDeXuatKhoa.jsx:511-513, 1086-1101; HD/01_NGHIEP_VU_HIEN_HANH.md:291-297",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_xn_lan_2",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_xn",
+      "cau_hoi": "Đã xác nhận rồi sao lại phải xác nhận lần nữa?",
+      "tra_loi": "Khoa tự sửa số hoặc sửa một ô thì xác nhận cũ hết hiệu lực. Băng vàng \"Xác nhận lần N đã hết hiệu lực\" ghi rõ lý do. Kiểm lại rồi bấm \"Xác nhận thông tin đề xuất lần N+1\". Số lần xác nhận không giới hạn.",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Xác nhận bị huỷ · khoa.xacNhanHetHieuLuc",
+          "tra_loi": "Xác nhận lần {khoa.lanXacNhan} đã hết hiệu lực: {khoa.lyDoHuyXacNhan}. Kiểm lại rồi bấm \"Xác nhận thông tin đề xuất lần {khoa.lanXacNhanKe}\"."
+        }
+      ],
+      "di_toi": {
+        "nhan": "Đi tới Danh mục đề xuất",
+        "man": "khoa.danh_muc_de_xuat"
+      },
+      "hoi_tiep": [
+        "k_xn_pdd_sua"
+      ],
+      "nguon": "features/DanhMucDeXuatKhoa.jsx:1125-1134; HD/01_NGHIEP_VU_HIEN_HANH.md:291-297, 1088-1089; HD/05_TRANG_THAI_VA_VIEC_TIEP_THEO.md:480",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_xn_pdd_sua",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_xn",
+      "cau_hoi": "PĐD sửa số của khoa, tôi có phải xác nhận lại không?",
+      "tra_loi": "Không. PĐD sửa số hay nội dung thì khoa KHÔNG mất xác nhận. Bạn thấy khung tím \"Phòng Điều dưỡng đã điều chỉnh số lượng của khoa\" ghi số cũ, số mới, người sửa, lý do, và có thông báo ở chuông. Có ý kiến thì trao đổi qua Teams.",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "PĐD đã điều chỉnh số của khoa · khoa.soLanPddDieuChinh > 0",
+          "tra_loi": "PĐD đã điều chỉnh số lượng của khoa {khoa.soLanPddDieuChinh} lần. Xem khung tím ngay trên bảng Danh mục đề xuất. Xác nhận của khoa vẫn còn hiệu lực."
+        }
+      ],
+      "di_toi": {
+        "nhan": "Đi tới Danh mục đề xuất",
+        "man": "khoa.danh_muc_de_xuat"
+      },
+      "hoi_tiep": [
+        "k_th_hop_thu",
+        "k_xn_o_chung"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:286-297, 924; features/DanhMucDeXuatKhoa.jsx:1135-1138, 1156-1190",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_xn_o_chung",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_xn",
+      "cau_hoi": "Ô viền tím \"giá trị dùng chung toàn viện\" là gì?",
+      "tra_loi": "Cột chữ như tiêu chí kỹ thuật, tên thương mại là một giá trị chung toàn viện. Sửa ở đó thì mọi khoa và bảng Tổng hợp đổi theo; ai sửa sau thì đè. Riêng cột giải trình là của riêng khoa. Ô có ghi ai sửa cuối và lúc nào.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [
+        "k_xn_lan_2"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:296-297, 1083-1085; features/DanhMucDeXuatKhoa.jsx:1139-1143, 1439-1452",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_xn_khoa_ghim",
+      "vai_tro": [
+        "khoa",
+        "pdd"
+      ],
+      "chu_de": "k_xn",
+      "cau_hoi": "Ổ khoá và ghim trên đầu cột là gì?",
+      "tra_loi": "Bấm \"Ẩn/khóa cột\" để chọn. Ổ khoá là \"Khóa sửa\": không ai sửa được cột đó, kể cả PĐD, phải mở khoá trước. Ghim giữ cột đứng yên khi cuộn ngang, vẫn sửa được; các cột ghim nằm dưới nhãn \"Luôn hiện khi cuộn ngang\". Cài đặt này dùng chung cho cả khoa.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [],
+      "nguon": "features/DanhMucDeXuatKhoa.jsx:1027-1069; lib/cotChuan.js:418; HD/01_NGHIEP_VU_HIEN_HANH.md:1126-1133",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_so_p50",
+      "vai_tro": [
+        "khoa",
+        "pdd"
+      ],
+      "chu_de": "k_so",
+      "cau_hoi": "\"Mức thường dùng (P50)\" là gì?",
+      "tra_loi": "Là số hệ dự báo khoa sẽ dùng trong cả kỳ, tính từ lịch sử xuất kho 24 tháng gần nhất. Đây là mức chọn sẵn, không phải khuyến nghị chuyên môn. Số không tự vào ô: bạn phải bấm nút thì số mới được điền. Nhập thấp hơn P50 vẫn được, không phải giải trình.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [
+        "k_so_p75",
+        "k_so_khong_goi_y"
+      ],
+      "nguon": "HD/02_CONG_THUC_SO_LUONG.md:9-13, 76-103; features/GoiYSoLuong.jsx:13-16, 57-66, 168-173",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_so_p75",
+      "vai_tro": [
+        "khoa",
+        "pdd"
+      ],
+      "chu_de": "k_so",
+      "cau_hoi": "\"Cao hơn thường lệ (P75)\" là gì?",
+      "tra_loi": "Là mức P50 cộng thêm phần dao động hay gặp giữa các tháng. Từ P50 đến P75 là khoảng thường dùng, không phải giải trình. Nhập cao hơn P75 thì phải chọn lý do và ghi chú căn cứ.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [
+        "k_so_p90_p95",
+        "k_dx_ly_do_p75"
+      ],
+      "nguon": "HD/02_CONG_THUC_SO_LUONG.md:78-93; features/GoiYSoLuong.jsx:57, 144-150",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_so_p90_p95",
+      "vai_tro": [
+        "khoa",
+        "pdd"
+      ],
+      "chu_de": "k_so",
+      "cau_hoi": "\"Mức cao (P90)\" và \"Ngoại lệ (P95)\" dùng khi nào?",
+      "tra_loi": "\"Mức cao · cần giải trình (P90)\" và \"Ngoại lệ · cần giải trình (P95)\" là hai mức vượt dải thường dùng. Chỉ chọn khi có căn cứ chuyên môn, và bắt buộc ghi rõ căn cứ. Không lấy quyền mua thêm 30% làm lý do nâng số lên P90/P95.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [
+        "k_so_tran_30"
+      ],
+      "nguon": "HD/02_CONG_THUC_SO_LUONG.md:94-95; HD/01_NGHIEP_VU_HIEN_HANH.md:717, 797; features/GoiYSoLuong.jsx:144-150, 168-173",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_so_khong_goi_y",
+      "vai_tro": [
+        "khoa",
+        "pdd"
+      ],
+      "chu_de": "k_so",
+      "cau_hoi": "Sao mã này không có gợi ý số, hoặc có cảnh báo vàng?",
+      "tra_loi": "Ba trường hợp. Khoa chưa từng xuất kho mã này: nhập theo kế hoạch chuyên môn và ghi căn cứ. Dữ liệu thưa (dưới 6 tháng có dùng trong 2 năm): các mức chỉ để tham khảo. Đợt bổ sung: không có gợi ý, khoa tự quyết số.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [
+        "k_so_p50"
+      ],
+      "nguon": "features/GoiYSoLuong.jsx:34-46, 102-110; features/Function1.jsx:139-154; HD/02_CONG_THUC_SO_LUONG.md:105-106; HD/01_NGHIEP_VU_HIEN_HANH.md:690-694",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_so_tran_30",
+      "vai_tro": [
+        "khoa",
+        "pdd"
+      ],
+      "chu_de": "k_so",
+      "cau_hoi": "\"Trần +30%\" / tùy chọn mua thêm là gì?",
+      "tra_loi": "Là mức mua thêm tối đa sau này, bằng 30% số của khoa, làm tròn xuống. Không tự mua, không cộng vào số đề xuất. Chỉ kích hoạt được sau khi PĐD chốt trình ký, lúc đó tính trên số trúng đã chia cho khoa.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [
+        "k_th_kich_hoat_30"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:779-797; features/GoiYSoLuong.jsx:152-158",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_so_dai_p50_p75",
+      "vai_tro": [
+        "khoa",
+        "pdd"
+      ],
+      "chu_de": "k_so",
+      "cau_hoi": "Cột dải P50–P75 trên Danh mục đề xuất là gì?",
+      "tra_loi": "Là khoảng thường dùng của riêng khoa cho mã đó. Số vượt P75 chỉ được tô nổi bật, không bị chặn. Dải tính theo kỳ mặc định của gói, nên có thể lệch chút với màn nhập nếu lúc nhập bạn đã đổi mốc từ/đến.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [
+        "k_so_p75"
+      ],
+      "nguon": "HD/06_DUNG_LAM_LAI.md:37; features/DanhMucDeXuatKhoa.jsx:1386-1394",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "p_so_xac_nhan",
+      "vai_tro": [
+        "pdd"
+      ],
+      "chu_de": "k_so",
+      "cau_hoi": "Khi nào khoa mất xác nhận?",
+      "tra_loi": "PĐD sửa số hay nội dung của khoa: khoa KHÔNG mất xác nhận, chỉ nhận thông báo. Khoa tự sửa số hoặc một ô: mất xác nhận của chính khoa đó, khoa khác giữ nguyên. Khoa được sửa đè cột chữ PĐD vừa chỉnh.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [
+        "p_q_nut_mo"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:291-297; HD/05_TRANG_THAI_VA_VIEC_TIEP_THEO.md:480",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_th_nhan_rot",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_thau",
+      "cau_hoi": "Nhãn \"Rớt … ở Chào giá · trúng …\" nghĩa là gì?",
+      "tra_loi": "Nhãn vàng \"Rớt N ở <giai đoạn> · trúng M\": mã rớt một phần. Nhãn đỏ \"Rớt toàn bộ ở <giai đoạn>\": không trúng. Giai đoạn là Chào giá, Mở thầu hoặc Đánh giá. Rê chuột lên nhãn để xem số mang đi thầu, trúng, thiếu và lý do. Khoa chỉ xem, không sửa.",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Khoa có mã rớt trong đợt · khoa.soMaRot > 0",
+          "tra_loi": "Danh mục của khoa đang có {khoa.soMaRot} mã rớt thầu. Nhãn vàng là rớt một phần, nhãn đỏ là rớt toàn bộ. Rê chuột lên nhãn để xem chi tiết."
+        }
+      ],
+      "di_toi": {
+        "nhan": "Đi tới Danh mục đề xuất",
+        "man": "khoa.danh_muc_de_xuat"
+      },
+      "hoi_tiep": [
+        "k_th_ma_rot_di_dau",
+        "k_th_da_do_nhan"
+      ],
+      "nguon": "features/DanhMucDeXuatKhoa.jsx:84, 1424-1438; HD/01_NGHIEP_VU_HIEN_HANH.md:856-859",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_th_da_do_nhan",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_thau",
+      "cau_hoi": "\"↪ đã đổ … sang …\" và \"↩ nhận … từ …\" là gì?",
+      "tra_loi": "\"↪ đã đổ N sang <mã>\": phần của khoa ở mã rớt đã được PĐD chuyển sang mã tương đương cùng mã quản lý, nên số dòng này về 0. \"↩ nhận N từ <mã>\": dòng này nhận phần đó. Số gốc vẫn giữ trong hồ sơ thầu. Khoa được báo, không bác được.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [
+        "k_th_day_sl"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:413-426, 482-525; features/DanhMucDeXuatKhoa.jsx:1410-1423",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_th_ma_rot_di_dau",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_thau",
+      "cau_hoi": "Mã rớt thầu thì đi đâu?",
+      "tra_loi": "Khi PĐD bấm \"Xác nhận rớt\", phần rớt chưa đổ sang mã tương đương vào GIỎ của khoa ở đợt bổ sung gần nhất (tháng 1, 5 hoặc 9), số điền sẵn bằng số rớt. Chưa phải đề xuất: khoa tự sửa số và tự gửi. Menu Gói bổ sung sẽ có nhãn đỏ \"N mã rớt\".",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Có mã rớt mới trong giỏ bổ sung · khoa.soMaRotMoi > 0",
+          "tra_loi": "Khoa đang có {khoa.soMaRotMoi} mã rớt trong giỏ đợt bổ sung. Mở Gói bổ sung → đúng tháng → giỏ, kiểm số rồi bấm gửi."
+        }
+      ],
+      "di_toi": {
+        "nhan": "Đi tới Gói bổ sung",
+        "man": "khoa.bo_sung_de_xuat"
+      },
+      "hoi_tiep": [
+        "k_th_so_goi_y",
+        "k_th_khong_can_nua"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:594-612, 628-637; features/KhungGoiThau.jsx:172-188, 224-228",
+      "can_xac_nhan": "Ngăn giỏ đang dùng KHÔNG hiện nhãn '⟳ rớt thầu · gợi ý N' — nhãn đó chỉ nằm ở khối giỏ cũ đang bị ẩn (Function1.jsx:2111 className=\"hidden\", nhãn ở 2101-2109). Khoa mở giỏ sẽ không phân biệt được mã nào do rớt thầu đưa về. Có cần báo cho agent giao diện không?"
+    },
+    {
+      "id": "k_th_so_goi_y",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_thau",
+      "cau_hoi": "Số trong giỏ bổ sung có phải gửi y nguyên không?",
+      "tra_loi": "Không. Số trong giỏ chỉ là gợi ý bằng đúng số đã rớt. Khoa quyết số cuối: nhiều hơn, ít hơn hay về 0 đều được. Đợt bổ sung không áp P50–P95 và không bắt lý do vượt ngưỡng.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": {
+        "nhan": "Đi tới Gói bổ sung",
+        "man": "khoa.bo_sung_de_xuat"
+      },
+      "hoi_tiep": [
+        "k_dx_sua_sau_gui"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:150-152, 604-609, 690-697",
+      "can_xac_nhan": "Khoa sửa số của mã rớt TRƯỚC khi gửi bằng cách nào? Ngăn giỏ hiện tại chỉ hiển thị số, không có ô sửa (Function1.jsx:1560-1568); ô sửa số chỉ có ở khối giỏ cũ đã ẩn (2117-2134). Chatbot nên hướng dẫn 'gửi rồi sửa trên Danh mục đề xuất' hay 'bỏ khỏi giỏ rồi nhập lại'?"
+    },
+    {
+      "id": "k_th_khong_can_nua",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_thau",
+      "cau_hoi": "Khoa không cần mã rớt đó nữa thì làm sao?",
+      "tra_loi": "CAN_XAC_NHAN — chưa có căn cứ về chỗ bấm, chưa viết.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:146-148, 1049 (luật cho khoa 'chọn không còn nhu cầu'); features/GioRotCuaKhoa.jsx:1-25",
+      "can_xac_nhan": "Luật cho khoa 'chọn không còn nhu cầu' với mã rớt. Khoa bấm ở đâu: bỏ mã khỏi giỏ đợt bổ sung, hay màn 'Giỏ rớt của khoa' (Nghiệp vụ dùng chung)? Màn Giỏ rớt đọc v_gio_rot_v3 và ghi chú đầu file còn theo luật 19/08 ('hệ thống không tự tạo đề xuất') — màn này còn dùng cho khoa không?"
+    },
+    {
+      "id": "k_th_day_sl",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_thau",
+      "cau_hoi": "Tôi có phải tự chuyển số rớt sang mã tương đương không?",
+      "tra_loi": "Không. Việc chuyển số rớt sang mã tương đương là của Phòng Điều dưỡng, làm trên bảng Tổng hợp. Khoa thấy kết quả qua nhãn \"↪ đã đổ\" / \"↩ nhận\" trên Danh mục đề xuất và thông báo ở chuông.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [
+        "k_th_da_do_nhan",
+        "k_th_hop_thu"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:577-580, 858-859; HD/06_DUNG_LAM_LAI.md:53, 63; features/DanhMucDeXuatKhoa.jsx:619-633",
+      "can_xac_nhan": "Trên màn khoa vẫn còn hai chữ cũ trái luật: băng đỏ 'bấm \"Đẩy SL\" ở dòng mã…' (DanhMucDeXuatKhoa.jsx:1153) trong khi nút Đẩy SL đã tắt; và nút 'Xử lý mã rớt ở Tiến độ gói thầu' (1102-1105) dẫn về màn chính, trong khi menu Tiến độ gói thầu đang ẩn (KhungGoiThau.jsx:413). Có sửa hai chữ này không? Chatbot đang trả lời theo luật."
+    },
+    {
+      "id": "k_th_hop_thu",
+      "vai_tro": [
+        "khoa",
+        "pdd"
+      ],
+      "chu_de": "k_thau",
+      "cau_hoi": "Chuông thông báo trên cùng dùng để làm gì?",
+      "tra_loi": "Chuông \"Hộp thư thông báo\" báo việc lớn. Khoa nhận: mã rớt đã vào đợt bổ sung (đỏ), số đã chuyển sang mã nào (đỏ), PĐD vừa chỉnh gì. PĐD nhận: khoa vừa sửa số hay nội dung. Bấm \"Đã xem\" là dòng đó xoá hẳn; dấu vết vẫn còn ở lịch sử từng ô.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:913-939; features/HopThuThongBao.jsx:65, 80-82, 112-113",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_th_kich_hoat_30",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_thau",
+      "cau_hoi": "Kích hoạt mua thêm 30% ở đâu, khi nào?",
+      "tra_loi": "Ở mục \"Gói tùy chọn mua thêm\" trên menu trái, sau khi PĐD chốt trình ký. Chỉ mã đã trúng mới có dòng. Nhập số rồi bấm \"Kích hoạt\"; tổng các lần không vượt trần 30% của số trúng.",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Đợt chưa chốt trình ký · !khoa.coPhienTrinhKy",
+          "tra_loi": "Đợt này chưa chốt trình ký nên chưa kích hoạt được. Trần 30% hiện giờ chỉ là số tham khảo."
+        }
+      ],
+      "di_toi": {
+        "nhan": "Đi tới Gói tùy chọn mua thêm",
+        "man": "chung.tuy_chon_mua_them"
+      },
+      "hoi_tiep": [
+        "k_so_tran_30"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:779-810; features/KhungGoiThau.jsx:346-359; features/GoiTuyChonMuaThem.jsx:169-183",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_loi_da_chot_q",
+      "vai_tro": [
+        "khoa"
+      ],
+      "chu_de": "k_loi",
+      "cau_hoi": "Sửa số thì báo \"Số tham gia thầu đã chốt…\"?",
+      "tra_loi": "Nghĩa là PĐD đã chốt số đi thầu, cột số lượng đã khoá. Khoa không tự mở được. Cần đổi số, nhắn Phòng Điều dưỡng qua Teams; PĐD mở lại phải ghi lý do.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [
+        "k_dx_sua_sau_gui"
+      ],
+      "nguon": "sql/patch_zzzzb_v3_chot_q.sql:249; features/DanhMucDeXuatKhoa.jsx:726-731; HD/01_NGHIEP_VU_HIEN_HANH.md:154-157, 171-173",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_loi_phien_mang",
+      "vai_tro": [
+        "khoa",
+        "pdd"
+      ],
+      "chu_de": "k_loi",
+      "cau_hoi": "Báo \"Phiên đăng nhập đã hết hạn\" hoặc \"Mất kết nối\"?",
+      "tra_loi": "\"Phiên đăng nhập đã hết hạn\": bấm nút Đăng xuất ở góc trên bên phải rồi đăng nhập lại. \"Mất kết nối tới máy chủ\": kiểm tra mạng rồi bấm Tải lại. \"Thao tác quá nhanh\": chờ ít phút rồi thử lại.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [
+        "k_loi_khac"
+      ],
+      "nguon": "lib/dichLoi.js:31-38; frontend/src/App.jsx:349",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_loi_he_thong",
+      "vai_tro": [
+        "khoa",
+        "pdd"
+      ],
+      "chu_de": "k_loi",
+      "cau_hoi": "Báo \"Hệ thống chưa được cập nhật đủ…\"?",
+      "tra_loi": "Đây là lỗi phía máy chủ, không phải do bạn thao tác sai. Chụp màn hình, gửi Phòng Điều dưỡng qua Teams.",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Người hỏi là PĐD · ctx.laPdd",
+          "tra_loi": "Lỗi phía máy chủ: thiếu bảng, hàm hoặc cột mà màn đang gọi (thường là patch chưa chạy). Câu báo có ghi mã patch thì báo người phụ trách kỹ thuật kèm ảnh chụp."
+        }
+      ],
+      "di_toi": null,
+      "hoi_tiep": [
+        "k_loi_khac"
+      ],
+      "nguon": "lib/dichLoi.js:27, 47-48; features/DanhMucDeXuatKhoa.jsx:476-479",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_loi_quyen",
+      "vai_tro": [
+        "khoa",
+        "pdd"
+      ],
+      "chu_de": "k_loi",
+      "cau_hoi": "Báo \"Tài khoản của bạn không có quyền…\"?",
+      "tra_loi": "Thao tác đó không thuộc quyền của tài khoản đang đăng nhập. Ví dụ khoa không sửa được số của khoa khác, không chốt hay ghi kết quả thầu. Nếu bạn nghĩ mình cần quyền này, liên hệ Phòng Điều dưỡng.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [],
+      "nguon": "lib/dichLoi.js:39-40; HD/01_NGHIEP_VU_HIEN_HANH.md:1101-1121",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "k_loi_khac",
+      "vai_tro": [
+        "khoa",
+        "pdd"
+      ],
+      "chu_de": "k_loi",
+      "cau_hoi": "Báo \"Có lỗi xảy ra, thao tác chưa hoàn tất\"?",
+      "tra_loi": "Bấm Tải lại rồi thử lần nữa. Vẫn lỗi thì chụp cả màn hình, gồm cả phần \"Chi tiết kỹ thuật\" trong ngoặc, gửi Phòng Điều dưỡng qua Teams.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [],
+      "nguon": "lib/dichLoi.js:72-74",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "p_tiep_goc",
+      "vai_tro": [
+        "pdd"
+      ],
+      "chu_de": "p_tiep",
+      "cau_hoi": "Tôi phải làm gì tiếp?",
+      "tra_loi": "Mọi thao tác sửa làm trên bảng Tổng hợp của từng gói con. Thứ tự: khoa gửi và xác nhận → \"Chốt số đi thầu\" → Chào giá, Mở thầu, Đánh giá (gõ R1·R2·R3) → chia số trúng về khoa → đổ sang mã tương đương → \"Xác nhận rớt\" → \"Chốt trình ký\".",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Chưa chốt Q, còn khoa chưa xác nhận · !pdd.coPhienQ && pdd.khoaChuaXacNhan.length > 0",
+          "tra_loi": "Còn {pdd.khoaChuaXacNhan.length} khoa chưa xác nhận: {pdd.khoaChuaXacNhan}. Nhắn Teams để khoa vào bấm xác nhận. Hết khoa chưa xác nhận thì nút \"Chốt số đi thầu\" mới sáng."
+        },
+        {
+          "khi": "Chưa chốt Q, mọi khoa đã gửi đều xác nhận · !pdd.coPhienQ && pdd.khoaDaGui.length > 0 && pdd.khoaChuaXacNhan.length == 0",
+          "tra_loi": "Mọi khoa đã gửi đều đã xác nhận bản hiện tại. Có thể bấm \"Chốt số đi thầu\" trên bảng Tổng hợp."
+        },
+        {
+          "khi": "Còn mã chưa chia đủ số trúng · pdd.soMaChuaChiaDu > 0",
+          "tra_loi": "Còn {pdd.soMaChuaChiaDu} mã chưa chia đủ số trúng về khoa. Bấm băng vàng đầu bảng để lọc ra, rồi gõ từng khoa hoặc bấm \"Chia\"."
+        },
+        {
+          "khi": "Còn phần rớt chưa xử lý, đã chia xong · pdd.tongRotChuaXuLy > 0 && pdd.soChuaChia == 0",
+          "tra_loi": "Còn {pdd.tongRotChuaXuLy} rớt chưa xử lý. Đổ sang mã tương đương nếu có, rồi bấm \"Xác nhận rớt\" để phần còn lại vào giỏ đợt bổ sung của khoa."
+        },
+        {
+          "khi": "Đang chạy một giai đoạn thầu · pdd.giaiDoanDangChay != null",
+          "tra_loi": "Đang ở giai đoạn {pdd.giaiDoanDangChay}. Gõ số rớt của giai đoạn này, xong bấm \"Hoàn thành\" để mở giai đoạn kế."
+        },
+        {
+          "khi": "Ba giai đoạn xong, chưa chốt trình ký · pdd.baGiaiDoanXong && !pdd.coPhienTrinhKy",
+          "tra_loi": "Ba giai đoạn thầu đã xong. Bấm \"Chốt trình ký\" rồi \"CHỐT TRÌNH KÝ TOÀN BỘ\" trên bảng Tổng hợp."
+        },
+        {
+          "khi": "Còn mã rớt nằm trong giỏ khoa · pdd.rotTrongGio.soKhoa > 0",
+          "tra_loi": "Còn {pdd.rotTrongGio.soMa} mã rớt nằm trong giỏ, {pdd.rotTrongGio.soKhoa} khoa chưa gửi. Nhắc khoa qua Teams; PĐD không gửi thay được.",
+          "di_toi": {
+            "nhan": "Đi tới Bàn điều hành",
+            "man": "pdd.ban_dieu_hanh"
+          }
+        }
+      ],
+      "di_toi": {
+        "nhan": "Mở bảng Tổng hợp",
+        "man": "pdd.tong_hop"
+      },
+      "hoi_tiep": [
+        "p_tiep_lam_o_dau",
+        "p_q_nut_mo",
+        "p_th_chia"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:37-40, 307-316, 428-432; HD/06_DUNG_LAM_LAI.md:38; features/TongHopPdd.jsx:1095-1113, 1172-1182; features/CumThauTongHop.jsx:216-300",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "p_tiep_lam_o_dau",
+      "vai_tro": [
+        "pdd"
+      ],
+      "chu_de": "p_tiep",
+      "cau_hoi": "Tôi sửa số, làm thầu ở màn nào?",
+      "tra_loi": "Bàn điều hành chỉ để xem. Chọn loại gói, đợt, rồi bấm nút gói con trong khung xanh \"Sửa số, tích rớt, chia số trúng, xác nhận rớt — làm trên bảng Tổng hợp\". Bảng Tổng hợp mở ở tab mới để bạn giữ Bàn điều hành đối chiếu.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": {
+        "nhan": "Đi tới Bàn điều hành",
+        "man": "pdd.ban_dieu_hanh"
+      },
+      "hoi_tiep": [
+        "p_tiep_goc"
+      ],
+      "nguon": "features/BanDieuHanhPdd.jsx:683-805; lib/moManExcel.js:1-16, 40-43; HD/06_DUNG_LAM_LAI.md:62",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "p_tiep_nhac_khoa",
+      "vai_tro": [
+        "pdd"
+      ],
+      "chu_de": "p_tiep",
+      "cau_hoi": "Nhắc khoa chưa gửi / chưa xác nhận thế nào?",
+      "tra_loi": "Ở Bàn điều hành, tab \"Theo dõi khoa\", mỗi khoa có nút \"Nhắc\". Bấm là hệ copy sẵn tin nhắn nêu khoa còn thiếu gì (chưa gửi đề xuất / chưa xác nhận). Dán sang Teams. Web không tự gửi gì ra ngoài.",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Có khoa chưa xác nhận · pdd.khoaChuaXacNhan.length > 0",
+          "tra_loi": "Đang có {pdd.khoaChuaXacNhan.length} khoa chưa xác nhận: {pdd.khoaChuaXacNhan}. Bấm \"Nhắc\" cạnh từng khoa ở Bàn điều hành để copy tin nhắn, rồi dán sang Teams."
+        }
+      ],
+      "di_toi": {
+        "nhan": "Đi tới Bàn điều hành",
+        "man": "pdd.ban_dieu_hanh"
+      },
+      "hoi_tiep": [
+        "p_q_nut_mo"
+      ],
+      "nguon": "features/BanDieuHanhPdd.jsx:626-640, 1154-1157; HD/01_NGHIEP_VU_HIEN_HANH.md:687-688, 938-939",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "p_q_sua_tong",
+      "vai_tro": [
+        "pdd"
+      ],
+      "chu_de": "p_q",
+      "cau_hoi": "Sửa số của khoa trên bảng Tổng hợp thế nào?",
+      "tra_loi": "Gõ vào ô tổng của mã: hệ chia phần chênh theo tỉ lệ khoa đã đề xuất và sổ dòng ra để bạn sửa từng khoa. Nhập lý do (bắt buộc nếu khoa đã chốt) rồi bấm \"Lưu phân bổ\". Chỉ khoa đã đề xuất mã đó mới nhận được số.",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Đã chốt số đi thầu · pdd.coPhienQ",
+          "tra_loi": "Đợt đã chốt số đi thầu nên cột số lượng đang khoá. Xem câu \"Đã chốt số đi thầu mà cần sửa số?\"."
+        }
+      ],
+      "di_toi": {
+        "nhan": "Mở bảng Tổng hợp",
+        "man": "pdd.tong_hop"
+      },
+      "hoi_tiep": [
+        "p_so_xac_nhan",
+        "p_q_sua_sau_chot"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:208-223, 286-289; features/TongHopPdd.jsx:822-867, 1606-1617",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "p_q_nut_mo",
+      "vai_tro": [
+        "pdd"
+      ],
+      "chu_de": "p_q",
+      "cau_hoi": "Vì sao nút \"Chốt số đi thầu\" bị mờ?",
+      "tra_loi": "Nút mờ khi còn khoa đã gửi mà chưa xác nhận bản hiện tại, hoặc bảng chưa có mã. Tên các khoa đó nằm ở băng vàng đầu bảng và trong chú thích khi rê chuột lên nút. Nhắn Teams để khoa vào bấm xác nhận.",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Còn khoa chưa xác nhận · pdd.khoaChuaXacNhan.length > 0",
+          "tra_loi": "Còn {pdd.khoaChuaXacNhan.length} khoa chưa xác nhận bản hiện tại: {pdd.khoaChuaXacNhan}. Khoa xác nhận xong, bấm \"Tải lại\" là nút sáng."
+        },
+        {
+          "khi": "Đã chốt · pdd.coPhienQ",
+          "tra_loi": "Đợt đã chốt số đi thầu (bản chốt số {pdd.revisionQ}). Nút lúc này đổi thành \"Mở chốt để sửa\"."
+        }
+      ],
+      "di_toi": {
+        "nhan": "Mở bảng Tổng hợp",
+        "man": "pdd.tong_hop"
+      },
+      "hoi_tiep": [
+        "p_tiep_nhac_khoa",
+        "p_q_khoa_chua_gui"
+      ],
+      "nguon": "features/TongHopPdd.jsx:456-457, 1172-1182, 1200-1206; HD/01_NGHIEP_VU_HIEN_HANH.md:324-329",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "p_q_khoa_chua_gui",
+      "vai_tro": [
+        "pdd"
+      ],
+      "chu_de": "p_q",
+      "cau_hoi": "Khoa chưa gửi đề xuất có chặn chốt không?",
+      "tra_loi": "Không. Khoa tham gia mà chưa gửi đề xuất nào thì không tính vào cổng chốt. Hệ chỉ ghi số khoa đó vào nhật ký, và băng \"Đã chốt số đi thầu\" ghi thêm \"lúc chốt còn N khoa chưa gửi\".",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [
+        "p_q_sau_chot"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:324-329, 745-750; features/TongHopPdd.jsx:1208-1218",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "p_q_sau_chot",
+      "vai_tro": [
+        "pdd"
+      ],
+      "chu_de": "p_q",
+      "cau_hoi": "Chốt số đi thầu xong thì chuyện gì xảy ra?",
+      "tra_loi": "Hệ lưu bản Q cố định cho từng mã × khoa. Cột số lượng khoá, không thêm mã được nữa. Cột chữ như tiêu chí kỹ thuật vẫn sửa được tới khi chốt trình ký. Cụm Q · R1 · R2 · R3 · Trúng bắt đầu có số và dải giai đoạn thầu hiện ra.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": {
+        "nhan": "Mở bảng Tổng hợp",
+        "man": "pdd.tong_hop"
+      },
+      "hoi_tiep": [
+        "p_th_giai_doan",
+        "p_q_sua_sau_chot"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:331-336; features/TongHopPdd.jsx:1208-1216; features/CumThauTongHop.jsx:198-214",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "p_q_sua_sau_chot",
+      "vai_tro": [
+        "pdd"
+      ],
+      "chu_de": "p_q",
+      "cau_hoi": "Đã chốt số đi thầu mà cần sửa số?",
+      "tra_loi": "Bấm \"Mở chốt để sửa\" trên bảng Tổng hợp và nhập lý do. Lưu ý mở chốt là mở cả gói con, không phải một dòng.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": {
+        "nhan": "Mở bảng Tổng hợp",
+        "man": "pdd.tong_hop"
+      },
+      "hoi_tiep": [],
+      "nguon": "features/TongHopPdd.jsx:786-803, 1180-1181; HD/01_NGHIEP_VU_HIEN_HANH.md:337-340",
+      "can_xac_nhan": "01:337-340 (QĐ 21/08) nói sau chốt Q PĐD 'gõ đè thẳng tại ô, hệ hỏi lý do', KHÔNG phải mở chốt cả gói. Trong TongHopPdd.jsx tôi chỉ thấy đường 'Mở chốt để sửa' (761-767); trigger còn chặn phan_bo_khoa sau chốt Q. Đường gõ đè tại ô đã thi công chưa? Chatbot nên chỉ đường nào?"
+    },
+    {
+      "id": "p_th_giai_doan",
+      "vai_tro": [
+        "pdd"
+      ],
+      "chu_de": "p_thau",
+      "cau_hoi": "Chuyển giai đoạn thầu thế nào?",
+      "tra_loi": "Dải \"Giai đoạn thầu\" trên bảng Tổng hợp: Chào giá → Mở thầu → Đánh giá, chạy lần lượt. Bấm \"Bắt đầu\", gõ rớt, xong bấm \"Hoàn thành\". Chữ \"chờ giai đoạn trước\" nghĩa là giai đoạn trước chưa xong. \"mở lại\" bắt nhập lý do và làm kết quả các giai đoạn sau hết hiệu lực.",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Chưa chốt Q · !pdd.coPhienQ",
+          "tra_loi": "Chưa chốt số đi thầu nên chưa có giai đoạn nào. Cụm Q · R1 · R2 · R3 · Trúng để trống là đúng. Chốt số đi thầu xong mới nhập được số rớt."
+        }
+      ],
+      "di_toi": {
+        "nhan": "Mở bảng Tổng hợp",
+        "man": "pdd.tong_hop"
+      },
+      "hoi_tiep": [
+        "p_th_nhap_rot"
+      ],
+      "nguon": "features/CumThauTongHop.jsx:198-270, 302-315; HD/01_NGHIEP_VU_HIEN_HANH.md:350-361",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "p_th_nhap_rot",
+      "vai_tro": [
+        "pdd"
+      ],
+      "chu_de": "p_thau",
+      "cau_hoi": "Nhập số rớt R1, R2, R3 thế nào?",
+      "tra_loi": "Bấm ô R của giai đoạn đang chạy; hai ô kia chỉ đọc. Hộp nhập bắt số rớt và lý do. Tích \"Rớt toàn bộ phần còn lại của mã này\" nếu rớt sạch. Tổng R1+R2+R3 vượt Q thì bị chặn ngay. Mã không nhập rớt mặc định trúng hết.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": {
+        "nhan": "Mở bảng Tổng hợp",
+        "man": "pdd.tong_hop"
+      },
+      "hoi_tiep": [
+        "p_th_chia"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:363-397; features/CumThauTongHop.jsx:455-500",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "p_th_chia",
+      "vai_tro": [
+        "pdd"
+      ],
+      "chu_de": "p_thau",
+      "cau_hoi": "Chia số trúng về khoa thế nào? Ô \"Đã chia\" đỏ là sao?",
+      "tra_loi": "Ghi rớt xong, số trúng của các khoa về trống, hệ không tự chia. Ô \"Đã chia\" nền đỏ là dòng còn lệch. Bấm \"Chia\" để chia theo tỉ lệ Q, hoặc sổ dòng ra gõ từng khoa rồi \"Xác nhận chia\". Còn thiếu thì \"Lưu tạm\"; gõ dư bị chặn.",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Còn mã chưa chia đủ · pdd.soMaChuaChiaDu > 0",
+          "tra_loi": "Còn {pdd.soMaChuaChiaDu} mã chưa chia đủ số trúng. Bấm băng vàng \"Còn N mã chưa chia đủ số trúng về khoa\" đầu bảng để lọc ra đúng các dòng đó."
+        }
+      ],
+      "di_toi": {
+        "nhan": "Mở bảng Tổng hợp",
+        "man": "pdd.tong_hop"
+      },
+      "hoi_tiep": [
+        "p_th_do_ma",
+        "p_th_xac_nhan_rot"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:60-69, 533-570; features/CumThauTongHop.jsx:391-412, 729-736; features/TongHopPdd.jsx:1095-1113",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "p_th_do_ma",
+      "vai_tro": [
+        "pdd"
+      ],
+      "chu_de": "p_thau",
+      "cau_hoi": "Đổ số rớt sang mã tương đương thế nào?",
+      "tra_loi": "Ở cột xử lý rớt, bấm \"Chưa xử lý N\". Điều kiện: mã rớt đã chia xong; mã nhận cùng mã quản lý, có trong đợt, còn trúng, cùng ĐVT; có lý do. Mỗi khoa giữ đúng phần của mình. Đổ xong, mã nhận phải chia lại số trúng.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": {
+        "nhan": "Mở bảng Tổng hợp",
+        "man": "pdd.tong_hop"
+      },
+      "hoi_tiep": [
+        "p_th_xac_nhan_rot"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:413-446; features/CumThauTongHop.jsx:413-420; sql/*.sql raise 'Mã nhận % không có trong đợt này…', 'Mã nhận % cũng đã rớt sạch…', 'Phải nhập lý do khi đổ số rớt sang mã khác.'",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "p_th_xac_nhan_rot",
+      "vai_tro": [
+        "pdd"
+      ],
+      "chu_de": "p_thau",
+      "cau_hoi": "Sao không thấy nút \"Xác nhận rớt\"?",
+      "tra_loi": "Nút đỏ \"Xác nhận rớt (N)\" chỉ hiện khi còn phần rớt chưa xử lý VÀ mọi mã đã chia xong số trúng. Thấy băng vàng \"Còn N mã chưa chia hết số trúng về khoa\" thì chia xong nút mới hiện. Bấm xong phải chọn \"Đồng ý, đẩy vào giỏ\".",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Còn mã chưa chia · pdd.soChuaChia > 0",
+          "tra_loi": "Còn {pdd.soChuaChia} mã chưa chia hết số trúng về khoa, nên nút \"Xác nhận rớt\" chưa hiện. Chia xong các mã đó trước."
+        },
+        {
+          "khi": "Không còn phần rớt chưa xử lý · pdd.tongRotChuaXuLy == 0",
+          "tra_loi": "Không còn phần rớt nào chưa xử lý, nên không có gì để xác nhận."
+        }
+      ],
+      "di_toi": {
+        "nhan": "Mở bảng Tổng hợp",
+        "man": "pdd.tong_hop"
+      },
+      "hoi_tiep": [
+        "p_th_xnr_lam_gi",
+        "p_th_chia"
+      ],
+      "nguon": "features/CumThauTongHop.jsx:124-129, 271-300; HD/01_NGHIEP_VU_HIEN_HANH.md:546-552",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "p_th_xnr_lam_gi",
+      "vai_tro": [
+        "pdd"
+      ],
+      "chu_de": "p_thau",
+      "cau_hoi": "Bấm \"Xác nhận rớt\" thì hệ làm gì?",
+      "tra_loi": "Phần rớt chưa đổ sang mã nào vào GIỎ của từng khoa ở đợt bổ sung gần nhất, số gợi ý bằng số rớt, khoa được báo đỏ. Chưa phải đề xuất: khoa tự sửa và tự gửi. PĐD tự chọn lúc bấm: nhóm còn chờ giai đoạn sau thì khoan, rớt sạch thì bấm sớm.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": null,
+      "hoi_tiep": [
+        "p_td_rot_trong_gio",
+        "p_td_chuyen_tiep_hong"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:399-411, 594-612; features/CumThauTongHop.jsx:287-300",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "p_td_rot_trong_gio",
+      "vai_tro": [
+        "pdd"
+      ],
+      "chu_de": "p_thau",
+      "cau_hoi": "Mã rớt đã vào giỏ khoa mà khoa chưa gửi?",
+      "tra_loi": "Bàn điều hành có băng vàng \"Còn N mã rớt nằm trong giỏ, M khoa chưa gửi\" kèm bảng khoa. PĐD chỉ nhắc qua Teams, không gửi thay: số mua kỳ tới là quyết định của khoa, và máy chủ chặn thật việc gửi thay.",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Có mã rớt trong giỏ chưa gửi · pdd.rotTrongGio.soKhoa > 0",
+          "tra_loi": "Hiện còn {pdd.rotTrongGio.soMa} mã rớt nằm trong giỏ, {pdd.rotTrongGio.soKhoa} khoa chưa gửi. Xem danh sách khoa ở Bàn điều hành rồi nhắc qua Teams."
+        }
+      ],
+      "di_toi": {
+        "nhan": "Đi tới Bàn điều hành",
+        "man": "pdd.ban_dieu_hanh"
+      },
+      "hoi_tiep": [
+        "p_tiep_nhac_khoa"
+      ],
+      "nguon": "features/BanDieuHanhPdd.jsx:820-850; HD/01_NGHIEP_VU_HIEN_HANH.md:610-620",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "p_td_chuyen_tiep_hong",
+      "vai_tro": [
+        "pdd"
+      ],
+      "chu_de": "p_thau",
+      "cau_hoi": "Kiểm tra mã rớt đã vào đợt bổ sung chưa?",
+      "tra_loi": "Mở \"Theo dõi chuyển tiếp mã rớt\" ở menu trái. Ô đợt bổ sung trống in đỏ hoặc \"CHUYỂN TIẾP HỎNG\" nghĩa là máy chưa đưa mã vào đợt nào, không phải chờ khoa; bấm \"Chạy lại\". \"Đã đưa nhiều hơn số rớt\": hệ không tự trừ, PĐD hoặc khoa tự cân nhắc.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": {
+        "nhan": "Đi tới Theo dõi chuyển tiếp",
+        "man": "pdd.chuyen_tiep"
+      },
+      "hoi_tiep": [],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:648-657, 662-688; features/TheoDoiChuyenTiep.jsx:135-138, 253; features/KhungGoiThau.jsx:382-391",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "p_tk_khi_nao",
+      "vai_tro": [
+        "pdd"
+      ],
+      "chu_de": "p_tk",
+      "cau_hoi": "Khi nào chốt trình ký được?",
+      "tra_loi": "Khi ba giai đoạn thầu đã hoàn thành và mọi mã đã chia khớp số trúng. Bấm \"Chốt trình ký\" rồi \"CHỐT TRÌNH KÝ TOÀN BỘ\": hệ tự chốt lần lượt các bảng khoa còn thiếu rồi đóng băng cả gói con. Còn mã lệch thì hệ liệt kê và từ chối chốt.",
+      "bien_the_theo_trang_thai": [
+        {
+          "khi": "Đã chốt trình ký · pdd.coPhienTrinhKy",
+          "tra_loi": "Gói con này đã chốt trình ký — bản số {pdd.revisionTrinhKy}. Excel xuất ra giờ là bản chính thức."
+        },
+        {
+          "khi": "Chưa đủ ba giai đoạn · !pdd.baGiaiDoanXong",
+          "tra_loi": "Chưa đủ ba giai đoạn thầu hoàn thành nên chưa chốt trình ký được. Hoàn thành Chào giá, Mở thầu, Đánh giá trước."
+        }
+      ],
+      "di_toi": {
+        "nhan": "Mở bảng Tổng hợp",
+        "man": "pdd.tong_hop"
+      },
+      "hoi_tiep": [
+        "p_tk_excel",
+        "p_tk_mo_lai"
+      ],
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:726-760, 902-906; features/CumThauTongHop.jsx:820-840, 856-906; sql/*.sql raise 'Phải hoàn thành đủ ba giai đoạn đấu thầu.'",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "p_tk_mo_lai",
+      "vai_tro": [
+        "pdd"
+      ],
+      "chu_de": "p_tk",
+      "cau_hoi": "Mở lại bảng trình ký của một khoa?",
+      "tra_loi": "Trong khung \"Chốt trình ký\", mục \"Mở lại bảng của một khoa\": chọn khoa, nhập lý do, bấm \"Mở lại\". Bản chốt chính thức hiện tại hết hiệu lực; sửa xong phải chốt lại để có bản số mới.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": {
+        "nhan": "Mở bảng Tổng hợp",
+        "man": "pdd.tong_hop"
+      },
+      "hoi_tiep": [
+        "p_tk_excel"
+      ],
+      "nguon": "features/CumThauTongHop.jsx:913-940; HD/01_NGHIEP_VU_HIEN_HANH.md:764-775",
+      "can_xac_nhan": null
+    },
+    {
+      "id": "p_tk_excel",
+      "vai_tro": [
+        "pdd"
+      ],
+      "chu_de": "p_tk",
+      "cau_hoi": "Excel bản nháp và bản chính thức khác gì?",
+      "tra_loi": "Nút xuất trên bảng Tổng hợp tự đổi tên. \"Xuất Excel bản nháp\": chưa chốt trình ký, số là số đi thầu. \"Xuất Excel CHÍNH THỨC (bản chốt số N)\": số là số trúng đã chia về khoa. File in số bản và thời điểm để đối chiếu bản giấy.",
+      "bien_the_theo_trang_thai": [],
+      "di_toi": {
+        "nhan": "Mở bảng Tổng hợp",
+        "man": "pdd.tong_hop"
+      },
+      "hoi_tiep": [],
+      "nguon": "features/TongHopPdd.jsx:1184-1191; HD/01_NGHIEP_VU_HIEN_HANH.md:757-760, 773-775, 825-829",
+      "can_xac_nhan": null
+    }
+  ]
+}

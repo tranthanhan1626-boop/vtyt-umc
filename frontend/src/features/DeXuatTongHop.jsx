@@ -6,6 +6,7 @@ import { NHAN_GOI_THAU } from "./Function1";
 import { GOI_ID_MAP, goiConCuaDot } from "../lib/cotChuan";
 import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
 import { moDanhMucDeXuat } from "../lib/moManExcel";
+import { dichLoi } from "../lib/dichLoi";
 
 // Tra ngược nhãn gói con (r.goi, vd "GMHS") -> khoá goiId dùng cho route
 // #danh-muc-de-xuat/<goiId>/<khoa>. Giống hệt DeXuatCuaToi.jsx.
@@ -76,7 +77,7 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
         .eq("loai_mua_sam", goi)
         .order("created_at", { ascending: false }).range(f, t)
     , { order: "id" });
-    if (error) { setLoi("Không đọc được v_de_xuat_tong_hop — kiểm tra view/RLS trong Supabase (schema hiện tại xem backend/sql/schema.sql)."); setLoading(false); return; }
+    if (error) { setLoi("Không tải được dữ liệu. Bấm Tải lại; nếu vẫn lỗi, báo Phòng Điều dưỡng."); setLoading(false); return; }
     setRows(data); setLoi("");
 
     const { data: dots } = await supabase.from("dot_de_xuat")
@@ -164,8 +165,8 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
     if (error) {
       const chuaPatch = error.code === "PGRST202" || /rut_nhom_de_xuat/i.test(error.message || "");
       setLoiCapNhat((p) => ({ ...p, [g.key]: chuaPatch
-        ? "Staging chưa chạy patch_i_rut_va_tong_hop.sql."
-        : error.message }));
+        ? "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_i_rut_va_tong_hop). Vui lòng báo Phòng Điều dưỡng."
+        : dichLoi(error) }));
     } else {
       const idSet = new Set(ids);
       setRows((prev) => prev.filter((r) => !idSet.has(r.id)));
@@ -206,78 +207,78 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
     URL.revokeObjectURL(a.href);
   };
 
-  if (loading) return <div className="text-sm text-slate-400 p-4">Đang tải đề xuất...</div>;
+  if (loading) return <div className="text-sm text-slate-500 p-4">Đang tải đề xuất...</div>;
   if (loi) return <div className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3 m-1">{loi}</div>;
 
   return (
     <div className="space-y-4">
       <div className="bg-white border border-slate-200 rounded-lg p-3 flex flex-wrap gap-3 items-end">
         <div className="flex-1 min-w-[200px]">
-          <label className="text-xs text-slate-400 block mb-1.5">Tìm mã hàng / nhóm kỹ thuật</label>
+          <label className="text-xs text-slate-500 block mb-1.5">Tìm mã hàng / nhóm kỹ thuật</label>
           <div className="relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
             <input value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)}
               className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-umc-500" />
           </div>
         </div>
 
         <div className="min-w-[180px]">
-          <label className="text-xs text-slate-400 block mb-1.5">Khoa</label>
+          <label className="text-xs text-slate-500 block mb-1.5">Khoa</label>
           <div className="relative">
             <select value={khoaLoc} onChange={(e) => setKhoaLoc(e.target.value)}
               className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-umc-500">
               <option value="">Tất cả khoa</option>
               {dsKhoa.map((k) => <option key={k} value={k}>{k}</option>)}
             </select>
-            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
           </div>
         </div>
 
         <div className="min-w-[160px]">
-          <label className="text-xs text-slate-400 block mb-1.5">Gói thầu</label>
+          <label className="text-xs text-slate-500 block mb-1.5">Gói thầu</label>
           <div className="relative">
             <select value={goiLoc} onChange={(e) => setGoiLoc(e.target.value)}
               className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-umc-500">
               <option value="">Tất cả gói</option>
               {dsGoi.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
-            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
           </div>
         </div>
 
         <div className="min-w-[150px]">
-          <label className="text-xs text-slate-400 block mb-1.5">Sắp xếp</label>
+          <label className="text-xs text-slate-500 block mb-1.5">Sắp xếp</label>
           <div className="relative">
             <select value={sapXep} onChange={(e) => setSapXep(e.target.value)}
               className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-umc-500">
               <option value="moi">Mới nhất trước</option>
               <option value="goi">Theo gói thầu</option>
             </select>
-            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
           </div>
         </div>
 
         <div className="min-w-[180px]">
-          <label className="text-xs text-slate-400 block mb-1.5">Lý do</label>
+          <label className="text-xs text-slate-500 block mb-1.5">Lý do</label>
           <div className="relative">
             <select value={lyDoLoc} onChange={(e) => setLyDoLoc(e.target.value)}
               className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-umc-500">
               <option value="">Tất cả lý do</option>
               {Object.entries(NHAN_LY_DO).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
-            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
           </div>
         </div>
 
         <div className="min-w-[160px]">
-          <label className="text-xs text-slate-400 block mb-1.5">Trạng thái</label>
+          <label className="text-xs text-slate-500 block mb-1.5">Trạng thái</label>
           <div className="relative">
             <select value={trangThaiLoc} onChange={(e) => setTrangThaiLoc(e.target.value)}
               className="w-full appearance-none border border-slate-300 rounded-md px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-umc-500">
               <option value="">Tất cả trạng thái</option>
               {Object.entries(NHAN_TRANG_THAI).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
-            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
           </div>
         </div>
 
@@ -291,14 +292,14 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span>
             {nhomLoc.length} đề xuất{" "}
-            <span className="text-slate-400">({rowsLoc.length} mã hàng{rowsLoc.length !== rows.length && `, lọc từ ${rows.length}`})</span>
+            <span className="text-slate-500">({rowsLoc.length} mã hàng{rowsLoc.length !== rows.length && `, lọc từ ${rows.length}`})</span>
           </span>
         </div>
         {loiCapNhat.gop && <p className="mt-2 text-xs text-red-600">{loiCapNhat.gop}</p>}
       </div>
 
       {nhomLoc.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-lg text-sm text-slate-400 p-6 text-center">
+        <div className="bg-white border border-slate-200 rounded-lg text-sm text-slate-500 p-6 text-center">
           {rows.length === 0 ? "Chưa khoa nào gửi đề xuất." : "Không có dòng nào khớp bộ lọc."}
         </div>
       ) : (
@@ -312,10 +313,10 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
                     <Package size={13} className="text-umc-700" />
                     {g.don_vi}
                   </span>
-                  <span className="text-slate-400">{g.items.length} mã hàng · năm {g.nam_de_xuat}</span>
+                  <span className="text-slate-500">{g.items.length} mã hàng · năm {g.nam_de_xuat}</span>
                   {g.goi && <span className="text-umc-700 font-medium">Gói: {g.goi}</span>}
-                  <span className="text-slate-400">{fmtNgayGio(g.created_at)}</span>
-                  <span className="text-slate-400">{g.created_by_ho_ten || g.created_by}</span>
+                  <span className="text-slate-500">{fmtNgayGio(g.created_at)}</span>
+                  <span className="text-slate-500">{g.created_by_ho_ten || g.created_by}</span>
                   <span className={`ml-auto inline-block px-2 py-0.5 rounded-full font-medium ${MAU_TRANG_THAI[g.trangThai]}`}>
                     {g.trangThai === "hon_hop" ? "Hỗn hợp" : NHAN_TRANG_THAI[g.trangThai]}
                   </span>
@@ -353,13 +354,13 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
                           <td className="px-4 py-2 align-top">
                             <div className="font-mono text-xs text-slate-600">{r.ma_hang}</div>
                             <div className="text-xs text-slate-500 leading-tight max-w-md">{r.ten_vat_tu}</div>
-                            <div className="text-xs text-slate-300 font-mono mt-0.5">{r.ma_quan_ly}</div>
+                            <div className="text-xs text-slate-500 font-mono mt-0.5">{r.ma_quan_ly}</div>
                             {r.so_luong_ma_quan_ly != null
                               && g.items.findIndex((x) => x.ma_quan_ly === r.ma_quan_ly) === index && (
                               <div className="mt-1 text-xs font-medium text-umc-700">
                                 Tổng mã quản lý: {fmt(r.so_luong_ma_quan_ly)} {r.dvt_ma_quan_ly}
                                 {r.bang_quy_doi && (
-                                  <div className="font-normal text-slate-400">
+                                  <div className="font-normal text-slate-500">
                                     Quy đổi ĐVSD đã chọn: {Object.entries(r.bang_quy_doi)
                                       .map(([dvt, heSo]) => `1 ${dvt} = ${fmt(heSo)} ${r.dvt_ma_quan_ly}`)
                                       .join(" · ")}
@@ -369,9 +370,9 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
                             )}
                           </td>
                           <td className="px-4 py-2 text-right font-mono align-top whitespace-nowrap">
-                            {fmt(r.so_luong)} <span className="text-slate-400 text-xs">{r.dvt}</span>
+                            {fmt(r.so_luong)} <span className="text-slate-500 text-xs">{r.dvt}</span>
                             {r.he_so_quy_doi && (
-                              <div className="text-[10px] text-slate-400">
+                              <div className="text-[11px] text-slate-500">
                                 = {fmt(Number(r.so_luong) * Number(r.he_so_quy_doi))} {r.dvt_ma_quan_ly}
                               </div>
                             )}
@@ -379,15 +380,15 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
                           <td className="px-4 py-2 align-top text-xs">
                             <div>{NHAN_LY_DO[r.loai_ly_do] || r.loai_ly_do}</div>
                             {r.ten_ky_thuat_moi && <div className="text-slate-500">KT mới: {r.ten_ky_thuat_moi}</div>}
-                            {r.ghi_chu && <div className="text-slate-400 italic">{r.ghi_chu}</div>}
+                            {r.ghi_chu && <div className="text-slate-500 italic">{r.ghi_chu}</div>}
                           </td>
                           <td className="px-4 py-2 align-top text-xs">
                             {r.goi && <div className="text-umc-700">Gói: {r.goi}</div>}
                             {r.loai_mua_sam && <div className="text-slate-700">{NHAN_GOI_THAU[r.loai_mua_sam]}</div>}
                             {r.tu_thang
-                              ? <div className="text-slate-400">T{r.tu_thang}/{r.tu_nam} – T{r.den_thang}/{r.den_nam} ({r.so_thang_du_kien} tháng)</div>
-                              : r.so_thang_du_kien ? <div className="text-slate-400">dự kiến {r.so_thang_du_kien} tháng</div> : null}
-                            {!r.goi && !r.loai_mua_sam && <span className="text-slate-300 italic">— chưa chọn</span>}
+                              ? <div className="text-slate-500">T{r.tu_thang}/{r.tu_nam} – T{r.den_thang}/{r.den_nam} ({r.so_thang_du_kien} tháng)</div>
+                              : r.so_thang_du_kien ? <div className="text-slate-500">dự kiến {r.so_thang_du_kien} tháng</div> : null}
+                            {!r.goi && !r.loai_mua_sam && <span className="text-slate-500 italic">— chưa chọn</span>}
                           </td>
                         </tr>
                       ))}
@@ -410,7 +411,7 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
 
                   <div className="ml-auto flex flex-col items-end gap-2">
                     {g.trangThai === "hoan_thanh" ? (
-                      <p className="text-xs text-slate-400">Đã hoàn thành — không thể xoá</p>
+                      <p className="text-xs text-slate-500">Đã hoàn thành — không thể xoá</p>
                     ) : (
                     <>
                     {xacNhanXoa === g.key ? (
@@ -434,7 +435,7 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
                       </div>
                     ) : (
                       <button onClick={() => { setXacNhanXoa(g.key); setLyDoXoa(""); }} title="Rút cả đề xuất"
-                        className="flex items-center gap-1 text-xs text-slate-300 hover:text-red-600 transition-colors">
+                        className="flex items-center gap-1 text-xs text-slate-500 hover:text-red-600 transition-colors">
                         <Trash2 size={14} /> Xoá đề xuất
                       </button>
                     )}

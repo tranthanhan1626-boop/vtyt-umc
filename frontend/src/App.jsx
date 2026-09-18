@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { Inbox, LogOut } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Inbox, LogOut, MoreHorizontal } from "lucide-react";
 import { motion } from "motion/react";
 import { useAuth } from "./auth/useAuth";
 import ChinhCoHienThi from "./components/ChinhCoHienThi";
@@ -29,9 +29,13 @@ import NhomKyThuatCuaKhoa from "./features/NhomKyThuatCuaKhoa";
 import DuyetNhomKyThuat from "./features/DuyetNhomKyThuat";
 import GoiTuyChonMuaThem from "./features/GoiTuyChonMuaThem";
 import QuanLyDuLieuTest from "./features/QuanLyDuLieuTest";
+import { BAT_XOA_DU_LIEU_TEST, datVaiTroChoNutXoaTest } from "./lib/xoaDuLieuTest";
 import DanhMucDeXuatKhoa from "./features/DanhMucDeXuatKhoa";
 import TongHopPdd from "./features/TongHopPdd";
 import NapDuLieuSuDung from "./features/NapDuLieuSuDung";
+import ChatbotTroGiup from "./components/ChatbotTroGiup";
+import { thucHienDiToi } from "./lib/chatbotDiToi";
+import { goiConCuaDot } from "./lib/cotChuan";
 
 const TEN_VAI_TRO = {
   dvsd: "Đơn vị sử dụng",
@@ -88,6 +92,23 @@ export default function App() {
   // !session). Đặt sau early return -> số hook mỗi lần render khác nhau ->
   // React ném "change in the order of Hooks" và App trắng trang. Đã mắc 1 lần.
   const [soChoDuyet, setSoChoDuyet] = useState(0);
+  // Menu "⋯" trên thanh đầu (V7): chứa thao tác ít dùng / nguy hiểm, tách khỏi
+  // nút Đăng xuất. Khai TRƯỚC các early return như mọi hook khác.
+  const [moMenuThem, setMoMenuThem] = useState(false);
+  const refMenuThem = useRef(null);
+  useEffect(() => {
+    if (!moMenuThem) return undefined;
+    // Thanh đầu có backdrop-filter nên lớp phủ `fixed` bên trong chỉ phủ được
+    // thanh đầu — nghe sự kiện ở document để bấm ra ngoài / Escape là đóng.
+    const ngoai = (e) => { if (!refMenuThem.current?.contains(e.target)) setMoMenuThem(false); };
+    const phim = (e) => { if (e.key === "Escape") setMoMenuThem(false); };
+    document.addEventListener("mousedown", ngoai);
+    document.addEventListener("keydown", phim);
+    return () => {
+      document.removeEventListener("mousedown", ngoai);
+      document.removeEventListener("keydown", phim);
+    };
+  }, [moMenuThem]);
   const {
     theoGoi: dotTheoGoi,
     dsTheoGoi: dsDotTheoGoi,
@@ -95,6 +116,7 @@ export default function App() {
     loi: loiDot,
   } = useDotDangMo(session?.user?.id || null);
   const laPdd = profile?.role === "admin" || profile?.role === "dieu_duong";
+  datVaiTroChoNutXoaTest(profile?.role);
 
   // PĐD đăng nhập vào thẳng Bàn điều hành. `chon` khởi tạo trước khi biết
   // profile (useAuth còn đang tải) nên phải đặt lại một lần ở đây — chỉ đúng
@@ -189,7 +211,12 @@ export default function App() {
     const phan = hash.replace(/^#tong-hop-pdd\/?/, "").split("/");
     const goiId = phan[0] || "18t-dung-chung";
     const dotId = phan[1] ? Number(phan[1]) : null;
-    return <TongHopPdd goiId={goiId} dotId={dotId} profile={profile} />;
+    return (<>
+      <TongHopPdd goiId={goiId} dotId={dotId} profile={profile} />
+      {/* Chatbot trợ giúp theo luật (QĐ 18/09/2026) — nằm trên dòng chân trang. */}
+      <ChatbotTroGiup profile={profile} man="tong_hop_pdd" nhichLen={44}
+        nguCanh={{ goiId, dotId }} onDiToi={(_, hd) => thucHienDiToi(hd, setChon)} />
+    </>);
   }
   // #danh-muc-de-xuat/<goiId>/<khoaEncoded>/<dotId> — `dotId` là ranh giới
   // bắt buộc của từng kỳ 18 tháng và từng đợt bổ sung. Route cũ (không có
@@ -203,7 +230,12 @@ export default function App() {
     const goiId = phan[0] || "18t-dung-chung";
     const khoaTuUrl = phan[1] ? decodeURIComponent(phan[1]) : null;
     const dotId = phan[2] ? Number(phan[2]) : null;
-    return <DanhMucDeXuatKhoa goiId={goiId} khoa={khoaTuUrl || profile.khoa} profile={profile} dotId={dotId} />;
+    return (<>
+      <DanhMucDeXuatKhoa goiId={goiId} khoa={khoaTuUrl || profile.khoa} profile={profile} dotId={dotId} />
+      <ChatbotTroGiup profile={profile} man="danh_muc_de_xuat" nhichLen={44}
+        nguCanh={{ goiId, dotId, khoa: khoaTuUrl || profile.khoa }}
+        onDiToi={(_, hd) => thucHienDiToi(hd, setChon)} />
+    </>);
   }
   // "Đề xuất của tôi" chỉ dành cho dvsd — admin/dieu_duong đã có tab tổng hợp
   // thấy hết mọi khoa rồi, thêm tab này cho họ là dư thừa.
@@ -240,7 +272,8 @@ export default function App() {
       />
     )
     : chon.man === "tongquan"
-    ? <TrangDungChung doiChon={setChon} laPdd={xemDuocTongHop} soChoDuyet={soChoDuyet} dotTheoGoi={dotTheoGoi} />
+    ? <TrangDungChung doiChon={setChon} laPdd={xemDuocTongHop} soChoDuyet={soChoDuyet} dotTheoGoi={dotTheoGoi}
+        profile={profile} dsDotTheoGoi={dsDotTheoGoi} dangTaiDot={dangTaiDot} loiDot={loiDot} />
     : chon.man === "thieuhang" ? <SoThieuHang profile={profile} />
     : chon.man === "tiendo" ? (
       <TienDoGoiThau
@@ -282,7 +315,8 @@ export default function App() {
         onMoManKhac={setChon}
       />
     )
-    : <TrangDungChung doiChon={setChon} laPdd={xemDuocTongHop} soChoDuyet={soChoDuyet} dotTheoGoi={dotTheoGoi} />;
+    : <TrangDungChung doiChon={setChon} laPdd={xemDuocTongHop} soChoDuyet={soChoDuyet} dotTheoGoi={dotTheoGoi}
+        profile={profile} dsDotTheoGoi={dsDotTheoGoi} dangTaiDot={dangTaiDot} loiDot={loiDot} />;
 
   return (
     <div className="umc-app-shell">
@@ -311,7 +345,7 @@ export default function App() {
                 Dự trù &amp; đấu thầu VTYT
               </p>
               {import.meta.env.DEV && (
-                <span className="hidden rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-800 sm:inline">
+                <span className="hidden rounded-full bg-cyan-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-cyan-800 sm:inline">
                   Staging local
                 </span>
               )}
@@ -344,10 +378,28 @@ export default function App() {
 
             <HopThuThongBao profile={profile} />
             <ChinhCoHienThi />
+            {/* V7 (đợt 3): "Dọn dữ liệu kiểm thử" không đứng cạnh Đăng xuất nữa
+                mà nằm trong menu "⋯". Menu CHỈ ẨN bằng lớp `hidden`, không gỡ
+                khỏi cây — bảng dọn là portal của QuanLyDuLieuTest nên vẫn mở
+                được sau khi menu đóng. Điều kiện hiện giữ nguyên: laPdd và
+                công tắc BAT_XOA_DU_LIEU_TEST (QuanLyDuLieuTest tự kiểm lại). */}
+            {laPdd && BAT_XOA_DU_LIEU_TEST && (
+              <div className="relative" ref={refMenuThem}>
+                <button type="button" onClick={() => setMoMenuThem((v) => !v)}
+                  className="umc-icon-button" title="Thao tác khác" aria-label="Thao tác khác"
+                  aria-haspopup="menu" aria-expanded={moMenuThem}>
+                  <MoreHorizontal size={17} />
+                </button>
+                <div role="menu"
+                  className={`absolute right-0 top-full z-50 mt-2 w-60 rounded-lg border border-slate-200 bg-white p-1 shadow-lg ${moMenuThem ? "" : "hidden"}`}>
+                  <QuanLyDuLieuTest profile={profile} kieu="menu" onMo={() => setMoMenuThem(false)} />
+                </div>
+              </div>
+            )}
+            <span aria-hidden className="hidden h-6 w-px bg-slate-200 sm:block" />
             <button type="button" onClick={signOut} className="umc-icon-button" title="Đăng xuất" aria-label="Đăng xuất">
               <LogOut size={17} />
             </button>
-            <QuanLyDuLieuTest profile={profile} />
           </div>
         </div>
       </header>
@@ -382,6 +434,7 @@ export default function App() {
             <div className="umc-linked-page">
               <QuayLaiDungChung
                 onBack={() => setChon({ nhom: "chung", man: "tongquan" })}
+                tenGoc={xemDuocTongHop ? "Nghiệp vụ dùng chung" : "Trang chính của khoa"}
                 tenTrang={TEN_TRANG_CHUNG[chon.man] || "Nghiệp vụ"}
               />
               {noiDungChung}
@@ -389,9 +442,30 @@ export default function App() {
           )}
         </KhungGoiThau>
 
+        {/* Chatbot trợ giúp theo luật (QĐ 18/09/2026): bong bóng góc dưới phải.
+            Màn đề xuất có thanh giỏ dính đáy: thẻ thanh chừa 72px bên phải và
+            đáy thẻ cách đáy màn 12px, cao 56px = đúng cỡ bong bóng. F4a 18/09:
+            đặt bong bóng NẰM TRONG dải 72px đó, ngang hàng thẻ thanh (z 45 >
+            dải nền 40) — không che nút nào, không nổi đè lên nội dung. */}
+        {(() => {
+          const dotGoi = chon.nhom === "goi" ? dotTheoGoi[chon.goi] : null;
+          return (
+            <ChatbotTroGiup profile={profile} man={`${chon.nhom}.${chon.man}`}
+              nhichLen={chon.nhom === "goi" && chon.man === "de_xuat" ? 12 : 24}
+              nguCanh={{
+                goi: chon.nhom === "goi" ? chon.goi : null,
+                goiId: chon.nhom === "goi" ? goiConCuaDot(dotGoi, chon.goiCon || null) : null,
+                dotId: chon.nhom === "goi" ? (chon.dotId || dotGoi?.id || null) : null,
+                dotDangMo: chon.nhom === "goi" && !dangTaiDot ? (dotGoi ? true : (loiDot ? null : false)) : null,
+                loiDocDot: chon.nhom === "goi" && !dangTaiDot ? (!!loiDot && !dotGoi) : null,
+              }}
+              onDiToi={(_, hd) => thucHienDiToi(hd, setChon)} />
+          );
+        })()}
+
         {/* Hai thông báo góc phải xếp CHỒNG DỌC — trước đây mỗi cái tự `fixed`
             vào cùng một góc nên cái sau che mất cái trước. */}
-        <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2">
+        <div className="umc-toast-stack pointer-events-none fixed right-4 z-50 flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2">
           <ThongBaoChamTienDo
             profile={profile}
             onXemChiTiet={() => setChon({ nhom: "chung", man: "tiendosudung" })}

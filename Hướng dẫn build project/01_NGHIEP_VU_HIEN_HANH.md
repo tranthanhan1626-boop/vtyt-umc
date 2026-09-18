@@ -288,6 +288,14 @@ nhiều dòng được. Khoa thấy được số cũ, số mới, người sử
 bảng của mình — không cần xác nhận lại, không cần thông báo tự động. Trao đổi
 chi tiết qua Teams.
 
+🆕 **18/09/2026 — chủ dự án xác nhận lại hai điểm:**
+**(a)** PĐD sửa **số** của khoa thì khoa **không** mất xác nhận — trước đó chỉ
+cột chữ làm đúng, cột số vẫn huỷ xác nhận (patch_zzzzx mục A3 "suy rộng").
+Đã vá `fn_huy_xac_nhan_khi_so_doi` (`patch_zzzzzzze`). Khoa **tự** sửa số của
+mình thì vẫn mất xác nhận như cũ; khoa vẫn nhận thông báo khi PĐD sửa.
+**(b)** Khoa **được** sửa đè cột chữ mà PĐD vừa chỉnh — giữ luật V2 "một giá
+trị chung, ai sửa sau đè", không khoá ô sau khi PĐD sửa.
+
 ### Giai đoạn 5 — Danh mục tổng hợp = mặt bàn của PĐD
 
 Aggregate mọi danh mục đề xuất của các khoa trong **cùng một DOT_GOI**. Cùng mã
@@ -1077,8 +1085,10 @@ CHƯA VÀO ĐỢT NÀO   ← báo đỏ: chuyển tiếp hỏng, không phải c
     giữ riêng theo từng khoa. (QĐ 19/08/2026)
 20. Tổng đi thầu bằng tổng số hiện hành của các khoa. Khoa sửa số của mình thì
     tổng đổi theo; số khoa gửi ban đầu đóng băng làm dấu vết. (QĐ 19/08/2026)
-21. Xác nhận của khoa mất hiệu lực khi có ai sửa dữ liệu của mã khoa đó đề
-    xuất, kể cả chính khoa. Số lần xác nhận không giới hạn. (QĐ 19/08/2026)
+21. Xác nhận của khoa mất hiệu lực khi **chính khoa đó** sửa số hoặc ô của mã
+    mình đề xuất. PĐD sửa (số hay chữ) thì **không** làm mất xác nhận — khoa
+    thấy dấu vết và nhận thông báo. Số lần xác nhận không giới hạn.
+    (QĐ 19/08/2026 · thu hẹp 20/08 và 18/09/2026)
 22. 🆕 PĐD chỉ có **một mặt bàn**: mọi thao tác sửa của PĐD đi qua Danh mục tổng
     hợp. Không màn nào khác của PĐD được ghi số. (QĐ 21/08/2026)
 23. 🆕 Số trúng phân bổ sau thầu là **cột riêng, không đè lên Q**. Q là snapshot
