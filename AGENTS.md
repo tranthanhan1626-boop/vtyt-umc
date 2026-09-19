@@ -2,7 +2,30 @@
 
 Hướng dẫn cho người và cho agent khi làm việc trong repo này.
 
-## 📍 BẮT ĐẦU SESSION MỚI — TÌNH HÌNH TỚI 27/08/2026
+## 📍 BẮT ĐẦU SESSION MỚI — TÌNH HÌNH TỚI 18/09/2026
+
+🆕 **18/09/2026 — dự án KHÔNG còn mốc thời gian** (chủ dự án: "vừa học vừa làm").
+Mọi chữ "go-live giữa T9" bên dưới là lịch sử, đừng sắp việc theo nó.
+
+```
+commit d357019 · Netlify = index-C5W2inys.js (đẩy bằng deploy + restoreSiteDeploy)
+pytest 268 · test:formula ✓ (có tienTrinh, chatbot, tenCotBieuMau)
+```
+
+- **Gói giao diện 5 đợt đã lên web** (không đổi chức năng): chữ dễ hiểu + `lib/dichLoi.js` ·
+  thanh tiến trình (`lib/tienTrinh.js`) · màn chào khoa, menu theo việc, đề xuất 3 bước,
+  thanh giỏ đáy · bảng kiểu Excel tông UMC, font Be Vietnam Pro · chatbot theo LUẬT
+  (`components/ChatbotTroGiup.jsx`, `data/chatbotCauHoi.json`). 17 QĐ a–p ở `05` khối 18/09.
+- **Chuẩn thị giác bắt buộc** cho mọi việc giao diện: `.scratch/giao-dien/CHUAN_THI_GIAC.md`.
+  Kiểm bằng mắt ở 1440×900 và 1280×800 — build ✓ không chứng minh màn đẹp.
+- **Chưa chạy trên DB (chủ dự án tự gõ `!`, Claude bị chặn chạy chay_patch.py):**
+  `patch_zzzzzzzf_chatbot_luot.sql` · `patch_zzzzzzzg_de_xuat_ky_truoc.sql` + nạp
+  `scripts/nap_de_xuat_ky_truoc.py` (`--kiem` trước) · dọn đợt test #200/#201.
+- **Agent kiểm thử tải Excel phải bắt blob**, không để rơi file vào ~/Downloads.
+
+---
+
+### (cũ) TÌNH HÌNH TỚI 27/08/2026
 
 Không có lỗi nào đang mở trong pipeline chính.
 
