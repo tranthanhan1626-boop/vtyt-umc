@@ -505,7 +505,7 @@ export default function TienDoGoiThau({ profile, onChuyenGoiBoSung }) {
         return (
           <section key={g.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
             <div className="flex items-start">
-              <button type="button" onClick={() => setGoiMo(dangMo ? null : g.id)}
+              <button type="button" onClick={() => setGoiMo(dangMo ? null : g.id)} aria-expanded={dangMo}
                 className="flex min-w-0 flex-1 items-start gap-3 px-4 py-3 text-left hover:bg-slate-50">
                 {dangMo ? <ChevronDown size={16} className="mt-0.5 text-slate-400" />
                          : <ChevronRight size={16} className="mt-0.5 text-slate-400" />}

@@ -1103,7 +1103,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
             </button>
             <div className="relative" ref={refHienThi}>
               <button type="button" className="qtdx-tb" onClick={() => setMoHienThi((v) => !v)} aria-expanded={moHienThi}>
-                <SlidersHorizontal size={13} /> Hiển thị <ChevronDown size={11} />
+                <SlidersHorizontal size={13} /> Hiển thị <ChevronDown size={11} aria-hidden className={`transition-transform ${moHienThi ? "" : "-rotate-90"}`} />
               </button>
               {moHienThi && (
                 <div className="absolute right-0 top-full mt-1 w-80 max-h-[70vh] overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg z-40 py-1">
@@ -1120,7 +1120,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                   </button>
                   <button type="button" className="qtdx-menu-item" onClick={() => setOpenMenuCot((v) => !v)} aria-expanded={openMenuCot}>
                     <EyeOff size={13} /> Cột hiển thị ({cotHienThi.length}/{cotDayDu.length})
-                    <ChevronDown size={11} className="ml-auto" />
+                    <ChevronDown size={11} aria-hidden className={`ml-auto transition-transform ${openMenuCot ? "" : "-rotate-90"}`} />
                   </button>
                   {openMenuCot && (
                     <div className="border-t border-slate-100">
@@ -1376,10 +1376,14 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                 <tr className={rowMoRong.has(r.ma_hang) ? "qtdx-row-mo" : "qtdx-row"}>
                   <td className="freeze" style={{ width: 30, left: 0, background: "#f1f5f9", padding: 0, textAlign: "center", borderBottom: "1px solid #e2e8f0", borderRight: "1px solid #e2e8f0" }}>
                     <span className="inline-flex items-center">
+                      {/* 19/09: mũi tên theo trạng thái THẬT (bảng con chỉ hiện
+                          khi "Chi tiết theo khoa" BẬT). */}
                       <button onClick={() => toggleExpand(r.ma_hang)}
                         className="text-slate-500 hover:text-umc-700 p-1"
-                        title={rowMoRong.has(r.ma_hang) ? "Thu gọn" : "Sổ chi tiết"}>
-                        {rowMoRong.has(r.ma_hang) ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                        aria-expanded={hienChiTietKhoa && rowMoRong.has(r.ma_hang)}
+                        title={!hienChiTietKhoa ? "Bật \"Chi tiết theo khoa\" trong menu Hiển thị để sổ"
+                          : rowMoRong.has(r.ma_hang) ? "Thu gọn" : "Sổ chi tiết"}>
+                        {hienChiTietKhoa && rowMoRong.has(r.ma_hang) ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                       </button>
                       <button onClick={() => toggleKhoa("dong", r.ma_hang, dongKhoa)}
                         className={`p-0.5 ${dongKhoa ? "text-indigo-600" : "text-slate-300 hover:text-slate-500"}`}

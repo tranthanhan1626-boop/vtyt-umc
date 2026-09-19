@@ -330,6 +330,13 @@
     color: var(--umc-navy);
   }
 
+  /* Nút nhóm "Khác" đang THU mà mục sáng nằm trong nó (19/09/2026) — mang
+     dấu sáng thay cho mục bị giấu, để vẫn đúng MỘT mục sáng nhìn thấy. */
+  .umc-nav-toggle.is-active {
+    background: #edf7fc;
+    color: var(--umc-blue-dark);
+  }
+
   .umc-package-icon {
     display: inline-flex;
     width: 1.9rem;

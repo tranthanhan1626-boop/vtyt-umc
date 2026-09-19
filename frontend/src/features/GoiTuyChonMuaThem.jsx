@@ -139,7 +139,7 @@ export default function GoiTuyChonMuaThem({ profile }) {
         const mo = g.key === goiChon;
         const tran = g.rows.reduce((s, r) => s + Number(r.tran_mua_them_30 || 0), 0);
         const da = g.rows.reduce((s, r) => s + Number(r.da_kich_hoat || 0), 0);
-        return <button key={g.key} onClick={() => setGoiChon(mo ? "" : g.key)}
+        return <button key={g.key} onClick={() => setGoiChon(mo ? "" : g.key)} aria-expanded={mo}
           className={`rounded-lg border p-3 text-left ${mo ? "border-sky-500 bg-sky-50 ring-1 ring-sky-500" : "border-slate-200 hover:bg-slate-50"}`}>
           <div className="flex gap-2"><ChevronRight size={15} className={`mt-0.5 text-sky-700 ${mo ? "rotate-90" : ""}`} />
             <div className="min-w-0"><p className="text-[10px] font-bold uppercase text-sky-700">{NHAN_LOAI[g.loai]} · REVISION {g.revision}</p>

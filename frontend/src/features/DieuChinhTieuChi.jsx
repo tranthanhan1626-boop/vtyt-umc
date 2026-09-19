@@ -278,7 +278,7 @@ export default function DieuChinhTieuChi({ profile }) {
         const cho = deNghi.some((d) => d.trang_thai === "cho_duyet" && d.ma_quan_ly === n.ma_quan_ly);
         return (
           <div key={n.ma_quan_ly} className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-            <button onClick={() => moNhom(n.ma_quan_ly)}
+            <button onClick={() => moNhom(n.ma_quan_ly)} aria-expanded={mo}
               className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-slate-50">
               {mo ? <ChevronDown size={14} className="shrink-0 text-slate-400" />
                   : <ChevronRight size={14} className="shrink-0 text-slate-400" />}

@@ -68,6 +68,7 @@ export default function HopThuThongBao({ profile }) {
   return (
     <div className="relative" ref={hopRef}>
       <button type="button" onClick={() => setMo((v) => !v)}
+        aria-haspopup="dialog" aria-expanded={mo}
         className="umc-icon-button relative" title="Hộp thư thông báo" aria-label="Hộp thư thông báo">
         <Bell size={17} />
         {rows.length > 0 && (

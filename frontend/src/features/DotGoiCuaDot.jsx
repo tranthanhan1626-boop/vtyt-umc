@@ -112,7 +112,7 @@ export default function DotGoiCuaDot({ dot, dsKhoa }) {
 
   return (
     <div className="w-full">
-      <button type="button" onClick={() => setMo((p) => !p)}
+      <button type="button" onClick={() => setMo((p) => !p)} aria-expanded={mo}
         className="flex items-center gap-1 text-xs text-umc-800 hover:underline">
         {mo ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
         Gói con của đợt{tomTat ? ` — ${tomTat}` : ""}

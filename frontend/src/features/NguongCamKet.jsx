@@ -106,17 +106,20 @@ export default function NguongCamKet({ moc, onLuuXong }) {
         className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-2.5 py-1 text-sm text-slate-600 hover:bg-slate-50">
         <SlidersHorizontal size={14} />
         Chỉnh ngưỡng cam kết
-        <ChevronRight size={13} className="text-slate-400" />
+        <ChevronRight size={13} aria-hidden className="text-slate-400" />
       </button>
     );
   }
 
   return (
     <div className="w-full rounded-lg border border-slate-200 bg-white p-3">
-      <div className="mb-2 flex items-center gap-1.5">
-        <ChevronDown size={14} className="text-slate-400" />
-        <p className="text-sm font-semibold text-slate-800">Ngưỡng cam kết sử dụng</p>
-      </div>
+      {/* 19/09/2026: bấm lại tiêu đề thì thu — cùng tác dụng nút "Hủy". */}
+      <button type="button" onClick={() => { setMo(false); setLoi(""); }} disabled={dangLuu}
+        aria-expanded="true" title="Bấm để thu gọn (không lưu)"
+        className="mb-2 flex min-h-8 items-center gap-1.5 rounded-md text-left hover:bg-slate-50 disabled:opacity-60">
+        <ChevronDown size={14} aria-hidden className="text-slate-400" />
+        <span className="text-sm font-semibold text-slate-800">Ngưỡng cam kết sử dụng</span>
+      </button>
       <p className="mb-2.5 text-xs text-slate-500">
         Đổi ở đây là mọi mã được chấm lại ngay — không sửa dữ liệu nào, chỉ đổi thước đo.
         Ngưỡng của mốc sau phải cao hơn mốc trước.

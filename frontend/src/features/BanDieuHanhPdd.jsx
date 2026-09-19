@@ -877,7 +877,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
                 Còn {fmt(tomTatRotTrongGio.soMa)} mã rớt nằm trong giỏ,{" "}
                 {fmt(tomTatRotTrongGio.soKhoa)} khoa chưa gửi
               </span>
-              <button type="button" onClick={() => setXemRotTrongGio((v) => !v)}
+              <button type="button" onClick={() => setXemRotTrongGio((v) => !v)} aria-expanded={xemRotTrongGio}
                 className="rounded border border-amber-400 bg-white px-2 py-0.5 text-xs font-medium text-amber-800 hover:bg-amber-100">
                 {xemRotTrongGio ? "Thu lại" : "Bấm để xem khoa nào"}
               </button>
@@ -1175,12 +1175,13 @@ function TabKhoa({
                     return (
                       <button type="button"
                         onClick={() => setKhoaMoGoi((cu) => (cu === k.don_vi ? "" : k.don_vi))}
+                        aria-expanded={khoaMoGoi === k.don_vi}
                         title="Bấm để xem khoa này đang đề xuất ở những gói nào"
                         className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold ${
                           khoaMoGoi === k.don_vi
                             ? "bg-umc-700 text-white"
                             : "border border-umc-300 bg-umc-50 text-umc-800 hover:bg-umc-100"}`}>
-                        {ds.length} gói <span className="opacity-70">{khoaMoGoi === k.don_vi ? "▲" : "▼"}</span>
+                        {ds.length} gói <span aria-hidden className="opacity-70">{khoaMoGoi === k.don_vi ? "▾" : "▸"}</span>
                       </button>
                     );
                   })()}
@@ -1323,7 +1324,7 @@ function FragmentNhom({
     <>
       <tr className="border-b border-slate-100 bg-slate-50/70">
         <td className="px-4 py-2">
-          <button type="button" onClick={() => doiMo(setMqMo, mq.ma_quan_ly)}
+          <button type="button" onClick={() => doiMo(setMqMo, mq.ma_quan_ly)} aria-expanded={!!moNhom}
             className="inline-flex items-center gap-1.5 text-left font-medium text-slate-800">
             {moNhom ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             <span className="font-mono text-xs text-slate-500">{mq.ma_quan_ly}</span>
@@ -1361,7 +1362,7 @@ function FragmentNhom({
           <Fragment key={`${mq.ma_quan_ly}-${mh.ma_hang}`}>
             <tr className="border-b border-slate-100">
               <td className="py-2 pl-10 pr-4">
-                <button type="button" onClick={() => doiMo(setMhMo, mh.ma_hang)}
+                <button type="button" onClick={() => doiMo(setMhMo, mh.ma_hang)} aria-expanded={moMa}
                   className="inline-flex items-center gap-1.5 text-left">
                   {moMa ? <ChevronDown size={13} className="text-slate-400" /> : <ChevronRight size={13} className="text-slate-400" />}
                   <span className="font-mono text-xs text-slate-500">{mh.ma_hang}</span>

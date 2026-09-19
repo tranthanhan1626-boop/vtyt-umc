@@ -213,7 +213,7 @@ export default function TheoDoiChuyenTiep({ profile, dotGoiId = null }) {
                   <FragmentRow key={g.ma_hang}>
                     <tr className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="py-2 pr-3">
-                        <button type="button" onClick={() => doiMo(g.ma_hang)}
+                        <button type="button" onClick={() => doiMo(g.ma_hang)} aria-expanded={mo}
                           className="inline-flex items-start gap-1.5 text-left">
                           {mo ? <ChevronDown size={13} className="mt-1 text-slate-400" />
                               : <ChevronRight size={13} className="mt-1 text-slate-400" />}

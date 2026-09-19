@@ -297,7 +297,7 @@ export function ThanhGiaiDoanThau({
             aria-expanded={moMenuMoLai}
             title="Mở lại một giai đoạn đã hoàn thành — kết quả từ đó trở đi sẽ hết hiệu lực"
             className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-[11px] font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">
-            Mở lại… <span className="opacity-70">{moMenuMoLai ? "▲" : "▼"}</span>
+            Mở lại… <span aria-hidden className="opacity-70">{moMenuMoLai ? "▾" : "▸"}</span>
           </button>
           {moMenuMoLai && (
             <span className="absolute left-2 top-full z-40 mt-1 flex w-56 flex-col rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
@@ -901,7 +901,7 @@ export function ChotTrinhKyTongHop({ dotGoiId, onXong, trongThanhCongCu = false 
                 : "border-umc-300 bg-white text-umc-800 hover:bg-umc-50"}`}>
         <Check size={12} />
         {phien ? `Đã chốt trình ký — bản số ${phien.revision}` : "Chốt trình ký"}
-        <span className="opacity-60">{mo ? "▲" : "▼"}</span>
+        <span aria-hidden className="opacity-60">{mo ? "▾" : "▸"}</span>
       </button>
 
       {mo && (

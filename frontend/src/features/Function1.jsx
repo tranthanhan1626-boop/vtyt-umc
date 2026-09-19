@@ -997,8 +997,9 @@ export default function Function1({
   // ② Lịch sử sử dụng: MỞ SẴN — trước đợt 3 hai biểu đồ luôn hiện.
   const [moLichSu, setMoLichSu] = useState(true);
   useEffect(() => { setMoDvt(null); }, [nhomChon]);
-  const dvtDangMo = !tinhTrangQuyDoi.hopLe
-    || (moDvt ?? dsDvtNhom.length > 1);
+  // 19/09/2026: chưa hợp lệ thì MỞ SẴN nhưng vẫn thu lại được (trước đây ép
+  // mở, bấm không thu). Dòng tóm tắt vẫn báo "còn thiếu hệ số quy đổi".
+  const dvtDangMo = moDvt ?? (!tinhTrangQuyDoi.hopLe || dsDvtNhom.length > 1);
 
   // L7 — Escape đóng ngăn giỏ.
   useEffect(() => {
@@ -1787,7 +1788,7 @@ export default function Function1({
                     {!tinhTrangQuyDoi.hopLe && " · còn thiếu hệ số quy đổi"}
                   </span>
                 </span>
-                <ChevronDown size={16} className={`shrink-0 text-slate-500 transition-transform ${dvtDangMo ? "rotate-180" : ""}`} />
+                <ChevronDown size={16} aria-hidden className={`shrink-0 text-slate-500 transition-transform ${dvtDangMo ? "" : "-rotate-90"}`} />
               </button>
               {dvtDangMo && (
               <div className="mx-4 mb-4 rounded-lg border border-amber-200 bg-amber-50/60 p-3">
@@ -2432,11 +2433,12 @@ export default function Function1({
                           <div key={tenGoi} className="overflow-hidden rounded-lg border border-slate-200">
                             <button type="button"
                               onClick={() => setGoiGioMo(dangMo ? null : tenGoi)}
+                              aria-expanded={dangMo}
                               className="flex w-full items-center gap-2 bg-slate-50 px-3 py-2.5 text-left">
                               <Package size={15} className="text-umc-700" />
                               <span className="flex-1 text-sm font-medium text-slate-700">{tenGoi}</span>
                               <span className="text-xs text-slate-400">{dsNhomGoi.length} mã quản lý</span>
-                              <ChevronDown size={14} className={dangMo ? "rotate-180" : ""} />
+                              <ChevronDown size={14} aria-hidden className={`transition-transform ${dangMo ? "" : "-rotate-90"}`} />
                             </button>
                             {dangMo && (
                               <div className="space-y-3 p-3">

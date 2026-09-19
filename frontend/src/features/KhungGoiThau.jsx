@@ -164,6 +164,11 @@ export function useDotDangMo(authKey = "mounted") {
 export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, dangTaiDot, loiDot, laPdd, children }) {
   const [menuMo, setMenuMo] = useState(false);
   const [moKhac, setMoKhac] = useState(false);
+  // 19/09/2026 — "sổ xuống rồi phải ẩn được": bấm lại gói ĐANG MỞ thì thu
+  // nhánh, KHÔNG điều hướng. Ghi nhớ bằng khoá vị trí (khoaChon) lúc thu, nên
+  // hễ người dùng đi tới chỗ khác thì nhánh tự mở lại cho thấy mục đang sáng.
+  const [goiThuTai, setGoiThuTai] = useState(null);
+  const [khacThuTai, setKhacThuTai] = useState(null);
 
   const chuyenMan = (giaTri) => {
     doiChon(giaTri);
@@ -233,7 +238,32 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
       || manHinhMeBao.some((m) => m.ma === chon.man)
       || chon.man === "danh_muc_khoa"
     );
-    const lopGoi = dangChon ? (conDangSang ? "is-open" : "is-active") : "";
+    // Thu/mở nhánh (19/09/2026). Nhánh chỉ mở khi đang đứng ở gói này và
+    // người dùng chưa bấm thu tại đúng vị trí hiện tại.
+    const nhanhMo = dangChon && goiThuTai !== khoaChon;
+    // Nhánh đang thu mà mục sáng nằm TRONG nhánh (gói con / Đề xuất của tôi…)
+    // thì mục đó bị giấu — gói cha nhận is-active để vẫn đúng MỘT mục sáng
+    // nhìn thấy được, và dòng mô tả đổi thành "Đang ở: …". Mục ② "Danh mục
+    // của khoa" nằm ngoài nhánh nên vẫn tự sáng; gói cha giữ dấu nhẹ is-open.
+    const conBiGiau = dangChon && !nhanhMo && conDangSang && chon.man !== "danh_muc_khoa";
+    const tenDangO = !conBiGiau ? ""
+      : chon.man === "de_xuat"
+        ? (coGoiCon ? dsGoiCon.find((gc) => gc.ma === chon.goiCon)?.ten || "" : "Đề xuất số lượng")
+        : manHinhMeBao.find((m) => m.ma === chon.man)?.ten || "";
+    const lopGoi = !dangChon ? ""
+      : conBiGiau ? "is-active"
+      : conDangSang ? "is-open" : "is-active";
+    const bamGoi = () => {
+      if (dangChon && nhanhMo) { setGoiThuTai(khoaChon); return; } // thu, giữ nguyên màn
+      if (dangChon) {                                                // đang thu → mở lại
+        setGoiThuTai(null);
+        if (chon.man) return;                                        // đã đứng đúng chỗ
+      }
+      setGoiThuTai(null);
+      chuyenMan(dangChon
+        ? { nhom: "goi", goi: g.ma, goiCon: chon.goiCon, man: chon.man || "de_xuat" }
+        : { nhom: "goi", goi: g.ma, goiCon: null, man: "de_xuat" });
+    };
 
     return (
       <div key={g.ma} className="relative">
@@ -243,11 +273,11 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
           // (`tongquan`) bấm "Gói 18 tháng" thì ra {nhom:"goi", man:"tongquan"},
           // rơi vào nhánh dự phòng của App.jsx. Chỉ giữ màn/gói con khi đang ở
           // CHÍNH gói này; còn lại vào thẳng Đề xuất số lượng.
-          onClick={() => chuyenMan(chon.nhom === "goi" && chon.goi === g.ma
-            ? { nhom: "goi", goi: g.ma, goiCon: chon.goiCon, man: chon.man || "de_xuat" }
-            : { nhom: "goi", goi: g.ma, goiCon: null, man: "de_xuat" })}
+          // 19/09: bấm gói đang mở thì THU nhánh (không đổi màn); xem bamGoi.
+          onClick={bamGoi}
           className={`umc-package-button ${lopGoi}`}
-          aria-expanded={dangChon}
+          aria-expanded={nhanhMo}
+          title={nhanhMo ? "Bấm để thu gọn" : undefined}
           aria-current={lopGoi === "is-active" ? "page" : undefined}
         >
           <span className={`umc-package-icon ${lopGoi}`}><Icon size={17} /></span>
@@ -261,9 +291,12 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
                 </span>
               )}
             </span>
-            <span className="mt-1 block text-[11px] leading-tight opacity-70">{g.mo_ta}</span>
+            {tenDangO
+              ? <span className="mt-1 block text-[11px] font-semibold leading-tight">Đang ở: {tenDangO}</span>
+              : <span className="mt-1 block text-[11px] leading-tight opacity-70">{g.mo_ta}</span>}
           </span>
-          <ChevronDown size={14} className={`mt-0.5 shrink-0 transition-transform ${dangChon ? "rotate-180" : ""}`} />
+          {/* ▸ khi thu, ▾ khi mở. */}
+          <ChevronDown size={14} aria-hidden className={`mt-0.5 shrink-0 transition-transform ${nhanhMo ? "" : "-rotate-90"}`} />
         </button>
 
         <div className="pl-11">
@@ -279,7 +312,7 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
         </div>
 
         <AnimatePresence initial={false}>
-          {dangChon && (
+          {nhanhMo && (
             <motion.div
               className="umc-subnav"
               initial={{ opacity: 0, height: 0 }}
@@ -466,7 +499,22 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
   // trong đó để mục sáng luôn nhìn thấy.
   const dangOKhac = chon.nhom === "tuy_chon_mua_them"
     || (chon.nhom === "chung" && ["tieuchi", "tiendosudung"].includes(chon.man));
-  const khacDangMo = moKhac || dangOKhac;
+  // 19/09/2026: trước đây đứng ở một mục trong "Khác" thì nhóm bị ép mở,
+  // bấm "Khác" không thu được. Nay thu được; mục sáng bị giấu thì nút "Khác"
+  // nhận dấu sáng + ghi "đang ở …" (vẫn đúng MỘT mục sáng nhìn thấy).
+  const khacDangMo = dangOKhac ? khacThuTai !== khoaChon : moKhac;
+  const tenKhacDangO = dangOKhac && !khacDangMo
+    ? (chon.nhom === "tuy_chon_mua_them" ? "Gói tùy chọn mua thêm"
+      : chon.man === "tieuchi" ? "Điều chỉnh tiêu chí kỹ thuật" : "Tiến độ sử dụng")
+    : "";
+  const bamKhac = () => {
+    if (dangOKhac) {
+      setKhacThuTai(khacDangMo ? khoaChon : null);
+      setMoKhac(!khacDangMo);
+    } else {
+      setMoKhac((v) => !v);
+    }
+  };
   // "Danh mục của khoa" mở đúng gói đang đứng; chưa đứng ở gói nào (hoặc
   // đang ở chỉ định thầu — không có danh mục dạng này) thì mở gói 18 tháng.
   const goiChoDanhMuc = chon.nhom === "goi" && chon.goi && chon.goi !== "chi_dinh_thau"
@@ -504,12 +552,15 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
 
       <button
         type="button"
-        onClick={() => setMoKhac((v) => !v)}
+        onClick={bamKhac}
         aria-expanded={khacDangMo}
-        className="umc-nav-label mt-6 flex min-h-8 w-full items-center justify-between rounded-md hover:bg-slate-50"
+        className={`umc-nav-label umc-nav-toggle mt-6 flex min-h-8 w-full items-center justify-between rounded-md hover:bg-slate-50 ${tenKhacDangO ? "is-active" : ""}`}
       >
-        <span>Khác</span>
-        <ChevronDown size={14} className={`transition-transform ${khacDangMo ? "" : "-rotate-90"}`} />
+        <span className="min-w-0 truncate">
+          Khác
+          {tenKhacDangO && <span className="ml-1.5 normal-case tracking-normal" title={`Đang ở: ${tenKhacDangO}`}>· đang ở: {tenKhacDangO}</span>}
+        </span>
+        <ChevronDown size={14} aria-hidden className={`shrink-0 transition-transform ${khacDangMo ? "" : "-rotate-90"}`} />
       </button>
       {khacDangMo && (
         <div className="space-y-2">

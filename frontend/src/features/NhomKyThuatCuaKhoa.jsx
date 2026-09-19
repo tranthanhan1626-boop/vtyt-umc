@@ -135,8 +135,8 @@ export default function NhomKyThuatCuaKhoa({ profile }) {
             một mã mới hoàn toàn để Phòng Điều dưỡng duyệt.
           </p>
         </div>
-        <button type="button" onClick={() => { setMoForm(true); setLoi(""); }}
-          className="umc-page-primary">
+        <button type="button" onClick={() => { setMoForm((v) => !v); setLoi(""); }}
+          aria-expanded={moForm} className="umc-page-primary">
           <Plus size={17} /> Thêm mã kỹ thuật
         </button>
       </section>

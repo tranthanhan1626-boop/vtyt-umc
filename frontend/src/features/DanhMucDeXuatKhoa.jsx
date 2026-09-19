@@ -1122,7 +1122,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
             </div>
             <div className="relative" ref={refHienThi}>
               <button className="qtdx-tb" onClick={() => setMoHienThi((v) => !v)} aria-expanded={moHienThi}>
-                <SlidersHorizontal size={13} /> Hiển thị <ChevronDownIcon size={11} />
+                <SlidersHorizontal size={13} /> Hiển thị <ChevronDownIcon size={11} aria-hidden className={`transition-transform ${moHienThi ? "" : "-rotate-90"}`} />
               </button>
               {moHienThi && (
                 <div className="absolute right-0 top-full mt-1 w-80 max-h-[70vh] overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg z-40 py-1">
@@ -1135,7 +1135,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
                   </button>
                   <button className="qtdx-menu-item" onClick={() => setOpenMenuCot((v) => !v)} aria-expanded={openMenuCot}>
                     <EyeOff size={13} /> Ẩn/khóa cột ({cotHienThi.length}/{cotDayDu.length})
-                    <ChevronDownIcon size={11} className="ml-auto" />
+                    <ChevronDownIcon size={11} aria-hidden className={`ml-auto transition-transform ${openMenuCot ? "" : "-rotate-90"}`} />
                   </button>
                   {openMenuCot && (
                     <div className="border-t border-slate-100">

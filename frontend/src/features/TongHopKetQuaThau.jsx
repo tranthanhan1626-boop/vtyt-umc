@@ -116,7 +116,7 @@ export default function TongHopKetQuaThau({ profile }) {
         const thieu = g.tongDeXuat - g.tongTrung;
         return (
           <div key={g.ma_hang} className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-            <button onClick={() => setBung(mo ? null : g.ma_hang)}
+            <button onClick={() => setBung(mo ? null : g.ma_hang)} aria-expanded={mo}
               className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-slate-50">
               {mo ? <ChevronDown size={14} className="shrink-0 text-slate-400" />
                   : <ChevronRight size={14} className="shrink-0 text-slate-400" />}

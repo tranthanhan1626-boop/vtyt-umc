@@ -221,7 +221,7 @@ export default function TienDoSuDung({ profile, onNapDuLieu }) {
         const moGoi = mo.has(`g${g.goi_id}`);
         return (
           <div key={g.goi_id} className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-            <button onClick={() => bat(`g${g.goi_id}`)}
+            <button onClick={() => bat(`g${g.goi_id}`)} aria-expanded={moGoi}
               className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left hover:bg-slate-50">
               {moGoi ? <ChevronDown size={16} className="shrink-0 text-slate-400" />
                      : <ChevronRight size={16} className="shrink-0 text-slate-400" />}
@@ -263,7 +263,7 @@ export default function TienDoSuDung({ profile, onNapDuLieu }) {
                   const moNhom = mo.has(kn);
                   return (
                     <div key={kn} className="mb-1.5 overflow-hidden rounded-md border border-slate-200 bg-white last:mb-0">
-                      <button onClick={() => bat(kn)}
+                      <button onClick={() => bat(kn)} aria-expanded={moNhom}
                         className="flex w-full items-center gap-2 px-2.5 py-2 text-left hover:bg-slate-50">
                         {moNhom ? <ChevronDown size={13} className="shrink-0 text-slate-400" />
                                 : <ChevronRight size={13} className="shrink-0 text-slate-400" />}
@@ -288,7 +288,7 @@ export default function TienDoSuDung({ profile, onNapDuLieu }) {
                             const nguong = h.nguong_phai_dat != null ? Number(h.nguong_phai_dat) * 100 : null;
                             return (
                               <div key={kh}>
-                                <button onClick={() => bat(kh)}
+                                <button onClick={() => bat(kh)} aria-expanded={moHang}
                                   className="w-full px-2.5 py-2.5 text-left hover:bg-slate-50">
                                   <div className="mb-1.5 flex flex-wrap items-baseline gap-2">
                                     {moHang ? <ChevronDown size={12} className="text-slate-400" />
