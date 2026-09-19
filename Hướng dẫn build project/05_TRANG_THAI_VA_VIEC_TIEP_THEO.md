@@ -29,8 +29,11 @@ Cập nhật **24/08/2026**. Nhánh `phase-a-luong-de-xuat`.
 > | o | Mã thuộc gói con nào → chatbot bảo hỏi PĐD qua Teams |
 > | p | `de_xuat.xlsx` = số **khoa gõ ban đầu**, **18 tháng**; bỏ Cơ sở 2/3 + 3 đơn vị lạ; thêm cột xem "Số đề xuất kỳ trước" (CHƯA làm) |
 >
-> Còn chờ: chạy `patch_zzzzzzzf_chatbot_luot.sql` (bảng lưu lượt chat) · việc tiếp: sửa nội dung chatbot theo QĐ g–o,
-> dọn dữ liệu test + nạp HIS T7–T8, rồi cột kỳ trước.
+> ✅ **19/09/2026 — đã chạy hết trên DB:** `patch_zzzzzzzf` (bảng `chatbot_luot`) · `patch_zzzzzzzg`
+> + nạp 5.082 dòng `de_xuat_ky_truoc` (44 khoa, 2.165 mã) · `patch_zzzzzzzh` (is_current theo ĐỢT —
+> kiểm bằng gửi thật 3 mã rớt RHM ở #201: dòng #200 giữ nguyên) · **dọn sạch đợt test #200/#201**
+> (558 dòng, sao lưu `backend/sao_luu/staging/2026-09-19/`). DB hiện **0 đợt**, dữ liệu nền nguyên vẹn.
+> Còn lại: nạp HIS T7–T8/2026 (chưa có file) · PĐD mở đợt thật khi sẵn sàng.
 > 🔴 **ĐỔI HƯỚNG 21/08/2026 — đọc trước mọi thứ khác trong file này.**
 >
 > Chủ dự án báo hướng cũ **đi chệch**. Chốt lại bằng 17 quyết định, gọi chung là

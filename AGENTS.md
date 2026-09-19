@@ -18,9 +18,9 @@ pytest 268 · test:formula ✓ (có tienTrinh, chatbot, tenCotBieuMau)
   (`components/ChatbotTroGiup.jsx`, `data/chatbotCauHoi.json`). 17 QĐ a–p ở `05` khối 18/09.
 - **Chuẩn thị giác bắt buộc** cho mọi việc giao diện: `.scratch/giao-dien/CHUAN_THI_GIAC.md`.
   Kiểm bằng mắt ở 1440×900 và 1280×800 — build ✓ không chứng minh màn đẹp.
-- **Chưa chạy trên DB (chủ dự án tự gõ `!`, Claude bị chặn chạy chay_patch.py):**
-  `patch_zzzzzzzf_chatbot_luot.sql` · `patch_zzzzzzzg_de_xuat_ky_truoc.sql` + nạp
-  `scripts/nap_de_xuat_ky_truoc.py` (`--kiem` trước) · dọn đợt test #200/#201.
+- **19/09: mọi patch đã chạy** (zzzzzzzf chatbot_luot · zzzzzzzg + nạp kỳ trước · zzzzzzzh
+  is_current theo đợt) và **đã dọn sạch đợt test** — DB còn 0 đợt. Patch/ghi DB: chủ dự án tự gõ `!`
+  (Claude bị chặn chạy chay_patch.py và bị chặn bấm nút ghi trên web).
 - **Agent kiểm thử tải Excel phải bắt blob**, không để rơi file vào ~/Downloads.
 
 ---
