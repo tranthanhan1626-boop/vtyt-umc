@@ -327,8 +327,23 @@ async function taiKetQuaThau(loaiMuaSam, khoa, dsMaHang, dotId = null) {
       // "trúng NaN" (fmt = Math.round(undefined).toLocaleString()).
       // Vá 26/08/2026 sau khi chủ dự án hỏi "chia số trúng rồi danh mục khoa
       // có đổi theo không".
+      //
+      // P1 (vòng 6, kiểm định độc lập lượt 4, 28/09/2026) — CHỈ lọc
+      // `ket_qua = "khong_trung"` bỏ sót mã TRÚNG MỘT PHẦN. View nguồn của
+      // truy vấn này (backend/sql/patch_zzzzzl_view_ket_qua_chay_o_quy_mo_
+      // that.sql:62-64) trả ba giá trị `ket_qua`:
+      //   khong_trung     : so_luong_trung = 0            (rớt toàn bộ)
+      //   trung_mot_phan  : 0 < so_luong_trung < q_khoa   (rớt một phần)
+      //   trung           : so_luong_trung >= q_khoa      (trúng đủ, không rớt)
+      // Lọc cũ chỉ lấy `khong_trung` nên nhánh nhãn vàng "Rớt N ở … · trúng M"
+      // (bên dưới, dựa vào `Number(r.rot.so_luong_trung) > 0`) là CODE CHẾT —
+      // mã trúng một phần không bao giờ vào `Map` này nên `r.rot` luôn
+      // undefined cho chúng, và chân bảng "N mã rớt" chỉ đếm rớt toàn bộ.
+      // K13 (`.scratch/huong-dan/DAN_Y.md`) yêu cầu có cả hai nhãn. Lấy thêm
+      // `trung_mot_phan`; KHÔNG lấy `trung` (không phải mã rớt).
       .select("goi_id, ten_goi, ma_hang, ket_qua, ma_moc_rot, ly_do_khong_trung, so_luong_de_xuat, so_luong_trung, so_luong_thieu, da_xu_ly, ket_qua_id")
-      .eq("don_vi", khoa).eq("loai_mua_sam", loaiMuaSam).eq("ket_qua", "khong_trung")
+      .eq("don_vi", khoa).eq("loai_mua_sam", loaiMuaSam)
+      .in("ket_qua", ["khong_trung", "trung_mot_phan"])
       .in("ma_hang", dsMaHang);
     if (dotId) q = q.eq("dot_id", Number(dotId));
     return q.range(f, t);
@@ -1598,7 +1613,14 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
                         {new Date(a.thoi_gian).toLocaleString("vi-VN")} · {a.nguoi_sua}
                       </div>
                       <div className="mt-0.5 whitespace-pre-wrap break-words">
-                        <span className="text-slate-400 line-through">{a.gia_tri_cu ?? "(trống)"}</span>
+                        {/* P6k (vòng 6, kiểm định độc lập lượt 4, P6) —
+                            `gia_tri_cu` rỗng/null KHÔNG nghĩa là ô từng bị
+                            xoá trắng: nó nghĩa là trước lần sửa này, ô đang
+                            mang giá trị GỐC (chưa có sửa đè nào trước đó) —
+                            xem patch_zl_khoi_phuc_o_goc.sql:39-41 ("gia_tri_cu
+                            NULL = lần đầu ghi đè"). Nhãn "(trống)" cũ khiến
+                            người đọc hiểu lầm là "trước đó ô rỗng". */}
+                        <span className="text-slate-400 line-through">{a.gia_tri_cu || "(giá trị gốc)"}</span>
                         {" → "}
                         <span className="text-slate-800 font-medium">
                           {/* M9k — "Khôi phục ô" ghi gia_tri_moi rỗng/null; đọc

@@ -246,6 +246,10 @@ Danh sách khoa đổi được cho tới khi chốt số tham gia đấu thầu
 3. Khoa chốt tổng ở **cấp mã quản lý** — chọn một mức hoặc tự nhập.
 4. Khoa phân bổ tổng đó xuống từng mã hàng tương đương. **Khóa cứng 1**: tổng
    sau quy đổi phải đúng bằng số đã chốt.
+   🆕 **QĐ 28/09/2026 — Q02:** nhóm chỉ có **đúng một mã hàng** thì ô mã hàng
+   **tự điền** bằng đúng số tổng vừa chốt (không cần gõ lại). Nhóm có từ hai
+   mã hàng trở lên vẫn giữ nguyên như cũ — khoa tự gõ tay từng mã. Mục đích là
+   giảm cú bấm (chỉ đạo nền "tối ưu click"), không đổi luật khoá cứng 1.
 5. Nút "Thêm cả mã quản lý vào giỏ" lưu toàn bộ phân bổ trong một transaction.
 6. Giỏ lưu trên server, sống qua đăng xuất/F5/máy khác. Mọi tài khoản cùng khoa
    thấy chung một giỏ; audit ghi đúng người thao tác.
@@ -608,6 +612,24 @@ sang mã tương đương: việc đó nay là của PĐD và làm trên bảng 
 Đường cũ ở màn khoa đã bị **chặn hẳn** ngày 23/08/2026 — nó gọi vào bảng của mô
 hình trước v3 nên khoa bấm là vào ngõ cụt.
 
+### 🆕 5.5 Màn "Tổng hợp kết quả thầu" — chỉ để xem (QĐ 28/09/2026 — Q01, Q05)
+
+Màn riêng, gộp kết quả thầu của **mọi khoa** theo từng mã hàng, để PĐD xem
+tổng quan (không phải Danh mục tổng hợp ở mục 5.4 — màn đó PĐD gõ số theo
+từng khoa).
+
+- **Q01 — bỏ nút "Nhập kết quả".** Nút cũ mở form cho gõ, nhưng bấm Lưu chỉ
+  hiện "Sửa kết quả thầu nay làm trên bảng Tổng hợp — màn này chỉ để xem"
+  (luật đã có từ QĐ A2, 23/08/2026). Nút là **nút cụt**, nay bỏ hẳn; câu đầu
+  màn sửa lại cho đúng: đây là màn xem, muốn sửa thì sang Danh mục tổng hợp
+  (mục 5.3, 5.4).
+- **Q05 — chỉ hiện gói con đã xong CẢ BA giai đoạn thầu**, mỗi dòng ghi rõ
+  **đợt** và **gói con**. Trước đó màn trộn mọi đợt/gói con lại, kể cả gói mới
+  ở Chào giá cũng bị gọi "Trúng" (vì `số trúng = Q` là giá trị mặc định trước
+  khi có kết quả thầu thật, xem mục 5.2) — gây hiểu lầm nặng cho người đọc bảng.
+  Điều kiện "xong cả ba giai đoạn" dùng đúng điều kiện đã có ở cổng chốt
+  trình ký (mục 8.2), không thêm luật mới.
+
 ---
 
 ## 6. Chuyển tiếp mã rớt và pipeline bổ sung
@@ -630,6 +652,11 @@ PĐD bấm, với **từng khoa** đã đề xuất mã đó:
 3. Hệ tìm **đợt bổ sung gần nhất** theo lịch cố định T1 · T5 · T9.
    🆕 Đợt bổ sung **luôn mở sẵn** (QĐ D10): hệ tự tạo và tự mở, không đợi PĐD.
    Đợt đích đã chốt Q rồi thì nhảy sang mốc kế tiếp.
+   🆕 **QĐ 28/09/2026 — Q03:** đợt được **ghi lại ngay lúc chuyển tiếp**
+   (`chuyen_tiep_rot_v3.dot_goi_bo_sung_id`) — đây là đợt thật của mục đó suốt
+   vòng đời. Màn của khoa **đọc lại đúng đợt đã ghi**, không tự đoán lại "đợt
+   đang mở gần nhất" mỗi lần hiện màn (cách đoán cũ có thể ra đợt khác đợt lúc
+   chuyển tiếp, ví dụ sau khi đợt gần nhất đã chốt Q hoặc đã qua mốc).
 4. 🆕 **Đẩy mã vào GIỎ của khoa** ở đợt đó (QĐ 26/08/2026), số lượng điền sẵn
    đúng bằng số khoa đó đã rớt — nhưng đó chỉ là **GỢI Ý**, chưa phải đề xuất.
    Mã đã có sẵn trong giỏ thì phần rớt được **CỘNG THÊM**, không ghi đè (D11).
@@ -644,6 +671,12 @@ PĐD bấm, với **từng khoa** đã đề xuất mã đó:
    ở màn **Giỏ rớt của khoa** (menu ③ Mã rớt). Nút này chỉ ghi trạng thái xử lý
    (`cap_nhat_xu_ly_gio_rot_v3`), **không** tự xoá mã khỏi giỏ đợt bổ sung — mã
    còn trong giỏ thì khoa bỏ bằng dấu X để khỏi gửi nhầm.
+   🆕 **QĐ 28/09/2026 — Q04:** một mục rớt được coi là **"Đã gửi ở đợt …"**
+   (đã xử lý xong, hết hiện ở đầu danh sách) khi khoa đã **gửi đề xuất mã đó
+   ở đúng đợt bổ sung, SAU thời điểm mã rớt vào giỏ** — so trực tiếp thời gian
+   gửi với thời gian chuyển tiếp, không chỉ xem "khoa có đề xuất mã này ở đợt
+   đó hay không" (đề xuất có sẵn từ trước khi rớt không tính là đã xử lý). Chỉ
+   đọc để hiện chữ, không thêm nút hay bảng ghi mới.
 6. 🆕 Bàn điều hành nhắc **"Còn N mã rớt nằm trong giỏ, M khoa chưa gửi"**, bấm
    xem được khoa nào. **PĐD nhắc được, KHÔNG gửi thay khoa** — RLS trên
    `proposals` chặn thật, không chỉ là quy ước.
@@ -715,11 +748,18 @@ Màn **"Theo dõi chuyển tiếp mã rớt"** (PĐD), dựng 23/08/2026:
 | Khoa đã xác nhận | n/m khoa đã xác nhận danh mục ở đợt bổ sung |
 | Trạng thái | Còn nợ xử lý · Đã đổ sang mã khác · **CHUYỂN TIẾP HỎNG** · Đã vào đợt bổ sung · 🆕 **Đã đưa nhiều hơn số rớt** |
 
-Có nút **"Chạy lại"** trên dòng nào còn nợ hoặc hỏng — gọi lại cò cho riêng mã đó.
+🆕 **QĐ 28/09/2026 — Q09:** nút **"Chạy lại"** chỉ còn hiện trên dòng **chuyển
+tiếp thật sự HỎNG** (chưa vào được đợt bổ sung nào dù đã "Xác nhận rớt" —
+đúng nghĩa "chạy lại cò cho mã bị kẹt"). Dòng ở trạng thái **"còn nợ xử lý"**
+vì PĐD **chưa bấm "Xác nhận rớt"** thì không có nút — chữ đổi thành **"Chưa
+xác nhận rớt — làm trên bảng Tổng hợp"**, vì bấm "Chạy lại" ở đây trước đây vô
+tình gọi thẳng cò chuyển tiếp, tức là **xác nhận rớt thay** mà PĐD không biết
+(bỏ qua hộp hỏi lại có sẵn trên bảng Tổng hợp, mục 5.3).
 
-Cột "đã vào đợt nào" là **chỗ kiểm tra máy có làm đúng việc không**. Theo luật
-6.1 thì nó phải luôn có đợt; ô trống nghĩa là chuyển tiếp hỏng ở đâu đó, phải xem
-ngay chứ không phải chờ khoa xử lý.
+Cột "đã vào đợt nào" là **chỗ kiểm tra máy có làm đúng việc không**, cho những
+mục ĐÃ được xác nhận rớt. Theo luật 6.1 thì nó phải luôn có đợt; ô trống ở một
+mục đã xác nhận rớt nghĩa là chuyển tiếp hỏng thật, phải xem ngay chứ không
+phải chờ khoa xử lý.
 
 PĐD thao tác thay khoa được, có audit. Nút "Nhắc nhở" sinh template tin nhắn để
 copy sang Teams — web không tự gửi gì.
@@ -795,6 +835,16 @@ PĐD bấm **Chốt toàn bộ dữ liệu trình ký**. Khi chốt: khóa toàn
 revision chính thức · cho phép xuất Excel chính thức · Excel khoa và Excel tổng
 hợp dùng **cùng revision** · số lượng trên Excel cuối là **số trúng đã phân bổ
 sau thầu** · template PĐD giữ nguyên.
+
+🆕 **QĐ 28/09/2026 — chốt trình ký toàn bộ nay là MỘT giao dịch.** Không đổi
+cổng nào ở trên. Trước đây nút này chốt **từng bảng khoa còn thiếu** bằng các
+lời gọi RPC riêng (mỗi lời gọi là một giao dịch DB của chính nó), rồi mới gọi
+chốt gói — nếu bước cuối hoặc một khoa giữa chừng bị từ chối, các khoa đã chốt
+ở những giao dịch trước đó **không tự lùi lại**, gói kẹt nửa chốt và PĐD phải
+gỡ tay từng khoa. Nay web gọi đúng một hàm server,
+`chot_trinh_ky_toan_bo_nguyen_khoi_v3(dot_goi_id)`: hàm này tự chốt mọi bảng
+khoa còn thiếu **và** chốt gói **trong cùng một giao dịch** — bị từ chối ở bất
+kỳ đâu thì huỷ hết, không còn nửa chốt. Patch `patch_zzzzzzzk`.
 
 **Mã hàng trở lại danh sách của khoa cho kỳ đề xuất sau.**
 
@@ -895,6 +945,16 @@ mục tổng hợp thì vẫn phải mặc định lưu về danh mục đề xu
 Khoa **chỉ xem** phần kết quả thầu, không sửa — đổ số rớt sang mã tương đương là
 việc của PĐD (QĐ D1, D3).
 
+🆕 **QĐ 28/09/2026 — Q06.** "Một giá trị chung toàn viện" ở dòng cột CHỮ trên
+chỉ đúng **trong phạm vi một đợt** (`danh_muc_tong_hop_o` đã neo theo đợt, xem
+mục 13.1). Trước 28/09, khi đợt đang xem **chưa có** giá trị PĐD sửa riêng, màn
+lịch sử ô lại lấy tạm giá trị PĐD sửa ở **đợt khác cùng gói con** — không có
+quyết định nào cho phép việc này, và gây lẫn dữ liệu giữa các đợt (ví dụ gói
+con "Tháng 9" có hai đợt bổ sung #203, #206 trong cùng năm). Nay mỗi đợt chỉ
+đọc đúng giá trị của chính nó; đợt chưa ai sửa thì đọc nền HIS gốc, không mượn
+từ đợt khác. Cơ chế kế thừa **qua kỳ** (đợt trước → đợt sau) vẫn là việc riêng
+của `danh_muc_chot_ky` ở mục 13.1, không đổi.
+
 ### 13.1 🆕 Giá trị PĐD chốt trở thành DANH MỤC CHUẨN của mã hàng (27/08/2026)
 
 Trước 27/08 mọi thứ PĐD gõ chỉ sống trong `danh_muc_tong_hop_o`, mà bảng đó neo
@@ -944,6 +1004,33 @@ vẫn thấy ngay mọi thứ PĐD sửa, bằng đường cũ ở mục 13.
 
 Patch: `backend/sql/patch_zzzzzzd_danh_muc_chuan_theo_ky.sql`.
 Kiểm lại: `backend/scripts/kiem_danh_muc_chuan_theo_ky.py` (giao dịch tự huỷ).
+
+### 🆕 "Năm đề xuất" của một ô = năm của ĐỢT (QĐ 28/09/2026 — Q08)
+
+`danh_muc_tong_hop_o` (ô PĐD đang sửa, mục 13) và `danh_muc_khoa_cot_cau_hinh`
+(cấu hình cột phía PĐD và phía khoa — ẩn cột, khoá cột) đều mang thêm một cột
+năm để phân biệt "Tên TM tham khảo **2026-2027**" với "…**2027-2028**" của kỳ
+sau. Trước 28/09, năm này lấy từ **hằng số cứng "năm hiện tại + 1"**
+(`NAM_DE_XUAT`) — lệch với năm thật của đợt đang xem bất cứ khi nào đợt không
+rơi đúng vào năm đó (đo thật 28/09: đợt 18 tháng mang năm 2028, đợt bổ sung
+T9/2026 mang năm 2026, các đợt bổ sung khác mang 2027, còn hằng số luôn ra
+2027). Hậu quả nếu không sửa: **sang năm mới, hằng số đổi giá trị**, và mọi ô
+PĐD đã sửa trong năm cũ **biến mất khỏi cả hai màn** vì bị lọc nhầm năm; ô sửa
+ở #202 (2028) hay #203 (2026) thậm chí **không bao giờ được đọc** khi chốt
+trình ký (hàm chốt lọc `o.nam_de_xuat = dot_de_xuat.nam`).
+
+**QĐ:** năm của một ô luôn là **năm của đợt** (`dot_de_xuat.nam`), không phải
+hằng số. Áp cho cả hai phía, đổi **cùng lúc** vì trigger chặn ghi so năm giữa
+hai bảng:
+
+| Phía | Bảng | Ghi chú |
+|---|---|---|
+| PĐD | `danh_muc_tong_hop_o`, `danh_muc_tong_hop_khoa` (cột khoá) | Đọc/ghi/khoá cột, xem lịch sử, xuất Excel đều theo năm đợt |
+| Khoa | `danh_muc_khoa_o` (qua `luu_o_danh_muc_khoa`), `danh_muc_khoa_cot_cau_hinh` | Đổi cùng lúc với phía PĐD |
+
+Phạm vi chỉ gồm các bảng trên — **chưa áp** cho `proposals.nam_de_xuat` (vẫn
+dùng hằng số cũ, (c) chưa xác nhận có cần đổi theo hay không, xem
+`05_TRANG_THAI_VA_VIEC_TIEP_THEO.md` mục 7).
 
 ---
 

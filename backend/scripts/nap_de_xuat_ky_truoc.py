@@ -8,14 +8,14 @@ Bảng dựng ở `sql/patch_zzzzzzzg_de_xuat_ky_truoc.sql`. Chỉ để XEM tr�
     set -a && . ./.env.local && set +a
 
     # Xem trước (mặc định) — đọc file + đọc DB để đối chiếu, KHÔNG ghi:
-    .venv/bin/python scripts/nap_de_xuat_ky_truoc.py ../de_xuat.xlsx --kiem
+    .venv/bin/python scripts/nap_de_xuat_ky_truoc.py ../database/de_xuat.xlsx --kiem
 
     # Ghi thật (upsert theo khoa + mã hàng + số QĐ, một transaction):
-    .venv/bin/python scripts/nap_de_xuat_ky_truoc.py ../de_xuat.xlsx \\
+    .venv/bin/python scripts/nap_de_xuat_ky_truoc.py ../database/de_xuat.xlsx \\
         --that-su-nap --xac-nhan-staging
 
     # Chỉ làm sạch file, không mở kết nối nào (cần danh sách khoa từ CSV):
-    .venv/bin/python scripts/nap_de_xuat_ky_truoc.py ../de_xuat.xlsx \\
+    .venv/bin/python scripts/nap_de_xuat_ky_truoc.py ../database/de_xuat.xlsx \\
         --khong-db --danh-sach-khoa <file.csv có cột ten_khoa>
 
 Làm sạch:

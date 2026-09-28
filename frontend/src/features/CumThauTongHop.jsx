@@ -44,17 +44,32 @@ export function useDuLieuThau(dotGoiId) {
   const [dangTai, setDangTai] = useState(false);
   const [coPhienQ, setCoPhienQ] = useState(false);
 
+  // P2 (KĐ lượt 4, 28/09/2026) — mẫu L13 (BanDieuHanhPdd.jsx, DanhMucDeXuatKhoa.jsx).
+  // Đổi đợt/gói con NHANH (đổi hash liên tiếp) có thể khiến lượt tải CŨ trả về
+  // SAU lượt MỚI, ghi đè coPhienQ/giaiDoan/... đúng của đợt mới bằng dữ liệu
+  // của đợt trước. Đếm lượt bằng ref; sau MỖI await, nếu không còn là lượt mới
+  // nhất thì bỏ ngang, không setState gì thêm. Không đổi thứ tự truy vấn.
+  const luotTai = useRef(0);
+
   const tai = useCallback(async () => {
+    const luot = ++luotTai.current;
     if (!dotGoiId) {
       setKetQua(new Map()); setGiaiDoan([]); setChuaXuLy(new Map());
       setDaChuyen(new Map()); setDaChuyenTiep(new Map()); setPhanBo(new Map()); setDaNhan(new Map()); setCoPhienQ(false);
+      setDangTai(false);
       return;
     }
     setDangTai(true);
+    // P2 — bỏ NGAY dữ liệu của đợt/gói con CŨ khi bắt đầu lượt tải mới: không
+    // làm vậy thì trong lúc chờ, thanh giai đoạn hiện coPhienQ/giaiDoan còn lại
+    // của đợt TRƯỚC, một dạng khác của cùng lỗi P2 (nhấp nháy sai nghĩa).
+    setKetQua(new Map()); setGiaiDoan([]); setChuaXuLy(new Map());
+    setDaChuyen(new Map()); setDaChuyenTiep(new Map()); setPhanBo(new Map()); setDaNhan(new Map()); setCoPhienQ(false);
+
     const { data: phien } = await supabase.from("chot_q_phien")
       .select("id").eq("dot_goi_id", dotGoiId).eq("hieu_luc", true).maybeSingle();
+    if (luot !== luotTai.current) return; // P2/L13: có lượt mới hơn, bỏ kết quả cũ
     const phienId = phien?.id || null;
-    setCoPhienQ(!!phienId);
 
     // Cụm cột thầu chỉ hiện MỘT con số cho mỗi mã hàng, nên đọc bản đã gộp ở
     // server. Bản cũ tải ba nguồn cấp (mã × khoa): ở quy mô 250 mã × 60 khoa đó
@@ -88,11 +103,19 @@ export function useDuLieuThau(dotGoiId) {
           .eq("phien_q_id", phienId).range(f, t), { order: "ma_hang" })
         : Promise.resolve({ data: [] }),
     ]);
+    if (luot !== luotTai.current) return; // P2/L13: có lượt mới hơn, bỏ kết quả cũ
 
     setDaNhan(new Map((nhan.data || []).map((r) => [r.ma_hang, r])));
     setPhanBo(new Map((pb.data || []).map((r) => [r.ma_hang, r])));
     setGiaiDoan(gd.data || []);
     setKetQua(new Map((kq.data || []).map((r) => [r.ma_hang, r])));
+    // P2 (KĐ lượt 4) — đặt `coPhienQ` CÙNG LÚC với `giaiDoan` ở đây, sau khi cả
+    // hai đã có dữ liệu THẬT của đúng đợt này. Bản trước đặt `setCoPhienQ(true)`
+    // ngay sau truy vấn `chot_q_phien`, trong khi `giaiDoan` còn `[]` (lượt tải
+    // đầu) hoặc còn là mảng của đợt cũ (vừa đổi hash) — làm ThanhGiaiDoanThau
+    // hiện liên tiếp "Chưa chốt số đi thầu." rồi dải đỏ "…HỎNG" trước khi tới
+    // đúng thanh giai đoạn. Xem KIEM_DINH_DOC_LAP_LUOT4.md mục P2.
+    setCoPhienQ(!!phienId);
 
     const mChua = new Map(); const mCuon = new Map(); const mChuyen = new Map();
     (rot.data || []).forEach((r) => {
@@ -137,7 +160,7 @@ export function useDuLieuThau(dotGoiId) {
 
 /** Thanh giai đoạn + nút xác nhận rớt, đặt trên thanh công cụ của Tổng hợp. */
 export function ThanhGiaiDoanThau({
-  dotGoiId, giaiDoan, giaiDoanDangChay, tongChuaXuLy, coPhienQ, soChuaChia = 0,
+  dotGoiId, giaiDoan, giaiDoanDangChay, tongChuaXuLy, coPhienQ, dangTai = false, soChuaChia = 0,
   onXong, onLoi, dotIdTrenUrl = null,
 }) {
   const [dangChay, setDangChay] = useState("");
@@ -202,6 +225,19 @@ export function ThanhGiaiDoanThau({
         {dotIdTrenUrl
           ? `Không tìm thấy gói con này trong đợt #${dotIdTrenUrl} — cụm cột đấu thầu chưa có dữ liệu.`
           : "Chưa chọn đợt — cụm cột đấu thầu chỉ hiện khi mở bảng theo một đợt cụ thể."}
+      </div>
+    );
+  }
+  // P2 (KĐ lượt 4, 28/09/2026) — trong lúc `useDuLieuThau` đang tải, `coPhienQ`
+  // và `giaiDoan` chưa chắc đã khớp nhau (một cái có thể còn là mặc định hoặc
+  // còn là của đợt cũ trong nhịp đổi hash). Hai câu "Chưa chốt số đi thầu." và
+  // dải đỏ "HỎNG" bên dưới CHỈ đúng nghĩa khi đã tải xong; hiện chúng trong lúc
+  // đang tải là nhấp nháy sai — báo "hỏng" cho một đợt vốn không hề hỏng. Chặn
+  // bằng `dangTai` TRƯỚC hai điều kiện đó, không đổi thứ tự hay điều kiện gốc.
+  if (dangTai) {
+    return (
+      <div className="rounded bg-slate-100 px-2.5 py-1 text-[11px] text-slate-500">
+        Đang tải trạng thái thầu…
       </div>
     );
   }
@@ -881,8 +917,12 @@ export function ChotTrinhKyTongHop({ dotGoiId, onXong, trongThanhCongCu = false,
   const [loi, setLoi] = useState("");
   const [moLai, setMoLai] = useState({ khoa: "", lyDo: "" });
 
+  // P5 (KĐ lượt 4, 28/09/2026): trả về `phien` VỪA đọc được (hoặc `null` nếu
+  // chưa chốt / chưa biết), để `chotHet` phân biệt được "đã chốt xong nhưng
+  // báo lỗi vì mất mạng" với "thật sự chưa chốt" mà không phải đợi render lại
+  // rồi đọc state cũ (state cập nhật không đồng bộ ngay sau `await doc()`).
   const doc = useCallback(async () => {
-    if (!dotGoiId) return;
+    if (!dotGoiId) return null;
     setTai(true); setLoi("");
     // N1 28/09/2026 (vòng 4) từng thêm truy vấn `chot_q_phien` ở đây để kiểm
     // `fn_dong_vuot_quyen_v3` trước vòng lặp chốt khoa — bỏ theo patch vòng 5
@@ -900,12 +940,14 @@ export function ChotTrinhKyTongHop({ dotGoiId, onXong, trongThanhCongCu = false,
     if (thieu.error) {
       // Không đọc được cổng ⇒ coi như CHƯA BIẾT ⇒ khoá nút. Đoán "chắc là đủ"
       // ở đây là cách nhanh nhất để chốt một bản trình ký thiếu khoa.
-      setKhoaThieu(null); setLoi(dichLoi(thieu.error)); return;
+      setKhoaThieu(null); setLoi(dichLoi(thieu.error)); return null;
     }
     setKhoaThieu((thieu.data || []).map((r) => r.khoa));
     setDaChot([...new Set((chot.data || []).map((r) => r.khoa))].sort((a, b) => a.localeCompare(b, "vi")));
     setDsKhoa([...new Set((gui.data || []).map((r) => r.khoa))].sort((a, b) => a.localeCompare(b, "vi")));
-    setPhien(ph.data || null);
+    const phienMoi = ph.data || null;
+    setPhien(phienMoi);
+    return phienMoi;
   }, [dotGoiId]);
 
   // Đọc CẢ KHI ĐANG ĐÓNG, để nhãn nút nói đúng trạng thái. Bản trước chỉ đọc
@@ -964,9 +1006,20 @@ export function ChotTrinhKyTongHop({ dotGoiId, onXong, trongThanhCongCu = false,
     setTienDo("");
     setDangChay("");
     if (error) {
-      setLoi(laLoiChuaCoHam(error)
-        ? "Hệ thống chưa được cập nhật đủ (mã patch_zzzzzzzk) — báo Phòng Điều dưỡng."
-        : dichLoi(error));
+      // P5 (KĐ lượt 4, 28/09/2026): đọc lại trạng thái chốt TRƯỚC khi quyết
+      // định có báo lỗi hay không. Nếu lỗi xảy ra SAU khi server đã chốt xong
+      // (vd. mất mạng lúc nhận phản hồi), `doc()` sẽ thấy phiên đã hiệu lực và
+      // màn tự chuyển sang trạng thái "Đã chốt trình ký" — không được báo lỗi
+      // giả trong khi thực tế đã chốt xong (trước đây phải tự tải lại trang
+      // mới thấy đúng). Chỉ báo lỗi khi đọc lại vẫn CHƯA thấy phiên chốt.
+      const phienSauKhiLoi = await doc();
+      if (!phienSauKhiLoi) {
+        // Câu cũ ghi "báo Phòng Điều dưỡng" — vô nghĩa vì chính PĐD là người
+        // đang bấm nút này. Đổi thành đúng vai cần báo khi thiếu patch.
+        setLoi(laLoiChuaCoHam(error)
+          ? "Hệ thống chưa được cập nhật đủ (mã patch_zzzzzzzk) — báo người quản trị hệ thống."
+          : dichLoi(error));
+      }
       return;
     }
     await doc();

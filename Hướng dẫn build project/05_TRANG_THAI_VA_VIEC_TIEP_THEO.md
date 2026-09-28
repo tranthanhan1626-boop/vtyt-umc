@@ -1,7 +1,24 @@
 # Trạng thái hiện tại và việc tiếp theo
 
-Cập nhật **24/08/2026**. Nhánh `phase-a-luong-de-xuat`.
+Cập nhật **24/08/2026** (thân file) · khối đầu và mục 7 cập nhật **28/09/2026**
+(đợt "test toàn bộ" — xem khối ngay dưới, mới hơn khối 18/09). Nhánh
+`phase-a-luong-de-xuat`.
 
+> 🆕 **28/09/2026 (cuối ngày) — ĐỢT "TEST TOÀN BỘ" KẾT THÚC.** Tóm tắt cách làm
+> và bảng lỗi đã vá: `07_NHAT_KY_THAY_DOI.md` khối đầu. Chín quyết định Q01–Q09
+> đã ghi vào `01_NGHIEP_VU_HIEN_HANH.md` (phần bị đảo ghi thêm vào
+> `06_DUNG_LAM_LAI.md`).
+>
+> ```text
+> commit ecdf408 (vòng 3–5) · vòng 6 (P1–P8, Q09) đã vá + bấm lại ĐẠT (SO_CHUNG mục 25)
+>   nhưng CHƯA COMMIT (còn trong working tree)
+> bundle local index-BlnlMBxw.js (build sau vòng 6) · pytest 401 · test:formula ✓
+> 0 lỗi mức NẶNG hoặc VỪA còn mở, theo 4 lượt kiểm định độc lập (Opus, không
+>   tham gia vá) đã xác nhận từng vòng 1–5. Vòng 6 mới có bấm lại của manager,
+>   CHƯA qua một lượt kiểm định độc lập riêng (khác với vòng 1–5).
+> ```
+>
+> Việc còn lại sau đợt: xem mục 7 ngay dưới đây (đã cập nhật 28/09).
 
 > 🆕 **18/09/2026 — GÓI GIAO DIỆN 5 ĐỢT + 17 QUYẾT ĐỊNH (dự án không còn mốc thời gian).**
 >
@@ -32,7 +49,9 @@ Cập nhật **24/08/2026**. Nhánh `phase-a-luong-de-xuat`.
 > ✅ **19/09/2026 — đã chạy hết trên DB:** `patch_zzzzzzzf` (bảng `chatbot_luot`) · `patch_zzzzzzzg`
 > + nạp 5.082 dòng `de_xuat_ky_truoc` (44 khoa, 2.165 mã) · `patch_zzzzzzzh` (is_current theo ĐỢT —
 > kiểm bằng gửi thật 3 mã rớt RHM ở #201: dòng #200 giữ nguyên) · **dọn sạch đợt test #200/#201**
-> (558 dòng, sao lưu `backend/sao_luu/staging/2026-09-19/`). DB hiện **0 đợt**, dữ liệu nền nguyên vẹn.
+> (558 dòng, sao lưu `backend/sao_luu/staging/2026-09-19/`). DB lúc đó **0 đợt**, dữ liệu nền nguyên vẹn.
+> ⚠️ **28/09: câu "0 đợt" không còn đúng** — ngay sáng 19/09 (08:41) `tao_du_lieu_test_day_du.py`
+> dựng lại bộ test #202–#206. Hiện trạng thật: mục 7.
 > Còn lại: nạp HIS T7–T8/2026 (chưa có file) · PĐD mở đợt thật khi sẵn sàng.
 > 🔴 **ĐỔI HƯỚNG 21/08/2026 — đọc trước mọi thứ khác trong file này.**
 >
@@ -551,6 +570,28 @@ Hai cổng chặn (`patch_zzzzzn` + `patch_zzzzzs`) giữ nguyên làm **lưới
 
 ## 7. Trạng thái staging ngay lúc này
 
+> **Đọc thật 28/09/2026** (chỉ đọc, không ghi):
+>
+> ```text
+> ── NỀN
+> users 8 · vat_tu 3.327 · de_xuat_ky_truoc 5.082 · HIS usage_history_current mới tới T6/2026
+>
+> ── NGHIỆP VỤ (toàn bộ là dữ liệu TEST, dựng 19/09 08:41 bởi tao_du_lieu_test_day_du.py)
+> dot_de_xuat 5   #202 "Gói 18 tháng 1/2028 - 6/2029"  ← tên đã bỏ tiền tố "TEST ĐẦY ĐỦ —"
+>                 #203–#206 bổ sung T9/2026 · T1/2027 · T5/2027 · T9/2027 (mở)
+> dot_goi 9 · proposals 2.486 (50 khoa; 2.485 ở #202 + 1 của dvsd1 ở #205)
+> chot_q_phien 5 (cả 5 gói con #202 đã chốt Q) · danh_muc_khoa_chot 114
+> chuyen_tiep_rot_v3 15 · chuyen_so_rot_v3 0 · gio_nhap 17
+> ```
+>
+> **Bản đang chạy:** commit `ff894bd` (19/09) · bundle local `index-DEYJr1HA.js` ·
+> Netlify còn ở `d357019` (`index-C5W2inys.js`), chậm 3 commit.
+> **Sao lưu:** chạy lại 28/09 (`sao_luu.py --staging`, 10.643 dòng / 48 bảng).
+> Chủ dự án chọn **test trên chính bộ #202** — lộ trình ở `08_LO_TRINH_TEST.md`.
+>
+> Khối dưới (26/08) là lịch sử.
+
+
 > **Đo thật cuối ngày 26/08/2026.** Chủ dự án đã tự chạy hết vòng và báo
 > **"tôi test ổn"**.
 
@@ -594,11 +635,18 @@ khoa gửi đề xuất → xác nhận lần 1 → PĐD tổng hợp → chốt
 | | Việc | Trạng thái |
 |---|---|---|
 | 1 | Chạy `backend/sql/patch_zzzzzz_go_tay_xoa_du_lieu.sql` + đổi `BAT_XOA_DU_LIEU_TEST` thành chỉ đọc cờ `VITE_ENABLE_TEST_DELETE` | **viết sẵn, CHỜ LỆNH chủ dự án** — còn đang giai đoạn test |
-| 2 | Nạp HIS **T7 và T8/2026** (đang mới tới T6) | chưa làm — gợi ý P50–P75 đang dựa trên dữ liệu cũ 3 tháng |
-| 3 | Dọn dữ liệu test, mở đợt thật cho gói 18 tháng 2027-2028 | chưa làm |
+| 2 | Nạp HIS **T7 và T8/2026** (đang mới tới T6) | chưa làm — **chưa có file** (kiểm lại cuối đợt test 28/09: DB vẫn tới T6/2026) |
+| 3 | Dọn dữ liệu test, mở đợt thật | **còn trên DB.** Đợt test #202–#206 chưa dọn — dọn khi hết nhu cầu test, xem `08_LO_TRINH_TEST.md`. Mốc "gói 2027-2028" đã bỏ 18/09 |
 | 4 | 62 khoa đăng ký, PĐD gán khoa ở màn `QuanLyNguoiDung` | chưa làm |
 | 5 | Đặt luật cắt cho `usage_history_changelog` (48 MB, chưa có luật) | chưa làm |
-| 6 | Giảm số cú bấm trên đường khoa gõ đề xuất — **việc code duy nhất đáng làm** | chưa bắt đầu |
+| 6 | Giảm số cú bấm trên đường khoa gõ đề xuất — **việc code duy nhất đáng làm** | Q02 (nhóm 1 mã hàng tự điền) đã làm một phần trong đợt test 28/09; phần còn lại chưa bắt đầu |
+| 7 | **Q07 — Excel trình ký không có cột mã hàng.** `v_danh_muc_chuan.his_1599` rỗng **3.327/3.327** dòng (đọc DB 28/09); cột "HIS QĐ1599 (2025)" trên Excel chính thức trống mọi dòng | **QĐ chủ dự án: ĐỂ SAU.** Cần hỏi: bản trình ký cần cột mã hàng nào, HIS QĐ1599 lấy nguồn nào, có cần nạp lại |
+| 8 | **Chữ sai trong hàm DB** (kiểm định #15): `xac_nhan_rot_v3` còn ghi 'bấm "Gửi giỏ"' (nút thật là "Gửi đề xuất"); thông báo có "Khoa Khoa …" lặp chữ; "đợt tháng 9 **tháng 9/2026**" lặp tháng | chưa vá — cần một patch SQL nhỏ, chủ dự án gõ lệnh |
+| 9 | **M8 — kẽ hở nhỏ của Q04.** `xac_nhan_rot_v3` không cập nhật `created_at` khi xác nhận rớt LẦN HAI cho cùng mã; nếu khoa đã gửi trước đó, màn vẫn báo "Đã gửi…" dù phần rớt thêm còn nằm trong giỏ nháp | ghi nhận, để sau — nếu vá thì cần thêm cột thời điểm cập nhật (SQL) |
+| 10 | Ghi nhận, không vá: **P4** (đổi đợt trong cùng tab còn một nhịp request mang năm cũ, vô hại vì đã có chốt chặn lượt tải) · **P8** (`BanDieuHanhPdd.jsx` còn code chết `TabKetQua` chốt theo đường rời cũ — không tab nào mở tới, nhưng ai bật lại sẽ làm sống lại lỗi kẹt nửa chốt) | không có việc phải làm, chỉ cảnh báo cho người sau |
+| 11 | **pptx** `huong-dan-su-dung/HuongDan_SuDung_VTYT.pptx` lệch với QĐ mới. Theo `KIEM_DINH_DOC_LAP_LUOT3.md`/`LUOT4.md`: trang **18** (Q02, tự điền 1 mã hàng) · **24** (nhãn rớt một phần trên Danh mục khoa, sau khi vá P1) · **25, 46** (câu "gợi ý bằng số đã rớt" sai với D11) · **26** (màn ③ Mã rớt đã đổi nhiều: "Rớt từ…", "Đã gửi ở đợt…", câu có điều kiện) · **43** (Theo dõi chuyển tiếp — dàn ý ghi nút "Chạy lại" *chỉ hiện ở dòng hỏng hoặc còn nợ* (`.scratch/huong-dan/DAN_Y.md:607`); Q09 bỏ trường hợp "còn nợ" → phải sửa; manager đối chiếu 28/09, a). Không trang nào có màn "Tổng hợp kết quả thầu" (Q01, Q05) — muốn đủ thì thêm trang mới | chưa sửa |
+| 12 | Netlify chưa đẩy | vẫn đứng ở `d357019`, chậm cả `b164c95` lẫn `ecdf408` và vòng 6 |
+| 13 | Dữ liệu test #202–#206 vẫn còn trên DB staging (staging = production) | chờ chủ dự án quyết thời điểm dọn |
 
 Tài khoản test — **mật khẩu tất cả là `111111`**:
 

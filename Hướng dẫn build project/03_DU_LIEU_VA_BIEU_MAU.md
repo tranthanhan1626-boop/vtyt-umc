@@ -106,13 +106,13 @@ Chi tiết khảo sát + schema đề xuất + **17 câu hỏi cần chủ dự 
 
 | | |
 |---|---|
-| Nguồn | `de_xuat.xlsx` ở gốc repo — 4 cột `Đơn vị` · `Quyết định` · `Mã hàng` · `Số lượng đề xuất`, 5.820 dòng, 9 số QĐ |
+| Nguồn | `database/de_xuat.xlsx` (dời từ gốc repo 28/09/2026) — 4 cột `Đơn vị` · `Quyết định` · `Mã hàng` · `Số lượng đề xuất`, 5.820 dòng, 9 số QĐ |
 | Nghĩa | Chủ dự án xác nhận 18/09: **số khoa gõ ban đầu** của kỳ thầu trước, cho **18 tháng**, theo **ĐVT của mã hàng** |
 | Bảng | `de_xuat_ky_truoc` (khoa, ma_hang, so_quyet_dinh, so_luong, nguon, nap_luc), unique (khoa, ma_hang, so_quyet_dinh) |
 | View | `v_de_xuat_ky_truoc` — gộp theo (khoa, ma_hang): `tong_so_luong` + `chi_tiet` jsonb `[{qd, so}]` |
 | Quyền | PĐD/admin đọc hết; khoa chỉ đọc dòng khoa mình. Web không ghi |
 | Patch | `backend/sql/patch_zzzzzzzg_de_xuat_ky_truoc.sql` |
-| Nạp | `backend/scripts/nap_de_xuat_ky_truoc.py ../de_xuat.xlsx --kiem` (xem trước, không ghi) → `--that-su-nap --xac-nhan-staging` (upsert, một transaction) |
+| Nạp | `backend/scripts/nap_de_xuat_ky_truoc.py ../database/de_xuat.xlsx --kiem` (xem trước, không ghi) → `--that-su-nap --xac-nhan-staging` (upsert, một transaction) |
 
 Làm sạch khi nạp: số QĐ đổi chữ Ð (U+00D0) thành Đ (U+0110); mã hàng ép text
 và cắt `\n`; ô số `'5\xa0'` → 5; số lẻ giữ nguyên. Tên khoa khớp đúng DB thì

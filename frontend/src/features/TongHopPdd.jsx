@@ -1283,6 +1283,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
               giaiDoanDangChay={thau.giaiDoanDangChay}
               tongChuaXuLy={thau.tongChuaXuLy}
               coPhienQ={thau.coPhienQ}
+              dangTai={thau.dangTai}
               soChuaChia={thau.soChuaChia}
               dotIdTrenUrl={dotId}
               // L16 28/09/2026 — đây là lỗi THAO TÁC (đổi giai đoạn thầu / xác
@@ -1567,11 +1568,13 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                         ) : (
                           <span>
                             {formatCell(value, c.kieu)}
+                            {/* P6p (KĐ lượt 4, 28/09/2026) — "số gốc" chỉ đúng cho ô
+                                SỐ; ô chữ phải ghi "giá trị gốc". */}
                             {daSuaDe && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); khoiPhucOGoc(r.ma_hang, c.key); }}
                                 className="ml-1 text-[11px] font-semibold text-amber-700 hover:text-amber-900"
-                                title={`Đã sửa đè (số gốc: ${chuThuanCuaO(giaTriGoc(r.ma_hang, c.key), c.kieu) || "trống"}) — bấm để bỏ sửa đè, trả về số gốc`}>
+                                title={`Đã sửa đè (${c.kieu === "num" ? "số gốc" : "giá trị gốc"}: ${chuThuanCuaO(giaTriGoc(r.ma_hang, c.key), c.kieu) || "trống"}) — bấm để bỏ sửa đè, trả về ${c.kieu === "num" ? "số gốc" : "giá trị gốc"}`}>
                                 ✎
                               </button>
                             )}
@@ -1862,7 +1865,13 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                         đọc thẳng từ `nguoi_sua`, không gán cứng. */}
                     <div className="text-slate-400">{new Date(a.thoi_gian).toLocaleString("vi-VN")} · {a.nguoi_sua}</div>
                     <div className="mt-0.5">
-                      <span className="text-slate-400 line-through">{a.gia_tri_cu ?? "(trống)"}</span>
+                      {/* P6/P6p (kiểm định độc lập lượt 3 và 4) — `gia_tri_cu`
+                          rỗng/null nghĩa là Ô ĐANG MANG GIÁ TRỊ GỐC (chưa từng bị
+                          sửa đè trước lần sửa này), KHÔNG phải "trống" theo nghĩa
+                          xoá trắng. Cùng loại sửa với `gia_tri_moi` ở M9 bên dưới. */}
+                      <span className="text-slate-400 line-through">
+                        {a.gia_tri_cu == null || a.gia_tri_cu === "" ? "(giá trị gốc)" : a.gia_tri_cu}
+                      </span>
                       {" → "}
                       {/* M9 — `gia_tri_moi` rỗng/null là do "Khôi phục ô" (trả
                           về giá trị gốc), KHÔNG phải xoá trắng — đổi chữ cho

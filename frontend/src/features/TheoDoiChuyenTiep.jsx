@@ -17,7 +17,20 @@ import { dichLoi } from "../lib/dichLoi";
  * Luật đọc quan trọng nhất — chép nguyên từ QĐ B8:
  *   Ô TRỐNG ở cột "Đợt bổ sung" = CHUYỂN TIẾP HỎNG, không phải đang chờ khoa.
  * Vì chuyển tiếp là việc của hệ, không phải việc của người. Trống nghĩa là hệ
- * chưa làm được, phải bấm lại "Xác nhận rớt".
+ * chưa làm được, phải bấm lại "Chạy lại".
+ *
+ * QĐ chủ dự án Q09 (28/09/2026, theo P3 của KIEM_DINH_DOC_LAP_LUOT4.md) —
+ * SỬA lại luật B8: ô trống ở cột "Đợt bổ sung" gộp HAI trạng thái khác hẳn
+ * nhau, và trước bản vá này màn không phân biệt được — dòng nào cũng hiện
+ * "— TRỐNG" đỏ với nút "Chạy lại" (gọi thẳng `xac_nhan_rot_v3`, không hỏi lại,
+ * bỏ qua hộp xác nhận có sẵn ở bảng Tổng hợp):
+ *   - `chuyen_tiep_hong` — ĐÃ xác nhận rớt (đã vào giỏ khoa) nhưng hệ tạo đợt
+ *     bổ sung/đường chuyển tiếp thất bại. Đây mới thật sự là HỎNG, cần "Chạy
+ *     lại" để hệ đẩy lại.
+ *   - `con_no_xu_ly` — CHƯA bấm "Xác nhận rớt" lần nào, không có gì hỏng cả.
+ *     Việc đúng là bấm "Xác nhận rớt" trên bảng Tổng hợp, không phải "Chạy
+ *     lại" ở đây (bấm nhầm là xác nhận rớt luôn mà không qua hộp hỏi lại).
+ * "Chạy lại" nay CHỈ hiện cho dòng `chuyen_tiep_hong`.
  */
 
 const NHAN_TRANG_THAI = {
@@ -134,8 +147,10 @@ export default function TheoDoiChuyenTiep({ profile, dotGoiId = null }) {
       <div className="shrink-0 border-b border-slate-200 bg-white px-4 py-3">
         <h1 className="text-lg font-semibold text-slate-900">Theo dõi chuyển tiếp mã rớt</h1>
         <p className="mt-0.5 text-xs text-slate-500">
-          Đọc theo từng mã hàng rớt. <b className="text-red-700">Ô trống ở cột “Đợt bổ sung”
-          nghĩa là chuyển tiếp hỏng</b> — không phải đang chờ khoa. Bấm “Chạy lại” để hệ đẩy lại.
+          Đọc theo từng mã hàng rớt. <b className="text-red-700">Ô đỏ “— TRỐNG” ở cột “Đợt bổ
+          sung” nghĩa là chuyển tiếp hỏng</b> — bấm <b>“Chạy lại”</b> để hệ đẩy lại. Dòng ghi
+          “Chưa xác nhận rớt” là mã <b>chưa bấm “Xác nhận rớt”</b> lần nào — làm trên{" "}
+          <b>bảng Tổng hợp</b>, không phải lỗi ở đây.
         </p>
 
         <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -233,8 +248,13 @@ export default function TheoDoiChuyenTiep({ profile, dotGoiId = null }) {
                           </span>
                         ) : g.doMa === g.khoa.length ? (
                           <span className="text-slate-400">— (đã đổ sang mã khác)</span>
-                        ) : (
+                        ) : g.hong > 0 ? (
+                          // P3+Q09 (28/09/2026): TRỐNG đỏ chỉ đúng nghĩa cho dòng
+                          // chuyển tiếp HỎNG (đã xác nhận rớt nhưng hệ đẩy đi thất
+                          // bại) — không phải cho dòng chưa xác nhận rớt.
                           <span className="font-semibold text-red-700">— TRỐNG</span>
+                        ) : (
+                          <span className="text-slate-500">Chưa xác nhận rớt — làm trên bảng Tổng hợp</span>
                         )}
                       </td>
                       <td className="px-3 py-2 text-xs font-mono">{g.daSuaSo}/{g.khoa.length}</td>
@@ -245,7 +265,13 @@ export default function TheoDoiChuyenTiep({ profile, dotGoiId = null }) {
                         </span>
                       </td>
                       <td className="px-3 py-2 text-right">
-                        {(g.hong > 0 || g.no > 0) && (
+                        {/* P3+Q09 (28/09/2026, QĐ chủ dự án 28/09): nút này gọi thẳng
+                            xac_nhan_rot_v3, KHÔNG hỏi lại — tức là XÁC NHẬN RỚT, bỏ
+                            qua hộp hỏi lại có sẵn ở bảng Tổng hợp. Chỉ được phép hiện
+                            cho dòng ĐÃ chuyển tiếp hỏng (g.hong > 0); dòng chưa xác
+                            nhận rớt (con_no_xu_ly) không được có đường bấm nào ở đây —
+                            việc đó phải làm trên bảng Tổng hợp, qua đúng hộp hỏi lại. */}
+                        {g.hong > 0 && (
                           <button type="button" disabled={dangChay === g.ma_hang}
                             onClick={() => chayLaiChuyenTiep(g.ma_hang)}
                             className="inline-flex items-center gap-1 rounded border border-red-300 bg-white px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-50 disabled:opacity-50">
@@ -275,7 +301,12 @@ export default function TheoDoiChuyenTiep({ profile, dotGoiId = null }) {
                                 ? <span className="text-sky-700">→ {k.ma_hang_nhan}
                                     {k.khoa_chua_tung_dung && <b className="text-amber-700"> (khoa chưa từng dùng)</b>}
                                   </span>
-                                : <span className="font-semibold text-red-700">— TRỐNG</span>}
+                                // P3+Q09: cùng luật với dòng mã ở trên — TRỐNG đỏ chỉ
+                                // đúng cho chuyen_tiep_hong; con_no_xu_ly là chưa xác
+                                // nhận rớt, không phải hỏng.
+                                : k.trang_thai === "chuyen_tiep_hong"
+                                  ? <span className="font-semibold text-red-700">— TRỐNG</span>
+                                  : <span className="text-slate-500">Chưa xác nhận rớt</span>}
                           </td>
                           <td className="px-3 py-1.5">{k.khoa_da_sua_so ? "có" : "chưa"}</td>
                           <td className="px-3 py-1.5">{k.khoa_da_xac_nhan ? "rồi" : "chưa"}</td>

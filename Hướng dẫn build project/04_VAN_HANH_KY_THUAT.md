@@ -19,16 +19,20 @@ Hai tầng mã:
 
 ## 2. Chạy local
 
-Cách nhanh: bấm `MO_WEB.command`.
+Cách nhanh: bấm đúp `MO_WEB.command` — tự build rồi mở **bản chuẩn** ở
+`http://localhost:4173` (từ 28/09/2026; trước đó nó chạy bản dev cổng 5173 và
+in nhầm mật khẩu `Test123456`). Mật khẩu mọi tài khoản thử `111111`.
 
-Hoặc:
+Hoặc gõ tay, cùng kết quả:
 
 ```bash
 cd "/Users/tranhien/Downloads/9.vtyt/frontend"
-npm run dev
+npm run build && npm run preview
 ```
 
-Mở `http://localhost:5173`. Dừng bằng `Control+C`.
+Dừng bằng `Control+C`. Bản dev (`npm run dev`, cổng 5173) chỉ dùng khi đang sửa
+code cần tự tải lại — **đừng đo tốc độ hay nghiệm thu trên bản dev** (StrictMode
+gọi mọi truy vấn hai lần).
 
 Sau khi đổi `.env`, phải khởi động lại Vite.
 

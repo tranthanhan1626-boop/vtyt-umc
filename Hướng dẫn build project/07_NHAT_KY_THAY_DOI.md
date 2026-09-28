@@ -12,6 +12,99 @@ Ký hiệu: **[C]** còn hiệu lực · **[X]** đã bị đảo, xem `06_DUNG_
 
 ---
 
+## 28/09/2026 — Đợt "test toàn bộ"
+
+> Khối này chép lại từ nháp `.scratch/test-toan-bo/SO_CHUNG.md` (nguồn duy
+> nhất) sau khi đợt kết thúc. Đặt ở đầu file vì là khối mới nhất; phần thân
+> file bên dưới vẫn theo thứ tự thời gian cũ (cũ trước, mới sau).
+
+**Cách làm:** một manager (Opus) đọc code/DB, ra việc, tự xác minh từng phát
+hiện trước khi ghi sổ; nhiều trợ lý (Sonnet) chia cụm bấm Chrome và vá theo
+lệnh. Sau vòng vá đầu, chủ dự án giao thêm **4 lượt kiểm định độc lập** (một
+Opus khác, không tham gia vá) — mỗi lượt đọc code/DB thật + tự bấm Chrome, chỉ
+dừng khi không còn phát hiện mức NẶNG/VỪA. Tổng cộng **6 vòng vá**.
+
+### Lỗi đã vá (mã · màn · lỗi · cách vá · file)
+
+| Mã | Màn | Lỗi | Cách vá | File |
+|---|---|---|---|---|
+| L01 | Tổng hợp #Đề xuất khoa (nút xoá test) | `setPhieuTheoNhom` không tồn tại (state bị bỏ 26/08) → xoá xong vẫn báo "Không xóa được" | Bỏ state chết | `DeXuatTongHop.jsx` |
+| L02 | Tổng hợp kết quả thầu | `r.id` không có trên view → bung một khoa là MỌI dòng vào chế độ sửa + React key trùng | Đổi khoá sang `ket_qua_id` | `TongHopKetQuaThau.jsx` |
+| Q01 | Tổng hợp kết quả thầu | Nút "Nhập kết quả" là nút cụt (mở form gõ, bấm Lưu chỉ báo "màn này chỉ để xem") | **QĐ:** bỏ nút, sửa câu đầu màn | `TongHopKetQuaThau.jsx` |
+| L07 | Tổng hợp kết quả thầu | **NẶNG** — nhãn kết quả (`NHAN_KQ`) không khớp giá trị thật của view (`trung`/`trung_mot_phan`/`khong_trung`) → bung bất kỳ mã nào cũng TRẮNG MÀN | Sửa bảng nhãn khớp đúng 3 giá trị | `TongHopKetQuaThau.jsx` |
+| L05 | Danh mục #202 (lịch sử ô PĐD) | Lọc `like goi_id%` lẫn cả đợt khác cùng gói con | Lọc đúng `goiScopeTongHop` | `DanhMucDeXuatKhoa.jsx` |
+| L08 → L08b | ③ Mã rớt của khoa | Chọn "đợt bổ sung gần nhất" bằng cách đoán (ban đầu đoán sai hướng, vá lại vẫn chỉ đúng nhờ trùng ngày — xem mục "Bài học" dưới) | Đọc thẳng đợt thật từ `chuyen_tiep_rot_v3`, bỏ đoán | `GioRotCuaKhoa.jsx`, `patch_zzzzzzzj` |
+| L09 | Bàn điều hành | `dotGoiIds` rỗng ⇒ không lọc ⇒ hiện "đã xác nhận" cho sai đợt | Lọc đúng theo `dot_goi` đang chọn | `BanDieuHanhPdd.jsx` |
+| Q02 | Đề xuất số lượng (khoa) | Nhóm chỉ có 1 mã hàng vẫn phải gõ lại số ở ô mã hàng | **QĐ:** tự điền ô mã hàng khi nhóm chỉ 1 mã hàng | `Function1.jsx` |
+| L03 | ③ Mã rớt của khoa | `v_gio_rot_v3` không trả `ghi_chu` dù bảng gốc có | Thêm cột vào view | `patch_zzzzzzzi` |
+| L04 | Theo dõi chuyển tiếp | `khoa_da_sua_so` báo "có" cho cả khoa chưa từng gửi (NULL ≠ số ⇒ TRUE) | Sửa điều kiện view | `patch_zzzzzzzi` |
+| L10 | ③ Mã rớt của khoa | View báo "thiếu" giả cho phần đã đổ sang mã tương đương (khoa chưa từng dùng mã nhận) | Viết lại nền view theo `phan_bo_trung_v3` | `patch_zzzzzzzj` |
+| L11 | Theo dõi chuyển tiếp | `khoa_da_xac_nhan` không lọc `hieu_luc` → khoa sửa ô sau khi xác nhận (huỷ xác nhận) vẫn báo "rồi" | Thêm điều kiện `dk.hieu_luc` | `patch_zzzzzzzj` |
+| L12, L13 | Bàn điều hành | Đổi gói con/đợt (kể cả chưa chọn) vẫn giữ 4 ô tóm tắt của lượt xem trước; đổi đợt nhanh có thể đứng ở số sai vì không có chốt chặn "lượt tải" | Xoá state khi chưa chọn; đếm lượt tải, chỉ nhận kết quả lượt mới nhất | `BanDieuHanhPdd.jsx` |
+| Q03 | ③ Mã rớt của khoa | Câu đầu màn và nút cũ ("Đang lập đề xuất bổ sung") theo luật cũ trước 26/08 | **QĐ:** bỏ nút, sửa câu theo luật 26/08 (mã rớt vào GIỎ, không tự thành đề xuất) | `GioRotCuaKhoa.jsx` |
+| Q04 | ③ Mã rớt của khoa | Mục khoa đã gửi ở đợt bổ sung vẫn báo "Chờ xử lý" mãi mãi | **QĐ:** tính là đã xử lý khi khoa gửi đề xuất **sau** khi mã rớt vào giỏ (so `created_at`); hiện "Đã gửi ở đợt …" | `GioRotCuaKhoa.jsx` |
+| L14 | ③ Mã rớt của khoa | Câu đầu màn nói mã rớt "đã vào giỏ, số đúng bằng số đã rớt" — sai với mã đã đổ mã hoặc rớt cộng dồn (D11) | Viết lại câu có điều kiện | `GioRotCuaKhoa.jsx` |
+| Q05 | Tổng hợp kết quả thầu | Trộn mọi đợt/gói con, kể cả gói chưa xong giai đoạn thầu nào cũng gọi "Trúng" | **QĐ:** chỉ hiện gói con đã xong cả 3 giai đoạn, ghi rõ đợt + gói con trên mỗi dòng | `TongHopKetQuaThau.jsx` |
+| L15 | Tổng hợp kết quả thầu | Dòng "Trúng một phần" không hiện lý do rớt | Thêm điều kiện hiển thị | `TongHopKetQuaThau.jsx` |
+| Q06 | Danh mục #202 (lịch sử ô PĐD) | `taiSuaDeCuaPdd` lấy giá trị PĐD sửa ở đợt KHÁC cùng gói con khi đợt này chưa có | **QĐ:** mỗi đợt giữ giá trị riêng, không kế thừa từ đợt khác | `DanhMucDeXuatKhoa.jsx` |
+| L16 | Tổng hợp PĐD | **NẶNG** — lỗi một thao tác ("Chia"/"Mở lại" bị server từ chối) bị đổ vào state lỗi tải trang → cả màn bị thay bằng "Không tải được" | Tách state lỗi thao tác (`loiO`) khỏi lỗi tải trang (`loi`) | `TongHopPdd.jsx` |
+| L17 | Tổng hợp PĐD (Chốt trình ký toàn bộ) | Chốt từng khoa xong mới kiểm khoá 2 → bị chặn thì kẹt nửa chốt | Kiểm khoá 2 trước ở phía giao diện (giảm nhẹ, chưa tận gốc — xem N1/M7) | `CumThauTongHop.jsx` |
+| L18 | Tổng hợp PĐD | Dải lỗi cục bộ của đợt A còn hiện khi đổi sang đợt B | `useEffect` xoá `loiO` khi đổi gói/đợt | `TongHopPdd.jsx` |
+| N1 (tạm) → **M7 (tận gốc)** | Chốt trình ký toàn bộ | **VỪA, xuyên vòng 3–5** — "Chốt trình ký toàn bộ" chốt từng khoa ở các giao dịch DB riêng rồi mới chốt gói; bị từ chối giữa chừng thì các khoa đã chốt không tự lùi lại (kẹt nửa chốt). Vòng 4 vá tạm bằng lưới tự gỡ ở JS (chưa triệt để — xem "Bài học" dưới). Vòng 5 sửa tận gốc | Hàm server mới `chot_trinh_ky_toan_bo_nguyen_khoi_v3`: chốt các khoa còn thiếu **và** chốt gói trong **MỘT giao dịch** — lỗi ở bất kỳ đâu thì hoàn tác hết. Không thêm/đổi cổng nào | `patch_zzzzzzzk`, `CumThauTongHop.jsx` |
+| Q08 | Tổng hợp PĐD, Danh mục khoa | "Năm đề xuất" của một ô lấy hằng số "năm hiện tại + 1", lệch với năm thật của đợt (`dot_de_xuat.nam`) | **QĐ:** khoá theo năm CỦA ĐỢT, cả phía PĐD (`danh_muc_tong_hop_o/_khoa`) lẫn phía khoa (`danh_muc_khoa_o`, `danh_muc_khoa_cot_cau_hinh`), đổi cùng lúc | `TongHopPdd.jsx`, `DanhMucDeXuatKhoa.jsx`, `BanDieuHanhPdd.jsx` |
+| N3–N6, N12 | ③ Mã rớt, Tổng hợp kết quả thầu, Danh mục khoa | Cảnh báo trùng với chính đợt gốc của mã; chữ dính không khoảng trắng; câu "Đã gửi" lặp hai lần; nhãn "sửa được tại đây" không đổi theo trạng thái đã chốt | Sửa từng chỗ, không thêm cổng | `GioRotCuaKhoa.jsx`, `TongHopKetQuaThau.jsx`, `DanhMucDeXuatKhoa.jsx` |
+| N7 | Tổng hợp PĐD | Dải xanh báo thành công không mất khi đổi gói/đợt | Xoá `thongBaoThau` trong cùng `useEffect` | `TongHopPdd.jsx` |
+| M1 | Danh mục khoa | **VỪA** — gõ xong, bấm thêm một lần VÀO TRONG ô rồi rời ô: chữ vừa gõ không được lưu, màn không báo gì, tải lại thì mất (đi qua cả cột số) | Thêm điều kiện `!isEditing` vào `onClick` của ô (giống Tổng hợp PĐD đã có sẵn) | `DanhMucDeXuatKhoa.jsx`, `lib/oKhongDoi.js` |
+| M2–M5 | Bàn điều hành, Tổng hợp PĐD, Danh mục khoa | Sót của Q08: nút dọn dữ liệu vẫn dùng năm cứng; lịch sử ô PĐD lọc thêm năm nên thiếu dòng so với màn khoa; đổi đợt nhanh có nhịp request mang năm cũ; hộp lịch sử không đóng khi đổi đợt | Mỗi mục sửa một chỗ; thêm chốt chặn lượt tải | `BanDieuHanhPdd.jsx`, `TongHopPdd.jsx`, `DanhMucDeXuatKhoa.jsx` |
+| M6 | Danh mục khoa | Server từ chối lưu ô (cột đang khoá) nhưng ô vẫn hiện chữ bị từ chối cho tới khi tải lại | Trả ô về giá trị trước khi sửa khi server từ chối | `DanhMucDeXuatKhoa.jsx` |
+| M9, M10 | Lịch sử ô, ③ Mã rớt | Dòng lịch sử "(trống) → X" đọc nhầm thành "xoá trắng" (thật ra là về giá trị gốc); tên đợt bị lặp "(T…)" | Đổi chữ "(giá trị gốc) → X"; bỏ phần lặp | `DanhMucDeXuatKhoa.jsx`, `TongHopPdd.jsx`, `GioRotCuaKhoa.jsx` |
+| P1 | Danh mục khoa | **VỪA, có từ trước, không do đợt này** — mã trúng một phần không bao giờ được gắn nhãn rớt (lọc `.eq(ket_qua,"khong_trung")` thiếu `trung_mot_phan`) | Đổi thành `.in(["khong_trung","trung_mot_phan"])` | `DanhMucDeXuatKhoa.jsx` |
+| P2 | Tổng hợp PĐD | Mỗi lần mở bảng của gói đã chốt Q: nhấp nháy sai 2 câu ("Chưa chốt số" rồi dải đỏ "hỏng") trước khi tới câu đúng, vì `coPhienQ` có trước `giaiDoan` | Đặt `coPhienQ` cùng lúc với `giaiDoan`; truyền `dangTai` cho thanh giai đoạn | `CumThauTongHop.jsx` |
+| P3 + Q09 | Theo dõi chuyển tiếp | Dòng CHƯA xác nhận rớt bị gộp chung với dòng chuyển tiếp thật sự HỎNG: cùng chữ "— TRỐNG"/"hỏng", cùng nút "Chạy lại" — mà nút này với dòng chưa xác nhận sẽ **âm thầm xác nhận rớt luôn** | **QĐ Q09:** nút "Chạy lại" chỉ còn cho dòng thật sự hỏng; dòng chưa xác nhận rớt hiện "Chưa xác nhận rớt — làm trên bảng Tổng hợp", không có nút | `TheoDoiChuyenTiep.jsx` |
+| P5 | Tổng hợp PĐD | Câu báo thiếu hàm server nói "báo Phòng Điều dưỡng" ngay với người PĐD đang bấm; nhánh lỗi không tải lại nên có thể báo lỗi dù đã chốt xong | Sửa câu; gọi lại `doc()` ở nhánh lỗi | `CumThauTongHop.jsx` |
+| P6 | Lịch sử ô (cả hai màn) | Tooltip và dòng lịch sử ghi "trả về số gốc" / "(trống) → X" — chưa rõ nghĩa | Đổi thành "giá trị gốc" | `DanhMucDeXuatKhoa.jsx`, `TongHopPdd.jsx` |
+| P7 | Bàn điều hành | "Dữ liệu HIS mới nhất" chỉ hiện sau khi chọn gói con | Nạp `mocHis` ngay khi mở màn | `BanDieuHanhPdd.jsx` |
+
+Còn khoảng chục lỗi NHẸ khác (chữ dính, tài liệu lệch, test lỏng) — xem
+`.scratch/test-toan-bo/SO_CHUNG.md` mục 7, 16, 18, 21, 24 và bốn báo cáo
+`KIEM_DINH_DOC_LAP*.md` nếu cần chi tiết.
+
+### Ba bản vá SQL đã chạy trên DB thật
+
+| Patch | Nội dung (một dòng) | Rollback |
+|---|---|---|
+| `patch_zzzzzzzi` | `v_gio_rot_v3` thêm cột `ghi_chu`; sửa `v_theo_doi_chuyen_tiep_v3.khoa_da_sua_so` khỏi báo sai khi khoa chưa từng gửi | `rollback_zzzzzzzi_vong1.sql` |
+| `patch_zzzzzzzj` | Viết lại nền `v_gio_rot_v3` theo `phan_bo_trung_v3` (hết báo "thiếu" giả sau đổ mã); thêm điều kiện `dk.hieu_luc` vào `v_theo_doi_chuyen_tiep_v3.khoa_da_xac_nhan` | `rollback_zzzzzzzj_vong3.sql` |
+| `patch_zzzzzzzk` | Hàm mới `chot_trinh_ky_toan_bo_nguyen_khoi_v3`: chốt khoa còn thiếu + chốt gói trong MỘT giao dịch, thay cho vòng lặp nhiều giao dịch cũ | `rollback_zzzzzzzk_vong5.sql` |
+
+**Commit:** `b164c95` (vòng 1: vá 8 lỗi nghiệm thu + Q01–Q03) · `ecdf408` (vòng
+3–5: vá theo 3 lượt kiểm định độc lập + Q04–Q06, Q08). Vòng 6 (P1–P8, Q09) vá
+xong, build `index-BlnlMBxw.js`, pytest 401 — **chưa commit** khi viết khối
+này; xem trạng thái mới nhất ở `05_TRANG_THAI_VA_VIEC_TIEP_THEO.md`.
+
+### Bài học — hai lần manager kết luận quá tay, kiểm định độc lập bắt được
+
+**1. "3 khoá cứng đúng" — nói quá bằng chứng.** Sau vòng 1, manager ghi trong
+sổ chung "3 khoá cứng đúng". Kiểm định độc lập lượt 1 lật lại: chỉ khoá cứng 3
+có bằng chứng bấm thật (400); khoá cứng 2 ở cổng chốt trình ký **chưa ai kiểm
+được**; khoá cứng 1 **chưa ai thử**. Cụm test chỉ bấm ra một cảnh có bằng
+chứng rồi suy rộng cho cả ba. Bài học: một khoá đúng không chứng minh khoá
+khác cũng đúng — phải bấm hoặc đọc trigger riêng từng khoá.
+
+**2. "Timeout 8s nên không gộp 50 khoa vào 1 lệnh DB" — suy đoán không có số
+đo.** Đây là lý do L17 chỉ vá tạm (kiểm khoá 2 trước ở giao diện) thay vì sửa
+tận gốc ở server: sợ gộp chốt 50 khoa vào một hàm sẽ chạm
+`statement_timeout` 8 giây của vai `authenticated`. Kiểm định độc lập lượt 3
+chỉ ra: con số **52 giây** đo được trước đó là do **50 lượt gọi mạng** (mỗi
+khoa một RPC riêng), không phải thời gian thật thi hành trong DB — 50 lệnh
+INSERT bên trong một hàm server chỉ tốn vài mili giây. Bằng chứng sau khi vá
+thật (`patch_zzzzzzzk`): hàm nguyên khối chèn hàng trăm dòng trong một giao
+dịch, không chạm giới hạn nào. Bài học: đo đúng đại lượng đang lo (thời gian
+**trong** một giao dịch DB), đừng suy từ thời gian đo được của một cách làm
+khác (nhiều lượt gọi qua mạng) rồi coi là bằng chứng cho giới hạn của DB.
+
+---
+
 ## Bảng mốc lớn
 
 | Ngày | Mốc | Đọng lại gì trong code hôm nay |

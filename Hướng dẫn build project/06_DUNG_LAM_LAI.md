@@ -61,6 +61,7 @@
 | **Đổ sang mã tương đương lúc nào cũng được** | Phải **chia xong mã rớt trước**, và mã nhận phải **có trong đợt** — nếu không sẽ đổ đi cả Q hoặc đổ vào chỗ không ai kiểm được | 24/08/2026 |
 | **Bàn điều hành có tab Danh mục tổng hợp và tab Kết quả thầu** | Gỡ khỏi menu — Bàn điều hành **chỉ để xem**, mọi thao tác sửa trên bảng Tổng hợp (thi công QĐ A2) | 24/08/2026 |
 | **Khoa không thấy kết quả thầu trên danh mục của mình** | Bật lại phần **XEM**: nhãn rớt/trúng + tooltip. Nút "Đẩy SL" của khoa vẫn tắt | 24/08/2026 |
+| **Nút "Chạy lại" ở Theo dõi chuyển tiếp hiện cho cả dòng "còn nợ xử lý" (PĐD chưa bấm "Xác nhận rớt")** | Chỉ còn hiện cho dòng **chuyển tiếp thật sự HỎNG**; dòng chưa xác nhận rớt đổi chữ "Chưa xác nhận rớt — làm trên bảng Tổng hợp", không có nút (bấm nút cũ ở dòng này vô tình xác nhận rớt thay PĐD, bỏ qua hộp hỏi lại) | 28/09/2026 (QĐ Q09) |
 
 ## Bốn cái bẫy hay khiến người ta code lại đồ đã bỏ
 

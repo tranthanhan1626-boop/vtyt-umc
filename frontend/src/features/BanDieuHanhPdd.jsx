@@ -176,6 +176,21 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
     })();
   }, []);
 
+  // P7 (KĐ lượt 4, 28/09/2026) — Mốc dữ liệu HIS mới nhất là thông tin CHUNG,
+  // không theo đợt/gói con đang chọn (đúng như `dungLuong` ngay dưới, đã tách
+  // riêng từ trước). Bản trước chỉ nạp `mocHis` trong `tai()`, SAU nhánh "chưa
+  // chọn gói con" (dòng return sớm) — nên mở màn khi chưa bấm gói con nào luôn
+  // thấy "chưa có" dù HIS đã có dữ liệu; chọn gói con xong mới hiện đúng. Nạp
+  // một lần lúc mở màn, không phụ thuộc `goiConId`.
+  useEffect(() => {
+    (async () => {
+      const { data: hisMoi } = await supabase.from("usage_history_current")
+        .select("nam, thang").order("nam", { ascending: false })
+        .order("thang", { ascending: false }).limit(1);
+      setMocHis(hisMoi?.[0] || null);
+    })();
+  }, []);
+
   // Ba cấp sổ (QĐ 26/08/2026): loại gói → đợt → gói con. Chưa chọn đủ ba thì
   // KHÔNG sổ dashboard — chủ dự án muốn phải chọn tới gói con mới hiện tiếp.
   const LOAI_GOI = [
@@ -447,19 +462,15 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
       setRotTrongGio([]);
     }
 
-    // Mốc dữ liệu HIS mới nhất — PĐD nạp file 2 lần/tuần nên cần biết ngay
-    // "số đang dùng để tính là tới tháng mấy", không phải tự nhớ.
     // Chỉ số dung lượng: thiếu patch_zu thì bỏ qua, không làm hỏng Bàn điều hành.
     supabase.rpc("do_dung_luong").then(({ data, error }) => {
       if (luot !== luotTai.current) return; // L13: có lượt mới hơn, bỏ kết quả cũ
       if (!error) setDungLuong(data);
     });
-
-    const { data: hisMoi } = await supabase.from("usage_history_current")
-      .select("nam, thang").order("nam", { ascending: false })
-      .order("thang", { ascending: false }).limit(1);
-    if (luot !== luotTai.current) return; // L13: có lượt mới hơn, bỏ kết quả cũ
-    setMocHis(hisMoi?.[0] || null);
+    // P7 (KĐ lượt 4, 28/09/2026) — mốc dữ liệu HIS mới nhất đã dời sang effect
+    // riêng ở đầu component (nạp một lần lúc mở màn, không phụ thuộc gói con).
+    // Bản trước nạp ở đây, SAU nhánh "chưa chọn gói con" return sớm phía trên,
+    // nên mở màn chưa bấm gói con nào luôn thấy "chưa có".
 
     // Bảng chốt danh mục là patch mới — thiếu thì chỉ mất một cột, không được
     // làm hỏng cả màn hình.

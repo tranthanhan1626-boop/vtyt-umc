@@ -493,7 +493,8 @@ def test_m7n1_nhanh_rieng_khi_chua_chay_patch():
     text = CUM_THAU_TONG_HOP.read_text(encoding="utf-8")
     assert "PGRST202" in text
     assert "42883" in text
-    assert "Hệ thống chưa được cập nhật đủ (mã patch_zzzzzzzk) — báo Phòng Điều dưỡng." in text
+    # P5 (vòng 6): câu báo nay gửi đúng vai — người quản trị hệ thống, không phải PĐD.
+    assert "Hệ thống chưa được cập nhật đủ (mã patch_zzzzzzzk) — báo người quản trị hệ thống." in text
 
 
 def test_m7n1_giu_nguyen_chu_nut_va_trang_thai_dang_chay():

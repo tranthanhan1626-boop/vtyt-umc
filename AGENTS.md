@@ -2,15 +2,35 @@
 
 Hướng dẫn cho người và cho agent khi làm việc trong repo này.
 
-## 📍 BẮT ĐẦU SESSION MỚI — TÌNH HÌNH TỚI 18/09/2026
+## 📍 BẮT ĐẦU SESSION MỚI — TÌNH HÌNH TỚI 28/09/2026
+
+**Cổng vào: `Hướng dẫn build project/00_DOC_TRUOC_TIEN.md`** (hiện trạng · cách
+mở web · việc còn lại). Lộ trình để chủ dự án tự bấm thử từ đầu:
+`Hướng dẫn build project/08_LO_TRINH_TEST.md`. File này giữ luật làm việc cho agent.
 
 🆕 **18/09/2026 — dự án KHÔNG còn mốc thời gian** (chủ dự án: "vừa học vừa làm").
-Mọi chữ "go-live giữa T9" bên dưới là lịch sử, đừng sắp việc theo nó.
+Mọi chữ "go-live giữa T9" hay "01/01/2027" bên dưới là lịch sử, đừng sắp việc theo nó.
 
 ```
-commit d357019 · Netlify = index-C5W2inys.js (đẩy bằng deploy + restoreSiteDeploy)
-pytest 268 · test:formula ✓ (có tienTrinh, chatbot, tenCotBieuMau)
+commit ecdf408 (vòng 3–5 đợt "test toàn bộ") · vòng 6 (P1–P8, Q09) đã vá +
+  bấm lại ĐẠT nhưng CHƯA COMMIT · bundle local index-BlnlMBxw.js (build sau vòng 6)
+Netlify còn đứng ở d357019 = index-C5W2inys.js — chậm cả b164c95, ecdf408 và vòng 6, chưa đẩy
+pytest 401 (đếm 28/09 cuối đợt) · test:formula ✓ (có tienTrinh, chatbot, tenCotBieuMau, oKhongDoi)
+DB staging (đọc thật 28/09): 5 đợt TEST #202–#206 còn nguyên, dùng để test đợt "test toàn bộ"
+  (dựng từ 19/09 bởi tao_du_lieu_test_day_du.py, đã phát sinh thêm dữ liệu qua các vòng bấm)
+  HIS mới tới T6/2026 · sao lưu: 28/09 sáng TRƯỚC đợt test và chạy lại CUỐI đợt 28/09
+  (sao_luu.py --staging → backend/sao_luu/staging/2026-09-28)
+Ba patch SQL đã chạy trong đợt: zzzzzzzi, zzzzzzzj, zzzzzzzk (nội dung + rollback ở
+  07_NHAT_KY_THAY_DOI.md khối đầu). Chín QĐ Q01–Q09 đã vào 01 và 06. Việc còn lại: 05 mục 7.
 ```
+
+- **Mở web để test:** bấm đúp `MO_WEB.command` → tự build rồi mở bản chuẩn ở
+  `localhost:4173`. Mật khẩu mọi tài khoản thử `111111` (sửa 28/09: file này
+  trước in nhầm `Test123456` và chạy bản dev cổng 5173).
+- **Hướng dẫn sử dụng cho người dùng cuối:** `huong-dan-su-dung/HuongDan_SuDung_VTYT.pdf`
+  (46 trang, kiểm định độc lập lần 3 ĐẠT 19/09; lỗi nhẹ còn lại ở
+  `.scratch/huong-dan/KIEM_DINH_3.md` mục 3; **28/09: thêm các trang lệch với
+  QĐ Q01–Q09, xem `05` mục 7 — chưa sửa**).
 
 - **Gói giao diện 5 đợt đã lên web** (không đổi chức năng): chữ dễ hiểu + `lib/dichLoi.js` ·
   thanh tiến trình (`lib/tienTrinh.js`) · màn chào khoa, menu theo việc, đề xuất 3 bước,
@@ -19,8 +39,12 @@ pytest 268 · test:formula ✓ (có tienTrinh, chatbot, tenCotBieuMau)
 - **Chuẩn thị giác bắt buộc** cho mọi việc giao diện: `.scratch/giao-dien/CHUAN_THI_GIAC.md`.
   Kiểm bằng mắt ở 1440×900 và 1280×800 — build ✓ không chứng minh màn đẹp.
 - **19/09: mọi patch đã chạy** (zzzzzzzf chatbot_luot · zzzzzzzg + nạp kỳ trước · zzzzzzzh
-  is_current theo đợt) và **đã dọn sạch đợt test** — DB còn 0 đợt. Patch/ghi DB: chủ dự án tự gõ `!`
-  (Claude bị chặn chạy chay_patch.py và bị chặn bấm nút ghi trên web).
+  is_current theo đợt). **28/09: dữ liệu test #202–#206 đang dùng để test, CHƯA dọn** —
+  câu "DB còn 0 đợt" chỉ đúng ở thời điểm 19/09, xem `05` mục 7.
+  Patch/ghi DB: chủ dự án tự gõ `!` (Claude bị chặn chạy `chay_patch.py` và bị chặn bấm
+  nút ghi trên web). 🆕 **28/09 — lệnh `!` dài bị CẮT** khi gõ trực tiếp trong khung chat
+  của app: gói lệnh nhiều dòng vào một file `.sh` trong repo rồi đưa chủ dự án gõ
+  `! bash <file>.sh`, đừng đưa chuỗi `!...` dài để chủ dự án gõ tay.
 - **Agent kiểm thử tải Excel phải bắt blob**, không để rơi file vào ~/Downloads.
 
 ---
@@ -69,7 +93,10 @@ khoa gửi đề xuất → xác nhận lần 1 → PĐD tổng hợp → chốt
 
 ---
 
-## 🔴🔴 GO-LIVE GIỮA T9/2026 — ĐỌC TRƯỚC MỌI THỨ
+## (lịch sử) GO-LIVE GIỮA T9/2026 — ĐÃ BỎ MỐC 18/09/2026
+
+> Khối này giữ lại để hiểu vì sao có chỉ đạo "tối ưu click" và vì sao staging
+> là production. **Mốc thời gian trong khối đã hết hiệu lực.**
 
 Không phải 01/01/2027. Việc thật đầu tiên: **62 khoa gõ đề xuất cho gói 18
 tháng 2027-2028**, ngày 08–20/09/2026.
@@ -175,6 +202,14 @@ nào tới nghĩa là lỗi ở công cụ, không phải ở app.
 
 ⚠️ Đây là **lỗi báo nhầm tốn nhất tới giờ**: một vòng chẩn đoán, một bản vá 30
 dòng viết ra rồi phải gỡ bỏ, vì vá cho một lỗi không tồn tại.
+
+🆕 **28/09/2026 — bẫy thứ hai của cùng công cụ: nhãn `isolatedContext` KHÔNG
+khớp tài khoản đang đăng nhập trong tab đó.** Đo được trong đợt "test toàn
+bộ": `list_pages` gán tên `isolatedContext` (vd "pdd", "dvsd1") lúc tạo tab,
+nhưng tài khoản thật trong tab có thể khác — nhiều lượt kiểm định độc lập ghi
+rõ "nhãn `isolatedContext` sai hết". **Luật:** trước khi bấm, luôn đọc thẳng
+email trong tab bằng `localStorage` (tìm key có chữ `auth-token`, đọc
+`JSON.parse(...).user.email`), đừng tin tên page/nhãn context.
 
 ---
 
@@ -301,6 +336,13 @@ Tối thiểu phải đọc trước khi sửa bất cứ thứ gì:
    làm trắng cả màn mà build vẫn qua; một view rớt cột làm ba màn chết mà
    `pytest` vẫn xanh. Phải **bấm thật** trên `localhost:4173` ít nhất một lượt
    trên đường mà thay đổi đi qua.
+   🆕 **28/09/2026 — còn phải BUILD THẬT, đừng dừng ở "sửa xong code".** Ở vòng
+   6 của đợt "test toàn bộ", một trợ lý bị treo (watchdog 600s) và để sót một
+   chú thích `{/* */}` viết giữa các thuộc tính của một thẻ JSX — code không
+   build được. `pytest` (401 test, phần lớn là test dò chữ/grep trong file)
+   vẫn xanh vì nó không hề chạy `npm run build`. Chỉ lộ ra khi manager tự chạy
+   build trước khi giao kiểm định. **Luật thêm:** sau khi sửa code, luôn tự
+   chạy `npm run build` (không suy từ pytest xanh) trước khi báo "xong".
 5. **PĐD chỉ có một mặt bàn.** Mọi thao tác sửa của PĐD đi qua Danh mục tổng
    hợp. Thấy thao tác nào chật chội trên grid thì làm grid rộng ra, **đừng tách
    màn mới** (QĐ 21/08/2026).

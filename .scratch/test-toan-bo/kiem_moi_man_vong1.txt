@@ -1,0 +1,29 @@
+Quét 33 màn · 67 bảng/view
+
+✅ CÓ DỮ LIỆU : 53 bảng
+⚠️  RỖNG cả hai vai trò: 14 bảng
+    danh_muc_khoa_o                  ← DanhMucDeXuatKhoa, TongHopPdd
+    danh_muc_khoa_o_audit            ← DanhMucDeXuatKhoa
+    danh_muc_tong_hop_khoa           ← TongHopPdd
+    danh_muc_tong_hop_o              ← DanhMucDeXuatKhoa, TongHopPdd
+    goi_thau_moc                     ← TienDoGoiThau  ← mô hình trước v3, rỗng là ĐÚNG
+    goi_thau_tien_do                 ← TienDoGoiThau  ← mô hình trước v3, rỗng là ĐÚNG
+    ho_so_cong_tac                   ← DanhMucDeXuatLinks, QuanLyDuLieuTest
+    lan_xuat_ho_so                   ← QuanLyDuLieuTest
+    phien_tong_hop                   ← QuanLyDuLieuTest
+    phieu_de_nghi                    ← QuanLyDuLieuTest
+    su_kien_thieu_hang               ← QuanLyDuLieuTest, SoThieuHang
+    tuy_chon_mua_them_kich_hoat      ← QuanLyDuLieuTest
+    v_thieu_theo_thang               ← Function1
+    xac_nhan_thang                   ← QuanLyDuLieuTest, SoThieuHang
+
+🔎 Dò cột thật: 343 cột trên 64 bảng/view
+✅ Mọi cột các màn xin đều tồn tại
+
+📋 Màn còn tham chiếu bảng đã khai tử (kiểm bằng mắt xem đã gỡ khỏi menu chưa):
+    goi_thau_moc                     ← TienDoGoiThau
+    goi_thau_tien_do                 ← TienDoGoiThau
+
+✅ Mọi policy RLS đều gọi hàm một lần cho cả câu
+
+✅ Không màn nào gọi ra lỗi.

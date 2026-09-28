@@ -1,5 +1,23 @@
 # Đọc trước tiên — hệ thống dự trù & đấu thầu VTYT (UMC)
 
+> ## 📍 HIỆN TRẠNG 28/09/2026 — đọc khối này trước
+>
+> - **Không còn mốc thời gian** (QĐ 18/09/2026, "vừa học vừa làm"). Mọi chữ
+>   "go-live giữa T9" hay "01/01/2027" trong bộ tài liệu là lịch sử.
+> - Commit cuối `ff894bd` (19/09). Netlify còn đứng ở `d357019`, chậm 3 commit.
+> - **Database staging (đọc thật 28/09):** 5 đợt **dữ liệu test** — #202 "Gói 18
+>   tháng 1/2028 - 6/2029" (5 gói con, 2.485 đề xuất của 50 khoa, chưa chốt Q) và
+>   bốn đợt bổ sung #203–#206 (T9/2026 · T1/2027 · T5/2027 · T9/2027). Dựng bằng
+>   `backend/scripts/tao_du_lieu_test_day_du.py` sáng 19/09, **sau** lần dọn sạch
+>   ghi ở `05` — nên câu "DB còn 0 đợt" ở `05`/`07` ngày 19/09 đã không còn đúng.
+> - Sao lưu cuối 19/09 — quá hạn 3 ngày, cần chạy lại `backend/scripts/sao_luu.py`.
+> - **Mở web:** bấm đúp `MO_WEB.command` ở gốc repo → tự build, mở
+>   `localhost:4173`. Mật khẩu mọi tài khoản thử `111111`.
+> - **Lộ trình tự bấm thử từ đầu tới cuối:** `08_LO_TRINH_TEST.md`.
+> - **Hướng dẫn sử dụng cho người dùng cuối** (46 trang, kiểm định ĐẠT 19/09):
+>   `huong-dan-su-dung/HuongDan_SuDung_VTYT.pdf` ở gốc repo.
+> - Việc còn lại: `05_TRANG_THAI_VA_VIEC_TIEP_THEO.md` mục 7.
+
 > ## 🔴🔴 TUYỆT ĐỐI KHÔNG BỊA — QĐ 27/08/2026
 >
 > *"tuyệt đối không bịa bất cứ thông tin gì cũng cần sự xác nhận bàn bạc với tôi"*
@@ -29,6 +47,8 @@
 > ```bash
 > cd frontend && npm run build && npm run preview      # → http://localhost:4173
 > ```
+>
+> Người không gõ lệnh: bấm đúp `MO_WEB.command` ở gốc repo, nó làm đúng hai lệnh trên.
 >
 > PĐD `pdd@umc.edu.vn` / `111111` · khoa `dvsd1@umc.edu.vn` / `111111`
 >
@@ -74,6 +94,8 @@ nó là ghi chú thi công cũ — đừng lấy quyết định từ đó.
 
 ---
 
+> *(lịch sử — mốc đã bỏ 18/09/2026, giữ để hiểu bối cảnh)*
+>
 > 🔴🔴 **GO-LIVE: GIỮA THÁNG 9/2026 (08–20/09).** Không phải 01/01/2027 như
 > tài liệu cũ. Việc thật đầu tiên: **62 khoa gõ đề xuất cho gói 18 tháng
 > 2027-2028**. Chỉ **nửa đầu** pipeline (khoa đề xuất → PĐD tổng hợp → chốt Q →
@@ -102,8 +124,8 @@ vật tư y tế và chạy quy trình đấu thầu**. Hai bên dùng:
 
 `admin` và `dieu_duong` **cùng quyền**, không có vai trò nghiệp vụ thứ ba.
 
-**Mốc cứng: go-live 01/01/2027.** Pilot 3–5 khoa T12/2026. Trước go-live phải
-build đầy đủ mọi chức năng — không phần nào được trượt sang sau.
+~~**Mốc cứng: go-live 01/01/2027.** Pilot 3–5 khoa T12/2026.~~ Đã bỏ: từ
+18/09/2026 dự án không còn mốc thời gian.
 
 ## Nguyên tắc nền — hiểu cái này trước khi đọc code
 
@@ -150,6 +172,7 @@ Ngoài hai chỗ đó: không hạn nộp, không nhắc theo lịch, không t�
 | 05 | `05_TRANG_THAI_VA_VIEC_TIEP_THEO.md` | Hôm nay đang ở đâu, còn nợ gì, làm gì tiếp |
 | 06 | `06_DUNG_LAM_LAI.md` | **Đọc trước khi dựng cái gì thấy "còn thiếu".** 29 quyết định đã bị đảo |
 | 07 | `07_NHAT_KY_THAY_DOI.md` | Toàn bộ lịch sử thay đổi, vì sao code ra nông nỗi này |
+| 08 | `08_LO_TRINH_TEST.md` | Chủ dự án tự bấm thử một vòng từ DB trống: bấm gì, thấy gì, đối chiếu trang nào trong PDF hướng dẫn |
 
 **Đường tắt theo việc bạn định làm:**
 
