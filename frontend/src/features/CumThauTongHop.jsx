@@ -805,7 +805,71 @@ export function BangSoTrungTheoKhoa({ dotGoiId, maHang, phaiChia, onLuuXong }) {
  *  Mở lại một khoa (revision 2 tầng) vẫn giữ, nhưng là MỘT ô chọn khoa chứ
  *  không phải 50 nút.
  * ─────────────────────────────────────────────────────────────────────────── */
-export function ChotTrinhKyTongHop({ dotGoiId, onXong, trongThanhCongCu = false }) {
+/*
+ * L17 28/09/2026 — kiểm khoá cứng 2 (phanBo/da_khop) TRƯỚC khi gọi RPC chốt
+ * toàn bộ, chỉ để BÁO SỚM bằng dữ liệu ĐÃ CÓ SẴN ở client (prop `phanBo`,
+ * không tốn thêm lượt mạng nào).
+ *
+ * 🔄 28/09/2026 vòng 5 (patch_zzzzzzzk) — từ khi server gộp hẳn một giao dịch
+ * (xem khối chú thích M7/N1 ngay dưới), điều kiện này KHÔNG CÒN là chốt chặn
+ * bắt buộc để tránh nửa chốt nữa — bỏ hẳn kiểm này thì hệ vẫn không kẹt nửa
+ * chốt, vì server tự rollback toàn bộ khi từ chối. Giữ lại vì nó MIỄN PHÍ
+ * (đọc từ `phanBo` đã tải sẵn cho bảng Tổng hợp, không gọi thêm RPC) và cho
+ * PĐD thấy phản hồi ngay trên client thay vì phải đợi một lượt RPC chốt toàn
+ * bộ (có thể chốt xong vài chục khoa ở server rồi mới tới bước này) chỉ để
+ * nhận lại đúng câu lỗi mà client đã biết trước.
+ *
+ * `da_khop` của `v_phan_bo_trung_theo_ma_v3` (định nghĩa ở
+ * patch_zzzzzg_chia_tay_ke_ca_phan_nhan.sql dòng 24-34: `da_khop = (trung +
+ * da_nhan = da_chia)`) ĐÚNG BẰNG điều kiện khoá cứng 2 mà
+ * `chot_trinh_ky_toan_bo_v3` kiểm ở server (backend/sql/patch_zzzzzzd_danh_muc_chuan_theo_ky.sql,
+ * dòng 297-308) — nên so thẳng trên `phanBo` (prop từ `useDuLieuThau(dotGoiId)`,
+ * đầu file này) là đủ, không cần đoán hay gọi thêm RPC riêng. Lệch → hiện lại
+ * NGUYÊN VĂN câu server sẽ báo kèm danh sách mã lệch, KHÔNG gọi RPC chốt.
+ */
+/*
+ * M7/N1 vòng 5 (28/09/2026, patch_zzzzzzzk) — GỘP MỘT GIAO DỊCH Ở SERVER,
+ * BỎ VÒNG LẶP + LƯỚI TỰ GỠ Ở CLIENT.
+ *
+ * Vòng 3/4 phát hiện (KIEM_DINH_DOC_LAP_LUOT2.md N1, LUOT3.md M7): nút "CHỐT
+ * TRÌNH KÝ TOÀN BỘ" gọi `chot_trinh_ky_khoa_v3` LẦN LƯỢT cho từng khoa còn
+ * thiếu — MỖI LƯỢT LÀ MỘT RPC RIÊNG, tức MỘT GIAO DỊCH DB ĐÃ COMMIT RIÊNG —
+ * rồi mới gọi `chot_trinh_ky_toan_bo_v3`. Bước cuối (hoặc một khoa giữa vòng
+ * lặp) bị từ chối thì các khoa đã chốt TRƯỚC ĐÓ không tự lùi lại: gói kẹt nửa
+ * chốt. Lưới tự gỡ ở JS (vòng 4: hàm `goTuDong`, biến `khoaVuaChotLuotNay`)
+ * giảm nhẹ nhưng không triệt để — nó gỡ cho MỌI lỗi của bước cuối, kể cả khi
+ * lỗi là "đã có revision hiệu lực" (PĐD khác vừa chốt xong) hay lỗi mạng giữa
+ * chừng, hai trường hợp này có thể vô hiệu NHẦM một bản chốt chính thức vừa
+ * tạo (M7 ý (1)).
+ *
+ * Vá GỐC ở server, không phải thêm lưới ở client: `patch_zzzzzzzk` tạo hàm
+ * `chot_trinh_ky_toan_bo_nguyen_khoi_v3(p_dot_goi_id)` — bên trong lặp đúng
+ * `khoa_chua_du_chot_trinh_ky` rồi gọi đúng `chot_trinh_ky_khoa_v3` cho từng
+ * khoa, cuối cùng gọi đúng `chot_trinh_ky_toan_bo_v3`, y hệt thứ tự web đang
+ * làm — CHỈ khác là toàn bộ nằm trong MỘT lời gọi RPC = MỘT giao dịch DB. Bất
+ * kỳ bước nào bị từ chối, Postgres tự rollback HẾT: không khoa nào bị chốt dở
+ * dang. Vì vậy web giờ chỉ cần gọi MỘT RPC — không còn vòng lặp, không còn
+ * trạng thái nửa chốt để phải gỡ, nên bỏ hẳn `goTuDong` và
+ * `khoaVuaChotLuotNay`. Lỗi (bất kỳ lý do gì) chỉ cần hiện `dichLoi(error)` —
+ * câu chữ y hệt server, không có khoa nào cần mở lại tay.
+ *
+ * Riêng lỗi "không tìm thấy hàm" (PostgREST `PGRST202` hoặc mã Postgres
+ * `42883` — nghĩa là DB chưa chạy patch_zzzzzzzk) KHÔNG được âm thầm quay lại
+ * đường cũ (vòng lặp + lưới đã bỏ): hiện thẳng "Hệ thống chưa được cập nhật
+ * đủ (mã patch_zzzzzzzk) — báo Phòng Điều dưỡng" để chủ dự án biết đúng việc
+ * cần làm là chạy patch, không phải một lỗi nghiệp vụ.
+ *
+ * 🔴 SỬA CÂU SAI của vòng 4 (M7 ý (2)): bản trước ghi "statement_timeout của
+ * role authenticated là 8 giây … chốt 50 khoa qua mạng mất khoảng 52 giây …
+ * gộp một lệnh sẽ bị hệ tự huỷ ngang giao dịch — tệ hơn cả kẹt nửa chốt hiện
+ * tại". Kiểm định độc lập lượt 3 chỉ ra lập luận đó KHÔNG có cơ sở: 52 giây
+ * đo được là do 50 LƯỢT GỌI QUA MẠNG (mỗi lượt một round-trip riêng), còn 50
+ * câu INSERT chạy BÊN TRONG một hàm server chỉ tốn vài mili giây —
+ * `chot_trinh_ky_toan_bo_v3` từng chèn 888 dòng trong một lệnh mà không chạm
+ * giới hạn nào. Gộp giao dịch ở server là cách sửa ĐÚNG và đã làm ở
+ * `patch_zzzzzzzk`, không phải phương án nguy hiểm như ghi nhầm trước đây.
+ */
+export function ChotTrinhKyTongHop({ dotGoiId, onXong, trongThanhCongCu = false, phanBo = null }) {
   const [mo, setMo] = useState(false);
   const [tai, setTai] = useState(false);
   const [khoaThieu, setKhoaThieu] = useState(null);   // null = chưa đọc được
@@ -820,6 +884,10 @@ export function ChotTrinhKyTongHop({ dotGoiId, onXong, trongThanhCongCu = false 
   const doc = useCallback(async () => {
     if (!dotGoiId) return;
     setTai(true); setLoi("");
+    // N1 28/09/2026 (vòng 4) từng thêm truy vấn `chot_q_phien` ở đây để kiểm
+    // `fn_dong_vuot_quyen_v3` trước vòng lặp chốt khoa — bỏ theo patch vòng 5
+    // (zzzzzzzk): server đã gộp một giao dịch nên client không còn cần tự dò
+    // cổng đó nữa (xem khối chú thích M7/N1 trên đầu component).
     const [thieu, chot, gui, ph] = await Promise.all([
       supabase.rpc("khoa_chua_du_chot_trinh_ky", { p_dot_goi_id: dotGoiId }),
       supabase.from("chot_trinh_ky_khoa_v3").select("khoa").eq("dot_goi_id", dotGoiId),
@@ -845,28 +913,62 @@ export function ChotTrinhKyTongHop({ dotGoiId, onXong, trongThanhCongCu = false 
   // nút quay lại chữ "Chốt trình ký" như chưa có chuyện gì (đo thật 25/08).
   useEffect(() => { doc(); }, [doc]);
 
-  // MỘT NÚT: chốt lần lượt từng khoa còn thiếu rồi chốt toàn bộ. Dừng ngay ở
-  // khoa đầu tiên lỗi và nói rõ khoa nào — chốt được nửa chừng rồi im lặng là
-  // trạng thái khó gỡ nhất.
+  // MỘT NÚT: từ vòng 5, một cú bấm gọi ĐÚNG MỘT RPC (`chotHet` bên dưới) —
+  // server tự lo chốt từng khoa còn thiếu rồi chốt toàn bộ, trong một giao
+  // dịch. Hàm này (L17 28/09/2026) chỉ kiểm khoá cứng 2 SỚM bằng dữ liệu đã
+  // có sẵn để báo lỗi ngay trên client, không gọi RPC nào. Trả về mảng mã
+  // lệch (rỗng = khớp), hoặc null nếu không có `phanBo` để kiểm (khi đó
+  // KHÔNG được coi là "đã khớp" — giữ nguyên hành vi cũ chỉ khi thật sự không
+  // có dữ liệu để so).
+  const timMaLechKhoaCung2 = () => {
+    if (!phanBo) return null;
+    return [...phanBo.values()].filter((p) => !p.da_khop)
+      .map((p) => p.ma_hang).sort((a, b) => a.localeCompare(b, "vi"));
+  };
+
+  // Có phải lỗi "không tìm thấy hàm" — nghĩa là DB staging CHƯA chạy
+  // patch_zzzzzzzk (hàm `chot_trinh_ky_toan_bo_nguyen_khoi_v3` chưa tồn tại).
+  // PostgREST trả code `PGRST202` khi không khớp hàm trong schema cache; nếu
+  // vì lý do gì đó lỗi lọt thẳng từ Postgres thì đó là `42883` (undefined
+  // function). KHÔNG được âm thầm quay lại đường cũ (vòng lặp đã bỏ) — phải
+  // nói rõ đây là hệ thống thiếu cập nhật, không phải lỗi nghiệp vụ của PĐD.
+  const laLoiChuaCoHam = (error) => {
+    const ma = String(error?.code || "");
+    const msg = String(error?.message || "");
+    return /^PGRST202$/i.test(ma) || ma === "42883"
+      || /Could not find the function|schema cache/i.test(msg);
+  };
+
+  // MỘT NÚT, MỘT RPC (vòng 5, patch_zzzzzzzk). Server gộp vòng lặp chốt từng
+  // khoa còn thiếu + chốt toàn bộ vào MỘT giao dịch — bị từ chối ở bất kỳ
+  // bước nào cũng tự rollback hết, nên client không còn trạng thái nửa chốt
+  // để phải tự gỡ (xem khối chú thích M7/N1 trên đầu component).
   const chotHet = async () => {
     setDangChay("toan_bo"); setLoi("");
-    for (let i = 0; i < khoaThieu.length; i += 1) {
-      const k = khoaThieu[i];
-      setTienDo(`đang chốt khoa ${i + 1}/${khoaThieu.length} — ${k}`);
-      const { error } = await supabase.rpc("chot_trinh_ky_khoa_v3", {
-        p_dot_goi_id: dotGoiId, p_khoa: k,
-      });
-      if (error) {
-        setDangChay(""); setTienDo("");
-        setLoi(`Dừng ở khoa "${k}": ${dichLoi(error)}`);
-        await doc();
-        return;
-      }
+    // L17 — kiểm khoá cứng 2 bằng dữ liệu đã có sẵn (miễn phí, không gọi RPC)
+    // để báo sớm; không còn là điều kiện an toàn bắt buộc (server tự kiểm lại
+    // đúng điều kiện này bên trong giao dịch nguyên khối), chỉ để đỡ một lượt
+    // chờ mạng khi đã biết trước chắc chắn sẽ bị từ chối.
+    const maLech = timMaLechKhoaCung2();
+    if (maLech && maLech.length > 0) {
+      setDangChay("");
+      setLoi(`Phân bổ số trúng chưa khớp: còn ${maLech.length} mã lệch (${
+        maLech.slice(0, 8).join(", ")}). Gõ số cho từng khoa hoặc bấm "Chia theo tỉ lệ Q".`);
+      return;
     }
-    setTienDo("đang đóng băng bản trình ký…");
-    const { error } = await supabase.rpc("chot_trinh_ky_toan_bo_v3", { p_dot_goi_id: dotGoiId });
-    setDangChay(""); setTienDo("");
-    if (error) { setLoi(dichLoi(error)); await doc(); return; }
+
+    setTienDo("đang chốt trình ký toàn bộ…");
+    const { error } = await supabase.rpc("chot_trinh_ky_toan_bo_nguyen_khoi_v3", {
+      p_dot_goi_id: dotGoiId,
+    });
+    setTienDo("");
+    setDangChay("");
+    if (error) {
+      setLoi(laLoiChuaCoHam(error)
+        ? "Hệ thống chưa được cập nhật đủ (mã patch_zzzzzzzk) — báo Phòng Điều dưỡng."
+        : dichLoi(error));
+      return;
+    }
     await doc();
     await onXong?.("Đã chốt trình ký toàn bộ — bản Excel chính thức dùng số này.");
   };

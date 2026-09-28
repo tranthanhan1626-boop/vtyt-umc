@@ -16,6 +16,7 @@ import { gomTheoThang } from "../lib/lichSuSuDung";
 import { taiDotIdCuaGoi, locTheoDot } from "../lib/dotBoSung";
 import { dichLoi, thayTenCot } from "../lib/dichLoi";
 import { taiDeXuatKyTruoc, tooltipKyTruoc, fmtKyTruoc } from "../lib/deXuatKyTruoc";
+import { giaTriKhongDoi } from "../lib/oKhongDoi";
 import ThanhDauUmc, { useDongKhiRaNgoai, doRongNhanNhom } from "../components/ThanhDauUmc";
 
 /*
@@ -342,6 +343,24 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
   const khoaHienTai = khoa || profile?.khoa || "";
   const laPdd = profile?.role === "dieu_duong" || profile?.role === "admin";
 
+  // Q08 (QĐ chủ dự án 28/09/2026) — "năm đề xuất" của Ô PĐD sửa
+  // (`danh_muc_tong_hop_o`, đọc/ghi ở màn này qua `taiSuaDeCuaPdd`/
+  // `luuOLenServer`) là năm của ĐỢT (`dot_de_xuat.nam`), không phải hằng
+  // `NAM_DE_XUAT`. Cùng lý do và cùng nguồn SQL đã ghi ở TongHopPdd.jsx.
+  // Không có `dotId` (đường cũ) -> giữ hằng `NAM_DE_XUAT`.
+  const [namDot, setNamDot] = useState(() => (dotId ? null : NAM_DE_XUAT));
+  useEffect(() => {
+    let huy = false;
+    if (!dotId) { setNamDot(NAM_DE_XUAT); return undefined; }
+    setNamDot(null);
+    supabase.from("dot_de_xuat").select("nam").eq("id", Number(dotId)).maybeSingle()
+      .then(({ data, error }) => {
+        if (huy) return;
+        setNamDot(error || data?.nam == null ? NAM_DE_XUAT : data.nam);
+      });
+    return () => { huy = true; };
+  }, [dotId]);
+
   // ---- Quy chuẩn khoá gói con (vá 25/08/2026) -----------------------------
   // Đường dẫn có thể mang BÍ DANH `bo-sung` (menu cũ, link đã bookmark) trong
   // khi `dot_goi.goi_id` thật của đợt bổ sung là `bs-t1|bs-t5|bs-t9`. Lấy bí
@@ -392,6 +411,12 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
   const [dangChot, setDangChot] = useState(false);
   const [loiChot, setLoiChot] = useState("");
   const [dotGoiId, setDotGoiId] = useState(null);
+  // N12 (kiểm định độc lập lượt 2) — "chốt số đi thầu" (chot_q_phien.hieu_luc)
+  // là trạng thái CHỐT có sẵn ở màn Tổng hợp PĐD (TongHopPdd.jsx, state
+  // `chot`); màn này trước giờ không đọc nó nên nhãn "Số lượng: sửa được tại
+  // đây" hiện sai cả khi đã chốt số (server đã khoá `phan_bo_khoa` bằng
+  // trigger `trg_khoa_phan_bo_sau_chot_q` — patch_zzzzs_v2_khoa_sua_so.sql).
+  const [daChotQ, setDaChotQ] = useState(false);
 
   const [oDangChon, setODangChon] = useState(null);
   const [openMenuCot, setOpenMenuCot] = useState(false);
@@ -411,6 +436,9 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
   // audit `danh_muc_khoa_o_audit` đã có sẵn từ patch_zm (trigger tự ghi mỗi
   // lần giá trị một ô THỰC SỰ đổi), trước giờ chỉ chưa có chỗ nào xem được.
   const [audit, setAudit] = useState(null); // { maHang, cot, dsAudit, dangTai, loi }
+  // M5 phía khoa (28/09/2026) — đổi gói/đợt/khoa trong cùng tab thì đóng hộp
+  // lịch sử của ô cũ, như bên Tổng hợp PĐD.
+  useEffect(() => { setAudit(null); }, [goiId, dotId, khoaHienTai]);
   // Ô PĐD đã sửa đè trên bản tổng hợp: Map<ma_hang, Map<cot_pdd, {gia_tri,...}>>
   const [suaDeCuaPdd, setSuaDeCuaPdd] = useState(new Map());
   // Mặc định hiện ĐẦY ĐỦ nội dung mọi ô (wraptext) — xem StyleTable.
@@ -442,15 +470,27 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
     return dichLoi(error);
   };
 
+  // M4k (vòng 5) — mẫu L13 (BanDieuHanhPdd.jsx): đếm lượt tải bằng ref, sau
+  // mỗi await nếu không còn là lượt mới nhất thì bỏ ngang, không setState.
+  // Đổi đợt liên tiếp trong cùng tab có thể khiến lượt CŨ trả về SAU lượt
+  // MỚI và ghi đè cấu hình cột bằng đúng dữ liệu của đợt/năm cũ.
+  const luotTaiCauHinhCot = useRef(0);
   const taiCauHinhCot = useCallback(async () => {
     if (!goiId || !khoaHienTai) return;
+    // Q08 (manager 28/09, đọc định nghĩa thật) — `fn_chan_o_cot_khoa_sua` tra
+    // bảng này bằng `nam_de_xuat = new.nam_de_xuat` của `danh_muc_khoa_o` nên
+    // hai bảng PHẢI cùng năm đợt, không thì "khoá sửa cột" mất tác dụng.
+    if (dotId && namDot == null) return;
+    const luot = ++luotTaiCauHinhCot.current;
     const doc = (cot) => supabase.from("danh_muc_khoa_cot_cau_hinh").select(cot)
-      .eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT).eq("khoa", khoaHienTai);
+      .eq("goi_id", goiId).eq("nam_de_xuat", dotId ? namDot : NAM_DE_XUAT).eq("khoa", khoaHienTai);
     let coKhoaSua = true;
     let { data, error } = await doc("cot, an, khoa_cot, khoa_sua");
+    if (luot !== luotTaiCauHinhCot.current) return; // M4k/L13: bỏ lượt tải cũ
     if (error && /khoa_sua/i.test(error.message || "")) {
       coKhoaSua = false;
       ({ data, error } = await doc("cot, an, khoa_cot"));
+      if (luot !== luotTaiCauHinhCot.current) return; // M4k/L13: bỏ lượt tải cũ
     }
     setCoCotKhoaSua(coKhoaSua);
     if (error) {
@@ -463,7 +503,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
       map[r.cot] = { an: r.an, khoa_cot: r.khoa_cot, khoa_sua: r.khoa_sua ?? false };
     });
     setCauHinhCot(map);
-  }, [goiId, khoaHienTai]);
+  }, [goiId, khoaHienTai, dotId, namDot]);
 
   useEffect(() => { taiCauHinhCot(); }, [taiCauHinhCot]);
 
@@ -474,6 +514,11 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
       setLoiCauHinhCot("Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_zi_khoa_sua_cot). Vui lòng báo Phòng Điều dưỡng.");
       return;
     }
+    // Q08 — chờ năm đợt trước khi ghi, cùng lý do ở taiCauHinhCot.
+    if (dotId && namDot == null) {
+      setLoiCauHinhCot("Đang tra năm của đợt, thử lại sau vài giây.");
+      return;
+    }
     const hienTai = cauHinhCot[colKey] || {};
     const macDinhFreeze = cotDayDu.find((c) => c.key === colKey)?.freeze || false;
     const an = patch.an ?? hienTai.an ?? false;
@@ -482,7 +527,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
     setCauHinhCot((prev) => ({ ...prev, [colKey]: { an, khoa_cot, khoa_sua } })); // optimistic
     const { error } = await supabase.from("danh_muc_khoa_cot_cau_hinh")
       .upsert({
-        goi_id: goiId, nam_de_xuat: NAM_DE_XUAT, khoa: khoaHienTai, cot: colKey,
+        goi_id: goiId, nam_de_xuat: dotId ? namDot : NAM_DE_XUAT, khoa: khoaHienTai, cot: colKey,
         an, khoa_cot, updated_by: profile?.email || khoaHienTai,
         ...(coCotKhoaSua ? { khoa_sua } : {}),
       }, { onConflict: "goi_id,nam_de_xuat,khoa,cot" });
@@ -507,8 +552,13 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
   // của mã khoa đó đề xuất — kể cả chính khoa — thì xác nhận mất hiệu lực và
   // lần sau bấm là lần N+1. PĐD không chốt số đi thầu được khi còn khoa chưa
   // xác nhận (chặn cứng ở DB, patch_zzzzu).
+  // M4k (vòng 5) — cùng mẫu L13: `dotGoiId` đổi liên tiếp (đổi đợt nhanh) có
+  // thể khiến lượt tải CŨ trả về sau, ghi nhãn "Đã xác nhận..." của đợt cũ đè
+  // lên màn đang xem đợt mới.
+  const luotTaiTrangThaiChot = useRef(0);
   const taiTrangThaiChot = useCallback(async () => {
     if (!goiId || !khoaHienTai) return;
+    const luot = ++luotTaiTrangThaiChot.current;
     let q = supabase.from("danh_muc_khoa_chot")
       .select("chot_boi, chot_luc, khong_phat_sinh, lan, hieu_luc, huy_luc, huy_do")
       .eq("khoa", khoaHienTai);
@@ -516,6 +566,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
       ? q.eq("dot_goi_id", dotGoiId)
       : q.eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT);
     const { data, error } = await q.maybeSingle();
+    if (luot !== luotTaiTrangThaiChot.current) return; // M4k/L13: bỏ lượt tải cũ
     if (error) {
       const chuaCoBang = error.code === "42P01" || /danh_muc_khoa_chot/i.test(error.message || "");
       setLoiChot(chuaCoBang
@@ -658,32 +709,45 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
   // LỖI 24 (19/08/2026): bản TỔNG HỢP ghi `goi_id` có hậu tố ':dot:N'
   // (`goiScope` ở TongHopPdd.jsx:304), bản KHOA thì không. So `.eq(goi_id,
   // goiId)` ở đây nên KHÔNG BAO GIỜ khớp — PĐD duyệt TSKT trên Tổng hợp mà
-  // bên khoa vẫn hiện giá trị cũ, không viền tím, không khoá ô. Trigger
-  // `fn_khoa_o_khoa_khi_pdd_da_duyet` thì so bằng `split_part(goi_id,
-  // ':dot:', 1)` nên vẫn CHẶN — khoa thấy ô sửa được, gõ vào lại bị báo lỗi
-  // "đã được Phòng Điều dưỡng duyệt". Đúng mẫu lỗi số 6 của dự án: tầng DB
-  // đúng, tầng giao diện chưa nối.
+  // bên khoa vẫn hiện giá trị cũ, không viền tím, không khoá ô. Đúng mẫu lỗi
+  // số 6 của dự án: tầng DB đúng, tầng giao diện chưa nối.
   //
-  // Lấy theo đúng cách trigger lấy: mọi bản ghi cùng gói con, bất kể đợt.
-  // Ưu tiên đợt đang mở, sau đó tới bản mới nhất — khớp với ghi chú phạm vi
-  // trong patch_zzzzp (ô khoa chưa neo theo `dot_goi_id`, xem mục E3).
-  // Một chỗ duy nhất dựng khoá phạm vi của bản tổng hợp. Trước đây mỗi nơi tự
-  // ghép một kiểu, và đó chính là Lỗi 24.
+  // Q06 (28/09/2026, kiểm định độc lập #8) — SỬA CHÚ THÍCH SAI NGUỒN. Bản cũ
+  // ở đây từng viết "lấy theo đúng cách trigger `fn_khoa_o_khoa_khi_pdd_da_duyet`
+  // lấy: mọi bản ghi cùng gói con, bất kể đợt" — hàm trigger đó ĐÃ BỊ GỠ
+  // (`drop function if exists fn_khoa_o_khoa_khi_pdd_da_duyet()`,
+  // backend/sql/patch_zzzzr_v2_cot_chu_mot_gia_tri.sql:33), không còn tồn tại
+  // trên DB, nên không có cơ sở nào cho việc kế thừa ô PĐD sửa giữa các đợt.
+  // Nguồn đúng: QĐ chủ dự án 28/09/2026 — ô chữ PĐD sửa là của TỪNG ĐỢT riêng.
+  // Có `dotId` thì chỉ lấy đúng bản ghi của đợt đó (lọc ngay ở truy vấn bằng
+  // `.eq("goi_id", goiScopeTongHop)`, giống bản vá L05 ở hàm `xemAudit` phía
+  // trên); chưa có `dotId` (đường cũ, ít dùng) thì giữ nguyên hành vi cũ
+  // (`.like` + chọn ưu tiên bằng `thangTruoc`).
   const goiScopeTongHop = dotId ? `${goiId}:dot:${dotId}` : goiId;
 
   const taiSuaDeCuaPdd = useCallback(async () => {
     if (!goiId) return new Map();
-    const { data, error } = await supabase.from("danh_muc_tong_hop_o")
-      .select("goi_id, ma_hang, cot, gia_tri, updated_by, updated_at")
-      .like("goi_id", `${goiId}%`).eq("nam_de_xuat", NAM_DE_XUAT);
+    // Q08 — có dotId thì chờ tra xong năm đợt; đọc bằng năm còn null (hoặc
+    // bằng hằng cũ) có thể bỏ sót đúng ô PĐD vừa ghi theo năm đợt.
+    if (dotId && namDot == null) return new Map();
+    const goiScope = goiScopeTongHop;
+    const truyVan = dotId
+      ? supabase.from("danh_muc_tong_hop_o")
+          .select("goi_id, ma_hang, cot, gia_tri, updated_by, updated_at")
+          .eq("goi_id", goiScope).eq("nam_de_xuat", namDot)
+      : supabase.from("danh_muc_tong_hop_o")
+          .select("goi_id, ma_hang, cot, gia_tri, updated_by, updated_at")
+          .like("goi_id", `${goiId}%`).eq("nam_de_xuat", NAM_DE_XUAT);
+    const { data, error } = await truyVan;
     // Chưa chạy patch_zs -> RLS trả rỗng chứ không lỗi. Không cản trở gì, chỉ
     // là chưa thấy được phần PĐD sửa.
     if (error) return new Map();
-    const goiScope = goiScopeTongHop;
     const m = new Map();
     (data || [])
-      // `like` bắt cả gói con khác có cùng tiền tố tên; lọc lại cho chắc.
-      .filter((r) => String(r.goi_id).split(":dot:")[0] === goiId)
+      // Đường có `dotId` đã lọc đúng bằng `.eq` nên khỏi lọc lại. Đường cũ
+      // (không `dotId`) dùng `.like`, bắt cả gói con khác có cùng tiền tố
+      // tên; lọc lại cho chắc.
+      .filter((r) => dotId || String(r.goi_id).split(":dot:")[0] === goiId)
       .forEach((r) => {
         if (!m.has(r.ma_hang)) m.set(r.ma_hang, new Map());
         const cua = m.get(r.ma_hang);
@@ -692,18 +756,27 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
         cua.set(r.cot, r);
       });
     return m;
-  }, [goiId, dotId]);
+  }, [goiId, dotId, goiScopeTongHop, namDot]);
 
+  // M4k (vòng 5) — ref đếm lượt dùng chung cho `taiLai`, mẫu L13.
+  const luotTaiChinh = useRef(0);
   const taiLai = useCallback(async () => {
     // Chưa quy chuẩn xong khoá gói con thì chưa tải: tải bằng bí danh sẽ ra
     // bản rỗng rồi tải lại lần hai, người dùng thấy bảng nhấp nháy từ "không
     // có mã nào" sang bản thật.
     if (!sanSangGoi) return;
+    // M4k (vòng 5) — mẫu L13: đổi đợt liên tiếp trong cùng tab có thể khiến
+    // lượt tải CŨ (goi/khoa/đợt trước) trả về SAU lượt MỚI và ghi đè bảng
+    // bằng đúng dữ liệu sai đợt. Đếm lượt bằng ref; sau MỖI await bên dưới,
+    // hết là lượt mới nhất thì bỏ ngang, không setState gì thêm. Không đổi
+    // thứ tự truy vấn.
+    const luot = ++luotTaiChinh.current;
     setDangTai(true);
     setLoi("");
     try {
       const { bo, rows: rowsGoc, dsMaHang, dsNamCoDuLieu: dsNam, dotGoiId: dgId } =
         await taiDuLieuKhoa(goiId, khoaHienTai, dotId);
+      if (luot !== luotTaiChinh.current) return; // M4k/L13: bỏ lượt tải cũ
       // 24/08/2026 — BẬT LẠI phần HIỂN THỊ kết quả thầu cho khoa.
       // `v_ket_qua_thau_theo_khoa` đã được viết lại trên nền v3 (patch_zzzzza)
       // nên đọc được thật. Chủ dự án yêu cầu: mọi thứ PĐD chỉnh trên Danh mục
@@ -721,7 +794,9 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
       const ketQuaTheoMa = dsMaHang?.length
         ? await taiKetQuaThau(bo.loai_mua_sam, khoaHienTai, dsMaHang, dotId)
         : new Map();
+      if (luot !== luotTaiChinh.current) return; // M4k/L13: bỏ lượt tải cũ
       const [oDaLuu, suaDePdd] = await Promise.all([taiODaLuu(), taiSuaDeCuaPdd()]);
+      if (luot !== luotTaiChinh.current) return; // M4k/L13: bỏ lượt tải cũ
       // V2: giá trị chung là giá trị DUY NHẤT, nên áp thẳng lên dòng thay vì
       // giữ song song rồi chọn lúc vẽ. Nhờ vậy ô gõ được như mọi ô khác —
       // bản cũ lấy giá trị PĐD lúc vẽ nên gõ vào không thấy chữ đổi.
@@ -770,6 +845,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
           .select("ma_hang, truoc, sau, tong_truoc, tong_sau, ly_do, nguoi_sua, vai_tro, thoi_gian")
           .eq("dot_goi_id", dotGoiId)
           .order("thoi_gian", { ascending: false });
+        if (luot !== luotTaiChinh.current) return; // M4k/L13: bỏ lượt tải cũ
         // Audit ghi theo MÃ HÀNG cho cả đợt; lọc lại còn đúng lần sửa có động
         // tới khoa đang xem.
         // Bỏ dòng do CHÍNH KHOA gõ (`vai_tro = 'dvsd'`, có từ patch_zzzzzv):
@@ -779,11 +855,22 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
         setDieuChinhPdd((dsAudit || []).filter((a) => (a.sau || {})[khoa] !== undefined
           && a.vai_tro !== "dvsd"));
       }
+      // N12 — cùng bảng `chot_q_phien` mà màn Tổng hợp PĐD đã đọc (state
+      // `chot` ở TongHopPdd.jsx); dùng để nói đúng nhãn "sửa được tại đây".
+      if (dgId) {
+        const { data: chotQData } = await supabase.from("chot_q_phien")
+          .select("id").eq("dot_goi_id", dgId).eq("hieu_luc", true).maybeSingle();
+        if (luot !== luotTaiChinh.current) return; // M4k/L13: bỏ lượt tải cũ
+        setDaChotQ(!!chotQData);
+      } else {
+        setDaChotQ(false);
+      }
       setODaSua(daSua);
     } catch (e) {
+      if (luot !== luotTaiChinh.current) return; // M4k/L13: lỗi của lượt cũ, bỏ qua
       setLoi(dichLoi(e) || "Không tải được dữ liệu.");
     } finally {
-      setDangTai(false);
+      if (luot === luotTaiChinh.current) setDangTai(false); // M4k/L13
     }
   }, [goiId, khoaHienTai, dotId, sanSangGoi, taiODaLuu, taiSuaDeCuaPdd]);
 
@@ -795,9 +882,36 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
   // `giai_trinh_2627` còn đi đường cũ: giải trình là tiếng nói của từng khoa.
   // patch_zzzzr mở RLS cho dvsd ghi bảng tổng hợp, giới hạn ở mã hàng khoa
   // thật sự có đề xuất trong đợt.
+  // M6 (vòng 5, KIEM_DINH_DOC_LAP_LUOT3.md) — server từ chối lưu (vd cột đang
+  // khoá) thì trước bản vá này ô vẫn hiện chữ bị từ chối cho tới khi tải lại
+  // trang, dễ khiến người đọc lướt tưởng đã lưu thành công. Đọc lại đúng
+  // `oDangChon` (giống hệt cách `ketThucSuaO` chụp `giaTriMoLuc` — cùng lượt
+  // render, cùng closure, `setODangChon(null)` ở `ketThucSuaO` chỉ ĐẶT LỊCH
+  // render sau chứ không đổi biến `oDangChon` của lượt gọi này) để có mốc giá
+  // trị TRƯỚC khi sửa mà không cần đổi chữ ký hay điểm gọi hàm này. Dải báo
+  // lỗi (`loiLuuO`) giữ nguyên như cũ.
   const luuOLenServer = async (maHang, colKey, giaTri) => {
     const gt = giaTri == null ? "" : String(giaTri);
     const laGiaiTrinh = colKey === "giai_trinh_2627";
+    const giaTriTruocKhiSua = oDangChon?.maHang === maHang && oDangChon?.colKey === colKey
+      ? oDangChon.giaTriMoLuc : undefined;
+    const traOVeTruocKhiSua = () => {
+      if (giaTriTruocKhiSua === undefined) return; // không có mốc để trả về
+      setRows((prev) => prev.map((r) => (r.ma_hang === maHang
+        ? { ...r, [colKey]: giaTriTruocKhiSua }
+        : r)));
+    };
+
+    // Q08 — cột chữ PĐD ghi vào `danh_muc_tong_hop_o`, giải trình khoa ghi vào
+    // `danh_muc_khoa_o` (qua RPC `luu_o_danh_muc_khoa`) — cả hai đều theo năm
+    // ĐỢT khi có dotId (manager 28/09, đọc định nghĩa thật trên DB: cả
+    // `chot_trinh_ky_toan_bo_v3` lẫn trigger `fn_chan_o_cot_khoa_sua` đều so
+    // khớp nam_de_xuat với năm đợt/với danh_muc_khoa_cot_cau_hinh). Cột SỐ đi
+    // đường khác (`phan_bo_khoa`, không có nam_de_xuat) nên không cần chờ.
+    if (colKey !== COT_SO_KHOA && dotId && namDot == null) {
+      setLoiLuuO("Đang tra năm của đợt, thử lại sau vài giây.");
+      return;
+    }
 
     // Cột SỐ đi đường riêng: `phan_bo_khoa` chứ không phải bảng ô sửa tay.
     // Qua RPC chứ không update thẳng — tổng là phép cộng nên hai khoa bấm cùng
@@ -816,6 +930,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
         setLoiLuuO(loiSo.code === "PGRST202"
           ? "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_zzzzs_v2_khoa_sua_so). Vui lòng báo Phòng Điều dưỡng."
           : `Không lưu được số: ${dichLoi(loiSo)}`);
+        traOVeTruocKhiSua(); // M6: server từ chối, trả ô về số trước khi sửa
         return;
       }
       setLoiLuuO("");
@@ -836,13 +951,18 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
 
     const { error } = laGiaiTrinh
       ? await supabase.rpc("luu_o_danh_muc_khoa", {
-        p_goi_id: goiId, p_nam_de_xuat: NAM_DE_XUAT, p_khoa: khoaHienTai,
+        // Q08 — phải cùng năm với `danh_muc_khoa_cot_cau_hinh` (trigger
+        // `fn_chan_o_cot_khoa_sua` so khớp nam_de_xuat của hai bảng) và cùng
+        // năm ĐỢT để `chot_trinh_ky_toan_bo_v3` gom đúng giải trình vào
+        // `gia_tri_khoa` (`ok.nam_de_xuat = d.nam`).
+        p_goi_id: goiId, p_nam_de_xuat: dotId ? namDot : NAM_DE_XUAT, p_khoa: khoaHienTai,
         p_ma_hang: maHang, p_cot: colKey, p_gia_tri: gt,
         // patch_zzzzw — hàm từ chối ghi nếu thiếu DOT_GOI.
         p_dot_goi_id: dotGoiId,
       })
       : await supabase.from("danh_muc_tong_hop_o").upsert({
-        goi_id: goiScopeTongHop, nam_de_xuat: NAM_DE_XUAT, ma_hang: maHang,
+        // Q08 — cùng bảng, cùng luật năm-của-đợt đã ghi ở TongHopPdd.jsx.
+        goi_id: goiScopeTongHop, nam_de_xuat: namDot, ma_hang: maHang,
         cot: cotKhoaSangPdd(colKey), gia_tri: gt === "" ? null : gt,
         updated_by: profile?.email || khoaHienTai,
       }, { onConflict: "goi_id,nam_de_xuat,ma_hang,cot" });
@@ -852,6 +972,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
       setLoiLuuO(chuaPatch
         ? "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_zm_luu_o_danh_muc_khoa). Vui lòng báo Phòng Điều dưỡng."
         : `Không lưu được ô: ${dichLoi(error)}`);
+      traOVeTruocKhiSua(); // M6: server từ chối, trả ô về chữ trước khi sửa
       return;
     }
     setLoiLuuO("");
@@ -892,10 +1013,19 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
   // Lưu khi RỜI ô, không lưu theo từng phím: gõ một đoạn tiêu chí kỹ thuật dài
   // mà bắn mỗi ký tự một request thì vừa nặng vừa đầy audit vô ích.
   const ketThucSuaO = async (maHang, colKey) => {
+    // L19 28/09/2026 — không lưu khi giá trị không đổi (bấm vào ô rồi bấm ra
+    // từng làm khoa mất xác nhận; audit bs-t9:dot:203/66355). `oDangChon` vẫn
+    // còn nguyên (chưa bị setODangChon(null) ở dưới) nên `giaTriMoLuc` là
+    // đúng giá trị hiệu lực đang hiển thị lúc bấm vào ô, chụp ở onClick.
+    const giaTriMoLuc = oDangChon?.maHang === maHang && oDangChon?.colKey === colKey
+      ? oDangChon.giaTriMoLuc : undefined;
     setODangChon(null);
     if (colKey === COT_SO_KHOA && !dotGoiId) return;
     if (daKhoaSua(colKey)) return;
     const giaTri = rows.find((r) => r.ma_hang === maHang)?.[colKey];
+    if (giaTriMoLuc !== undefined && giaTriKhongDoi(giaTri, giaTriMoLuc, colKey === COT_SO_KHOA)) {
+      return; // đóng ô, không gọi server
+    }
     await luuOLenServer(maHang, colKey, giaTri);
   };
 
@@ -1046,7 +1176,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
         tieuDe: [
           "BỆNH VIỆN ĐẠI HỌC Y DƯỢC TP HỒ CHÍ MINH",
           (khoaHienTai || "").toUpperCase(),
-          `ĐỀ XUẤT DANH MỤC, SỐ LƯỢNG, YÊU CẦU KỸ THUẬT GÓI THẦU CUNG CẤP VẬT TƯ Y TẾ NĂM ${NAM_DE_XUAT}-${NAM_DE_XUAT + 1} (${boThau.nhan})`,
+          `ĐỀ XUẤT DANH MỤC, SỐ LƯỢNG, YÊU CẦU KỸ THUẬT GÓI THẦU CUNG CẤP VẬT TƯ Y TẾ NĂM ${namDot}-${namDot + 1} (${boThau.nhan})`,
           phienChinhThuc
             ? `BẢN CHÍNH THỨC · REVISION ${phienChinhThuc.revision} · ${new Date(phienChinhThuc.chot_luc).toLocaleString("vi-VN")}`
             : "BẢN NHÁP · CHƯA CHỐT TRÌNH KÝ TOÀN BỘ",
@@ -1064,7 +1194,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
             .catch(() => []),
         ),
         rows: rowsXuat,
-        tenFile: `danh-muc-de-xuat-${tenFileAnToan(khoaHienTai)}-${tenFileAnToan(boThau.nhan)}-${NAM_DE_XUAT}-${
+        tenFile: `danh-muc-de-xuat-${tenFileAnToan(khoaHienTai)}-${tenFileAnToan(boThau.nhan)}-${namDot}-${
           phienChinhThuc ? `chinh-thuc-rev-${phienChinhThuc.revision}` : "ban-nhap"}.xlsx`,
         tenSheet: "Danh mục đề xuất",
       });
@@ -1097,7 +1227,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
       {/* Thanh đầu trang UMC (đợt 4, 18/09/2026) — thay dòng breadcrumb cũ:
           logo · đường dẫn · tên màn · người dùng · nút về. Cùng một tầng. */}
       <ThanhDauUmc
-        duongDan={["VTYT", `Năm đề xuất ${NAM_DE_XUAT}`, boThau.nhan]}
+        duongDan={["VTYT", `Năm đề xuất ${namDot}`, boThau.nhan]}
         tenMan="Danh mục đề xuất của khoa"
         profile={profile} />
 
@@ -1260,11 +1390,22 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
               {soOPddSuaDe} ô đang mang giá trị DÙNG CHUNG toàn viện
             </span>
           )}
-          <span className="qtdx-badge green"
-            title={dotGoiId
-              ? "Số lượng khoa đề xuất: sửa được tại đây — tổng đi thầu là tổng của các khoa, sửa là tổng đổi theo"
-              : "Số lượng khoa đề xuất: đợt này chưa đi đường v3, chỉ sửa được ở màn Nhập đề xuất"}>
-            {dotGoiId ? "Số lượng: sửa được tại đây" : "Số lượng: sửa ở màn Nhập đề xuất"}
+          {/* N12 (kiểm định độc lập lượt 2) — nhãn này trước chỉ xét dotGoiId
+              nên vẫn nói "sửa được tại đây" cả khi đã chốt số đi thầu (server
+              đã khoá `phan_bo_khoa` bằng trigger, xem `daChotQ` ở taiLai).
+              Chữ khi đã chốt lấy nguyên ý từ chatbot (data/chatbotCauHoi.json,
+              câu "Sửa số thì báo Số tham gia thầu đã chốt…?"). */}
+          <span className={`qtdx-badge ${!dotGoiId ? "green" : daChotQ ? "amber" : "green"}`}
+            title={!dotGoiId
+              ? "Số lượng khoa đề xuất: đợt này chưa đi đường v3, chỉ sửa được ở màn Nhập đề xuất"
+              : daChotQ
+                ? "PĐD đã chốt số đi thầu nên cột số lượng đã khoá. Cần đổi số, nhắn Phòng Điều dưỡng qua Teams."
+                : "Số lượng khoa đề xuất: sửa được tại đây — tổng đi thầu là tổng của các khoa, sửa là tổng đổi theo"}>
+            {!dotGoiId
+              ? "Số lượng: sửa ở màn Nhập đề xuất"
+              : daChotQ
+                ? "Số lượng: PĐD đã chốt số đi thầu, không sửa được ở đây"
+                : "Số lượng: sửa được tại đây"}
           </span>
           {soMaRot > 0 && (
             <span className="qtdx-badge red">
@@ -1434,23 +1575,41 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
               ) : audit.dsAudit.length === 0 ? (
                 <p className="text-xs text-slate-400">Chưa có lần sửa nào.</p>
               ) : (
-                audit.dsAudit.map((a, i) => (
-                  <div key={i} className="text-xs border-b border-slate-100 pb-2">
-                    <div className="flex items-center gap-1.5 text-slate-400">
-                      <span className={`rounded px-1 py-0.5 text-[11px] font-semibold ${
-                        a.ben === "pdd" ? "bg-violet-100 text-violet-800" : "bg-slate-100 text-slate-600"
-                      }`}>
-                        {a.ben === "pdd" ? "PĐD" : "Khoa"}
-                      </span>
-                      {new Date(a.thoi_gian).toLocaleString("vi-VN")} · {a.nguoi_sua}
+                audit.dsAudit.map((a, i) => {
+                  // M9k (vòng 5, KIEM_DINH_DOC_LAP_LUOT3.md) — trước đây nhãn
+                  // lấy theo `a.ben` (bảng audit nào trả dòng này về: khoa hay
+                  // PĐD), không phải người sửa THẬT. Lần chính khoa (dvsd1) tự
+                  // gõ cột chữ chung vẫn ghi vào `danh_muc_tong_hop_o_audit`
+                  // (ben = "pdd") nên mang nhãn "PĐD" sai người. Đổi sang suy
+                  // ra từ `nguoi_sua` (email) bằng đúng hàm `tenNguoiSuaNgan`
+                  // đã dùng cho dấu vết "AI SỬA CUỐI" ở màn này: pdd/admin…
+                  // mới ra "PĐD", còn lại (kể cả dvsd…) hiện tên rút gọn từ
+                  // chính email — không gán cứng "Khoa" hay "PĐD" khi không
+                  // chắc vai trò.
+                  const nhanNguoiSua = tenNguoiSuaNgan(a.nguoi_sua);
+                  return (
+                    <div key={i} className="text-xs border-b border-slate-100 pb-2">
+                      <div className="flex items-center gap-1.5 text-slate-400">
+                        <span className={`rounded px-1 py-0.5 text-[11px] font-semibold ${
+                          nhanNguoiSua === "PĐD" ? "bg-violet-100 text-violet-800" : "bg-slate-100 text-slate-600"
+                        }`}>
+                          {nhanNguoiSua}
+                        </span>
+                        {new Date(a.thoi_gian).toLocaleString("vi-VN")} · {a.nguoi_sua}
+                      </div>
+                      <div className="mt-0.5 whitespace-pre-wrap break-words">
+                        <span className="text-slate-400 line-through">{a.gia_tri_cu ?? "(trống)"}</span>
+                        {" → "}
+                        <span className="text-slate-800 font-medium">
+                          {/* M9k — "Khôi phục ô" ghi gia_tri_moi rỗng/null; đọc
+                              "(trống)" dễ hiểu lầm là PĐD/khoa xoá trắng ô,
+                              trong khi thật ra là trả về giá trị gốc. */}
+                          {a.gia_tri_moi || "(bỏ sửa, về giá trị gốc)"}
+                        </span>
+                      </div>
                     </div>
-                    <div className="mt-0.5 whitespace-pre-wrap break-words">
-                      <span className="text-slate-400 line-through">{a.gia_tri_cu ?? "(trống)"}</span>
-                      {" → "}
-                      <span className="text-slate-800 font-medium">{a.gia_tri_moi ?? "(trống)"}</span>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </motion.div>
@@ -1529,7 +1688,18 @@ function RowKhoa({
                 minWidth: c.width, maxWidth: c.width * 1.3,
                 ...(c.freeze ? { left: tinhLeftFreeze(cotHienThi, c.key) } : {}),
               }}
-              onClick={() => canSua && setODangChon({ maHang: r.ma_hang, colKey: c.key })}
+              // L19 28/09/2026 — chụp lại giá trị hiệu lực đang hiển thị NGAY
+              // lúc mở ô (trước khi capNhatO có thể ghi đè `value` trong
+              // `rows` theo từng phím gõ), để ketThucSuaO so sánh lúc rời ô.
+              // M1 (vòng 5, KIEM_DINH_DOC_LAP_LUOT3.md) — THIẾU `!isEditing`:
+              // bấm lại vào TRONG ô đang gõ (vd để đặt con trỏ) làm sự kiện
+              // click nổi lên tới ô và chụp lại `giaTriMoLuc` bằng CHỮ VỪA GÕ,
+              // nên lúc rời ô `giaTriKhongDoi` so hai giá trị bằng nhau và bỏ
+              // qua, không lưu — trong khi màn vẫn hiện chữ mới, tải lại thì
+              // mất. Thêm `!isEditing` để chỉ chụp lại mốc so sánh khi ô CHƯA
+              // đang sửa, đúng mẫu đã làm ở TongHopPdd.jsx (~dòng 1512).
+              onClick={() => canSua && !isEditing
+                && setODangChon({ maHang: r.ma_hang, colKey: c.key, giaTriMoLuc: value })}
             >
               {c.key === "dai_p50_p75" ? (
                 <span title={coDai

@@ -7,6 +7,7 @@ nhất khoá cứng 2 được thi hành, và là điều kiện của Excel ch�
 
 Test này canh để chuyện đó không lặp lại.
 """
+import re
 from pathlib import Path
 
 import pytest
@@ -22,8 +23,16 @@ def cum() -> str:
 def test_co_component_chot_trinh_ky_tren_tong_hop(cum: str) -> None:
     assert "export function ChotTrinhKyTongHop" in cum
     than = cum.split("export function ChotTrinhKyTongHop")[1]
+    # 🔄 28/09/2026 vòng 5 (patch_zzzzzzzk, xem test_vong5_ra_code.py mã
+    # M7/N1): "chot_trinh_ky_toan_bo_v3" không còn được GỌI TRỰC TIẾP từ
+    # client — server đã gộp nó cùng vòng lặp chốt khoa vào MỘT hàm nguyên
+    # khối (`chot_trinh_ky_toan_bo_nguyen_khoi_v3`), đổi chỗ đòi hỏi tương
+    # ứng. Ba RPC còn lại vẫn được client gọi trực tiếp: `khoa_chua_du_chot_trinh_ky`
+    # (đọc trạng thái), `chot_trinh_ky_khoa_v3` (chỉ còn xuất hiện qua truy vấn
+    # đọc bảng `daChot` trong `doc()`, không còn gọi RPC trong `chotHet`),
+    # `mo_chot_trinh_ky_khoa_v3` (nút "Mở lại một khoa").
     for rpc in ("chot_trinh_ky_khoa_v3", "mo_chot_trinh_ky_khoa_v3",
-                "chot_trinh_ky_toan_bo_v3", "khoa_chua_du_chot_trinh_ky"):
+                "chot_trinh_ky_toan_bo_nguyen_khoi_v3", "khoa_chua_du_chot_trinh_ky"):
         assert rpc in than, f"thiếu {rpc}"
 
 
@@ -47,13 +56,24 @@ def test_khong_doc_duoc_cong_thi_khoa_nut(cum: str) -> None:
 def test_MOT_nut_khong_phai_50(cum: str) -> None:
     """QĐ 21/08/2026 bỏ hẳn 49 nút chốt từng bảng khoa (06_DUNG_LAM_LAI dòng 41).
 
-    Bản đầu của panel dựng lại đúng 50 nút đó — rà soát độc lập bắt được. Server
-    vẫn đòi chốt từng khoa trước khi chốt toàn bộ, nên đường đúng là MỘT nút,
-    máy tự chạy vòng lặp.
+    Bản đầu của panel dựng lại đúng 50 nút đó — rà soát độc lập bắt được.
+
+    🔄 28/09/2026 vòng 5 (patch_zzzzzzzk): "server vẫn đòi chốt từng khoa
+    trước khi chốt toàn bộ, nên đường đúng là MỘT nút, máy tự chạy vòng lặp"
+    — câu đó vẫn đúng về NGHIỆP VỤ, nhưng "máy tự chạy vòng lặp" giờ là SERVER
+    (bên trong `chot_trinh_ky_toan_bo_nguyen_khoi_v3`, một giao dịch), không
+    còn là vòng `for` ở CLIENT như vòng 3/4 (lý do: vòng lặp ở client tạo
+    trạng thái nửa chốt nếu bước cuối bị từ chối — xem M7/N1,
+    test_vong5_ra_code.py). Đổi mốc kiểm tra từ "có vòng for ở client" thành
+    "chotHet gọi ĐÚNG MỘT RPC nguyên khối" — tinh thần MỘT NÚT giữ nguyên.
     """
     than = cum.split("export function ChotTrinhKyTongHop")[1]
-    assert "for (let i = 0; i < khoaThieu.length" in than, \
-        "một nút phải tự chạy vòng lặp qua các khoa còn thiếu"
+    m = re.search(r"const chotHet = async \(\) => \{([\s\S]*?)\n  \};", than)
+    assert m, "không tìm thấy hàm chotHet"
+    assert '"chot_trinh_ky_toan_bo_nguyen_khoi_v3"' in m.group(1), \
+        "một nút phải gọi đúng một RPC nguyên khối ở server"
+    assert "for (let i = 0; i < khoaThieu.length" not in m.group(1), \
+        "không còn vòng lặp chốt từng khoa Ở CLIENT — việc đó chuyển vào server"
     assert 'x.textContent.trim()' not in than
     assert than.count("CHỐT TRÌNH KÝ TOÀN BỘ") == 1
     # Không được có nút "chốt" theo từng khoa nữa
@@ -68,9 +88,24 @@ def test_mo_lai_la_mot_o_chon_khong_phai_50_nut(cum: str) -> None:
 
 
 def test_dung_ngay_o_khoa_dau_tien_loi(cum: str) -> None:
-    """Chốt được nửa chừng rồi im lặng là trạng thái khó gỡ nhất."""
+    """Chốt được nửa chừng rồi im lặng là trạng thái khó gỡ nhất.
+
+    🔄 28/09/2026 vòng 5 (patch_zzzzzzzk): câu 'Dừng ở khoa "${k}"' là văn bản
+    của lưới tự gỡ (`goTuDong`) khi vòng lặp chốt khoa Ở CLIENT bị từ chối
+    giữa chừng — cả vòng lặp lẫn lưới đó đã bỏ hẳn (xem M7/N1,
+    test_vong5_ra_code.py::test_m7n1_khong_con_gotudong_hay_khoavuachotluotnay_trong_code).
+    Tinh thần bài test ("không được chốt nửa chừng rồi im lặng") giờ được đảm
+    bảo ở TẦNG KHÁC: `chot_trinh_ky_toan_bo_nguyen_khoi_v3` là MỘT giao dịch
+    DB, một khoa bị từ chối thì Postgres tự rollback HẾT — không có "nửa
+    chừng" nào để phải dừng lại giữa vòng lặp và báo "khoa nào" nữa."""
     than = cum.split("export function ChotTrinhKyTongHop")[1]
-    assert 'Dừng ở khoa "${k}"' in than
+    m = re.search(r"const chotHet = async \(\) => \{([\s\S]*?)\n  \};", than)
+    assert m, "không tìm thấy hàm chotHet"
+    # Không còn vòng lặp/lưới tự gỡ theo từng khoa ở client.
+    assert 'Dừng ở khoa "${k}"' not in m.group(1)
+    assert "goTuDong" not in m.group(1)
+    # Lỗi (bất kỳ bước nào ở server) phải dừng hẳn — return ngay khi có error.
+    assert re.search(r"if \(error\) \{[\s\S]*?return;", m.group(1))
 
 
 def test_khong_dung_window_prompt(cum: str) -> None:

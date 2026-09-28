@@ -16,11 +16,11 @@ Test chỉ đọc văn bản (jsx + sql), không chạm DB, không chạy build.
 - Q01 (28/09/2026, hai QĐ giao diện của chủ dự án): TongHopKetQuaThau.jsx bỏ
   hẳn form sửa kết quả thầu (QĐ A2 — màn chỉ để xem); không còn nút "Nhập kết
   quả".
-- Q03 (28/09/2026): GioRotCuaKhoa.jsx — truy vấn đợt bổ sung đích phải lấy đợt
-  SỚM NHẤT đang mở (ascending), khớp `fn_dot_bo_sung_gan_nhat`
-  (patch_zzzzz_vong_khep_kin.sql); và không còn nút/nhãn "Đang lập đề xuất bổ
+- Q03 (28/09/2026): GioRotCuaKhoa.jsx — không còn nút/nhãn "Đang lập đề xuất bổ
   sung" (luồng cũ, đã đảo bởi QĐ 26/08/2026 — mã rớt vào giỏ kèm số gợi ý,
-  khoa tự gửi).
+  khoa tự gửi). Phần khác của Q03 — "lấy đợt bổ sung sớm nhất đang mở" — chỉ
+  đúng tới hết T9/2026 và đã bị L08b (vòng 3, xem test_vong3_ra_code.py) bỏ
+  hẳn: KIEM_DINH_DOC_LAP.md #3.
 """
 import re
 from pathlib import Path
@@ -121,19 +121,18 @@ def test_q01_khong_con_form_sua_nut_nhap_ket_qua():
     assert "Nhập kết quả" not in text
 
 
-def test_q03_dot_bo_sung_dich_dung_ascending():
-    """Q03 (28/09/2026): truy vấn đợt bổ sung đích trong GioRotCuaKhoa.jsx
-    phải lấy đợt SỚM NHẤT đang mở (ascending), khớp cách `fn_dot_bo_sung_gan_nhat`
-    (backend/sql/patch_zzzzz_vong_khep_kin.sql ~370-393) chọn mốc: duyệt
-    T1/T5/T9 từ ngày hiện tại đi TỚI, dừng ở mốc chưa chốt Q đầu tiên — tức
-    đợt gần nhất, không phải đợt xa nhất."""
+def test_l08b_dot_that_tu_chuyen_tiep_khong_con_doan_ascending():
+    """L08b (28/09/2026, KIEM_DINH_DOC_LAP.md #3): bản Q03 ở trên chỉ đúng tới
+    hết T9/2026 — `.order(..., { ascending: true })` trên `dot_de_xuat` đoán
+    "đợt sớm nhất đang mở" nhưng không khớp `fn_dot_bo_sung_gan_nhat` sau khi
+    mốc đích đổi (mốc đã qua/đã chốt Q bị bỏ qua theo NGÀY, không theo thứ tự
+    liệt kê). L08b bỏ hẳn cách đoán này: mỗi mục đọc ĐÚNG đợt thật đã ghi ở
+    `chuyen_tiep_rot_v3.dot_goi_bo_sung_id` khi `xac_nhan_rot_v3` chạy."""
     text = GIO_ROT_CUA_KHOA.read_text(encoding="utf-8")
-    assert '.order("nam", { ascending: true })' in text
-    assert '.order("thang_moc", { ascending: true })' in text
-    # Không còn truy vấn nào lấy "xa nhất" (ascending: false) cho hai cột này.
-    idx = text.index('.from("dot_de_xuat")')
-    doan = text[idx: idx + 400]
-    assert "ascending: false" not in doan
+    assert 'from("dot_de_xuat")' not in text
+    assert '.order("nam", { ascending: true })' not in text
+    assert 'from("chuyen_tiep_rot_v3")' in text
+    assert "dot_goi_bo_sung_id" in text
 
 
 def test_q03_khong_con_nut_dang_lap_de_xuat_bo_sung():

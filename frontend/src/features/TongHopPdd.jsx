@@ -31,6 +31,7 @@ import ThanhTienTrinh, { diToiPhanTu } from "../components/ThanhTienTrinh";
 import ThanhDauUmc, { useDongKhiRaNgoai, doRongNhanNhom } from "../components/ThanhDauUmc";
 import { tinhTienTrinhPdd } from "../lib/tienTrinh";
 import { dauVaoPdd, useKhoaThamGiaVaDaGui } from "../lib/useTienTrinh";
+import { giaTriKhongDoi } from "../lib/oKhongDoi";
 
 /*
  * TongHopPdd — Excel Tổng hợp Danh mục đề xuất cấp PĐD.
@@ -421,6 +422,27 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   // Cùng một biểu mẫu có thể tái diễn ở nhiều kỳ 18 tháng. Scope này được
   // dùng cho phần Excel web/ghi đè để kỳ sau không đọc hay khoá kỳ trước.
   const goiScope = dotId ? `${goiId}:dot:${dotId}` : goiId;
+  // Q08 (QĐ chủ dự án 28/09/2026) — "năm đề xuất" của MỘT Ô là năm của ĐỢT
+  // (`dot_de_xuat.nam`), KHÔNG phải hằng `NAM_DE_XUAT` (= năm hiện tại + 1).
+  // Lý do: `day_ky_ve_danh_muc` và `chot_trinh_ky_toan_bo_v3` (bản mới nhất —
+  // backend/sql/patch_zzzzzzd_danh_muc_chuan_theo_ky.sql, đọc bằng tên file vì
+  // repo SQL không phải nguồn chuẩn, xem AGENTS.md điều 2) lọc
+  // `danh_muc_tong_hop_o.nam_de_xuat = dot_de_xuat.nam` khi gom ô PĐD đã sửa
+  // xuống bản chốt. Đợt có `nam` khác năm hiện tại+1 (vd #202=2028, #203=2026)
+  // thì chữ PĐD sửa bằng hằng cũ sẽ KHÔNG vào bản chốt.
+  // Không có `dotId` (đường cũ) -> giữ hằng `NAM_DE_XUAT` như trước.
+  const [namDot, setNamDot] = useState(() => (dotId ? null : NAM_DE_XUAT));
+  useEffect(() => {
+    let huy = false;
+    if (!dotId) { setNamDot(NAM_DE_XUAT); return undefined; }
+    setNamDot(null); // chờ tra lại — đừng để phần dưới tải/ghi nhầm năm cũ
+    supabase.from("dot_de_xuat").select("nam").eq("id", Number(dotId)).maybeSingle()
+      .then(({ data, error }) => {
+        if (huy) return;
+        setNamDot(error || data?.nam == null ? NAM_DE_XUAT : data.nam);
+      });
+    return () => { huy = true; };
+  }, [dotId]);
   const [rowsGoc, setRowsGoc] = useState([]);
   const [overrideTheoMa, setOverrideTheoMa] = useState(new Map());
   // (mã hàng -> cột -> {updated_by, updated_at}) — dấu vết AI SỬA CUỐI ô đó.
@@ -455,19 +477,35 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   // "chưa rõ". Chỉ ghi nhận lỗi ở đây — KHÔNG đổi giá trị mà các nút đang dùng.
   const [loiNguonTienTrinh, setLoiNguonTienTrinh] = useState({});
 
+  // M4 (kiểm định độc lập lượt 3, mẫu L13 ở BanDieuHanhPdd.jsx) — đổi đợt bằng
+  // hash trong CÙNG TAB (không tải lại trang) thì có thể có hai lượt `taiLai`
+  // chạy chồng nhau (lượt của đợt cũ chưa kịp trả lời khi đã đổi sang đợt
+  // mới). Nếu lượt cũ trả lời SAU, nó ghi đè state bằng dữ liệu/năm của đợt
+  // cũ lên trên màn đang đứng ở đợt mới. Đếm lượt bằng ref; sau MỖI await bên
+  // dưới, nếu không còn là lượt mới nhất thì bỏ ngang, không setState gì
+  // thêm (kể cả `dangTai`/`loi`) — lượt mới nhất sẽ tự lo phần đó.
+  const luotTaiRef = useRef(0);
+
   const taiLai = useCallback(async () => {
+    // Q08 — có dotId thì phải chờ tra xong năm đợt trước khi tải dữ liệu phụ
+    // thuộc (override/khoá theo nam_de_xuat); tải bằng năm còn null sẽ tra
+    // nhầm hoặc ghi nhầm năm.
+    if (dotId && namDot == null) return;
+    const luot = ++luotTaiRef.current;
     setDangTai(true);
     setLoi("");
     try {
       const [{ bo, rows, dsNamCoDuLieu: dsNam, dotGoiId: dgId }, khoaVaOverride] = await Promise.all([
         taiDuLieuGoc(goiId, dotId),
-        taiOverrideVaKhoa(goiScope, NAM_DE_XUAT),
+        taiOverrideVaKhoa(goiScope, namDot),
       ]);
+      if (luot !== luotTaiRef.current) return; // M4: có lượt mới hơn, bỏ kết quả cũ
       const { overrideTheoMa: ov, veSuaCuoiTheoMa: vsc, cotLocked: cl,
         dongLocked: dl, cotAn: ca, oKhoaTheoMa: okm } = khoaVaOverride;
       // Danh sách khoa chưa xác nhận — tải cùng lúc với trạng thái chốt.
       if (dgId) {
         const { data: chuaXn, error: loiChuaXn } = await supabase.rpc("khoa_chua_xac_nhan", { p_dot_goi_id: dgId });
+        if (luot !== luotTaiRef.current) return; // M4: có lượt mới hơn, bỏ kết quả cũ
         setKhoaChuaXacNhan((chuaXn || []).map((x) => (typeof x === "string" ? x : x.khoa)));
         setLoiNguonTienTrinh((cu) => ({ ...cu, chuaXacNhan: !!loiChuaXn }));
       } else {
@@ -488,6 +526,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
             .select("revision").eq("dot_goi_id", dgId).eq("hieu_luc", true).maybeSingle()
           : Promise.resolve({ data: null, error: null }),
       ]);
+      if (luot !== luotTaiRef.current) return; // M4: có lượt mới hơn, bỏ kết quả cũ
       setChot(chotRes.error ? null : (chotRes.data || null));
       setRevTrinhKy(trinhKyRes.error ? null : (trinhKyRes.data?.revision ?? null));
       setLoiNguonTienTrinh((cu) => ({ ...cu, q: !!chotRes.error, trinhKy: !!trinhKyRes.error }));
@@ -502,11 +541,13 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       setCotAn(ca);
       setOKhoaTheoMa(okm || new Map());
     } catch (e) {
-      setLoi(dichLoi(e) || "Không tải được dữ liệu.");
+      if (luot === luotTaiRef.current) setLoi(dichLoi(e) || "Không tải được dữ liệu.");
     } finally {
-      setDangTai(false);
+      // M4: chỉ lượt MỚI NHẤT mới được phép tắt "đang tải" — nếu để lượt cũ
+      // tắt, nó có thể tắt đè lên lúc lượt mới còn đang chạy.
+      if (luot === luotTaiRef.current) setDangTai(false);
     }
-  }, [goiId, dotId, goiScope]);
+  }, [goiId, dotId, goiScope, namDot]);
 
   useEffect(() => {
     let huy = false;
@@ -521,6 +562,20 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   const [giaTriDangGo, setGiaTriDangGo] = useState("");
   const [dangLuu, setDangLuu] = useState(false);
   const [loiO, setLoiO] = useState("");
+  // M5 — khai báo `audit` ở đây (trước, không phải chỗ cũ ở dưới) để
+  // useEffect ngay sau có thể gọi `setAudit` mà không đụng TDZ.
+  const [audit, setAudit] = useState(null); // { maHang, cot, dsAudit, dangTai }
+  // L18 (28/09/2026) — đổi sang gói con/đợt khác trong cùng tab (đổi hash,
+  // không tải lại trang) thì lỗi thao tác của bảng cũ không được đi theo.
+  // N7 (kiểm định độc lập lượt 2) — dải xanh báo thành công (`thongBaoThau`,
+  // vd "Đã chốt trình ký toàn bộ…") cùng họ với lỗi này nhưng bị bỏ sót, nên
+  // đổi gói/đợt xong vẫn thấy dải báo thành công của bảng CŨ.
+  // M5 (kiểm định độc lập lượt 3, cùng họ L18/N7) — hộp "Lịch sử sửa ô" (state
+  // `audit`) và ô đang sửa (`oDangChon`) cũng phải đóng/bỏ khi đổi gói/đợt,
+  // giống lỗi đã vá của loiO/thongBaoThau: nếu không, hộp lịch sử của mã hàng
+  // bên đợt CŨ còn hiện đè lên màn của đợt MỚI (mã đó có thể không tồn tại ở
+  // đợt mới).
+  useEffect(() => { setLoiO(""); setThongBaoThau(""); setAudit(null); setODangChon(null); }, [goiId, dotId]);
   const [rowMoRong, setRowMoRong] = useState(new Set());
   const [cotAn, setCotAn] = useState(new Set());
   const [openMenuCot, setOpenMenuCot] = useState(false);
@@ -535,7 +590,6 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   // Mặc định hiện ĐẦY ĐỦ nội dung mọi ô (wraptext) — xem StyleTable.
   const [dongGon, setDongGon] = useState(false);
   const [dangXuat, setDangXuat] = useState(false);
-  const [audit, setAudit] = useState(null); // { maHang, cot, dsAudit, dangTai }
   const [dsNamCoDuLieu, setDsNamCoDuLieu] = useState([]);
   const [phanBoDangSua, setPhanBoDangSua] = useState(null);
   const [revTrinhKy, setRevTrinhKy] = useState(null);
@@ -666,12 +720,15 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   const toggleKhoa = async (loai, khoaKey, dangKhoa) => {
     if (dangKhoa) {
       const { error } = await supabase.from("danh_muc_tong_hop_khoa").delete()
-        .eq("goi_id", goiScope).eq("nam_de_xuat", NAM_DE_XUAT).eq("loai", loai).eq("khoa_key", khoaKey);
+        .eq("goi_id", goiScope).eq("nam_de_xuat", namDot).eq("loai", loai).eq("khoa_key", khoaKey);
       if (error) { setLoiO(thongBaoLoiKhoa(error, loai)); return; }
       setStateTheoLoai(loai)((prev) => { const n = new Set(prev); n.delete(khoaKey); return n; });
     } else {
       const { error } = await supabase.from("danh_muc_tong_hop_khoa").insert({
-        goi_id: goiScope, nam_de_xuat: NAM_DE_XUAT, loai, khoa_key: khoaKey,
+        // Q08 — phải cùng năm với `danh_muc_tong_hop_o` (namDot): trigger
+        // `fn_chan_o_da_lock` so khớp nam_de_xuat của hai bảng này khi chặn ô
+        // đã khoá, lệch năm là khoá "biến mất" khỏi mắt server.
+        goi_id: goiScope, nam_de_xuat: namDot, loai, khoa_key: khoaKey,
         locked_by: profile.email,
       });
       if (error) { setLoiO(thongBaoLoiKhoa(error, loai)); return; }
@@ -790,7 +847,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
         tieuDe: [
           "BỆNH VIỆN ĐẠI HỌC Y DƯỢC THÀNH PHỐ HỒ CHÍ MINH",
           "PHÒNG ĐIỀU DƯỠNG",
-          `DANH MỤC, SỐ LƯỢNG, YÊU CẦU KỸ THUẬT VẬT TƯ Y TẾ NĂM ${NAM_DE_XUAT}-${NAM_DE_XUAT + 1} (${boThau.nhan})`,
+          `DANH MỤC, SỐ LƯỢNG, YÊU CẦU KỸ THUẬT VẬT TƯ Y TẾ NĂM ${namDot}-${namDot + 1} (${boThau.nhan})`,
           phienChinhThuc
             ? `BẢN CHÍNH THỨC · REVISION ${phienChinhThuc.revision} · ${new Date(phienChinhThuc.chot_luc).toLocaleString("vi-VN")}`
             : "BẢN NHÁP · CHƯA CHỐT TRÌNH KÝ TOÀN BỘ",
@@ -800,7 +857,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
         cot: ganTenMau(cotXuat, COT_PDD, tenMau),
         cotKhoa,
         rows: duLieu,
-        tenFile: `tong-hop-di-thau-${tenFileAnToan(boThau.nhan)}-${NAM_DE_XUAT}-${
+        tenFile: `tong-hop-di-thau-${tenFileAnToan(boThau.nhan)}-${namDot}-${
           phienChinhThuc ? `chinh-thuc-rev-${phienChinhThuc.revision}` : "ban-nhap"}.xlsx`,
         tenSheet: "Tổng hợp",
       });
@@ -848,7 +905,11 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
 
   const batDauSua = (maHang, colKey, giaTriHienTai) => {
     setLoiO("");
-    setODangChon({ maHang, colKey });
+    // L19 28/09/2026 — giữ lại giá trị hiệu lực đang hiển thị NGAY lúc mở ô
+    // (`giaTriMoLuc`), để `luuO` so sánh khi bấm Lưu/rời ô — xem chú thích ở
+    // đó. Đặt tên khác với hàm `giaTriGoc(maHang, cot)` đã có sẵn ở trên (đọc
+    // từ `rowGocTheoMa`, dùng cho tooltip "số gốc") để khỏi trùng/che tên.
+    setODangChon({ maHang, colKey, giaTriMoLuc: giaTriHienTai ?? "" });
     setGiaTriDangGo(giaTriHienTai ?? "");
   };
 
@@ -856,7 +917,15 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   // (báo lỗi rõ trong error.message), tự ghi audit. ----
   const luuO = async () => {
     if (!oDangChon) return;
-    const { maHang, colKey } = oDangChon;
+    const { maHang, colKey, giaTriMoLuc } = oDangChon;
+    // L19 28/09/2026 — không lưu khi giá trị không đổi (bấm vào ô rồi bấm ra
+    // từng làm khoa mất xác nhận; audit bs-t9:dot:203/66355). Chặn TRƯỚC khi
+    // rẽ nhánh: không nhánh nào bên dưới (mở màn phân bổ của sl_de_xuat_2627,
+    // hay upsert cột chữ/số) cần chạy khi không có gì đổi.
+    if (giaTriKhongDoi(giaTriDangGo, giaTriMoLuc, colKey === "sl_de_xuat_2627")) {
+      setODangChon(null);
+      return;
+    }
     setDangLuu(true);
     setLoiO("");
     // Cột số không còn là override: đặt tổng mới sẽ chia xuống phan_bo_khoa
@@ -897,7 +966,10 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
     }
 
     const { error } = await supabase.from("danh_muc_tong_hop_o").upsert({
-      goi_id: goiScope, nam_de_xuat: NAM_DE_XUAT, ma_hang: maHang, cot: colKey,
+      // Q08 — server (day_ky_ve_danh_muc) chỉ gom ô có nam_de_xuat = nam của
+      // ĐỢT khi chốt trình ký; ghi bằng hằng cũ thì ô PĐD sửa "biến mất" khỏi
+      // bản chốt ở đợt có nam khác năm hiện tại+1.
+      goi_id: goiScope, nam_de_xuat: namDot, ma_hang: maHang, cot: colKey,
       gia_tri: giaTriDangGo === "" ? null : String(giaTriDangGo),
       updated_by: profile.email,
     }, { onConflict: "goi_id,nam_de_xuat,ma_hang,cot" });
@@ -997,7 +1069,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
     setLoiO("");
     const { data, error } = await supabase.from("danh_muc_tong_hop_o")
       .delete()
-      .eq("goi_id", goiScope).eq("nam_de_xuat", NAM_DE_XUAT)
+      .eq("goi_id", goiScope).eq("nam_de_xuat", namDot)
       .eq("ma_hang", maHang).eq("cot", colKey)
       .select();
     if (error) { setLoiO(dichLoi(error)); return; }
@@ -1027,9 +1099,16 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
 
   const xemAudit = async (maHang, colKey) => {
     setAudit({ maHang, cot: colKey, dsAudit: [], dangTai: true });
-    const { data, error } = await supabase.from("danh_muc_tong_hop_o_audit")
+    // M3 (kiểm định độc lập lượt 3) — khi có `dotId`, `goiScope` đã mang hậu tố
+    // ":dot:N" nên KHÔNG lọc thêm theo `nam_de_xuat`. Lọc thêm năm làm mất các
+    // dòng audit cũ mang năm khác (vd năm hằng cũ 2027) mà màn khoa (chỉ lọc
+    // goi_id) vẫn thấy đủ — cùng ô, hai màn ra số dòng lịch sử khác nhau.
+    // Không có `dotId` (đường cũ) thì giữ nguyên lọc theo năm như trước.
+    let q = supabase.from("danh_muc_tong_hop_o_audit")
       .select("gia_tri_cu, gia_tri_moi, nguoi_sua, thoi_gian")
-      .eq("goi_id", goiScope).eq("nam_de_xuat", NAM_DE_XUAT).eq("ma_hang", maHang).eq("cot", colKey)
+      .eq("goi_id", goiScope);
+    if (!dotId) q = q.eq("nam_de_xuat", namDot);
+    const { data, error } = await q.eq("ma_hang", maHang).eq("cot", colKey)
       .order("thoi_gian", { ascending: false }).limit(20);
     setAudit({ maHang, cot: colKey, dsAudit: error ? [] : (data || []), dangTai: false, loi: dichLoi(error) });
   };
@@ -1058,7 +1137,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
 
       {/* Thanh đầu trang UMC (đợt 4, 18/09/2026) — thay dòng breadcrumb cũ. */}
       <ThanhDauUmc
-        duongDan={["VTYT", `Năm đề xuất ${NAM_DE_XUAT}`, boThau.nhan]}
+        duongDan={["VTYT", `Năm đề xuất ${namDot}`, boThau.nhan]}
         tenMan="Danh mục tổng hợp PĐD"
         profile={profile} />
 
@@ -1169,6 +1248,11 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                 <ChotTrinhKyTongHop
                   trongThanhCongCu
                   dotGoiId={dotGoiId}
+                  // L17 28/09/2026 — cùng dữ liệu `v_phan_bo_trung_theo_ma_v3`
+                  // (qua useDuLieuThau ở trên) mà server dùng cho khoá cứng 2
+                  // trong chot_trinh_ky_toan_bo_v3. Xem chú thích tại định
+                  // nghĩa ChotTrinhKyTongHop trong CumThauTongHop.jsx.
+                  phanBo={thau.phanBo}
                   onXong={async (m) => {
                     setThongBaoThau(m || "");
                     await thau.taiLaiThau();
@@ -1201,7 +1285,12 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
               coPhienQ={thau.coPhienQ}
               soChuaChia={thau.soChuaChia}
               dotIdTrenUrl={dotId}
-              onLoi={(m) => setLoi(m)}
+              // L16 28/09/2026 — đây là lỗi THAO TÁC (đổi giai đoạn thầu / xác
+              // nhận rớt), không phải lỗi TẢI TRANG. Trước đổ vào `loi` (trang
+              // lỗi toàn màn) nên server từ chối một thao tác là mất cả màn
+              // Tổng hợp. Đổi sang `loiO` — dải báo lỗi cục bộ có sẵn trên
+              // thanh công cụ, không thay trang.
+              onLoi={(m) => setLoiO(m)}
               onXong={async (m) => {
                 setThongBaoThau(m || "");
                 await thau.taiLaiThau();
@@ -1573,7 +1662,10 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                         p_dot_goi_id: dotGoiId, p_ma_hang: r.ma_hang,
                       });
                       setDangChiaTiLe("");
-                      if (error) { setLoi(dichLoi(error)); return; }
+                      // L16 28/09/2026 — lỗi thao tác "Chia theo tỉ lệ Q", không
+                      // phải lỗi tải trang. Cùng mẫu với `onLoi` ở trên: đổ vào
+                      // `loiO` cục bộ, không thay cả màn Tổng hợp bằng trang lỗi.
+                      if (error) { setLoiO(dichLoi(error)); return; }
                       await thau.taiLaiThau();
                     }}
                     onSuaRot={(row, giaiDoan, giaTri) =>
@@ -1766,11 +1858,20 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
               ) : (
                 audit.dsAudit.map((a, i) => (
                   <div key={i} className="text-xs border-b border-slate-100 pb-2">
+                    {/* M9 (kiểm định độc lập lượt 3) — nhãn theo NGƯỜI SỬA THẬT
+                        đọc thẳng từ `nguoi_sua`, không gán cứng. */}
                     <div className="text-slate-400">{new Date(a.thoi_gian).toLocaleString("vi-VN")} · {a.nguoi_sua}</div>
                     <div className="mt-0.5">
                       <span className="text-slate-400 line-through">{a.gia_tri_cu ?? "(trống)"}</span>
                       {" → "}
-                      <span className="text-slate-800 font-medium">{a.gia_tri_moi ?? "(trống)"}</span>
+                      {/* M9 — `gia_tri_moi` rỗng/null là do "Khôi phục ô" (trả
+                          về giá trị gốc), KHÔNG phải xoá trắng — đổi chữ cho
+                          đúng nghĩa, tránh đọc nhầm là PĐD đã xoá ô. */}
+                      {a.gia_tri_moi == null || a.gia_tri_moi === "" ? (
+                        <span className="text-slate-500 italic">(bỏ sửa, về giá trị gốc)</span>
+                      ) : (
+                        <span className="text-slate-800 font-medium">{a.gia_tri_moi}</span>
+                      )}
                     </div>
                   </div>
                 ))

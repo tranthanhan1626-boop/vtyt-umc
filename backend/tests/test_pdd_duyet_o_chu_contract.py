@@ -103,7 +103,8 @@ def test_v2_o_ben_khoa_sua_duoc_va_doc_tu_dong():
     # chuỗi tại chỗ vẽ.
     assert ": r[c.key];" in KHOA_JSX
     assert 'c.readonly || !canSua ? "readonly" : "",' in KHOA_JSX
-    assert "canSua && setODangChon" in KHOA_JSX
+    # M1 (28/09/2026): mở ô chỉ khi ô CHƯA đang sửa.
+    assert "canSua && !isEditing" in KHOA_JSX and "&& setODangChon({" in KHOA_JSX
     assert "apGiaTriChung(dong)" in KHOA_JSX
     assert "pddDuyet" not in KHOA_JSX
 

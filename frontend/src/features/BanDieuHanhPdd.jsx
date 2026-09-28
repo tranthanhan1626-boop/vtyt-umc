@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, Bell, Building2, CheckCircle2, ChevronDown, ChevronRight,
   Copy, Database, ExternalLink, FileSignature, Layers3, RefreshCw, Search,
@@ -278,16 +278,49 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   );
 
   // ---- Dữ liệu chính ------------------------------------------------------
+  // L13 (28/09/2026, KĐ#6) — đổi đợt/gói con NHANH: lượt tải cũ có thể trả về
+  // SAU lượt mới và ghi đè số đúng bằng số cũ (✓ của đợt cũ hiện dưới tên đợt
+  // mới). Đếm lượt bằng ref; sau MỖI await bên dưới, nếu không còn là lượt
+  // mới nhất thì bỏ ngang, không setState gì thêm. Không đổi thứ tự truy vấn.
+  const luotTai = useRef(0);
+
+  // L12 (28/09/2026, KĐ#5) — nhánh return sớm (chưa chọn đợt/gói con) trước
+  // đây chỉ xoá khoaDaChot/chotDanhMucV3 (vá L09), còn mọi state khác mà 4 ô
+  // tóm tắt + ba bảng dùng vẫn giữ nguyên số của lần xem TRƯỚC đó → màn ghi
+  // "Đã đề xuất 50 · 22/50 · 156 mã…" dù đang đứng ở "Chọn đợt/gói con ở
+  // trên" (thanh tổng quan không bị điều kiện !goiConId ẩn đi). Gom xoá vào
+  // một hàm để gọi ở MỌI nhánh return sớm, khỏi quên lẻ tẻ. Không đụng
+  // mocHis/dungLuong (thông tin CHUNG, không theo đợt/gói đang chọn) và
+  // không đụng state của thanh tiến trình (useTienTrinhPdd tải riêng).
+  const xoaDuLieuDangXem = useCallback(() => {
+    setRows([]);
+    setDsKhoa([]);
+    setGoiCuaKhoa(new Map());
+    setKetQuaRot([]);
+    setGiaiDoanThau([]);
+    setGioRotV3([]);
+    setPhanBoTrungV3([]);
+    setKhoaThamGiaV3([]);
+    setChotTrinhKyKhoaV3([]);
+    setPhienTrinhKyV3([]);
+    setRotTrongGio([]);
+    setDsDotGoi([]);
+    setKhoaDaChot(new Set());
+    setChotDanhMucV3([]);
+    setCanhBaoChot("");
+  }, []);
+
   const tai = useCallback(async () => {
-    if (!dot) return;
+    const luot = ++luotTai.current;
+    if (!dot) {
+      xoaDuLieuDangXem();
+      setDangTai(false);
+      return;
+    }
     // Chưa chọn gói con thì màn không hiện bảng nào — nạp lúc này là ném đi
     // trọn một lượt truy vấn (đo 25/08: 27 request cho một cú đổi đợt).
-    // L09(a) 28/09/2026 — PHẢI xoá khoaDaChot/chotDanhMucV3 cũ ở đây: nếu
-    // không, đổi sang gói con rỗng vẫn giữ nguyên ✓ "Đã xác nhận" của gói con
-    // vừa xem trước đó trên màn.
     if (!goiConId) {
-      setKhoaDaChot(new Set());
-      setChotDanhMucV3([]);
+      xoaDuLieuDangXem();
       setDangTai(false);
       return;
     }
@@ -297,6 +330,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
 
     const { data: dotGoiData, error: loiDotGoi } = await supabase.from("dot_goi")
       .select("id, goi_id").eq("dot_id", dot.id).order("id");
+    if (luot !== luotTai.current) return; // L13: có lượt mới hơn, bỏ kết quả cũ
     if (loiDotGoi) {
       setLoi(`Không đọc được DOT_GOI: ${dichLoi(loiDotGoi)}`);
       setDangTai(false);
@@ -351,6 +385,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
           .in("dot_goi_id", dotGoiIds).eq("hieu_luc", true).range(f, t), { order: "id" })
         : Promise.resolve({ data: [] }),
     ]);
+    if (luot !== luotTai.current) return; // L13: có lượt mới hơn, bỏ kết quả cũ
 
     if (rDeXuat.error) {
       setLoi(`Không đọc được đề xuất: ${dichLoi(rDeXuat.error)}`);
@@ -379,6 +414,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
       supabase.from("v_khoa_theo_goi_v3")
         .select("khoa, dot_goi_id, goi_id, ten_goi, ten_dot, nam, thang_moc, loai_mua_sam, trang_thai_dot, so_ma_quan_ly, so_ma_hang, tong_so_luong")
         .range(f, t), { order: "khoa" });
+    if (luot !== luotTai.current) return; // L13: có lượt mới hơn, bỏ kết quả cũ
     const gom = new Map();
     (rGoiKhoa.data || []).forEach((r) => {
       if (!gom.has(r.khoa)) gom.set(r.khoa, []);
@@ -405,6 +441,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
       const { data: dRot, error: eRot } = await supabase.from("v_ma_rot_trong_gio_v3")
         .select("khoa, ma_hang, so_rot, so_trong_gio, dot_goi_id_goc, dot_goi_bo_sung_id")
         .in("dot_goi_id_goc", dotGoiDangXem.map((dg) => dg.id));
+      if (luot !== luotTai.current) return; // L13: có lượt mới hơn, bỏ kết quả cũ
       setRotTrongGio(eRot ? [] : (dRot || []));
     } else {
       setRotTrongGio([]);
@@ -414,12 +451,14 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
     // "số đang dùng để tính là tới tháng mấy", không phải tự nhớ.
     // Chỉ số dung lượng: thiếu patch_zu thì bỏ qua, không làm hỏng Bàn điều hành.
     supabase.rpc("do_dung_luong").then(({ data, error }) => {
+      if (luot !== luotTai.current) return; // L13: có lượt mới hơn, bỏ kết quả cũ
       if (!error) setDungLuong(data);
     });
 
     const { data: hisMoi } = await supabase.from("usage_history_current")
       .select("nam, thang").order("nam", { ascending: false })
       .order("thang", { ascending: false }).limit(1);
+    if (luot !== luotTai.current) return; // L13: có lượt mới hơn, bỏ kết quả cũ
     setMocHis(hisMoi?.[0] || null);
 
     // Bảng chốt danh mục là patch mới — thiếu thì chỉ mất một cột, không được
@@ -436,6 +475,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
       const { data: chotData, error: loiChot } = await supabase.from("danh_muc_khoa_chot")
         .select("khoa, dot_goi_id, lan, hieu_luc").eq("hieu_luc", true)
         .in("dot_goi_id", dotGoiIds);
+      if (luot !== luotTai.current) return; // L13: có lượt mới hơn, bỏ kết quả cũ
       if (loiChot) {
         setKhoaDaChot(new Set());
         setChotDanhMucV3([]);
@@ -453,7 +493,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
       setChotDanhMucV3([]);
     }
     setDangTai(false);
-  }, [dot, goiConId]);
+  }, [dot, goiConId, xoaDuLieuDangXem]);
 
   useEffect(() => { tai(); }, [tai]);
 
@@ -653,7 +693,10 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
     }
     setLoi("");
     const { data, error } = await supabase.rpc("dem_du_lieu_lam_viec", {
-      p_goi_id: goiIdHienTai, p_nam_de_xuat: NAM_DE_XUAT,
+      // M2 (vòng 5, QĐ Q08): năm phải là năm của ĐỢT đang xem (dot.nam), không
+      // phải hằng NAM_DE_XUAT — đợt khác 2027 (vd #202=2028, #203=2026) trước
+      // đây đếm ra 0 vì lọc sai năm.
+      p_goi_id: goiIdHienTai, p_nam_de_xuat: dot?.nam ?? NAM_DE_XUAT,
       p_dot_goi_id: dotGoiHienTai.id,
     });
     if (error) {
@@ -669,7 +712,8 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   const donDuLieu = async () => {
     setDangDon(true);
     const { data, error } = await supabase.rpc("don_du_lieu_lam_viec", {
-      p_goi_id: goiIdHienTai, p_nam_de_xuat: NAM_DE_XUAT,
+      // M2: cùng lý do ở moDonDuLieu — dùng năm của đợt, không dùng hằng.
+      p_goi_id: goiIdHienTai, p_nam_de_xuat: dot?.nam ?? NAM_DE_XUAT,
       // Hàm ném lỗi nếu thiếu — thà từ chối còn hơn xoá xuyên đợt như trước.
       p_dot_goi_id: dotGoiHienTai?.id ?? null,
     });
