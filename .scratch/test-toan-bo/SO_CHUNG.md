@@ -294,3 +294,6 @@ Trợ lý vòng 6 nhóm P2/P3/P5/P6p/P7 bị TREO (watchdog 600s) nhưng code đ
 | R6-5 P7 | pdd · mở Bàn điều hành (chưa chọn gói con): "Dữ liệu HIS mới nhất: T6/2026" hiện ngay |
 | R6-6 hồi quy | K01 · Bàn điều hành đổi đợt · Tổng hợp kết quả thầu · ③ Mã rớt · Q02 tự điền (chỉ gõ) — console sạch, không NaN |
 CHỈ XEM. P5 không bấm được (không tạo lỗi thiếu hàm) — kiểm bằng code.
+
+## ✅ KẾT THÚC ĐỢT 28/09
+Vòng 6 bấm lại 6/6 ĐẠT (R6.md; manager mở ảnh P1 thấy "Rớt 3 ở Chào giá · trúng 27"). Tài liệu chính thức đã ghi Q01–Q09. Sao lưu sau đợt 19:18 (12.419 dòng/48 bảng). Commit **9e1a559**. Báo cáo: `BAO_CAO_TONG_KET.md`.
