@@ -5,6 +5,7 @@ import {
   heSoHieuLuc,
   kiemTraQuyDoi,
   tongPhanBoQuyDoi,
+  tuDienPhanBoMotMaHang,
 } from "../src/lib/deXuatMaQuanLy.js";
 
 const items = [
@@ -39,5 +40,32 @@ assert.equal(tongPhanBoQuyDoi(
   { D: 1, E: 2, F: 10 },
   "Cái",
 ), 70);
+
+// Q02 28/09/2026 — nhóm chỉ có MỘT mã hàng: tự điền ô mã hàng từ tổng mã quản
+// lý, đã quy đổi đúng theo hệ số hiệu lực; giữ nguyên hành vi khi ≥2 mã hàng.
+const motMaCungDvt = [{ ma_hang: "G", dvt: "Cái", he_so_quy_doi: 1 }];
+assert.deepEqual(
+  tuDienPhanBoMotMaHang(motMaCungDvt, "25", "Cái"),
+  { ma_hang: "G", giaTri: "25" },
+);
+
+const motMaKhacDvt = [{ ma_hang: "H", dvt: "Hộp", he_so_quy_doi: 10 }];
+assert.deepEqual(
+  tuDienPhanBoMotMaHang(motMaKhacDvt, "250", "Cái"),
+  { ma_hang: "H", giaTri: "25" },
+);
+
+// Tổng chưa hợp lệ (rỗng/0/âm) hoặc thiếu hệ số quy đổi -> trả ô trống, không
+// để lại số cũ sai lệch.
+assert.deepEqual(tuDienPhanBoMotMaHang(motMaCungDvt, "", "Cái"), { ma_hang: "G", giaTri: "" });
+assert.deepEqual(tuDienPhanBoMotMaHang(motMaCungDvt, "0", "Cái"), { ma_hang: "G", giaTri: "" });
+assert.deepEqual(
+  tuDienPhanBoMotMaHang([{ ma_hang: "K", dvt: "Hộp", he_so_quy_doi: null }], "10", "Cái"),
+  { ma_hang: "K", giaTri: "" },
+);
+
+// Nhóm ≥2 mã hàng: KHÔNG tự điền gì cả — giữ nguyên hành vi cũ, khoa tự chia.
+assert.equal(tuDienPhanBoMotMaHang(items, "25", "Cái"), null);
+assert.equal(tuDienPhanBoMotMaHang([], "25", "Cái"), null);
 
 console.log("✓ Quy đổi và cộng lịch sử theo mã quản lý");

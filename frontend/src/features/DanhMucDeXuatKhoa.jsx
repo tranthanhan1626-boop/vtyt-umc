@@ -928,13 +928,24 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
         .eq("dot_goi_id", dotGoiId).eq("khoa", khoaHienTai)
         .eq("ma_hang", maHang).eq("cot", colKey)
         .order("thoi_gian", { ascending: false }).limit(20),
-      // Cùng lỗi phạm vi ':dot:N' như `taiSuaDeCuaPdd` — `.eq` ở đây làm phần
-      // lịch sử bên PĐD luôn rỗng, khoa không tra được ai duyệt ô của mình.
-      supabase.from("danh_muc_tong_hop_o_audit")
-        .select("gia_tri_cu, gia_tri_moi, nguoi_sua, thoi_gian")
-        .like("goi_id", `${goiId}%`).eq("nam_de_xuat", NAM_DE_XUAT)
-        .eq("ma_hang", maHang).eq("cot", cotKhoaSangPdd(colKey))
-        .order("thoi_gian", { ascending: false }).limit(20),
+      // Sửa 28/09/2026 (L05, manager đã xác minh): dữ liệu thật cho thấy
+      // audit lưu `goi_id` đúng khuôn `goiScopeTongHop` (vd
+      // "18t-dung-chung:dot:202"), không phải chuỗi trần như chú thích cũ
+      // từng nói. Khi có `dotId`, lọc đúng bằng `.eq("goi_id",
+      // goiScopeTongHop)` để tách lịch sử theo từng đợt (vd hai đợt "bs-t9"
+      // #203 và #206 không còn bị trộn). Khi không có `dotId` (đường cũ),
+      // giữ nguyên `like` + `nam_de_xuat` như trước để không phá hành vi cũ.
+      (dotId
+        ? supabase.from("danh_muc_tong_hop_o_audit")
+            .select("gia_tri_cu, gia_tri_moi, nguoi_sua, thoi_gian")
+            .eq("goi_id", goiScopeTongHop)
+            .eq("ma_hang", maHang).eq("cot", cotKhoaSangPdd(colKey))
+            .order("thoi_gian", { ascending: false }).limit(20)
+        : supabase.from("danh_muc_tong_hop_o_audit")
+            .select("gia_tri_cu, gia_tri_moi, nguoi_sua, thoi_gian")
+            .like("goi_id", `${goiId}%`).eq("nam_de_xuat", NAM_DE_XUAT)
+            .eq("ma_hang", maHang).eq("cot", cotKhoaSangPdd(colKey))
+            .order("thoi_gian", { ascending: false }).limit(20)),
     ]);
     const chuaCoBang = khoaRes.error && (khoaRes.error.code === "42P01"
       || /danh_muc_khoa_o_audit/i.test(khoaRes.error.message || ""));

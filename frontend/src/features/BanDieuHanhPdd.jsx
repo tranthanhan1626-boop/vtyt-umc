@@ -282,7 +282,15 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
     if (!dot) return;
     // Chưa chọn gói con thì màn không hiện bảng nào — nạp lúc này là ném đi
     // trọn một lượt truy vấn (đo 25/08: 27 request cho một cú đổi đợt).
-    if (!goiConId) { setDangTai(false); return; }
+    // L09(a) 28/09/2026 — PHẢI xoá khoaDaChot/chotDanhMucV3 cũ ở đây: nếu
+    // không, đổi sang gói con rỗng vẫn giữ nguyên ✓ "Đã xác nhận" của gói con
+    // vừa xem trước đó trên màn.
+    if (!goiConId) {
+      setKhoaDaChot(new Set());
+      setChotDanhMucV3([]);
+      setDangTai(false);
+      return;
+    }
     setDangTai(true);
     setLoi("");
     setCanhBaoChot("");
@@ -419,21 +427,30 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
     // V2 (19/08/2026): bảng này giờ là VÒNG XÁC NHẬN. Chỉ dòng còn `hieu_luc`
     // mới tính là "khoa đã xác nhận bản hiện tại" — dòng bị huỷ vẫn nằm đó để
     // giữ số lần, đếm cả nó thì màn này báo xanh trong khi PĐD không chốt được.
-    let qChot = supabase.from("danh_muc_khoa_chot")
-      .select("khoa, dot_goi_id, lan, hieu_luc").eq("hieu_luc", true);
-    if (dotGoiIds.length) qChot = qChot.in("dot_goi_id", dotGoiIds);
-    const { data: chotData, error: loiChot } = await qChot;
-    if (loiChot) {
+    // L09(b) 28/09/2026 — `dotGoiIds` RỖNG không được bỏ điều kiện `.in(...)`:
+    // bỏ lọc là lấy xác nhận của MỌI đợt, hiện ✓ sai hàng loạt (DB 28/09: đợt
+    // #206 chỉ 1 khoa xác nhận nhưng màn từng hiện ✓ cho nhiều khoa). Rỗng ⇒
+    // tập rỗng, không truy vấn — cùng mẫu với các `dotGoiIds.length ? … : …`
+    // ở khối Promise.all phía trên.
+    if (dotGoiIds.length) {
+      const { data: chotData, error: loiChot } = await supabase.from("danh_muc_khoa_chot")
+        .select("khoa, dot_goi_id, lan, hieu_luc").eq("hieu_luc", true)
+        .in("dot_goi_id", dotGoiIds);
+      if (loiChot) {
+        setKhoaDaChot(new Set());
+        setChotDanhMucV3([]);
+        setCanhBaoChot(
+          loiChot.code === "42P01" || /danh_muc_khoa_chot/i.test(loiChot.message || "")
+            ? "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_zj_ban_dieu_hanh_pdd) — cột \"Đã xác nhận\" tạm để trống. Vui lòng báo Phòng Điều dưỡng."
+            : dichLoi(loiChot)
+        );
+      } else {
+        setKhoaDaChot(new Set((chotData || []).map((x) => x.khoa)));
+        setChotDanhMucV3(chotData || []);
+      }
+    } else {
       setKhoaDaChot(new Set());
       setChotDanhMucV3([]);
-      setCanhBaoChot(
-        loiChot.code === "42P01" || /danh_muc_khoa_chot/i.test(loiChot.message || "")
-          ? "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_zj_ban_dieu_hanh_pdd) — cột \"Đã xác nhận\" tạm để trống. Vui lòng báo Phòng Điều dưỡng."
-          : dichLoi(loiChot)
-      );
-    } else {
-      setKhoaDaChot(new Set((chotData || []).map((x) => x.khoa)));
-      setChotDanhMucV3(chotData || []);
     }
     setDangTai(false);
   }, [dot, goiConId]);

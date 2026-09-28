@@ -62,3 +62,17 @@ export function tongPhanBoQuyDoi(dsMaHang, phanBo, dvtChuan) {
 export function saiSoPhanBo(tongMaQuanLy, tongDaPhanBo) {
   return Math.abs(so(tongMaQuanLy) - so(tongDaPhanBo));
 }
+
+// Q02 28/09/2026 — nhóm CHỈ CÓ MỘT mã hàng: khoa khỏi phải gõ số hai lần (tổng
+// mã quản lý rồi lại số mã hàng, hai số luôn phải bằng nhau sau quy đổi). Tự
+// tính giá trị ô mã hàng duy nhất từ tổng mã quản lý vừa gõ; nơi gọi tự quyết
+// có ghi đè hay không (khoa đã sửa tay ô mã hàng thì đừng gọi hàm này nữa).
+// Trả `null` khi nhóm có từ 2 mã hàng trở lên — giữ NGUYÊN hành vi cũ ở đó.
+export function tuDienPhanBoMotMaHang(dsMaHang, tongMoi, dvtChuan) {
+  if ((dsMaHang || []).length !== 1) return null;
+  const [m] = dsMaHang;
+  const heSo = heSoHieuLuc(m, dvtChuan);
+  const tong = Number(tongMoi);
+  const hopLe = heSo > 0 && Number.isFinite(tong) && tong > 0;
+  return { ma_hang: m.ma_hang, giaTri: hopLe ? String(tong / heSo) : "" };
+}

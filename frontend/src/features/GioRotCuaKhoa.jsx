@@ -65,11 +65,17 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
 
       // Đợt bổ sung gần nhất ĐANG MỞ. Đọc lại mỗi lần tải nên khi PĐD mở đợt
       // mới thì gợi ý tự xuất hiện — đúng ý "khi có đợt mới, gợi ý lại".
+      // 28/09/2026 — trước đây `.order(..., { ascending: false })` lấy đợt bổ
+      // sung XA nhất đang mở. Đổi sang tăng dần để lấy đợt SỚM NHẤT đang mở,
+      // khớp `fn_dot_bo_sung_gan_nhat` (backend/sql/patch_zzzzz_vong_khep_kin.sql
+      // ~370-393) — hàm đó duyệt các mốc T1/T5/T9 từ ngày hiện tại đi TỚI và
+      // dừng ở mốc chưa qua ĐẦU TIÊN, tức là đợt gần nhất/sớm nhất, không phải
+      // đợt xa nhất — nơi `xac_nhan_rot_v3` thật sự đưa mã rớt vào giỏ.
       const { data: dsDot } = await supabase
         .from("dot_de_xuat")
         .select("id, ten, nam, thang_moc, trang_thai")
         .eq("loai_mua_sam", "mua_sam_bo_sung").eq("trang_thai", "mo")
-        .order("nam", { ascending: false }).order("thang_moc", { ascending: false })
+        .order("nam", { ascending: true }).order("thang_moc", { ascending: true })
         .limit(1);
       setDotBoSungMo(dsDot?.[0] || null);
 
@@ -129,8 +135,10 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
       <div>
         <h2 className="text-base font-semibold text-slate-900">Giỏ rớt của khoa</h2>
         <p className="text-sm text-slate-500 mt-0.5">
-          Phần số lượng đã mang đi thầu nhưng <b>chưa được đáp ứng</b>. Hệ thống không tự
-          tạo đề xuất và không tự điền số — khoa tự quyết có đề xuất lại ở đợt bổ sung hay không.
+          Phần số lượng đã mang đi thầu nhưng <b>chưa được đáp ứng</b>. Mã rớt đã được đưa
+          vào <b>giỏ</b> của khoa ở đợt bổ sung, số lượng điền sẵn chỉ là <b>gợi ý</b> bằng
+          đúng số đã rớt — khoa tự sửa lại cho đúng nhu cầu rồi bấm <b>"Gửi đề xuất"</b> ở
+          Gói bổ sung; chưa gửi thì chưa thành đề xuất chính thức.
         </p>
       </div>
 
@@ -230,11 +238,6 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
                         onChange={(e) => setGhiChu((p) => ({ ...p, [key]: e.target.value }))}
                         placeholder="Ghi chú (không bắt buộc)"
                         className="flex-1 min-w-[12rem] rounded-md border border-slate-300 px-2 py-1.5 text-xs" />
-                      <button type="button" disabled={dangLuu === key}
-                        onClick={() => doiTrangThai(r, "da_vao_gio_nhap")}
-                        className="px-3 py-1.5 text-xs rounded-md border border-umc-300 bg-white text-umc-800 hover:bg-umc-50 disabled:opacity-60">
-                        Đang lập đề xuất bổ sung
-                      </button>
                       <button type="button" disabled={dangLuu === key}
                         onClick={() => doiTrangThai(r, "khong_con_nhu_cau")}
                         className="px-3 py-1.5 text-xs rounded-md border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-60">

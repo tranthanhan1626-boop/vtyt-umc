@@ -450,11 +450,6 @@ export default function DeXuatTongHop({ profile, goi, onMoHoSo }) {
                       onDaXoa={() => {
                         const ids = new Set(g.items.map((i) => i.id));
                         setRows((cu) => cu.filter((r) => !ids.has(r.id)));
-                        setPhieuTheoNhom((cu) => {
-                          const tiep = { ...cu };
-                          delete tiep[g.key];
-                          return tiep;
-                        });
                       }}
                     />
                   </div>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronRight, ChevronDown, Check, X, Clock } from "lucide-react";
+import { ChevronRight, ChevronDown } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 
 // QĐ-23 — Tổng hợp kết quả thầu HAI TẦNG cho Phòng Điều dưỡng.
@@ -8,20 +8,34 @@ import { supabase, fetchAllRows } from "../supabaseClient";
 //           ĐVT (không dính bẫy 42 nhóm lệch đơn vị ở cấp mã quản lý)
 //   Tầng 2: bung ra thấy TỪNG KHOA đề xuất bao nhiêu, trúng bao nhiêu
 //
-// Phân bổ phần trúng: PĐD GÕ TAY từng khoa (QĐ-23). Hệ thống gợi ý số theo
-// tỷ lệ để đỡ gõ, nhưng số PĐD nhập mới là số cuối — phân bổ hàng khan hiếm
-// là quyết định chuyên môn, không phải phép chia.
-
+// QĐ A2 (23/08/2026, chủ dự án chốt 28/09/2026) — màn này CHỈ ĐỂ XEM. Mọi
+// thao tác sửa kết quả thầu (rớt/trúng) làm trên bảng Tổng hợp danh mục, cụm
+// cột R1/R2/R3 và nút "Xác nhận rớt". Form sửa từng dòng đã bỏ khỏi màn này
+// (nút mở form, các nút chọn kết quả, ô số lượng trúng, mốc rớt, lý do,
+// Lưu/Huỷ) — nó từng ghi vào `goi_thau_ket_qua_ma`, bảng của mô hình TRƯỚC v3,
+// đã chết (xem AGENTS.md "Ba bảng ĐÃ CHẾT").
+//
+// MOC — nhãn hiển thị cho `ma_moc_rot` mà view trả về (đọc, không còn ai
+// dùng để GHI: đường ghi ma_moc_rot/ly_do_khong_trung ở form đã bỏ theo QĐ A2
+// trên). Vẫn giữ để dịch giá trị cột sang chữ khi hiện dòng "Rớt ở ...".
 const MOC = [
   { v: "chao_gia", n: "Chào giá" }, { v: "mo_thau", n: "Mở thầu" },
   { v: "danh_gia", n: "Đánh giá" }, { v: "ky_hop_dong", n: "Ký hợp đồng" },
   { v: "hang_ve_dot_dau", n: "Hàng về đợt đầu" },
 ];
+// L07 (28/09/2026) — khoá phải khớp ĐÚNG giá trị cột `ket_qua` mà view
+// `v_ket_qua_thau_theo_khoa` trả (đọc CASE ở backend/sql/patch_zzzzzl_view_ket_qua_chay_o_quy_mo_that.sql):
+// 'khong_trung' | 'trung_mot_phan' | 'trung'. `cho_ket_qua`/`trung_thau` là
+// khoá của bảng CŨ đã chết (`goi_thau_ket_qua_ma`, xem AGENTS.md) — view v3
+// không bao giờ trả hai giá trị đó.
 const NHAN_KQ = {
-  cho_ket_qua: ["Chờ kết quả", "bg-slate-100 text-slate-600"],
-  trung_thau: ["Trúng", "bg-umc-100 text-umc-800"],
+  trung: ["Trúng", "bg-umc-100 text-umc-800"],
+  trung_mot_phan: ["Trúng một phần", "bg-amber-100 text-amber-800"],
   khong_trung: ["Không trúng", "bg-red-100 text-red-700"],
 };
+// Giá trị lạ (chưa từng thấy, hoặc `cho_ket_qua` cũ) → hiện thẳng giá trị đó,
+// màu trung tính, KHÔNG ném lỗi làm trắng màn (đó là nguyên nhân của L07).
+const nhanVaMau = (v) => NHAN_KQ[v] || [v ?? "—", "bg-slate-100 text-slate-600"];
 const so = (v) => (v == null ? "—" : Number(v).toLocaleString("vi-VN"));
 
 export default function TongHopKetQuaThau({ profile }) {
@@ -29,9 +43,6 @@ export default function TongHopKetQuaThau({ profile }) {
   const [rows, setRows] = useState([]);
   const [dangTai, setDangTai] = useState(true);
   const [bung, setBung] = useState(null);
-  const [sua, setSua] = useState(null);        // id dòng đang sửa
-  const [form, setForm] = useState({});
-  const [loi, setLoi] = useState("");
 
   const tai = useCallback(async () => {
     setDangTai(true);
@@ -58,37 +69,6 @@ export default function TongHopKetQuaThau({ profile }) {
     return [...m.values()];
   }, [rows]);
 
-  const moSua = (r, g) => {
-    setSua(r.id); setLoi("");
-    // Gợi ý theo tỷ lệ để đỡ gõ — PĐD sửa được, số PĐD nhập mới là số cuối.
-    const goiY = g.tongDeXuat > 0 && g.tongTrung > 0
-      ? Math.round((Number(r.so_luong_de_xuat) || 0) / g.tongDeXuat * g.tongTrung)
-      : "";
-    setForm({
-      ket_qua: r.ket_qua,
-      so_luong_trung: r.so_luong_trung ?? goiY,
-      ma_moc_rot: r.ma_moc_rot || "",
-      ly_do_khong_trung: r.ly_do_khong_trung || "",
-    });
-  };
-
-  const luu = async (r) => {
-    setLoi("");
-    const p = {
-      ket_qua: form.ket_qua,
-      so_luong_trung: form.so_luong_trung === "" ? null : Number(form.so_luong_trung),
-      ma_moc_rot: form.ket_qua === "khong_trung" ? form.ma_moc_rot || null : null,
-      ly_do_khong_trung: form.ket_qua === "khong_trung" ? form.ly_do_khong_trung.trim() : null,
-    };
-    // 23/08/2026 — đường SỬA ở đây ghi vào `goi_thau_ket_qua_ma`, bảng của mô
-    // hình TRƯỚC v3. Theo QĐ A2 (Bàn điều hành chỉ để xem) và D1 (mọi thao tác
-    // rớt làm trên bảng Tổng hợp), màn này chỉ còn để ĐỌC. Phần đọc đã sống
-    // lại nhờ `v_ket_qua_thau_theo_khoa` viết lại trên nền v3 (patch_zzzzza).
-    void p;
-    setLoi("Sửa kết quả thầu nay làm trên bảng Tổng hợp danh mục — cụm cột "
-      + "R1/R2/R3 và nút Xác nhận rớt. Màn này chỉ để xem.");
-  };
-
   if (!laPdd) return <p className="text-sm text-slate-500">Màn hình này dành cho Phòng Điều dưỡng.</p>;
   if (dangTai) return <p className="text-sm text-slate-500">Đang tải...</p>;
   if (theoMa.length === 0) {
@@ -104,12 +84,11 @@ export default function TongHopKetQuaThau({ profile }) {
       <div>
         <h2 className="text-base font-semibold text-slate-900">Tổng hợp kết quả thầu</h2>
         <p className="mt-0.5 text-sm text-slate-500">
-          Dòng gộp theo mã hàng. Bấm để bung ra xem <b>từng khoa đề xuất bao nhiêu</b> và
-          nhập kết quả riêng cho khoa đó.
+          Dòng gộp theo mã hàng. Bấm để bung ra xem <b>từng khoa đề xuất bao nhiêu, trúng bao
+          nhiêu</b>. Màn này chỉ để xem — sửa kết quả thầu (rớt/trúng) làm trên bảng Tổng hợp
+          danh mục, cụm cột <b>R1/R2/R3</b> và nút <b>Xác nhận rớt</b>.
         </p>
       </div>
-
-      {loi && <p className="text-sm text-red-600">{loi}</p>}
 
       {theoMa.map((g) => {
         const mo = bung === g.ma_hang;
@@ -136,10 +115,9 @@ export default function TongHopKetQuaThau({ profile }) {
             {mo && (
               <div className="divide-y divide-slate-100 border-t border-slate-100">
                 {g.khoa.map((r) => {
-                  const [nhan, mau] = NHAN_KQ[r.ket_qua];
-                  const dangSua = sua === r.id;
+                  const [nhan, mau] = nhanVaMau(r.ket_qua);
                   return (
-                    <div key={r.id} className="px-3 py-2">
+                    <div key={r.ket_qua_id} className="px-3 py-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="min-w-0 flex-1 text-sm text-slate-700">{r.don_vi}</span>
                         <span className="text-sm tabular-nums text-slate-500">
@@ -149,70 +127,12 @@ export default function TongHopKetQuaThau({ profile }) {
                           trúng {so(r.so_luong_trung)}
                         </span>
                         <span className={`rounded px-2 py-0.5 text-xs ${mau}`}>{nhan}</span>
-                        {!dangSua && (
-                          <button onClick={() => moSua(r, g)}
-                            className="rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50">
-                            Nhập kết quả
-                          </button>
-                        )}
                       </div>
 
-                      {r.ket_qua === "khong_trung" && !dangSua && r.ly_do_khong_trung && (
+                      {r.ket_qua === "khong_trung" && r.ly_do_khong_trung && (
                         <p className="mt-1 text-xs text-red-700">
                           Rớt ở {MOC.find((m) => m.v === r.ma_moc_rot)?.n || "?"} · {r.ly_do_khong_trung}
                         </p>
-                      )}
-
-                      {dangSua && (
-                        <div className="mt-2 space-y-2 rounded-md bg-slate-50 p-2">
-                          <div className="flex flex-wrap gap-1.5">
-                            {[["trung_thau", "Trúng", Check], ["khong_trung", "Không trúng", X],
-                              ["cho_ket_qua", "Chờ kết quả", Clock]].map(([v, n, I]) => (
-                              <button key={v} onClick={() => setForm((p) => ({ ...p, ket_qua: v }))}
-                                className={`flex items-center gap-1 rounded-md border px-2 py-1 text-xs ${
-                                  form.ket_qua === v ? "border-umc-600 bg-umc-700 text-white"
-                                                     : "border-slate-300 bg-white text-slate-600"}`}>
-                                <I size={11} /> {n}
-                              </button>
-                            ))}
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-2">
-                            <label className="text-xs text-slate-600">Số lượng trúng</label>
-                            <input type="number" value={form.so_luong_trung}
-                              onChange={(e) => setForm((p) => ({ ...p, so_luong_trung: e.target.value }))}
-                              className="w-28 rounded-md border border-slate-300 px-2 py-1 text-sm tabular-nums" />
-                            <span className="text-xs text-slate-400">
-                              / {so(r.so_luong_de_xuat)} {r.dvt} · gợi ý theo tỷ lệ, sửa được
-                            </span>
-                          </div>
-
-                          {form.ket_qua === "khong_trung" && (
-                            <>
-                              <div className="flex flex-wrap gap-1.5">
-                                {MOC.map((m) => (
-                                  <button key={m.v} onClick={() => setForm((p) => ({ ...p, ma_moc_rot: m.v }))}
-                                    className={`rounded-md border px-2 py-1 text-xs ${
-                                      form.ma_moc_rot === m.v ? "border-red-500 bg-red-600 text-white"
-                                                              : "border-slate-300 bg-white text-slate-600"}`}>
-                                    Rớt ở {m.n}
-                                  </button>
-                                ))}
-                              </div>
-                              <input value={form.ly_do_khong_trung}
-                                onChange={(e) => setForm((p) => ({ ...p, ly_do_khong_trung: e.target.value }))}
-                                placeholder="Lý do không trúng (bắt buộc)"
-                                className="w-full rounded-md border border-red-300 px-2 py-1 text-sm" />
-                            </>
-                          )}
-
-                          <div className="flex gap-2">
-                            <button onClick={() => luu(r)}
-                              className="rounded-md bg-umc-700 px-3 py-1 text-xs font-medium text-white">Lưu</button>
-                            <button onClick={() => setSua(null)}
-                              className="rounded-md border border-slate-300 px-3 py-1 text-xs text-slate-600">Huỷ</button>
-                          </div>
-                        </div>
                       )}
                     </div>
                   );

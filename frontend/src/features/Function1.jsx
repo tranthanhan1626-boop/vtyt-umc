@@ -17,6 +17,7 @@ import {
   kiemTraQuyDoi,
   saiSoPhanBo,
   tongPhanBoQuyDoi,
+  tuDienPhanBoMotMaHang,
 } from "../lib/deXuatMaQuanLy";
 import { moDanhMucDeXuat } from "../lib/moManExcel";
 import { dichLoi } from "../lib/dichLoi";
@@ -1109,10 +1110,22 @@ export default function Function1({
   const capNhatNhapNhom = (field, value) => {
     if (!nhomChon) return;
     setBanNhapNhom((prev) => {
+      const cuNhap = prev[nhomChon] || MAC_DINH_NHAP_NHOM(goi);
       const tiep = {
-        ...(prev[nhomChon] || MAC_DINH_NHAP_NHOM(goi)),
+        ...cuNhap,
         [field]: value,
       };
+      // Q02 28/09/2026 — nhóm 1 mã hàng tự điền, bớt 1 thao tác/mã: nhóm chỉ có
+      // đúng một mã hàng thì gõ tổng ở bước ② tự chép xuống ô mã hàng duy nhất
+      // ở bước ③ (quy đổi theo hệ số hiệu lực, khớp khoá cứng 1 ngay khi gõ).
+      // Khoa vẫn sửa tay được; một khi đã sửa tay (`phanBoTuDong === false`)
+      // thì gõ lại tổng KHÔNG đè — cùng luật "ai sửa sau đè" đang áp cho cột
+      // chữ (06_DUNG_LAM_LAI mục 1 chỉ cấm tự điền SỐ GỢI Ý P50–P95, không
+      // phải việc chép số khoa vừa gõ xuống mã hàng duy nhất).
+      if (field === "soLuong" && cuNhap.phanBoTuDong !== false) {
+        const tuDien = tuDienPhanBoMotMaHang(maHangQuyDoi, value, dvtChuan);
+        if (tuDien) tiep.phanBo = { ...tiep.phanBo, [tuDien.ma_hang]: tuDien.giaTri };
+      }
       const danhGia = CO_GOI_Y_SO_LUONG(goi)
         ? danhGiaSoLuong(lichSuNhom, thieuNhom, doDaiKy(tiep), tiep.soLuong, thangCuoiHIS)
         : null;
@@ -1145,6 +1158,10 @@ export default function Function1({
         [nhomChon]: {
           ...cu,
           phanBo: { ...cu.phanBo, [maHang]: value },
+          // Q02 28/09/2026 — nhóm 1 mã hàng tự điền, bớt 1 thao tác/mã: khoa gõ
+          // tay vào đúng ô mã hàng duy nhất thì tắt tự điền, gõ lại tổng ở bước
+          // ② sau đó không được đè mất số khoa vừa sửa.
+          ...(maHangTrongNhom.length === 1 ? { phanBoTuDong: false } : null),
         },
       };
     });
