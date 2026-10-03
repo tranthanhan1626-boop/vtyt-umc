@@ -14,7 +14,7 @@ Mọi chữ "go-live giữa T9" hay "01/01/2027" bên dưới là lịch sử, �
 ```
 commit ecdf408 (vòng 3–5 đợt "test toàn bộ") · vòng 6 (P1–P8, Q09) đã vá +
   bấm lại ĐẠT nhưng CHƯA COMMIT · bundle local index-BlnlMBxw.js (build sau vòng 6)
-Netlify còn đứng ở d357019 = index-C5W2inys.js — chậm cả b164c95, ecdf408 và vòng 6, chưa đẩy
+Netlify = 60ddbf9 = index-BlnlMBxw.js (đẩy tay 03/10/2026, khớp localhost) · GitHub chưa push 5 commit 28/09
 pytest 401 (đếm 28/09 cuối đợt) · test:formula ✓ (có tienTrinh, chatbot, tenCotBieuMau, oKhongDoi)
 DB staging (đọc thật 28/09): 5 đợt TEST #202–#206 còn nguyên, dùng để test đợt "test toàn bộ"
   (dựng từ 19/09 bởi tao_du_lieu_test_day_du.py, đã phát sinh thêm dữ liệu qua các vòng bấm)
@@ -151,6 +151,10 @@ Cùng loại với lỗi 17/08 ở dự án khác (bịa "37 tiêu chí" trong k
 lại những thứ đáng lẽ đã đúng.
 
 ## 🔴 ĐẨY LÊN NETLIFY — TÀI KHOẢN ĐÃ HẾT CREDITS
+
+> 03/10/2026: ngày 19/09 Netlify đã tự build từ GitHub (`ff894bd`), nên credits có
+> thể đã có lại. Chủ dự án muốn dùng đường đẩy tay bên dưới (không tốn credits) —
+> đã chạy được 03/10, máy đã đăng nhập sẵn, không cần `netlify login`.
 
 Hết credits thì Netlify **nhận commit nhưng bỏ qua không build**, site cứ phục
 vụ bản cũ và **không báo gì cho ai**. Ngày 26/08 site đứng sau HEAD 8 commit,

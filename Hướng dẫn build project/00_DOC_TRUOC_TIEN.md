@@ -8,7 +8,8 @@
 >   độc lập; không còn lỗi nặng/vừa đang mở. Commit cuối `f5e6a63`. Chín quyết định
 >   Q01–Q09 đã vào `01`/`06`; nhật ký ở `07` khối 28/09; báo cáo
 >   `.scratch/test-toan-bo/BAO_CAO_TONG_KET.md`.
-> - Netlify **vẫn là bản cũ** (`d357019`) — mọi bản vá mới chỉ chạy ở localhost.
+> - Netlify **đã là bản mới nhất** (`60ddbf9`, bundle `index-BlnlMBxw.js`) — đẩy tay
+>   từ máy ngày 03/10/2026. GitHub thì **chưa push** 5 commit đợt 28/09.
 > - **Database staging:** vẫn là **dữ liệu test** #202–#206 (#202 "Gói 18 tháng
 >   1/2028 - 6/2029", 4 đợt bổ sung T9/2026 · T1/2027 · T5/2027 · T9/2027), nay đã
 >   chạy thêm giai đoạn thầu/chốt trình ký trong lúc test. 3 bản vá SQL mới
@@ -278,13 +279,17 @@ mục 4b.
 1. **Q07** — cột HIS QĐ1599 rỗng 3.327/3.327 mã → Excel trình ký không có cột mã hàng; chủ dự án tìm nguồn.
 2. Nạp HIS **T7–T8/2026** (hiện tới T6).
 3. Sửa pptx các trang **18, 24, 25, 26, 43, 46**; thêm trang cho màn "Tổng hợp kết quả thầu" nếu muốn.
-4. Đẩy Netlify (cần chủ dự án `!netlify login`; cách làm ở `AGENTS.md`).
+4. ~~Đẩy Netlify~~ — xong 03/10 (đẩy tay). Còn: push 5 commit lên GitHub khi chủ dự án đồng ý.
 5. Dọn dữ liệu test #202–#206 khi xong test (nhờ Claude xem phạm vi trước).
 6. Ghi nhận, chưa vá: M8 (xác nhận rớt lần 2 sau khi khoa đã gửi vẫn báo "Đã gửi"); chữ sai trong vài hàm DB ("Gửi giỏ", "Khoa Khoa"); code chết `TabKetQua` còn đường chốt rời. Chi tiết: `05` mục 7.
 
 ## Ghi chú sửa
 
 - 28/09/2026 — lệnh `!` dài bị cắt khi dán trong app, chủ dự án phải nhờ đưa lại lệnh → luôn gói lệnh vào file `.sh` rồi đưa một dòng `! bash <đường dẫn>`.
+
+## Ghi chú sửa (bổ sung)
+
+- 03/10/2026 — sổ ghi Netlify đứng ở `d357019` là sai: lịch sử deploy cho thấy 19/09 Netlify đã tự build `ff894bd` từ GitHub. Trước khi nói Netlify đang ở bản nào, đọc `listSiteDeploys` hoặc curl tên bundle, đừng tin sổ.
 
 ## Nhật ký chốt
 
