@@ -265,6 +265,8 @@ mục 4b.
 | `AGENTS.md`, `MO_WEB.command`, `netlify.toml` | luật cho agent · nút mở web · cấu hình deploy | — |
 | `huong-dan-su-dung/HuongDan_SuDung_VTYT.pptx` + `.pdf` | tài liệu hướng dẫn người dùng (bản 10/2026, 48 trang, kiểm định 05/10 ĐẠT) | dựng lại bằng `.scratch/huong-dan/ban-05-10/dung_pptx.py` (đọc `README_DUNG.md` ở đó) rồi chép đè vào `huong-dan-su-dung/` |
 | `.scratch/test-toan-bo/` (BAO_CAO_TONG_KET, SO_CHUNG, KIEM_DINH_DOC_LAP*, `bao-cao/`, 172 ảnh bằng chứng) | hồ sơ đợt test toàn bộ 28/09 | không sửa; ảnh không commit (nặng) |
+| `.scratch/test-tu-dau-05-10/` (NHAT_KY, LOI, 9 ảnh) | hồ sơ test trọn vòng hai vai 05/10 | không sửa; ảnh không commit |
+| `.scratch/ra-thi-giac-05-10/` (KE_HOACH = QĐ Q-A…Q-F, DANH_SACH 40 lỗi, KIEM_DINH_DOC_LAP, KIEM_LAI_VONG2, 118 ảnh) | hồ sơ rà + sửa thị giác 05/10 | không sửa; ảnh không commit |
 | `Cải tiến 03-10-2026/` (đọc `00_DOC_TRUOC.md` trong đó; `huong-dan-test/HUONG_DAN_BAM_THU.html`) | hồ sơ đợt cải tiến giao diện 03/10 (16 quy tắc, bản vẽ, hướng dẫn bấm thử có ảnh) | không sửa; chỉ trên máy, không đưa git (chủ dự án chọn) |
 | `.scratch/don-dep-05-10/BAO_CAO_TONG_KET.md` | báo cáo đợt dọn chuẩn bị demo 14/10 | không sửa |
 
@@ -273,8 +275,8 @@ mục 4b.
 - `database/` — Excel HIS, danh mục, mẫu biểu, `de_xuat.xlsx` (nguồn "đề xuất kỳ trước").
 - `Form biểu mẫu/` — biểu mẫu thật của bệnh viện.
 - `backend/du_lieu_staging/` — dữ liệu xuất từ production để dựng staging.
-- `backend/sao_luu/` — sao lưu database (production 04/08; staging 03/10, 05/10 — bản 05/10 chụp ngay trước khi dọn sạch DB).
-- `.scratch/huong-dan/` — ảnh chụp + dàn ý + script dựng pptx (bản 19/09 ở gốc; bản 10/2026 ở `ban-05-10/`).
+- `backend/sao_luu/` — sao lưu database (production 04/08; staging 03/10 và `2026-10-05_toi_truoc_khi_don` — chụp ngay trước khi dọn sạch lần 2).
+- `.scratch/huong-dan/` — ảnh chụp + dàn ý + script dựng pptx (bản 19/09 ở gốc; bản 10/2026 ở `ban-05-10/`: `dan_y.json`, `anh/`, `anh_cu/` (C01, C05), `anh_meta.json`, `dung_pptx.py`, `README_DUNG.md`). `_tam/`, `xem_truoc/` và pptx/pdf đầu ra tự sinh lại khi chạy script.
 - `ghi-chu-key/`, `backend/.env.local` — khoá bí mật, không bao giờ đưa lên git.
 - `.scratch/` các thư mục ghi chép đợt cũ (`_da-xong`, `chatbot`, `demo`, `giao-dien`, `is-current`, `link-tong-hop-xuong-khoa`, `mot-mat-ban`, `test-full-2roles`, `tien-do-goi-thau`, `vong-khep-kin`) — code, patch SQL và tài liệu còn trỏ tới; `giao-dien/CHUAN_THI_GIAC.md` là chuẩn bắt buộc theo `AGENTS.md`.
 - `phan-tich-cong-thuc/` — script sinh báo cáo công thức (T8/2026).
@@ -290,6 +292,8 @@ mục 4b.
 6. Ghi nhận, chưa vá: M8 (xác nhận rớt lần 2 sau khi khoa đã gửi vẫn báo "Đã gửi"); chữ sai trong vài hàm DB ("Gửi giỏ", "Khoa Khoa"); ~~code chết `TabKetQua`~~ đã gỡ 05/10. Chi tiết: `05` mục 7.
 7. Q10b (kỳ sử dụng đợt bổ sung T1/T5/T9) và Q14 (PĐD mở lại cho khoa sau xác nhận) — treo từ 03/10, xem `Cải tiến 03-10-2026/00_DOC_TRUOC.md`.
 8. Đợt riêng về mẫu Excel (khoa 35 cột / PĐD 31 cột, thống nhất tên + thứ tự cột) — từ 03/10.
+10. Chín câu hỏi gom 05/10 (Tim mạch/P06–P07 ảnh cũ, trang "Giỏ rớt của các khoa", câu trống màn Theo dõi chuyển tiếp vs Q09, màn khoa gõ đề xuất còn cuộn ở 1440, cột "SL 5 tháng" cạnh Khoảng thường dùng, dòng số 0 khoa tự sửa, tô đỏ theo mã/nhóm): `.scratch/don-dep-05-10/BAO_CAO_TONG_KET.md` phần 2.
+11. `backend/scripts/sao_luu.py` đặt thư mục theo ngày → sao lưu hai lần cùng ngày ghi đè; nên thêm giờ vào tên thư mục.
 9. `huong-dan-su-dung/` và `.scratch/huong-dan/` chưa theo dõi git — chủ dự án quyết có đưa vào git không.
 
 ## Ghi chú sửa
@@ -302,6 +306,8 @@ mục 4b.
 - 05/10/2026 — viết hướng dẫn sửa Supabase bằng tên mục kỹ thuật ("Site URL", "Redirect URLs"), chủ dự án không hiểu phải hỏi lại → việc chủ dự án phải tự làm trên trang quản trị thì giải thích bằng lời thường (để làm gì, không làm thì sao) và đề nghị làm giúp qua Chrome trước, không đưa thẳng tên mục kỹ thuật.
 
 ## Nhật ký chốt
+
+- 05/10/2026 (chốt khuya) — Chốt toàn ngày: web + tài liệu bản 10/2026, DB sạch lần 2 cho chủ dự án tự test. Xếp nhóm hồ sơ `test-tu-dau-05-10/`, `ra-thi-giac-05-10/`, nguồn dựng `ban-05-10/`. Vào Thùng rác: `ban-05-10/_tam`, `xem_truoc`, pptx/pdf trùng, `anh_sang_05-10`, file Excel test, `backend/.pytest_cache` — ~104 MB.
 
 - 05/10/2026 — Chuẩn bị demo 14/10: dọn sạch DB staging (13.228 dòng / 35 bảng + 54 lý do mồ côi, sao lưu trước), đổi tên 5 tài khoản bỏ chữ Test, ẩn 8 nút dọn test, đổi site Netlify → `vtyt-umc` + URL Configuration Supabase, gỡ code chết/thư viện/script cũ, push GitHub (`1754424` · `6d63b2b` · `c355840` · `6fccee5`). Vào Thùng rác: 8 script cũ, sao lưu staging 17/08 · 19/09 · 28/09, `kha-dung-hop-dong-staging.json`, bộ nhớ đệm pytest, `.DS_Store`, `frontend/.netlify` rỗng — ~137 MB. Chốt: xếp nhóm `Cải tiến 03-10-2026/`, `.scratch/` cũ, cấu hình; sửa mốc cũ trong cố vấn `.claude/agents`.
 - 05/10/2026 (chiều–tối) — Test trọn vòng hai vai bằng trợ lý (dữ liệu giữ cho demo); sửa Q-A (giữ dòng mã đã đổ), Q-B (dải gợi ý theo tháng HIS toàn viện), Q-F (tổng thiếu), nhãn mã rớt, giỏ rớt PĐD; rà + sửa 40 lỗi thị giác (kiểm định độc lập 2 vòng ĐẠT); tài liệu hướng dẫn bản 10/2026 thay bản 19/09 (bản cũ vào Thùng rác). Commit `665e2b5` · `59be7c2` · `dfe5be6`.
