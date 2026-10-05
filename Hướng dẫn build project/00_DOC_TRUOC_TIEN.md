@@ -5,8 +5,9 @@
 > - **Không còn mốc thời gian** (QĐ 18/09/2026). Mốc gần nhất do chủ dự án đặt:
 >   **demo 14/10/2026** (vẫn là bản demo trên staging).
 > - **Web: https://vtyt-umc.netlify.app** (đổi tên từ `vtyt-umc-test` ngày 05/10; địa chỉ
->   cũ trả 404). Bản đang chạy: commit `6d63b2b`, bundle `index-DKSA8G-_.js`, đẩy tay.
->   GitHub **chưa push** (từ đợt 28/09).
+>   cũ trả 404). Bản đang chạy: bundle `index-DKSA8G-_.js` (code `6d63b2b`).
+>   GitHub **đã push** 05/10 (`6fccee5`); push làm Netlify TỰ build từ GitHub
+>   (credits có lại) — commit chỉ sửa tài liệu thì ghi `[skip netlify]` để khỏi tốn build.
 > - **Database staging SẠCH từ 05/10:** 0 đợt, 0 đề xuất — chủ dự án tự đi lại từ đầu
 >   cả hai vai. Dữ liệu nền giữ nguyên (3.327 mã, HIS tới T6/2026, 5.082 dòng kỳ trước,
 >   khả dụng hợp đồng). Sao lưu ngay trước khi dọn: `backend/sao_luu/staging/2026-10-05`.
@@ -283,7 +284,7 @@ mục 4b.
 1. **Q07** — cột HIS QĐ1599 rỗng 3.327/3.327 mã → Excel trình ký không có cột mã hàng; chủ dự án tìm nguồn.
 2. Nạp HIS **T7–T8/2026** (hiện tới T6).
 3. Sửa pptx các trang **18, 24, 25, 26, 43, 46**; thêm trang cho màn "Tổng hợp kết quả thầu" nếu muốn.
-4. ~~Đẩy Netlify~~ — xong 05/10 (đẩy tay, `6d63b2b`). Còn: push các commit từ 28/09 lên GitHub khi chủ dự án đồng ý.
+4. ~~Đẩy Netlify + push GitHub~~ — xong 05/10.
 5. ~~Dọn dữ liệu test #202–#206~~ — xong 05/10 (dọn sạch mọi đợt, có sao lưu).
 6. Ghi nhận, chưa vá: M8 (xác nhận rớt lần 2 sau khi khoa đã gửi vẫn báo "Đã gửi"); chữ sai trong vài hàm DB ("Gửi giỏ", "Khoa Khoa"); ~~code chết `TabKetQua`~~ đã gỡ 05/10. Chi tiết: `05` mục 7.
 7. Q10b (kỳ sử dụng đợt bổ sung T1/T5/T9) và Q14 (PĐD mở lại cho khoa sau xác nhận) — treo từ 03/10, xem `Cải tiến 03-10-2026/00_DOC_TRUOC.md`.
