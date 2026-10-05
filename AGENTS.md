@@ -15,7 +15,7 @@ Mọi chữ "go-live giữa T9" hay "01/01/2027" bên dưới là lịch sử, �
 05/10/2026 tối: GitHub = Netlify = dfe5be6 · bundle index-Dps3s9ef.js · site https://vtyt-umc.netlify.app
   (push lên nhánh phase-a-luong-de-xuat → Netlify TỰ build; commit chỉ tài liệu ghi [skip netlify])
 pytest 404 · test:formula 10 ✓ · eslint no-undef/no-unused sạch
-DB staging: dữ liệu demo 14/10 (đợt 207 + 208, số rớt MẪU) — xem 08_LO_TRINH_TEST.md. KHÔNG dọn khi chưa hỏi.
+DB staging SẠCH (05/10 tối): 0 đợt, 0 đề xuất — chủ dự án tự test từ đầu hai vai. Dữ liệu nền giữ nguyên.
 Nút dọn dữ liệu kiểm thử ẨN mặc định (cờ build VITE_HIEN_NUT_KIEM_THU=1 để hiện).
 Tài liệu người dùng: huong-dan-su-dung/ bản 10/2026 (nguồn dựng .scratch/huong-dan/ban-05-10/).
 Việc còn lại: mục "Việc còn mở" trong 00_DOC_TRUOC_TIEN.md và 05 mục 7.

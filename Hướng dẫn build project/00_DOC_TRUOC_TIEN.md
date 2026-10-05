@@ -7,11 +7,11 @@
 > - **Web: https://vtyt-umc.netlify.app** (đổi tên từ `vtyt-umc-test` 05/10). GitHub = Netlify =
 >   commit `dfe5be6`, bundle `index-Dps3s9ef.js`. Push lên `phase-a-luong-de-xuat` làm Netlify
 >   TỰ build; commit chỉ sửa tài liệu ghi `[skip netlify]`.
-> - **Dữ liệu demo (giữ cho 14/10, số rớt là MẪU):** đợt 207 "Gói 18 tháng 2027-2028" — Dùng
->   chung/GMHS/RHM đã chốt trình ký, Tim mạch **dở có chủ ý** (dvsd1 chưa xác nhận → PĐD chưa chốt
->   được, cổng cứng), CTCH-NTK trống; đợt 208 "Mua sắm bổ sung đợt tháng 1/2027" (hệ tự tạo) có
->   mã rớt trong giỏ khoa. Chi tiết + lộ trình bấm thử: `08_LO_TRINH_TEST.md`. Sao lưu trước khi
->   dọn sạch sáng 05/10: `backend/sao_luu/staging/2026-10-05`.
+> - **Database staging SẠCH lần 2 (05/10 tối, chủ dự án yêu cầu tự test từ đầu):** 0 đợt, 0 đề
+>   xuất. Đã xoá dữ liệu demo trợ lý chạy chiều 05/10 (560 dòng + 19 lý do mồ côi + 12 lượt trợ
+>   giúp ngày 05/10). Dữ liệu nền giữ nguyên. Sao lưu ngay trước khi dọn:
+>   `backend/sao_luu/staging/2026-10-05_toi_truoc_khi_don` (bản sáng 05/10 đã bị ghi đè — công cụ
+>   sao lưu đặt tên thư mục theo ngày).
 > - **Tài khoản (mật khẩu `111111`):** `pdd@` Phòng Điều dưỡng · `admin@` Quản trị hệ thống ·
 >   `dvsd1@` ĐD Phòng mổ · `dvsd2@` ĐD Răng Hàm Mặt · `dvsd3@` ĐD Ngoại thần kinh.
 > - **05/10 đã làm:** dọn DB + đổi tên tài khoản; ẩn nút dọn test (cờ `VITE_HIEN_NUT_KIEM_THU=1`);
@@ -297,6 +297,7 @@ mục 4b.
 - 28/09/2026 — lệnh `!` dài bị cắt khi dán trong app, chủ dự án phải nhờ đưa lại lệnh → luôn gói lệnh vào file `.sh` rồi đưa một dòng `! bash <đường dẫn>`.
 
 - 03/10/2026 — sổ ghi Netlify đứng ở `d357019` là sai: lịch sử deploy cho thấy 19/09 Netlify đã tự build `ff894bd` từ GitHub. Trước khi nói Netlify đang ở bản nào, đọc `listSiteDeploys` hoặc curl tên bundle, đừng tin sổ.
+- 05/10/2026 — `sao_luu.py` đặt thư mục theo NGÀY nên sao lưu lần 2 trong ngày ghi đè lần 1 → trước khi sao lưu lần nữa trong cùng ngày, đổi tên thư mục cũ.
 - 05/10/2026 — đọc ngược bảng `06_DUNG_LAM_LAI.md` (cột 1 là cách ĐÃ BỎ): tưởng "cổng mềm chốt số" còn hiệu lực, giao trợ lý chốt Tim mạch khi khoa chưa xác nhận; web chặn đúng (cổng cứng). → Đọc tiêu đề cột của bảng 06 trước khi trích một dòng làm căn cứ.
 - 05/10/2026 — viết hướng dẫn sửa Supabase bằng tên mục kỹ thuật ("Site URL", "Redirect URLs"), chủ dự án không hiểu phải hỏi lại → việc chủ dự án phải tự làm trên trang quản trị thì giải thích bằng lời thường (để làm gì, không làm thì sao) và đề nghị làm giúp qua Chrome trước, không đưa thẳng tên mục kỹ thuật.
 
@@ -304,6 +305,7 @@ mục 4b.
 
 - 05/10/2026 — Chuẩn bị demo 14/10: dọn sạch DB staging (13.228 dòng / 35 bảng + 54 lý do mồ côi, sao lưu trước), đổi tên 5 tài khoản bỏ chữ Test, ẩn 8 nút dọn test, đổi site Netlify → `vtyt-umc` + URL Configuration Supabase, gỡ code chết/thư viện/script cũ, push GitHub (`1754424` · `6d63b2b` · `c355840` · `6fccee5`). Vào Thùng rác: 8 script cũ, sao lưu staging 17/08 · 19/09 · 28/09, `kha-dung-hop-dong-staging.json`, bộ nhớ đệm pytest, `.DS_Store`, `frontend/.netlify` rỗng — ~137 MB. Chốt: xếp nhóm `Cải tiến 03-10-2026/`, `.scratch/` cũ, cấu hình; sửa mốc cũ trong cố vấn `.claude/agents`.
 - 05/10/2026 (chiều–tối) — Test trọn vòng hai vai bằng trợ lý (dữ liệu giữ cho demo); sửa Q-A (giữ dòng mã đã đổ), Q-B (dải gợi ý theo tháng HIS toàn viện), Q-F (tổng thiếu), nhãn mã rớt, giỏ rớt PĐD; rà + sửa 40 lỗi thị giác (kiểm định độc lập 2 vòng ĐẠT); tài liệu hướng dẫn bản 10/2026 thay bản 19/09 (bản cũ vào Thùng rác). Commit `665e2b5` · `59be7c2` · `dfe5be6`.
+- 05/10/2026 (tối) — Dọn sạch DB lần 2 theo yêu cầu (chủ dự án tự test từ đầu): 560 dòng/26 bảng + 19 lý do mồ côi + 12 lượt trợ giúp; sao lưu `2026-10-05_toi_truoc_khi_don`.
 
 - 28/09/2026 — Đợt test toàn bộ (6 vòng, 4 kiểm định độc lập, ~45 lỗi vá, Q01–Q09, 3 patch SQL, commit `b164c95` · `ecdf408` · `9e1a559` · `f5e6a63`). Dọn vào Thùng rác: 62 tệp `snap_*.txt`, 2 thư mục `.pytest_cache`, 11 ảnh test không được trích — 75 mục, ~13 MB. Sáng cùng ngày đã dọn ~268 MB (sao lưu cũ, rác máy, ảnh nghiệm thu cũ) và gom nháp vào `.scratch/_da-xong/`.
 

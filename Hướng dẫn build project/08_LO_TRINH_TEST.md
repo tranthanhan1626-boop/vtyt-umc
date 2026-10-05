@@ -1,6 +1,6 @@
 # Lộ trình tự bấm thử — cho chủ dự án
 
-Soạn lại 05/10/2026, trên dữ liệu trợ lý đã chạy trọn vòng hôm đó (giữ để demo 14/10).
+Soạn lại 05/10/2026 (tối), cho database TRỐNG — chủ dự án tự đi từ đầu.
 Lộ trình này **không tả nút bấm** — tả nút là việc của
 `huong-dan-su-dung/HuongDan_SuDung_VTYT.pdf` (bản 10/2026, 48 trang). Đây chỉ là
 thứ tự đi và chỗ cần soi.
@@ -19,15 +19,11 @@ thứ tự đi và chỗ cần soi.
    | Khoa 3 | `dvsd3@umc.edu.vn` | ĐD Ngoại thần kinh | Khoa Ngoại thần kinh |
 
    Muốn xem hai vai cùng lúc: mở vai thứ hai trong **cửa sổ ẩn danh**.
-3. Dữ liệu đang có (05/10). **Số rớt thầu là SỐ LIỆU MẪU**, lý do rớt ghi "Dữ liệu mẫu — …":
-
-   | Đợt / gói con | Tình trạng |
-   |---|---|
-   | "Gói 18 tháng 2027-2028" · **Dùng chung** | 3 khoa gửi (13 mã), đã chốt số, xong 3 giai đoạn, **đã chốt trình ký**. Mẫu rớt: 66349 Găng tay rớt một phần · 66330 Bơm tiêm 50ml rớt hết · 66326 Bơm tiêm 10ml rớt rồi **đổ hết sang 66142** |
-   | · **GMHS** (dvsd1, 3 mã) · **Răng Hàm Mặt** (dvsd2, 2 mã) | đã chốt trình ký |
-   | · **Tim mạch** | **đang dở có chủ ý**: dvsd1 gửi 1 mã nhưng **chưa xác nhận**, còn 1 nhóm trong giỏ chưa gửi; PĐD chưa chốt số |
-   | · CTCH-NTK | chưa khoa nào gửi |
-   | "Mua sắm bổ sung đợt tháng 1/2027" | **hệ tự tạo** khi xác nhận rớt; mã rớt nằm trong giỏ của dvsd1 (2 mã chờ xử lý) và dvsd3 (1 mã chờ, 1 mã đã báo "Không còn nhu cầu") |
+3. **Database trống** (dọn lần 2 tối 05/10): chưa có đợt nào. Đi từ đầu:
+   PĐD → Nghiệp vụ dùng chung → **Quản lý đợt đề xuất** → Tạo đợt (loại gói, năm, tên) →
+   Mở đợt → mở các gói con → khoa gửi đề xuất → … Đợt bổ sung **hệ tự tạo** khi PĐD bấm
+   "Xác nhận rớt" (mốc T1/T5/T9 gần nhất chưa chốt). Dữ liệu nền (danh mục, HIS tới T6/2026,
+   đề xuất kỳ trước) có sẵn.
 
 ## 1. Phần chung (bất kỳ tài khoản nào)
 
@@ -38,20 +34,18 @@ thứ tự đi và chỗ cần soi.
 
 ## 2. Khoa (dvsd1 hoặc dvsd3)
 
-- [ ] Menu "Gói bổ sung" có nhãn đỏ "N mã rớt" — chỉ đếm mã **còn chờ** khoa xử lý (dvsd1: 2, dvsd3: 1)
+- [ ] (sau khi PĐD xác nhận rớt) menu "Gói bổ sung" có nhãn đỏ "N mã rớt" — chỉ đếm mã **còn chờ** khoa xử lý
 - [ ] Mã rớt (③): mỗi mục có **tên vật tư** trước mã; "Tổng số lượng thiếu" không tính mục "Không còn nhu cầu"
 - [ ] Danh mục của khoa · Dùng chung: dải đỏ ghi theo trạng thái ("1 mã đã đổ sang mã 66142; 2 mã đã vào giỏ…"); cột **"Khoảng thường dùng"** (không còn chữ P50–P75); ô chữ dài không làm dòng cao quá
-- [ ] (dvsd1) gói **Tim mạch**: xác nhận danh mục → sau đó PĐD mới chốt số được (cổng cứng)
-- [ ] (tuỳ) Gõ một đề xuất ở **CTCH-NTK** (gói con còn trống) theo 3 bước
+- [ ] Gõ đề xuất theo 3 bước, gửi, xác nhận danh mục — PĐD chỉ chốt số được khi mọi khoa đã gửi đều xác nhận (cổng cứng)
 
 ## 3. PĐD (pdd)
 
 - [ ] Bàn điều hành: chọn Gói 18 tháng → đợt → gói con; 7 ô tiến trình đọc rõ, không bị cắt
-- [ ] Tổng hợp · Dùng chung: **9 mã**; dòng 66326 hiện **0** kèm nhãn "↪ đã đổ 301.729 sang 66142"; số không gãy dọc; thử hai "Cách xem"
-- [ ] Xuất Excel tổng hợp: có dòng 66326 = 0 kèm nhãn
-- [ ] Tim mạch (sau khi dvsd1 xác nhận): Chốt số đi thầu → Chào giá → Mở thầu…
+- [ ] Tổng hợp: chốt số → 3 giai đoạn → ghi rớt → chia số trúng → đổ mã tương đương → xác nhận rớt; mã đổ hết vẫn ở lại bảng với số 0 + nhãn "↪ đã đổ … sang …"; thử hai "Cách xem"
+- [ ] Chốt trình ký, xuất Excel tổng hợp
 - [ ] Theo dõi chuyển tiếp mã rớt · Tổng hợp kết quả thầu ("Rớt ở Chào giá / Mở thầu / Đánh giá") · Gói tùy chọn mua thêm — chỉ xem
-- [ ] Nghiệp vụ dùng chung → **"Giỏ rớt của các khoa"**: thấy 2 khoa, 4 mục (trước đây màn này luôn trống)
+- [ ] Nghiệp vụ dùng chung → **"Giỏ rớt của các khoa"**: thấy mã rớt của các khoa (trước đây màn này luôn trống)
 - [ ] Quản lý đợt: "Đóng gói con" nằm trong nút ⋯ từng dòng
 
 ## Gặp lỗi thì ghi thế này
