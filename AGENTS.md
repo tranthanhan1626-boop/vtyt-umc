@@ -12,12 +12,12 @@ mở web · việc còn lại). Lộ trình để chủ dự án tự bấm th�
 Mọi chữ "go-live giữa T9" hay "01/01/2027" bên dưới là lịch sử, đừng sắp việc theo nó.
 
 ```
-05/10/2026: GitHub = Netlify = 6fccee5 · bundle index-DKSA8G-_.js · site https://vtyt-umc.netlify.app
+05/10/2026 tối: GitHub = Netlify = dfe5be6 · bundle index-Dps3s9ef.js · site https://vtyt-umc.netlify.app
   (push lên nhánh phase-a-luong-de-xuat → Netlify TỰ build; commit chỉ tài liệu ghi [skip netlify])
-pytest 401 · test:formula ✓ · eslint no-undef/no-unused sạch (đo 05/10)
-DB staging SẠCH từ 05/10 (0 đợt, 0 đề xuất) — chủ dự án tự đi lại từ đầu cả hai vai cho demo 14/10.
-  Dữ liệu nền giữ nguyên, HIS tới T6/2026. Sao lưu ngay trước khi dọn: backend/sao_luu/staging/2026-10-05
+pytest 404 · test:formula 10 ✓ · eslint no-undef/no-unused sạch
+DB staging: dữ liệu demo 14/10 (đợt 207 + 208, số rớt MẪU) — xem 08_LO_TRINH_TEST.md. KHÔNG dọn khi chưa hỏi.
 Nút dọn dữ liệu kiểm thử ẨN mặc định (cờ build VITE_HIEN_NUT_KIEM_THU=1 để hiện).
+Tài liệu người dùng: huong-dan-su-dung/ bản 10/2026 (nguồn dựng .scratch/huong-dan/ban-05-10/).
 Việc còn lại: mục "Việc còn mở" trong 00_DOC_TRUOC_TIEN.md và 05 mục 7.
 ```
 
@@ -25,9 +25,8 @@ Việc còn lại: mục "Việc còn mở" trong 00_DOC_TRUOC_TIEN.md và 05 m�
   `localhost:4173`. Mật khẩu mọi tài khoản thử `111111` (sửa 28/09: file này
   trước in nhầm `Test123456` và chạy bản dev cổng 5173).
 - **Hướng dẫn sử dụng cho người dùng cuối:** `huong-dan-su-dung/HuongDan_SuDung_VTYT.pdf`
-  (46 trang, kiểm định độc lập lần 3 ĐẠT 19/09; lỗi nhẹ còn lại ở
-  `.scratch/huong-dan/KIEM_DINH_3.md` mục 3; **28/09: thêm các trang lệch với
-  QĐ Q01–Q09, xem `05` mục 7 — chưa sửa**).
+  (bản 10/2026, 48 trang, kiểm định độc lập 05/10 ĐẠT; lỗi nhẹ còn lại ở
+  `.scratch/huong-dan/ban-05-10/KIEM_LAI_05-10.md`).
 
 - **Gói giao diện 5 đợt đã lên web** (không đổi chức năng): chữ dễ hiểu + `lib/dichLoi.js` ·
   thanh tiến trình (`lib/tienTrinh.js`) · màn chào khoa, menu theo việc, đề xuất 3 bước,
