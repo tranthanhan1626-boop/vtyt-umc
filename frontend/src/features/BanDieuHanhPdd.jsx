@@ -779,8 +779,8 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
               </button>
             </div>
             <p className="mt-1 text-xs text-amber-800">
-              Số lượng trong giỏ mới là GỢI Ý. Khoa phải tự sửa rồi bấm Gửi đề xuất trong giỏ thì mới thành
-              đề xuất chính thức của đợt bổ sung. Phòng Điều dưỡng nhắc được, <b>không gửi thay khoa</b>.
+              Số lượng trong giỏ mới là GỢI Ý. Khoa gửi nguyên số gợi ý, rồi sửa số trên Danh mục đề xuất của
+              khoa và xác nhận lại thì mới thành đề xuất chính thức của đợt bổ sung. Phòng Điều dưỡng nhắc được, <b>không gửi thay khoa</b>.
             </p>
             {xemRotTrongGio && (
               <div className="mt-2 max-h-64 overflow-auto rounded border border-amber-200 bg-white">

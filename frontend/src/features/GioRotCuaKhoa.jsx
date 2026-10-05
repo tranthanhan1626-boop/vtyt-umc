@@ -11,8 +11,9 @@ import NutGiaiThich from "./NutGiaiThich";
 // — SO_CHUNG.md mục 5). Khi PĐD bấm "Xác nhận rớt", phần CHƯA đổ sang mã
 // tương đương được hệ tự CHUYỂN TIẾP vào giỏ của khoa ở đợt bổ sung gần nhất
 // (Hướng dẫn build project/01_NGHIEP_VU_HIEN_HANH.md mục 6.1), số điền sẵn =
-// số rớt nhưng chỉ là GỢI Ý — khoa sửa số rồi tự bấm "Gửi đề xuất" mới thành
-// đề xuất chính thức. Luật cũ "không tự tạo đề xuất, không tự điền số lượng"
+// số rớt nhưng chỉ là GỢI Ý — khoa tự bấm "Gửi đề xuất" (gửi nguyên số gợi ý,
+// QĐ k 18/09/2026) mới thành đề xuất chính thức, rồi sửa số trên Danh mục đề
+// xuất của khoa và xác nhận lại. Luật cũ "không tự tạo đề xuất, không tự điền số lượng"
 // đã bị đảo 21/08/2026 (06_DUNG_LAM_LAI.md:43).
 //
 // Trước 19/08/2026 màn này không tồn tại: RPC `cap_nhat_xu_ly_gio_rot_v3` có
@@ -285,8 +286,9 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
               điền sẵn chỉ là <b>gợi ý</b> (khoa đã có số ở đợt đó thì cộng thêm, không ghi đè).
             </p>
             <p className="mt-2">
-              Khoa tự sửa lại cho đúng nhu cầu rồi bấm <b>"Gửi đề xuất"</b> ở Gói bổ sung,
-              chưa gửi thì chưa thành đề xuất chính thức.
+              Số trong giỏ không sửa ở ngăn giỏ: khoa bấm <b>"Gửi đề xuất"</b> ở Gói bổ sung để
+              gửi nguyên số gợi ý, rồi sửa số cho đúng nhu cầu trên <b>Danh mục đề xuất của
+              khoa</b> và xác nhận lại. Chưa gửi thì chưa thành đề xuất chính thức.
             </p>
           </NutGiaiThich>
         </p>

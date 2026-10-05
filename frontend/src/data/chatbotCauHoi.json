@@ -64,7 +64,7 @@
         "khoa",
         "pdd"
       ],
-      "ten": "Hiểu các con số (P50…)",
+      "ten": "Hiểu các con số (Mức thường dùng…)",
       "nut_goc": [
         "k_so_p50",
         "k_so_p75",
@@ -397,7 +397,7 @@
       ],
       "chu_de": "k_dx",
       "cau_hoi": "Khi nào bắt chọn lý do và ghi chú?",
-      "tra_loi": "Chỉ khi tổng bạn nhập cao hơn mức \"Cận trên thông thường\" (P75). Khi đó phải chọn lý do đề xuất và ghi chú căn cứ. Số từ mức đó trở xuống, kể cả thấp hơn \"Mức thường dùng\" (P50), không phải giải trình. Đợt bổ sung không áp luật này.",
+      "tra_loi": "Chỉ khi tổng bạn nhập cao hơn mức \"Cận trên thông thường\". Khi đó phải chọn lý do đề xuất và ghi chú căn cứ. Số từ mức đó trở xuống, kể cả thấp hơn \"Mức thường dùng\", không phải giải trình. Đợt bổ sung không áp luật này.",
       "bien_the_theo_trang_thai": [],
       "di_toi": null,
       "hoi_tiep": [
@@ -664,8 +664,8 @@
         "pdd"
       ],
       "chu_de": "k_so",
-      "cau_hoi": "\"Mức thường dùng (P50)\" là gì?",
-      "tra_loi": "Là số hệ dự báo khoa sẽ dùng trong cả kỳ, tính từ lịch sử xuất kho 24 tháng gần nhất. Đây là mức chọn sẵn, không phải khuyến nghị chuyên môn. Số không tự vào ô: bạn phải bấm nút thì số mới được điền. Nhập thấp hơn P50 vẫn được, không phải giải trình.",
+      "cau_hoi": "\"Mức thường dùng\" là gì?",
+      "tra_loi": "Là số hệ dự báo khoa sẽ dùng trong cả kỳ, tính từ lịch sử xuất kho 24 tháng gần nhất. Đây là mức chọn sẵn, không phải khuyến nghị chuyên môn. Số không tự vào ô: bạn phải bấm nút thì số mới được điền. Nhập thấp hơn mức thường dùng vẫn được, không phải giải trình.",
       "bien_the_theo_trang_thai": [],
       "di_toi": null,
       "hoi_tiep": [
@@ -682,8 +682,8 @@
         "pdd"
       ],
       "chu_de": "k_so",
-      "cau_hoi": "\"Cận trên thông thường (P75)\" là gì?",
-      "tra_loi": "Là mức P50 cộng thêm phần dao động hay gặp giữa các tháng — mép trên của khoảng thường dùng. Từ \"Mức thường dùng\" (P50) đến mức này không phải giải trình. Nhập cao hơn thì phải chọn lý do và ghi chú căn cứ.",
+      "cau_hoi": "\"Cận trên thông thường\" là gì?",
+      "tra_loi": "Là mức thường dùng cộng thêm phần dao động hay gặp giữa các tháng — mép trên của khoảng thường dùng. Từ \"Mức thường dùng\" đến mức này không phải giải trình. Nhập cao hơn thì phải chọn lý do và ghi chú căn cứ.",
       "bien_the_theo_trang_thai": [],
       "di_toi": null,
       "hoi_tiep": [
@@ -700,8 +700,8 @@
         "pdd"
       ],
       "chu_de": "k_so",
-      "cau_hoi": "\"Mức cao (P90)\" và \"Ngoại lệ (P95)\" dùng khi nào?",
-      "tra_loi": "\"Mức cao · cần giải trình (P90)\" và \"Ngoại lệ · cần giải trình (P95)\" là hai mức vượt dải thường dùng. Chỉ chọn khi có căn cứ chuyên môn, và bắt buộc ghi rõ căn cứ. Không lấy quyền mua thêm 30% làm lý do nâng số lên P90/P95.",
+      "cau_hoi": "\"Mức cao · cần giải trình\" và \"Ngoại lệ · cần giải trình\" dùng khi nào?",
+      "tra_loi": "\"Mức cao · cần giải trình\" và \"Ngoại lệ · cần giải trình\" là hai mức vượt dải thường dùng. Chỉ chọn khi có căn cứ chuyên môn, và bắt buộc ghi rõ căn cứ. Không lấy quyền mua thêm 30% làm lý do nâng số lên hai mức này.",
       "bien_the_theo_trang_thai": [],
       "di_toi": null,
       "hoi_tiep": [
@@ -751,8 +751,8 @@
         "pdd"
       ],
       "chu_de": "k_so",
-      "cau_hoi": "Cột dải P50–P75 trên Danh mục đề xuất là gì?",
-      "tra_loi": "Là khoảng thường dùng của riêng khoa cho mã đó. Số vượt P75 chỉ được tô nổi bật, không bị chặn. Dải tính theo kỳ mặc định của gói, nên có thể lệch chút với màn nhập nếu lúc nhập bạn đã đổi mốc từ/đến.",
+      "cau_hoi": "Cột \"Khoảng thường dùng\" trên Danh mục đề xuất là gì?",
+      "tra_loi": "Là khoảng thường dùng của riêng khoa cho mã đó. Số vượt cận trên thông thường chỉ được tô nổi bật, không bị chặn. Dải tính theo kỳ mặc định của gói, nên có thể lệch chút với màn nhập nếu lúc nhập bạn đã đổi mốc từ/đến.",
       "bien_the_theo_trang_thai": [],
       "di_toi": null,
       "hoi_tiep": [
@@ -850,7 +850,7 @@
       ],
       "chu_de": "k_thau",
       "cau_hoi": "Số trong giỏ bổ sung có phải gửi y nguyên không?",
-      "tra_loi": "Không. Số trong giỏ chỉ là gợi ý bằng đúng số đã rớt. Cách làm: gửi nguyên số gợi ý, rồi mở Danh mục đề xuất của khoa sửa thành số khoa cần (nhiều hơn, ít hơn hay về 0) và bấm xác nhận lại. Đợt bổ sung không áp P50–P95 và không bắt lý do vượt ngưỡng.",
+      "tra_loi": "Không. Số trong giỏ chỉ là gợi ý bằng đúng số đã rớt. Cách làm: gửi nguyên số gợi ý, rồi mở Danh mục đề xuất của khoa sửa thành số khoa cần (nhiều hơn, ít hơn hay về 0) và bấm xác nhận lại. Đợt bổ sung không áp mức gợi ý và không bắt lý do vượt ngưỡng.",
       "bien_the_theo_trang_thai": [],
       "di_toi": {
         "nhan": "Đi tới Gói bổ sung",
