@@ -1893,14 +1893,19 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                           <span>
                             {/* L6: một hàng ngang gồm PHẦN CHỮ (.o-chu — chỉ phần này
                                 bị cắt 2 dòng khi Gọn) + các dấu nhỏ; mã hàng dòng dưới. */}
-                            <span className={`flex items-center gap-x-1 ${c.kieu === "num" ? "justify-end" : ""}`}>
+                            {/* 05/10/2026: ô SỐ cho phép xuống hàng — cột hẹp thì nhãn
+                                ("N khoa tự sửa", "N khoa"…) rơi xuống dưới số, thay vì ép
+                                chính con số gãy dọc từng chữ số (chuẩn thị giác mục 5). */}
+                            <span className={`flex items-center gap-x-1 ${c.kieu === "num" ? "flex-wrap justify-end gap-y-0.5" : ""}`}>
                             {/* Lăng kính trước chốt số: ô Tổng đề xuất vẽ như ô nhập
                                 để thấy là gõ được (bản vẽ M2_truoc-thau). */}
                             {laTheoViec && c.key === "sl_de_xuat_2627" && canSua ? (
                               <span className="inline-block min-w-[5.5rem] rounded border border-slate-300 bg-white px-2 py-0.5 text-right tabular-nums">
                                 {formatCell(value, c.kieu)}
                               </span>
-                            ) : <span className="o-chu min-w-0">{formatCell(value, c.kieu)}</span>}
+                            ) : c.kieu === "num"
+                              ? <span className="shrink-0 whitespace-nowrap tabular-nums">{formatCell(value, c.kieu)}</span>
+                              : <span className="o-chu min-w-0">{formatCell(value, c.kieu)}</span>}
                             {/* P6p (KĐ lượt 4, 28/09/2026) — "số gốc" chỉ đúng cho ô
                                 SỐ; ô chữ phải ghi "giá trị gốc". 1e (03/10/2026):
                                 bỏ sửa đè phải HỎI LẠI, không làm ngay. */}
