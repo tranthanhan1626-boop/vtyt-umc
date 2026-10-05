@@ -269,15 +269,20 @@ mục 4b.
 | `AGENTS.md`, `MO_WEB.command`, `netlify.toml` | luật cho agent · nút mở web · cấu hình deploy | — |
 | `huong-dan-su-dung/HuongDan_SuDung_VTYT.pptx` + `.pdf` | tài liệu hướng dẫn người dùng (46 trang) | dựng lại bằng `.scratch/huong-dan/dung_pptx.py` (cần thư mục `anh/` ở đó) |
 | `.scratch/test-toan-bo/` (BAO_CAO_TONG_KET, SO_CHUNG, KIEM_DINH_DOC_LAP*, `bao-cao/`, 172 ảnh bằng chứng) | hồ sơ đợt test toàn bộ 28/09 | không sửa; ảnh không commit (nặng) |
+| `Cải tiến 03-10-2026/` (đọc `00_DOC_TRUOC.md` trong đó; `huong-dan-test/HUONG_DAN_BAM_THU.html`) | hồ sơ đợt cải tiến giao diện 03/10 (16 quy tắc, bản vẽ, hướng dẫn bấm thử có ảnh) | không sửa; chỉ trên máy, không đưa git (chủ dự án chọn) |
+| `.scratch/don-dep-05-10/BAO_CAO_TONG_KET.md` | báo cáo đợt dọn chuẩn bị demo 14/10 | không sửa |
 
 ## Tài liệu gốc (giữ, không dọn)
 
 - `database/` — Excel HIS, danh mục, mẫu biểu, `de_xuat.xlsx` (nguồn "đề xuất kỳ trước").
 - `Form biểu mẫu/` — biểu mẫu thật của bệnh viện.
 - `backend/du_lieu_staging/` — dữ liệu xuất từ production để dựng staging.
-- `backend/sao_luu/` — sao lưu database (production 04/08; staging 17/08, 19/09, 28/09).
+- `backend/sao_luu/` — sao lưu database (production 04/08; staging 03/10, 05/10 — bản 05/10 chụp ngay trước khi dọn sạch DB).
 - `.scratch/huong-dan/` — ảnh chụp + dàn ý + script dựng pptx.
 - `ghi-chu-key/`, `backend/.env.local` — khoá bí mật, không bao giờ đưa lên git.
+- `.scratch/` các thư mục ghi chép đợt cũ (`_da-xong`, `chatbot`, `demo`, `giao-dien`, `is-current`, `link-tong-hop-xuong-khoa`, `mot-mat-ban`, `test-full-2roles`, `tien-do-goi-thau`, `vong-khep-kin`) — code, patch SQL và tài liệu còn trỏ tới; `giao-dien/CHUAN_THI_GIAC.md` là chuẩn bắt buộc theo `AGENTS.md`.
+- `phan-tich-cong-thuc/` — script sinh báo cáo công thức (T8/2026).
+- Cấu hình: `docs/agents/` (ghi chú cho agent), `.claude/` (cố vấn dự án + khung xem trước), `.netlify/state.json` (cần khi đẩy Netlify tay).
 
 ## Việc còn mở
 
@@ -295,13 +300,12 @@ mục 4b.
 
 - 28/09/2026 — lệnh `!` dài bị cắt khi dán trong app, chủ dự án phải nhờ đưa lại lệnh → luôn gói lệnh vào file `.sh` rồi đưa một dòng `! bash <đường dẫn>`.
 
-## Ghi chú sửa (bổ sung)
-
 - 03/10/2026 — sổ ghi Netlify đứng ở `d357019` là sai: lịch sử deploy cho thấy 19/09 Netlify đã tự build `ff894bd` từ GitHub. Trước khi nói Netlify đang ở bản nào, đọc `listSiteDeploys` hoặc curl tên bundle, đừng tin sổ.
+- 05/10/2026 — viết hướng dẫn sửa Supabase bằng tên mục kỹ thuật ("Site URL", "Redirect URLs"), chủ dự án không hiểu phải hỏi lại → việc chủ dự án phải tự làm trên trang quản trị thì giải thích bằng lời thường (để làm gì, không làm thì sao) và đề nghị làm giúp qua Chrome trước, không đưa thẳng tên mục kỹ thuật.
 
 ## Nhật ký chốt
 
-- 05/10/2026 — Chuẩn bị demo 14/10: dọn sạch DB staging (13.228 dòng / 35 bảng + 54 lý do mồ côi, sao lưu trước), đổi tên 5 tài khoản bỏ chữ Test, ẩn 8 nút dọn test, đổi site Netlify → `vtyt-umc` + sửa URL Configuration Supabase, gỡ code chết/thư viện/script cũ (commit `1754424`, `6d63b2b`). Vào Thùng rác: 8 script cũ, sao lưu staging 17/08 · 19/09 · 28/09 (~127 MB), `kha-dung-hop-dong-staging.json`, bộ nhớ đệm pytest, `.DS_Store`.
+- 05/10/2026 — Chuẩn bị demo 14/10: dọn sạch DB staging (13.228 dòng / 35 bảng + 54 lý do mồ côi, sao lưu trước), đổi tên 5 tài khoản bỏ chữ Test, ẩn 8 nút dọn test, đổi site Netlify → `vtyt-umc` + URL Configuration Supabase, gỡ code chết/thư viện/script cũ, push GitHub (`1754424` · `6d63b2b` · `c355840` · `6fccee5`). Vào Thùng rác: 8 script cũ, sao lưu staging 17/08 · 19/09 · 28/09, `kha-dung-hop-dong-staging.json`, bộ nhớ đệm pytest, `.DS_Store`, `frontend/.netlify` rỗng — ~137 MB. Chốt: xếp nhóm `Cải tiến 03-10-2026/`, `.scratch/` cũ, cấu hình; sửa mốc cũ trong cố vấn `.claude/agents`.
 
 - 28/09/2026 — Đợt test toàn bộ (6 vòng, 4 kiểm định độc lập, ~45 lỗi vá, Q01–Q09, 3 patch SQL, commit `b164c95` · `ecdf408` · `9e1a559` · `f5e6a63`). Dọn vào Thùng rác: 62 tệp `snap_*.txt`, 2 thư mục `.pytest_cache`, 11 ảnh test không được trích — 75 mục, ~13 MB. Sáng cùng ngày đã dọn ~268 MB (sao lưu cũ, rác máy, ảnh nghiệm thu cũ) và gom nháp vào `.scratch/_da-xong/`.
 

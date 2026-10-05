@@ -194,7 +194,6 @@ checkpoint này.
 - [DanhMucDeXuatKhoa.jsx](../../frontend/src/features/DanhMucDeXuatKhoa.jsx): danh mục Khoa, audit, chốt và xử lý rớt một phần.
 - [BanDieuHanhPdd.jsx](../../frontend/src/features/BanDieuHanhPdd.jsx): dashboard 62 Khoa, tổng hợp, kết quả và giỏ rớt.
 - [TongHopPdd.jsx](../../frontend/src/features/TongHopPdd.jsx): override/lock/chốt tổng hợp và scope `goi:dot:id`.
-- [TienDoGoiThau.jsx](../../frontend/src/features/TienDoGoiThau.jsx): ba giai đoạn, hợp đồng, hàng về và vòng bổ sung.
 - [TienDoSuDung.jsx](../../frontend/src/features/TienDoSuDung.jsx): giám sát từ số trúng và HIS.
 - [XuatHoSo.jsx](../../frontend/src/features/XuatHoSo.jsx) và [HoSoTrucTuyen.jsx](../../frontend/src/features/HoSoTrucTuyen.jsx): Word và lifecycle hồ sơ.
 

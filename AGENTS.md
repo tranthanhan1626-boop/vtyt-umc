@@ -12,16 +12,13 @@ mở web · việc còn lại). Lộ trình để chủ dự án tự bấm th�
 Mọi chữ "go-live giữa T9" hay "01/01/2027" bên dưới là lịch sử, đừng sắp việc theo nó.
 
 ```
-commit ecdf408 (vòng 3–5 đợt "test toàn bộ") · vòng 6 (P1–P8, Q09) đã vá +
-  bấm lại ĐẠT nhưng CHƯA COMMIT · bundle local index-BlnlMBxw.js (build sau vòng 6)
-Netlify = 60ddbf9 = index-BlnlMBxw.js (đẩy tay 03/10/2026, khớp localhost) · GitHub chưa push 5 commit 28/09
-pytest 401 (đếm 28/09 cuối đợt) · test:formula ✓ (có tienTrinh, chatbot, tenCotBieuMau, oKhongDoi)
-DB staging (đọc thật 28/09): 5 đợt TEST #202–#206 còn nguyên, dùng để test đợt "test toàn bộ"
-  (dựng từ 19/09 bởi tao_du_lieu_test_day_du.py, đã phát sinh thêm dữ liệu qua các vòng bấm)
-  HIS mới tới T6/2026 · sao lưu: 28/09 sáng TRƯỚC đợt test và chạy lại CUỐI đợt 28/09
-  (sao_luu.py --staging → backend/sao_luu/staging/2026-09-28)
-Ba patch SQL đã chạy trong đợt: zzzzzzzi, zzzzzzzj, zzzzzzzk (nội dung + rollback ở
-  07_NHAT_KY_THAY_DOI.md khối đầu). Chín QĐ Q01–Q09 đã vào 01 và 06. Việc còn lại: 05 mục 7.
+05/10/2026: GitHub = Netlify = 6fccee5 · bundle index-DKSA8G-_.js · site https://vtyt-umc.netlify.app
+  (push lên nhánh phase-a-luong-de-xuat → Netlify TỰ build; commit chỉ tài liệu ghi [skip netlify])
+pytest 401 · test:formula ✓ · eslint no-undef/no-unused sạch (đo 05/10)
+DB staging SẠCH từ 05/10 (0 đợt, 0 đề xuất) — chủ dự án tự đi lại từ đầu cả hai vai cho demo 14/10.
+  Dữ liệu nền giữ nguyên, HIS tới T6/2026. Sao lưu ngay trước khi dọn: backend/sao_luu/staging/2026-10-05
+Nút dọn dữ liệu kiểm thử ẨN mặc định (cờ build VITE_HIEN_NUT_KIEM_THU=1 để hiện).
+Việc còn lại: mục "Việc còn mở" trong 00_DOC_TRUOC_TIEN.md và 05 mục 7.
 ```
 
 - **Mở web để test:** bấm đúp `MO_WEB.command` → tự build rồi mở bản chuẩn ở

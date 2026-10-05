@@ -276,8 +276,8 @@ Cập nhật **24/08/2026** (thân file) · khối đầu và mục 7 cập nh�
 mô hình trước v3 (`goi_thau_ket_qua_ma` · `goi_thau_tien_do` · `goi_thau_moc`).
 Cách chữa: viết lại **nền của view** chứ không sửa từng màn — `patch_zzzzza` trỏ
 `v_ket_qua_thau_theo_khoa` · `v_ma_rot_theo_goi` · `v_tien_do_su_dung` sang bảng
-v3 mà giữ nguyên tên cột, nên 5 màn sống lại cùng lúc. Chỉ còn `TienDoGoiThau`
-đọc bảng cũ — đã gỡ khỏi menu, để nguyên cho nhánh D6 viết lại.
+v3 mà giữ nguyên tên cột, nên 5 màn sống lại cùng lúc. Màn `TienDoGoiThau` (đọc bảng cũ)
+đã gỡ hẳn khỏi mã nguồn ngày 05/10/2026; nhánh D6 nếu làm thì viết mới (bản cũ còn trong git).
 
 **17/18 invariant** đo được và đúng. Cái còn lại (*một mã quản lý chỉ thuộc một
 gói con*) cần **quyết định nghiệp vụ**, không phải việc code — xem mục 4.
