@@ -28,6 +28,15 @@ const LOI_HE_THONG = "Hệ thống chưa được cập nhật đủ để làm 
 
 // [điều kiện trên message hoặc code, câu tiếng Việt]
 const LUAT = [
+  // L4 (bấm thử 03/10/2026, THỢ B — báo THỢ A trước khi sửa): tab mở từ bản
+  // cũ, web vừa build/đẩy bản mới → tải phần chia nhỏ (vd thư viện Excel) theo
+  // tên file cũ thất bại. Lỗi này cũng chứa "Failed to fetch" nên PHẢI đứng
+  // TRƯỚC luật mất kết nối, nếu không bị dịch nhầm thành "Mất kết nối…".
+  // Chrome: "Failed to fetch dynamically imported module" · Safari: "Importing
+  // a module script failed" · Firefox: "error loading dynamically imported
+  // module" · Vite: "Unable to preload CSS" · webpack: ChunkLoadError (ở name).
+  [/dynamically imported module|Importing a module script failed|Unable to preload CSS|ChunkLoadError|Loading chunk \S+ failed/i,
+    "Web vừa được cập nhật — bấm Tải lại trang (F5) rồi làm lại."],
   [/Failed to fetch|NetworkError|Load failed|fetch failed|ERR_NETWORK/i,
     "Mất kết nối tới máy chủ. Kiểm tra mạng rồi bấm Tải lại."],
   [/JWT expired|invalid JWT|refresh token|Auth session missing/i,
@@ -61,7 +70,9 @@ export function thayTenCot(msg) {
 /** Chuỗi, Error hay lỗi Supabase `{ message, code }` đều nhận. Rỗng thì trả "". */
 export function dichLoi(loi) {
   if (!loi) return "";
-  const msg = typeof loi === "string" ? loi : String(loi.message || "");
+  const msg = typeof loi === "string" ? loi
+    // `name` ghép vào để bắt ChunkLoadError (lỗi đó mang tên ở `name`).
+    : [loi.name === "ChunkLoadError" ? loi.name : "", String(loi.message || "")].filter(Boolean).join(": ");
   const code = typeof loi === "object" ? String(loi.code || "") : "";
 
   if (msg && CO_DAU_TIENG_VIET.test(msg)) return thayTenCot(msg);

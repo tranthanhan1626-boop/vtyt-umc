@@ -65,9 +65,11 @@ assert.equal(vaiTroChatbot(undefined), null);
   });
   // Nhãn nút trong câu trả lời khớp chữ trên màn (grep ở src).
   assert.match(nut("k_tiep_khong_nhu_cau").tra_loi, /"Không phát sinh nhu cầu"/);
-  assert.match(nut("k_th_ma_rot_di_dau").tra_loi, /⟳ rớt thầu · gợi ý N/);
+  // 03/10/2026: nhãn trong giỏ đổi theo bản vẽ M1_4 (G4) — "⟳ Mã rớt thầu · số gợi ý N".
+  assert.match(nut("k_th_ma_rot_di_dau").tra_loi, /⟳ Mã rớt thầu · số gợi ý N/);
   assert.match(nut("k_th_khong_can_nua").tra_loi, /"Không còn nhu cầu"/);
-  assert.match(nut("p_q_sua_sau_chot").tra_loi, /"Mở chốt để sửa"/);
+  // 03/10/2026 (G12): "Mở chốt để sửa…" nay nằm trong menu ⋯ của bảng Tổng hợp.
+  assert.match(nut("p_q_sua_sau_chot").tra_loi, /⋯.*"Mở chốt để sửa…"/);
   assert.match(nut("k_tiep_goi_con").tra_loi, /Teams/);
   // k_xn_nut_mo hỏi tiếp k_tiep_khong_nhu_cau nay đã hiện → giữ nguyên.
   assert.deepEqual(k.nut.get("k_xn_nut_mo").hoi_tiep, nut("k_xn_nut_mo").hoi_tiep);

@@ -1,5 +1,6 @@
 import { supabase } from "../supabaseClient";
 import { dichLoi } from "./dichLoi";
+import { hienNutKiemThu } from "./hienNutKiemThu";
 
 export const MA_DU_AN_STAGING = "ihgfafubwyxnbubmppbj";
 
@@ -14,10 +15,16 @@ const supabaseUrl = String(import.meta.env.VITE_SUPABASE_URL || "");
 // đoạn test, và sẽ báo thời điểm gỡ. Việc phải làm trước khi mở cho khoa:
 // gỡ 4 RPC (backend/sql/patch_zzzzzz_go_tay_xoa_du_lieu.sql) và đổi dòng
 // dưới thành chỉ đọc cờ VITE_ENABLE_TEST_DELETE.
+//
+// 05/10/2026 — thêm công tắc ngoài cùng `hienNutKiemThu()` (VITE_HIEN_NUT_KIEM_THU=1):
+// không đặt thì TẤT CẢ nút/khối dọn dữ liệu kiểm thử đều ẩn (chuẩn bị demo 14/10);
+// các điều kiện cũ bên dưới giữ nguyên làm lớp an toàn thứ hai.
 export const BAT_XOA_DU_LIEU_TEST =
-  import.meta.env.DEV
-  || supabaseUrl.includes(MA_DU_AN_STAGING)
-  || import.meta.env.VITE_ENABLE_TEST_DELETE === "true";
+  hienNutKiemThu() && (
+    import.meta.env.DEV
+    || supabaseUrl.includes(MA_DU_AN_STAGING)
+    || import.meta.env.VITE_ENABLE_TEST_DELETE === "true"
+  );
 
 // 18/09/2026 — chủ dự án chốt: nút xoá dữ liệu test ẨN với tài khoản khoa,
 // PĐD vẫn thấy. App.jsx báo vai trò vào đây ngay khi biết hồ sơ; các nút xoá

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { ArrowUpRight, ClipboardList, ExternalLink, PackageX, Sheet } from "lucide-react";
+import { ArrowUpRight, ClipboardList, PackageX, Sheet } from "lucide-react";
 import { supabase } from "../supabaseClient";
-import { GOI, GOI_CON, MUC_CHUNG } from "../features/KhungGoiThau";
+import { GOI, GOI_CON, MUC_CHUNG, nhanDot } from "../features/KhungGoiThau";
 import { goiConCuaDot } from "../lib/cotChuan";
 import { moDanhMucDeXuat } from "../lib/moManExcel";
 import { useTienTrinhKhoa } from "../lib/useTienTrinh";
@@ -121,7 +121,7 @@ export default function ManChaoKhoa({ profile, doiChon, dsDotTheoGoi = {}, dangT
   });
   const coDanhMuc = goi && goi !== "chi_dinh_thau";
   const moDanhMuc = () => {
-    // Đủ gói con + đợt → mở thẳng Danh mục đề xuất (tab riêng, như nút ở màn
+    // Đủ gói con + đợt → mở thẳng Danh mục đề xuất (cùng tab từ 03/10 — Q1, như ở màn
     // Đề xuất). Chưa đủ → danh sách các kỳ của gói, như menu "Danh mục".
     if (goiId && dot?.id) moDanhMucDeXuat(goiId, khoa, dot.id);
     else doiChon({ nhom: "goi", goi: coDanhMuc ? goi : "dau_thau_rong_rai", goiCon: null, man: "danh_muc_khoa" });
@@ -165,8 +165,8 @@ export default function ManChaoKhoa({ profile, doiChon, dsDotTheoGoi = {}, dangT
           ) : dsGoiMo.length === 0 ? (
             <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-semibold">Chưa có đợt nào đang mở</span>
           ) : dsGoiMo.flatMap((g) => (dsDotTheoGoi[g.ma] || []).map((d) => (
-            <span key={d.id} className="rounded-full border border-white/25 bg-white/15 px-2.5 py-0.5 text-xs font-semibold">
-              {g.ten} · {d.ten}
+            <span key={d.id} title={d.ten} className="rounded-full border border-white/25 bg-white/15 px-2.5 py-0.5 text-xs font-semibold">
+              {g.ten} · {nhanDot(d)}
             </span>
           )))}
         </div>
@@ -212,7 +212,7 @@ export default function ManChaoKhoa({ profile, doiChon, dsDotTheoGoi = {}, dangT
             <select value={dot?.id || ""} onChange={(e) => setDotId(Number(e.target.value) || null)}
               className="mt-1 block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm">
               <option value="">— chọn đợt —</option>
-              {dsDotHopLe.map((d) => <option key={d.id} value={d.id}>{d.ten}</option>)}
+              {dsDotHopLe.map((d) => <option key={d.id} value={d.id} title={d.ten}>{nhanDot(d)}</option>)}
             </select>
           </label>
         )}
@@ -251,7 +251,6 @@ export default function ManChaoKhoa({ profile, doiChon, dsDotTheoGoi = {}, dangT
           </span>
         </button>
         <button type="button" onClick={moDanhMuc} disabled={goi === "chi_dinh_thau"}
-          title={goiId && dot?.id ? "Mở trong tab trình duyệt mới" : undefined}
           className="flex min-h-[5.5rem] items-center gap-3 rounded-xl border border-umc-300 bg-white px-5 py-4 text-left text-umc-800 transition-colors hover:bg-umc-50 disabled:cursor-not-allowed disabled:opacity-50">
           <Sheet size={26} className="shrink-0" />
           <span className="min-w-0 flex-1">
@@ -262,7 +261,6 @@ export default function ManChaoKhoa({ profile, doiChon, dsDotTheoGoi = {}, dangT
                 : "Danh sách các kỳ đề xuất của khoa"}
             </span>
           </span>
-          {goiId && dot?.id && <ExternalLink size={16} className="shrink-0" />}
         </button>
         <button type="button" onClick={moMaRot}
           className="flex min-h-[5.5rem] items-center gap-3 rounded-xl border border-umc-300 bg-white px-5 py-4 text-left text-umc-800 transition-colors hover:bg-umc-50">

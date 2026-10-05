@@ -53,6 +53,16 @@ export const GOI_CON = {
   ],
 };
 
+// Nhãn một đợt cho người dùng (03/10/2026): hai đợt bổ sung cùng tháng mốc
+// (vd T9/2026 và T9/2027) trước đây cùng hiện "Tháng 9" / cùng tên khó phân
+// biệt. `thang_moc` + `nam` của `dot_de_xuat` chỉ dùng để ĐẶT NHÃN — không suy
+// ra kỳ sử dụng từ đây (AGENTS.md, bẫy 27/08). Đợt không có tháng mốc (18
+// tháng, chỉ định) giữ tên đợt PĐD đặt. Tên đầy đủ để ở `title`.
+export function nhanDot(d) {
+  if (!d) return "";
+  return d.thang_moc ? `T${d.thang_moc}/${d.nam}` : (d.ten || `Đợt ${d.id}`);
+}
+
 export function manHinhTheoVaiTro(goi, laPdd) {
   const ds = [
     { ma: "de_xuat", ten: "Đề xuất số lượng", icon: ClipboardList },
@@ -306,7 +316,7 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
           >
             {dangTaiDot ? "Đang kiểm tra đợt…"
               : loiDot && !dotMo ? "Không đọc được trạng thái"
-              : dotMo ? (soDot > 1 ? `${soDot} đợt đang mở` : `Đang mở: ${dotMo.ten}`)
+              : dotMo ? (soDot > 1 ? `${soDot} đợt đang mở` : `Đang mở: ${nhanDot(dotMo)}`)
               : "Chưa mở đợt"}
           </span>
         </div>

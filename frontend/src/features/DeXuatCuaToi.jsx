@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ExternalLink, Package, Sheet, Trash2, Undo2, X } from "lucide-react";
+import { Package, Sheet, Trash2, Undo2, X } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import { NHAN_TRANG_THAI, fmtNgayGio, khoaNhom } from "./DeXuatTongHop";
 import { NHAN_GOI_THAU } from "./Function1";
 import { GOI_ID_MAP, goiConCuaDot } from "../lib/cotChuan";
 import NutXoaDuLieuTest from "../components/NutXoaDuLieuTest";
+import { hienNutKiemThu } from "../lib/hienNutKiemThu";
 import { moDanhMucDeXuat } from "../lib/moManExcel";
 import { dichLoi } from "../lib/dichLoi";
 
@@ -173,9 +174,9 @@ export default function DeXuatCuaToi({ profile, goi }) {
           {danhMucTheoGoi.map((d) => (
             <button key={d.key} type="button"
               onClick={() => moDanhMucDeXuat(d.goiId, d.donVi, d.dotId)}
-              title="Mở trong tab trình duyệt mới"
+              title="Mở Danh mục đề xuất của khoa"
               className="inline-flex items-center gap-1 rounded-md border border-umc-300 bg-white px-2.5 py-1.5 text-xs font-medium text-umc-800 hover:bg-umc-100">
-              <ExternalLink size={13} /> {GOI_ID_MAP[d.goiId]?.nhan || d.goiId}
+              <Sheet size={13} /> {GOI_ID_MAP[d.goiId]?.nhan || d.goiId}
               {d.dotId && <span className="text-umc-500">· {tenDot[d.dotId] || `đợt #${d.dotId}`}</span>}
               {d.soGio > 1 && <span className="text-umc-500">({d.soGio} giỏ)</span>}
             </button>
@@ -220,7 +221,7 @@ export default function DeXuatCuaToi({ profile, goi }) {
                     {g.goiId && (
                       <button type="button"
                         onClick={() => moDanhMucDeXuat(g.goiId, g.don_vi, g.dot_id)}
-                        title="Mở trong tab trình duyệt mới"
+                        title="Mở Danh mục đề xuất của khoa"
                         className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-white px-2.5 py-1.5 font-medium text-emerald-700 hover:bg-emerald-50">
                         <Sheet size={13} /> Mở Excel danh mục đề xuất
                       </button>
@@ -331,7 +332,7 @@ export default function DeXuatCuaToi({ profile, goi }) {
                       : !cungKhoa ? "Chỉ tài khoản thuộc khoa này mới được điều chỉnh." : ""}
                   </p>
                 )}
-                <div className="mt-2 flex justify-end">
+                {hienNutKiemThu() && <div className="mt-2 flex justify-end">
                   <NutXoaDuLieuTest
                     loai="nhom_de_xuat"
                     id={g.key}
@@ -343,7 +344,7 @@ export default function DeXuatCuaToi({ profile, goi }) {
                       setRows((cu) => cu.filter((r) => !ids.has(r.id)));
                     }}
                   />
-                </div>
+                </div>}
               </div>
             </motion.div>
           );

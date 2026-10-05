@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, Bell, Building2, CheckCircle2, ChevronDown, ChevronRight,
-  Copy, Database, ExternalLink, FileSignature, Layers3, RefreshCw, Search,
+  Copy, Database, FileSignature, Layers3, MoreHorizontal, RefreshCw, Search,
   Trash2, XCircle,
 } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
@@ -12,6 +12,7 @@ import GioRotToanVien from "./GioRotToanVien";
 import { moDanhMucDeXuat, moTongHopPdd } from "../lib/moManExcel";
 import { dichLoi } from "../lib/dichLoi";
 import ThanhTienTrinh from "../components/ThanhTienTrinh";
+import { useDongKhiRaNgoai } from "../components/ThanhDauUmc";
 import { useTienTrinhPdd } from "../lib/useTienTrinh";
 
 /*
@@ -145,6 +146,12 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   const [formDon, setFormDon] = useState(null); // số dòng sẽ xoá, chờ xác nhận
   const [dangDon, setDangDon] = useState(false);
   const [thongBao, setThongBao] = useState("");
+  // G12 (03/10/2026): "Kết thúc đợt & dọn" dời vào menu ⋯ (chữ đỏ, vẫn hỏi lại
+  // bằng hộp xác nhận như cũ). Esc / bấm ra ngoài đóng menu.
+  const [moMenuThem, setMoMenuThem] = useState(false);
+  const refMenuThem = useRef(null);
+  const dongMenuThem = useCallback(() => setMoMenuThem(false), []);
+  useDongKhiRaNgoai(moMenuThem, dongMenuThem, refMenuThem);
 
   const [locKhoa, setLocKhoa] = useState("tat_ca"); // tat_ca | chua | thieu_ho_so | du
   const [tuKhoa, setTuKhoa] = useState("");
@@ -768,8 +775,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
   const moDanhMucKhoa = (khoa) => {
     const ds = goiConCuaKhoa(khoa);
     if (ds.length === 1) {
-      // Tab riêng như bảng Tổng hợp — PĐD phải giữ được Bàn điều hành để đối
-      // chiếu chứ không phải bấm qua bấm lại (yêu cầu 24/08/2026).
+      // Q1 (CDA 03/10/2026): mở trong tab đang dùng, như bảng Tổng hợp.
       moDanhMucDeXuat(ds[0], khoa, dot.id);
       return;
     }
@@ -823,13 +829,28 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50">
             <RefreshCw size={13} /> Tải lại
           </button>
-          {/* 18/09/2026 (V7): nút nguy hiểm tách xa "Tải lại" — đẩy về mép phải,
-              chữ/viền đỏ. Vẫn chỉ MỞ hộp xác nhận như cũ, không xoá ngay. */}
-          <button type="button" onClick={moDonDuLieu}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-medium text-red-600 hover:border-red-300 hover:bg-red-50"
-            title="Xoá dữ liệu làm việc (ô đã sửa tay, cấu hình cột) khi đợt thầu đã xong hẳn">
-            <Trash2 size={13} /> Kết thúc đợt & dọn
-          </button>
+          {/* 18/09/2026 (V7) → 03/10/2026 (G12): nút nguy hiểm vào menu ⋯ ở mép
+              phải, chữ đỏ. Vẫn chỉ MỞ hộp xác nhận như cũ, không xoá ngay. */}
+          <div className="relative ml-auto" ref={refMenuThem}>
+            <button type="button" onClick={() => setMoMenuThem((v) => !v)} aria-expanded={moMenuThem}
+              aria-label="Thêm thao tác"
+              className="inline-flex min-h-9 items-center rounded-lg border border-slate-300 px-2.5 text-slate-600 hover:bg-slate-50">
+              <MoreHorizontal size={16} />
+            </button>
+            {moMenuThem && (
+              <div className="absolute right-0 top-full z-40 mt-1 w-72 rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+                <button type="button" onClick={() => { setMoMenuThem(false); moDonDuLieu(); }}
+                  className="block w-full px-3 py-1.5 text-left hover:bg-red-50">
+                  <span className="flex items-center gap-2 text-sm font-medium text-red-600">
+                    <Trash2 size={14} /> Kết thúc đợt & dọn…
+                  </span>
+                  <span className="block pl-6 text-xs text-slate-500">
+                    Xoá dữ liệu làm việc (ô sửa tay, cấu hình cột) khi đợt thầu đã xong hẳn. Sẽ hỏi lại.
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* CẤP 1 — loại gói. Sổ dần: loại → đợt → gói con → dashboard
@@ -889,8 +910,9 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
             <div className="mt-1.5 space-y-1.5">
               {dsGoiCon.map((g) => {
                 const tt = tienTrinhTheoGoi.get(g.goiId)?.tienTrinh || null;
-                // Mở TAB TRÌNH DUYỆT MỚI (yêu cầu 24/08/2026): bảng Tổng hợp là
-                // mặt bàn làm việc lâu, PĐD cần giữ Bàn điều hành ở tab cũ.
+                // Q1 (CDA 03/10/2026): mở ngay trong tab đang dùng (bỏ tab riêng
+                // của 24/08). Quay về bằng "‹ Về trang chính"; đợt/gói con đang
+                // chọn được nhớ trên máy nên không mất chỗ đang xem.
                 const moBang = () => moTongHopPdd(g.goiId, dot.id);
                 const xemKhoa = () => { setGoiConId(g.goiId); setTab("khoa"); };
                 return (
@@ -908,7 +930,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
                       }))}
                       viecTiepTheo={tt?.viecTiepTheo || ""} />
                     <button type="button" onClick={moBang}
-                      title={`Mở bảng Tổng hợp gói ${g.goi} (tab mới)`}
+                      title={`Mở bảng Tổng hợp gói ${g.goi}`}
                       className="inline-flex min-h-8 shrink-0 items-center gap-1 rounded border border-umc-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-umc-800 hover:bg-umc-50">
                       <Layers3 size={13} /> <span className="hidden 2xl:inline">Mở bảng</span> Tổng hợp
                     </button>
@@ -928,13 +950,16 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
         <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
           {/* "Khoa tham gia gói này", KHÔNG phải toàn viện: gói chuyên khoa
               (GMHS · RHM · Tim mạch) chỉ vài khoa dự (QĐ 26/08/2026). */}
-          <ONhanh nhan="Khoa tham gia gói" so={tongQuan.soKhoaToanVien} vach="bg-slate-300" />
-          <ONhanh nhan="Đã đề xuất" so={tongQuan.soKhoaDaDeXuat} mau="text-emerald-600" vach="bg-emerald-500" />
-          <ONhanh nhan="Chưa đề xuất" so={tongQuan.soKhoaChuaDeXuat}
-            mau={tongQuan.soKhoaChuaDeXuat > 0 ? "text-red-600" : "text-slate-800"}
-            vach={tongQuan.soKhoaChuaDeXuat > 0 ? "bg-red-500" : "bg-emerald-500"} />
+          {/* G11 (03/10/2026): chưa chọn gói con thì chưa có số — hiện "—",
+              không hiện 0 (0 đọc như "chưa khoa nào", là sai). */}
+          <ONhanh nhan="Khoa tham gia gói" so={goiConId ? tongQuan.soKhoaToanVien : "—"} vach="bg-slate-300" />
+          <ONhanh nhan="Đã đề xuất" so={goiConId ? tongQuan.soKhoaDaDeXuat : "—"}
+            mau={goiConId ? "text-emerald-600" : "text-slate-400"} vach={goiConId ? "bg-emerald-500" : "bg-slate-200"} />
+          <ONhanh nhan="Chưa đề xuất" so={goiConId ? tongQuan.soKhoaChuaDeXuat : "—"}
+            mau={!goiConId ? "text-slate-400" : tongQuan.soKhoaChuaDeXuat > 0 ? "text-red-600" : "text-slate-800"}
+            vach={!goiConId ? "bg-slate-200" : tongQuan.soKhoaChuaDeXuat > 0 ? "bg-red-500" : "bg-emerald-500"} />
           <ONhanh nhan="Đã xác nhận bản hiện tại"
-            so={tongQuan.soKhoaCanChot ? `${tongQuan.soKhoaDaChot}/${tongQuan.soKhoaCanChot}` : "—"}
+            so={goiConId && tongQuan.soKhoaCanChot ? `${tongQuan.soKhoaDaChot}/${tongQuan.soKhoaCanChot}` : "—"}
             vach="bg-cyan-400" />
         </div>
         {/* QĐ 26/08/2026 — mã rớt KHÔNG còn tự thành đề xuất ở đợt bổ sung; nó
@@ -989,10 +1014,13 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
         )}
 
         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-          <span>
-            {fmt(tongQuan.soMaQuanLy)} mã quản lý · {fmt(tongQuan.soMaHang)} mã hàng
-            {goiConId ? ` · lọc theo ${nhanGoiCon || goiConId}` : " · tất cả gói con"}
-          </span>
+          {/* G11: chưa chọn gói con thì không in "0 mã" — chưa có số. */}
+          {goiConId && (
+            <span>
+              {fmt(tongQuan.soMaQuanLy)} mã quản lý · {fmt(tongQuan.soMaHang)} mã hàng
+              {` · lọc theo ${nhanGoiCon || goiConId}`}
+            </span>
+          )}
           {/* Mọi số lịch sử trên màn này đều tính từ dữ liệu HIS đã nạp — nên
               hiện thẳng mốc mới nhất cạnh nút nạp, thay vì bắt PĐD tự nhớ. */}
           <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1">
@@ -1134,7 +1162,7 @@ export default function BanDieuHanhPdd({ profile, onMoManKhac }) {
                 Huỷ
               </button>
               <button type="button" onClick={donDuLieu} disabled={dangDon}
-                className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50">
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50">
                 {dangDon ? "Đang dọn…" : "Xác nhận dọn"}
               </button>
             </div>
@@ -1268,7 +1296,7 @@ function TabKhoa({
                       <>
                         <button type="button" onClick={() => moDanhMucKhoa(k.don_vi)}
                           className="inline-flex items-center gap-1 rounded border border-umc-200 bg-umc-50 px-2 py-1 text-xs font-medium text-umc-700 hover:bg-umc-100">
-                          <ExternalLink size={11} /> Danh mục
+                          Danh mục ›
                         </button>
                       </>
                     )}
@@ -1347,7 +1375,7 @@ function TabTongHop({
         <button type="button" onClick={onMoExcel}
           className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--umc-blue)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
           title={goiIdHienTai ? "Mở bản Excel tổng hợp toàn màn hình" : "Chọn một gói con trước"}>
-          <ExternalLink size={13} /> Mở Excel tổng hợp
+          <Layers3 size={13} /> Mở Excel tổng hợp
         </button>
         <div className="relative ml-auto">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />

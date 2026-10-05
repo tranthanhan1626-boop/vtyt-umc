@@ -122,6 +122,36 @@ export const COT_PDD = [
   { key: "nuoc_sx",         nhan: "Nước sản xuất",                  width: 130, group: "tm_2627" },
 ];
 
+// -------- Nhãn HIỂN THỊ lời thường cho bảng Tổng hợp PĐD (G4, 03/10/2026) ---
+// CHỈ lớp hiển thị trên màn: `COT_PDD.nhan` (tên gốc, đi vào Excel và tooltip)
+// giữ nguyên. Màn vẽ nhãn ở đây, rê chuột thấy tên gốc.
+export const NHAN_HIEN_PDD = {
+  ten_vt_2627: "Tên vật tư",
+  dvt: "Đơn vị",
+  sl_de_xuat_2627: "Tổng đề xuất",
+  dai_p50_p75: "Khoảng thường dùng",
+};
+
+// Tám cột theo mẫu bệnh viện mà PĐD gõ tay (nguồn: danh mục chuẩn theo kỳ).
+// Q8 (CDA 03/10/2026): giữ nguyên tên mẫu, không giải nghĩa, rê chuột ghi
+// "Cột theo mẫu bệnh viện — PĐD gõ tay".
+export const COT_MAU_PDD_GO_TAY = new Set([
+  "co_dinh_276", "his_1599", "his_957", "ma_kt",
+  "ma_tt04", "ten_tt04", "phan_nhom_tt14", "quy_cach",
+]);
+
+// Nhóm cột "Thêm cột ▾" khi đang xem "Theo việc đang làm" — chỉ trên máy
+// này, không đổi Excel. `nhom` là khoá NHOM_COT_PDD; `cot` là danh sách cột lẻ.
+export const NHOM_THEM_COT_PDD = [
+  { ma: "dinh_danh", nhan: "Định danh", nhom: "dinh_danh" },
+  { ma: "phan_nhom", nhan: "Phân nhóm quản lý", nhom: "phan_nhom" },
+  { ma: "vat_tu", nhan: "Vật tư & tiêu chí kỹ thuật (TSKT)", nhom: "vat_tu" },
+  { ma: "lich_su", nhan: "Lịch sử sử dụng toàn viện", nhom: "lich_su" },
+  { ma: "lich_su_nhom", nhan: "Lịch sử cả nhóm mã quản lý", nhom: "lich_su_nhom" },
+  { ma: "tm_2627", nhan: "Thương mại tham khảo 2026-2027", nhom: "tm_2627" },
+  { ma: "giai_trinh", nhan: "Giải trình đề xuất mua sắm", cot: ["giai_trinh"] },
+];
+
 export const NHOM_COT_PDD = [
   { key: "dinh_danh",  nhan: "Định danh",                            nhanNgan: "Đ.danh",     mau: "bg-slate-800" },
   { key: "phan_nhom",  nhan: "Phân nhóm quản lý",                    nhanNgan: "Phân nhóm",  mau: "bg-slate-700" },

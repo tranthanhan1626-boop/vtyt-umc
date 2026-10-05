@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Info } from "lucide-react";
 import { supabase } from "../supabaseClient";
+import NutGiaiThich from "./NutGiaiThich";
 
 // Mục I.3 của workflow v3 — gói bổ sung:
 //
@@ -88,33 +89,31 @@ export default function CanhBaoMaTrungDot({ maQuanLy, khoa, dotIdHienTai }) {
 
   if (!dong.length) return null;
 
+  // 03/10/2026 (G2, G15): cảnh báo gọn còn MỘT dòng vàng; danh sách đợt vào
+  // nút ?. Vẫn chỉ cảnh báo, không chặn. Màn khoa gọi mã quản lý là "nhóm".
   return (
-    <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50/70 p-2.5">
-      <div className="flex items-start gap-1.5">
-        <Info size={13} className="mt-0.5 shrink-0 text-sky-700" />
-        <div className="min-w-0">
-          <p className="text-xs font-semibold text-sky-900">
-            Mã quản lý này khoa đang có ở {dong.length} đợt khác
-          </p>
-          <p className="mt-0.5 text-[11px] text-sky-800">
-            Đây chỉ là cảnh báo — <b>không chặn</b>. Được phép đề xuất tiếp; xem qua rồi làm tiếp.
-          </p>
-          <ul className="mt-1.5 space-y-0.5">
-            {dong.map((d) => (
-              <li key={d.dotId} className="text-[11px] text-sky-900">
-                <span className="font-medium">{d.ten}</span>
-                {" — "}{d.soMaHang} mã hàng · tổng {d.tongSoLuong.toLocaleString("vi-VN")}
-                {" · "}
-                {d.tienDo === "da_trinh_ky" ? "đã chốt dữ liệu trình ký"
-                  : d.tienDo === "da_chot_q" ? "đã chốt số tham gia đấu thầu"
-                  : d.dotMo ? "đợt đang mở, chưa chốt số đi thầu"
-                  : "đợt đã đóng, chưa chốt số đi thầu"}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </div>
+    <p className="mt-2 flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-sm text-amber-900">
+      <Info size={14} className="shrink-0 text-amber-700" />
+      <span className="min-w-0 truncate">
+        Nhóm này khoa đang có ở {dong.length} đợt khác — chỉ cảnh báo, không chặn
+      </span>
+      <NutGiaiThich nhan="Các đợt khác có nhóm này" rong={420}>
+        <p>Đây chỉ là cảnh báo — <b>không chặn</b>. Được phép đề xuất tiếp; xem qua rồi làm tiếp.</p>
+        <ul className="mt-2 space-y-1">
+          {dong.map((d) => (
+            <li key={d.dotId} className="text-sm">
+              <span className="font-medium">{d.ten}</span>
+              {" — "}{d.soMaHang} mã hàng · tổng {d.tongSoLuong.toLocaleString("vi-VN")}
+              {" · "}
+              {d.tienDo === "da_trinh_ky" ? "đã chốt dữ liệu trình ký"
+                : d.tienDo === "da_chot_q" ? "đã chốt số tham gia đấu thầu"
+                : d.dotMo ? "đợt đang mở, chưa chốt số đi thầu"
+                : "đợt đã đóng, chưa chốt số đi thầu"}
+            </li>
+          ))}
+        </ul>
+      </NutGiaiThich>
+    </p>
   );
 }
 

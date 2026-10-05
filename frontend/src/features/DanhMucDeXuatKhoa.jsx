@@ -91,7 +91,10 @@ const COT_SO_KHOA = "sl_de_xuat_18t";
 // Nhãn kết quả thầu (rớt/đổ/nhận) không phải cột riêng: nó nằm trong ô Tên
 // vật tư nên vẫn hiện ở chế độ này.
 const COT_XEM_NHANH = ["stt", "ten_vt_2627", "dvt", "sl_de_xuat_18t", "dai_p50_p75", "giai_trinh_2627"];
-const KHOA_LUU_XEM_NHANH = "vtyt.danhMucKhoa.xemNhanh";
+// CDA 03/10/2026 (sau bấm thử): MỞ RA LÀ "Đủ cột" — bảng khoa và bảng Tổng hợp
+// PĐD phải nhìn giống nhau khi mới mở (đổi QĐ f 18/09 "mặc định Xem nhanh").
+// Đổi tên khoá lưu (".v2") để máy đã lưu "Xem nhanh" từ trước cũng mở Đủ cột.
+const KHOA_LUU_XEM_NHANH = "vtyt.danhMucKhoa.xemNhanh.v2";
 
 // "Đề xuất kỳ trước (18T)" — CỘT XEM (QĐ 18/09/2026 mục p), đọc từ
 // `v_de_xuat_ky_truoc`. Chỉ chèn vào `cotTrenManHinh` (cột VẼ), KHÔNG vào
@@ -110,8 +113,8 @@ function chenCotKyTruoc(dsCot) {
 function docXemNhanh() {
   try {
     const v = window.localStorage.getItem(KHOA_LUU_XEM_NHANH);
-    return v == null ? true : v === "1";
-  } catch { return true; }
+    return v === "1";
+  } catch { return false; }
 }
 
 const NHAN_GIAI_DOAN = { chao_gia: "Chào giá", mo_thau: "Mở thầu", danh_gia: "Đánh giá" };
@@ -461,7 +464,13 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
   // nguyên vẹn, không cắt dòng. Hàng cao thấp không đều là chấp nhận được;
   // đọc thiếu nội dung thì không. Nút "Nội dung ô" trên thanh công cụ vẫn cho
   // chuyển sang GỌN khi cần lướt nhanh qua nhiều mã.
+  // L6 (03/10/2026): CDA quyết GIỮ mặc định ĐẦY ĐỦ (QĐ 08/08), không đảo.
+  // GỌN chỉ là tuỳ chọn qua công tắc "Nội dung ô": phần chữ của ô tối đa 2
+  // dòng (StyleTable `.o-chu`), rê chuột thấy nguyên văn, bấm sửa thấy đủ.
+  // Cùng cách với bảng Tổng hợp PĐD (thống nhất với THỢ B). Excel không đổi.
   const [dongGon, setDongGon] = useState(false);
+  // L7: Esc huỷ sửa ô — đánh dấu để `ketThucSuaO` không lưu nếu blur còn tới.
+  const huySuaO = useRef(null);
   // Cấu hình cột dùng CHUNG theo (goiId, năm, khoa), lưu server qua
   // danh_muc_khoa_cot_cau_hinh (patch_zh + patch_zi). Cả ĐVSD và PĐD tick
   // được; { [colKey]: { an, khoa_cot, khoa_sua } }.
@@ -1028,6 +1037,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
   // Lưu khi RỜI ô, không lưu theo từng phím: gõ một đoạn tiêu chí kỹ thuật dài
   // mà bắn mỗi ký tự một request thì vừa nặng vừa đầy audit vô ích.
   const ketThucSuaO = async (maHang, colKey) => {
+    if (huySuaO.current === `${maHang}|${colKey}`) { huySuaO.current = null; return; }
     // L19 28/09/2026 — không lưu khi giá trị không đổi (bấm vào ô rồi bấm ra
     // từng làm khoa mất xác nhận; audit bs-t9:dot:203/66355). `oDangChon` vẫn
     // còn nguyên (chưa bị setODangChon(null) ở dưới) nên `giaTriMoLuc` là
@@ -1042,6 +1052,28 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
       return; // đóng ô, không gọi server
     }
     await luuOLenServer(maHang, colKey, giaTri);
+  };
+
+  // L7 (bấm thử 03/10/2026, G13): Enter = lưu (rời ô → ketThucSuaO, đủ mọi
+  // kiểm tra như khi bấm ra ngoài); Esc = huỷ, trả ô về giá trị lúc mở. Ô chữ
+  // nhiều dòng (TSKT, giải trình…): Enter xuống dòng, Ctrl/⌘+Enter = lưu.
+  const phimSuaO = (maHang, colKey, nhieuDong) => (e) => {
+    if (e.nativeEvent?.isComposing) return;
+    if (e.key === "Escape") {
+      e.preventDefault();
+      huySuaO.current = `${maHang}|${colKey}`;
+      const goc = oDangChon?.maHang === maHang && oDangChon?.colKey === colKey
+        ? oDangChon.giaTriMoLuc : undefined;
+      if (goc !== undefined) {
+        setRows((prev) => prev.map((r) => (r.ma_hang === maHang ? { ...r, [colKey]: goc } : r)));
+      }
+      setODangChon(null);
+      return;
+    }
+    if (e.key === "Enter" && (!nhieuDong || e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      e.currentTarget.blur();
+    }
   };
 
   /** Ô này PĐD đã sửa đè trên bản tổng hợp chưa? (minh bạch, QĐ 08/08/2026) */
@@ -1286,7 +1318,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
                     <RefreshCw size={13} /> Tải lại
                   </button>
                   <button className="qtdx-menu-item" onClick={() => setDongGon((v) => !v)}
-                    title="Đầy đủ = mọi ô hiện trọn nội dung (dòng cao). Gọn = cắt còn 4 dòng cho dễ cuộn; bấm vào ô vẫn xem/sửa được đủ.">
+                    title="Gọn = chữ trong ô tối đa 2 dòng, rê chuột hoặc bấm vào ô thấy đủ. Đầy đủ = mọi ô hiện trọn nội dung (dòng cao).">
                     <AlignLeft size={13} /> Nội dung ô: {dongGon ? "GỌN" : "ĐẦY ĐỦ"}
                   </button>
                   <button className="qtdx-menu-item" onClick={() => setOpenMenuCot((v) => !v)} aria-expanded={openMenuCot}>
@@ -1549,7 +1581,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
               <RowKhoa key={r.ma_hang} r={r} cotHienThi={cotTrenManHinh} oDangChon={oDangChon}
                 setODangChon={setODangChon} oCoTheSua={oCoTheSua} capNhatO={capNhatO}
                 daKhoaSua={daKhoaSua} ketThucSuaO={ketThucSuaO} oDaSua={oDaSua}
-                xemAudit={xemAudit} oPddSuaDe={oPddSuaDe}
+                xemAudit={xemAudit} oPddSuaDe={oPddSuaDe} phimSuaO={phimSuaO}
                 dangChonMaDay={dangChonMaDay} moFormDay={moFormDay} setDangChonMaDay={setDangChonMaDay}
                 ungVienDay={ungVienDay} formDay={formDay} setFormDay={setFormDay}
                 luuDaySL={luuDaySL} dangLuuDay={dangLuuDay} thongBaoDay={thongBaoDay}
@@ -1643,7 +1675,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
 
 function RowKhoa({
   r, cotHienThi, oDangChon, setODangChon, oCoTheSua, capNhatO, daKhoaSua,
-  ketThucSuaO, oDaSua, xemAudit, oPddSuaDe,
+  ketThucSuaO, oDaSua, xemAudit, oPddSuaDe, phimSuaO,
   dangChonMaDay, moFormDay, setDangChonMaDay, ungVienDay, formDay, setFormDay,
   luuDaySL, dangLuuDay, thongBaoDay, kyTruoc,
 }) {
@@ -1733,19 +1765,31 @@ function RowKhoa({
                   {value}
                 </span>
               ) : isEditing ? (
-                c.kieu === "wide" ? (
-                  <textarea value={value ?? ""} rows={3}
-                    style={{ resize: "vertical", width: "100%", minHeight: 52 }}
+                c.kieu === "num" ? (
+                  <input value={value ?? ""} inputMode="numeric"
                     onChange={(e) => capNhatO(r.ma_hang, c.key, e.target.value)}
+                    onKeyDown={phimSuaO(r.ma_hang, c.key, false)}
                     onBlur={() => ketThucSuaO(r.ma_hang, c.key)} autoFocus />
                 ) : (
-                  <input value={value ?? ""}
+                  // L6: ô chữ khi sửa hiện ĐỦ — textarea tự cao theo nội dung.
+                  // Ô "wide" (TSKT, giải trình) cho xuống dòng; ô chữ khác
+                  // một dòng nên Enter = lưu.
+                  <textarea value={value ?? ""}
+                    rows={soDongSua(value, c.width, c.kieu === "wide")}
+                    style={{ resize: "vertical", width: "100%" }}
                     onChange={(e) => capNhatO(r.ma_hang, c.key, e.target.value)}
-                    onBlur={() => ketThucSuaO(r.ma_hang, c.key)} autoFocus />
+                    onKeyDown={phimSuaO(r.ma_hang, c.key, c.kieu === "wide")}
+                    onBlur={() => ketThucSuaO(r.ma_hang, c.key)} autoFocus
+                    onFocus={(e) => { const n = e.currentTarget.value.length; e.currentTarget.setSelectionRange(n, n); }} />
                 )
               ) : (
                 <span>
-                  {formatCell(value, c.kieu)}
+                  {/* L6: chỉ PHẦN CHỮ bị cắt ở chế độ Gọn (.o-chu); nhãn nhỏ
+                      đi kèm (đã đổ, rớt, ai sửa cuối, lịch sử) luôn thấy. */}
+                  <span className="o-chu"
+                    title={typeof value === "string" && value.length > 30 ? value : undefined}>
+                    {formatCell(value, c.kieu)}
+                  </span>
                   {/* QĐ 26/08/2026 — mã đã đổ hết sang mã tương đương thì số về 0.
                       Phải nói RA MẶT số đi đâu, nếu không khoa nhìn dòng 0 tưởng
                       mình mất đề xuất. Cả chiều nhận cũng vậy. */}
@@ -1968,11 +2012,12 @@ export function StyleTable() {
          khoảng trắng thừa đầu dòng trong dữ liệu (lỗi L4 18/09/2026: pre-wrap
          làm ô thụt lề lung tung); break-word
          + anywhere xử lý chuỗi dài không có khoảng trắng (mã, ký mã hiệu).
-         vertical-align: top để ô ngắn không bị "trôi" xuống giữa dòng cao. */
+         vertical-align: middle (L6 03/10/2026, thống nhất với bảng PĐD): ô Gọn
+         tối đa 2 dòng nên canh giữa cho hàng thẳng. */
       /* ĐỢT 4 (18/09/2026) — dáng bảng kiểu Excel theo hệ màu UMC: chữ ô
          13px, kẻ ô mảnh xám xanh, hàng chẵn nền rất nhạt, ô đang sửa có khung
          xanh umc-600 dày 2px như ô đang chọn của Excel. */
-      .qtdx-cell { padding: 6px 10px; font-size: 13px; line-height: 1.45; border-right: 1px solid #e3eaf3; border-bottom: 1px solid #e3eaf3; vertical-align: top; overflow: hidden; white-space: pre-line; word-break: break-word; overflow-wrap: anywhere; }
+      .qtdx-cell { padding: 6px 10px; font-size: 13px; line-height: 1.45; border-right: 1px solid #e3eaf3; border-bottom: 1px solid #e3eaf3; vertical-align: middle; overflow: hidden; white-space: pre-line; word-break: break-word; overflow-wrap: anywhere; }
       .qtdx-cell input, .qtdx-cell textarea { background: transparent; outline: none; width: 100%; border: 0; font-size: 13px; font-family: inherit; resize: vertical; }
       /* Hàng xen kẽ: bọc :where() để độ đặc hiệu THẤP NHẤT — mọi màu trạng
          thái (chỉ đọc, đã sửa đè, vượt P75, rớt thầu, cột khoá…) luôn thắng. */
@@ -2031,9 +2076,12 @@ export function StyleTable() {
          hình — cuộn qua 200 mã thành cực hình. Bật "Gọn" thì mỗi ô cắt còn 4
          dòng; nội dung KHÔNG mất, bấm vào ô là mở textarea thấy đủ, và file
          Excel xuất ra luôn có nguyên văn bất kể đang ở chế độ nào. */
-      table.qtdx-table.dong-gon td.qtdx-cell > span {
-        display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
-        overflow: hidden;
+      /* L6 (03/10/2026): GỌN = phần chữ (.o-chu) tối đa 2 dòng, dấu …;
+         max-height chặn thêm khi ô có nhiều dòng <div> từ formatCell. Nhãn nhỏ
+         đi kèm không bị cắt. Ô đang sửa không cắt. Cùng cách bảng PĐD. */
+      table.qtdx-table.dong-gon td.qtdx-cell:not(.editing) .o-chu {
+        display: -webkit-inline-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+        overflow: hidden; max-height: calc(1.45em * 2); max-width: 100%; vertical-align: top;
       }
     `}</style>
   );
@@ -2086,6 +2134,14 @@ export function chuThuanCuaO(v, kieu) {
     return Object.values(v).filter((x) => typeof x === "string" || typeof x === "number").join(" ");
   }
   return String(v);
+}
+
+/** Số dòng của ô chữ đang sửa (L6): đủ để thấy hết, 2–12 dòng (ô một dòng 1–6). */
+function soDongSua(v, rong, nhieuDong) {
+  const chu = v == null ? "" : String(v);
+  const kyTuMoiDong = Math.max(16, Math.floor((Number(rong) || 160) * 1.3 / 7));
+  const dong = chu.split("\n").reduce((t, d) => t + Math.max(1, Math.ceil(d.length / kyTuMoiDong)), 0);
+  return nhieuDong ? Math.min(12, Math.max(3, dong)) : Math.min(6, Math.max(1, dong));
 }
 
 export function formatCell(v, kieu) {

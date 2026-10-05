@@ -41,7 +41,10 @@ def test_trong_khoang_mac_dinh_lich_su_ngoai_khoang_bat_buoc_ly_do_va_ghi_chu():
     assert "Số lượng > P75 bắt buộc nhập ghi chú thêm." in FUNCTION_1
     # Câu chặn lúc LƯU cả giỏ (không chỉ lúc gõ từng dòng) — vẫn bắt buộc.
     assert "ghi chú bắt buộc khi chọn ngoài khoảng" in FUNCTION_1
-    assert "Ghi chú thêm" in FUNCTION_1
+    # 03/10/2026: nhãn ô theo bản vẽ M1_3 là "Ghi chú *"; ô bắt buộc khi
+    # vượt cận trên được vẽ bằng oGhiChu(true).
+    assert "Ghi chú {batBuoc" in FUNCTION_1
+    assert "oGhiChu(true)" in FUNCTION_1
     assert "So với {namCuoi}" not in FUNCTION_1
     assert "canhBaoBienDong" not in FUNCTION_1
     assert "ly_do_khac_phai_co_ghi_chu" in PATCH_Q
@@ -59,7 +62,10 @@ def test_de_xuat_cap_ma_quan_ly_quy_doi_phan_bo_va_gio_phan_tang():
     assert "drop function if exists cap_nhat_quy_doi_ma_quan_ly" in PATCH_Q
     assert "create or replace function cap_nhat_quy_doi_ma_quan_ly" not in PATCH_Q
     assert "themMaQuanLyVaoGio" in FUNCTION_1
+    # Q11 (03/10/2026): chữ trên màn khoa là "nhóm"; tên gốc "mã quản lý"
+    # còn ở `title` (rê chuột thấy — G4).
     assert "Thêm cả mã quản lý vào giỏ" in FUNCTION_1
+    assert "Thêm cả nhóm vào giỏ" in FUNCTION_1
     assert "gioTheoGoi" in FUNCTION_1
     assert "Tổng mã quản lý" in FUNCTION_1
     assert "nhomDangChoDiThau" in FUNCTION_1

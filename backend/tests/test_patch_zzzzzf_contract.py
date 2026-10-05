@@ -56,25 +56,23 @@ def test_giao_dien_hien_phan_nhan() -> None:
     assert "daNhan" in cum
 
 
-def test_mo_bang_tong_hop_bang_tab_moi() -> None:
-    """Hai màn dạng Excel phải mở TAB TRÌNH DUYỆT MỚI, không đổi hash tại chỗ.
+def test_mo_bang_tong_hop_trong_tab_dang_dung() -> None:
+    """Hai màn dạng Excel mở NGAY TRONG TAB ĐANG DÙNG (CDA quyết Q1 03/10/2026).
 
-    Từ 24/08/2026 lời gọi `window.open` gom vào `lib/moManExcel.js` để năm chỗ
-    mở không lệch nhau (tên cửa sổ kèm mã băm, tránh hai khoa khác dấu giành
-    một tab). Nên test soi cái LIB, không soi từng màn.
+    Trước đó (yêu cầu 24/08/2026) chúng mở tab trình duyệt riêng bằng
+    `window.open`. Q1 bỏ tab riêng: người dùng không rành máy hay lạc giữa
+    nhiều tab; mỗi màn có "‹ Về trang chính". Mọi chỗ mở vẫn phải đi qua
+    `lib/moManExcel.js` để đổi một nơi là đổi hết — test soi cái LIB.
     """
     bd = (FE / "BanDieuHanhPdd.jsx").read_text(encoding="utf-8")
-    goi = [d for d in bd.splitlines()
-           if "#tong-hop-pdd" in d and "window.location.hash" in d
-           and not d.strip().startswith("//")]
-    assert not goi, f"phải mở tab trình duyệt mới, không đổi hash tại chỗ: {goi}"
-    assert "moTongHopPdd(" in bd, "phải đi qua lib chung, đừng gọi window.open tay"
+    assert "moTongHopPdd(" in bd, "phải đi qua lib chung, đừng tự đổi hash"
+    assert "moDanhMucDeXuat(" in bd, "đường mở Danh mục khoa cũng phải đi qua lib chung"
 
     lib = (FE.parent / "lib" / "moManExcel.js").read_text(encoding="utf-8")
-    assert "window.open(" in lib
+    assert "window.open(" not in lib, "Q1: không còn mở tab riêng"
+    assert "window.location.hash" in lib
     assert "#tong-hop-pdd" in lib and "#danh-muc-de-xuat" in lib
 
-    # Không màn nào được gọi window.open tay nữa — lệch khỏi lib là lệch tên
-    # cửa sổ, và hai chỗ mở cùng một bảng sẽ đẻ hai tab.
+    # Không màn nào được tự mở tab riêng.
     tay = [f.name for f in FE.glob("*.jsx") if "window.open(" in f.read_text(encoding="utf-8")]
-    assert not tay, f"còn gọi window.open tay ngoài lib: {tay}"
+    assert not tay, f"còn mở tab riêng bằng window.open: {tay}"

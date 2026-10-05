@@ -207,7 +207,7 @@ export function tinhTienTrinhKhoa(v = {}) {
 
   let viec;
   if (chuaRo) viec = "Chưa đọc được đủ trạng thái — bấm Tải lại hoặc thử lại sau.";
-  else if (ma === "de_xuat") viec = "Chọn nhóm kỹ thuật, nhập số rồi bấm “Thêm cả mã quản lý vào giỏ”.";
+  else if (ma === "de_xuat") viec = "Chọn nhóm, nhập số rồi bấm “Thêm cả nhóm vào giỏ”.";
   else if (ma === "gui") viec = "Mở giỏ, kiểm tra rồi bấm “Gửi đề xuất” — giỏ chưa gửi chưa phải đề xuất.";
   else if (ma === "xac_nhan") viec = "Mở Danh mục đề xuất của khoa, kiểm tra rồi bấm “Xác nhận thông tin đề xuất”.";
   else if (ma === "cho_q") viec = "Chờ Phòng Điều dưỡng chốt số đi thầu. Khoa tự sửa số lúc này thì phải xác nhận lại.";
@@ -345,8 +345,8 @@ export function tinhTienTrinhPdd(v = {}) {
   else if (["chao_gia", "mo_thau", "danh_gia"].includes(ma)) {
     const g = GIAI_DOAN_THAU.find((x) => x.ma === ma);
     viec = trangThaiGiaiDoan(v.giaiDoan, ma) === "dang_thuc_hien"
-      ? `Gõ số rớt giai đoạn ${g.nhan}, xong bấm “Hoàn thành”.`
-      : `Bấm “Bắt đầu” giai đoạn ${g.nhan} trên bảng Tổng hợp.`;
+      ? `Gõ số rớt giai đoạn ${g.nhan}, xong bấm “✓ Hoàn thành ${g.nhan}”.`
+      : `Bấm “▶ Bắt đầu ${g.nhan}” trên bảng Tổng hợp.`;
   } else if (ma === "trinh_ky") viec = "Chia đủ số trúng về khoa rồi bấm “Chốt trình ký” trên bảng Tổng hợp.";
   else viec = "Gói con đã có bản chốt trình ký chính thức.";
 

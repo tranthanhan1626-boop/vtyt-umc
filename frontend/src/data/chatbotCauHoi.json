@@ -173,7 +173,7 @@
       ],
       "chu_de": "k_tiep",
       "cau_hoi": "Tôi phải làm gì tiếp?",
-      "tra_loi": "Việc của khoa có ba bước. Một: ở màn Đề xuất số lượng, nhập số rồi bấm \"Thêm cả mã quản lý vào giỏ\". Hai: mở giỏ, bấm \"Gửi đề xuất (… mã quản lý)\". Ba: mở Danh mục đề xuất của khoa, kiểm lại rồi bấm \"Xác nhận thông tin đề xuất lần N\".",
+      "tra_loi": "Việc của khoa có ba bước. Một: ở màn Đề xuất số lượng, nhập số rồi bấm \"Thêm cả nhóm vào giỏ\". Hai: mở giỏ, bấm \"Gửi đề xuất (… nhóm)\". Ba: mở Danh mục đề xuất của khoa, kiểm lại rồi bấm \"Xác nhận thông tin đề xuất lần N\".",
       "bien_the_theo_trang_thai": [
         {
           "khi": "Gói đang xem chưa có đợt mở · !ctx.dotDangMo",
@@ -189,7 +189,7 @@
         },
         {
           "khi": "Giỏ còn mã chưa gửi · khoa.soMaTrongGio > 0",
-          "tra_loi": "Giỏ của bạn đang có {khoa.soMaTrongGio} mã hàng chưa gửi. Bấm \"Xem giỏ\" trên thanh giỏ ở đáy màn, rồi bấm \"Gửi đề xuất (… mã quản lý)\" ở đáy giỏ."
+          "tra_loi": "Giỏ của bạn đang có {khoa.soMaTrongGio} mã hàng chưa gửi. Bấm \"Gửi đề xuất (… nhóm)\" trên thanh giỏ ở đáy màn, hoặc bấm \"Xem giỏ\" để kiểm lại trước."
         },
         {
           "khi": "Đã từng xác nhận nhưng xác nhận bị huỷ, PĐD chưa chốt số đi thầu · khoa.xacNhanHetHieuLuc && !khoa.coPhienQ",
@@ -236,7 +236,7 @@
       ],
       "chu_de": "k_tiep",
       "cau_hoi": "Đề xuất từ đầu đến cuối gồm những bước nào?",
-      "tra_loi": "Menu trái: Gói 18 tháng → bấm tên gói con (Dùng chung, GMHS, RHM, Tim mạch, CTCH-NTK) → màn Đề xuất số lượng. Chọn nhóm kỹ thuật, nhập tổng, chia xuống từng mã hàng, thêm vào giỏ, gửi giỏ. Sau đó vào \"Danh mục đề xuất của khoa\" để kiểm lại và xác nhận.",
+      "tra_loi": "Menu trái: Gói 18 tháng → bấm tên gói con (Dùng chung, GMHS, RHM, Tim mạch, CTCH-NTK) → màn Đề xuất số lượng. Chọn nhóm, nhập tổng, chia xuống từng mã hàng, thêm vào giỏ, gửi giỏ. Sau đó vào \"Danh mục đề xuất của khoa\" để kiểm lại và xác nhận.",
       "bien_the_theo_trang_thai": [],
       "di_toi": {
         "nhan": "Đi tới Đề xuất số lượng",
@@ -295,7 +295,7 @@
       ],
       "chu_de": "k_tiep",
       "cau_hoi": "Khoa tôi không cần gì trong gói này thì làm sao?",
-      "tra_loi": "Nên bấm \"Không phát sinh nhu cầu\" (không bắt buộc) để Phòng Điều dưỡng biết khoa không cần, khỏi tưởng khoa quên. Mở Đề xuất số lượng của gói con, bấm \"Xem Danh mục đề xuất của khoa\". Bảng chưa có mã nào thì nút này hiện ra.",
+      "tra_loi": "Nên bấm \"Không phát sinh nhu cầu\" (không bắt buộc) để Phòng Điều dưỡng biết khoa không cần, khỏi tưởng khoa quên. Mở Đề xuất số lượng của gói con, bấm ô \"Xác nhận\" trên thanh tiến trình ở đầu màn để mở Danh mục đề xuất của khoa. Bảng chưa có mã nào thì nút này hiện ra.",
       "bien_the_theo_trang_thai": [
         {
           "khi": "Khoa đã có mã trong đợt · khoa.daGui",
@@ -323,7 +323,7 @@
       ],
       "chu_de": "k_dx",
       "cau_hoi": "Tôi bắt đầu nhập đề xuất ở đâu?",
-      "tra_loi": "Menu trái: Gói 18 tháng (hoặc Gói bổ sung) → bấm tên gói con → màn Đề xuất số lượng. Cột trái: gõ tên nhóm, mã quản lý hoặc mã hàng vào ô tìm. Chọn một nhóm, cột phải hiện lịch sử dùng và ô nhập số.",
+      "tra_loi": "Menu trái: Gói 18 tháng (hoặc Gói bổ sung) → bấm tên gói con → màn Đề xuất số lượng. Có nhiều đợt thì chọn đợt ở dòng đầu màn trước. Cột trái: gõ tên hoặc mã nhóm, hay mã hàng vào ô tìm. Bấm một nhóm là gõ số ngay.",
       "bien_the_theo_trang_thai": [],
       "di_toi": {
         "nhan": "Đi tới Đề xuất số lượng",
@@ -344,7 +344,7 @@
       ],
       "chu_de": "k_dx",
       "cau_hoi": "Tôi không tìm thấy mã cần đề xuất?",
-      "tra_loi": "Hai lý do hay gặp. Một: danh sách chỉ hiện nhóm khoa đã từng dùng; tích ô \"Hiện cả mã chưa từng dùng ở khoa này\" để thấy hết. Hai: mã quản lý đã nằm trong giỏ hoặc đã gửi ở đợt này thì tạm ẩn; dòng chữ tím ngay dưới cho biết đang ẩn bao nhiêu mã.",
+      "tra_loi": "Hai lý do hay gặp. Một: danh sách chỉ hiện nhóm khoa đã từng dùng; tích ô \"Hiện cả nhóm khoa chưa dùng\" để thấy hết. Hai: nhóm đã nằm trong giỏ hoặc đã gửi ở đợt này thì tạm ẩn; dòng \"… nhóm đã vào giỏ hoặc đã gửi — tạm ẩn\" ngay dưới cho biết đang ẩn bao nhiêu nhóm.",
       "bien_the_theo_trang_thai": [],
       "di_toi": {
         "nhan": "Đi tới Đề xuất số lượng",
@@ -364,7 +364,7 @@
       ],
       "chu_de": "k_dx",
       "cau_hoi": "\"ĐVT chuẩn\" và hệ số quy đổi là gì?",
-      "tra_loi": "Một mã quản lý có thể gồm nhiều mã hàng khác đơn vị tính, ví dụ Bộ và Cái. Chọn một \"ĐVT chuẩn\", rồi nhập \"1 <ĐVT khác> = ? <ĐVT chuẩn>\" cho từng ĐVT còn lại. Chưa đủ hệ số thì chưa nhập được số và chưa thêm vào giỏ được. Nhóm chỉ có một ĐVT thì tự xong.",
+      "tra_loi": "Một nhóm có thể gồm nhiều mã hàng khác đơn vị tính, ví dụ Bộ và Cái. Ở bước 1 \"Đơn vị tính\", chọn một đơn vị chuẩn, rồi nhập \"1 <đơn vị khác> = ? <đơn vị chuẩn>\" cho từng đơn vị còn lại. Chưa đủ hệ số thì chưa nhập được số và chưa thêm vào giỏ được. Nhóm chỉ có một đơn vị thì tự xong.",
       "bien_the_theo_trang_thai": [],
       "di_toi": null,
       "hoi_tiep": [
@@ -380,7 +380,7 @@
       ],
       "chu_de": "k_dx",
       "cau_hoi": "Vì sao không thêm được vào giỏ?",
-      "tra_loi": "Nút \"Thêm cả mã quản lý vào giỏ\" mờ khi còn ĐVT chưa có hệ số quy đổi. Nếu bấm được mà hiện chữ đỏ bên cạnh, thường là: chưa nhập tổng; tổng chia xuống các mã hàng chưa bằng tổng; số chia không phải số nguyên; hoặc vượt P75 mà chưa chọn lý do và ghi chú.",
+      "tra_loi": "Nút \"Thêm cả nhóm vào giỏ\" mờ khi còn đơn vị chưa có hệ số quy đổi. Nếu bấm (hoặc Enter) mà hiện chữ đỏ ở thanh giỏ, màn tự mở đúng chỗ còn thiếu: chưa nhập tổng; \"Đã chia\" chưa bằng tổng; số chia không phải số nguyên; hoặc tổng cao hơn cận trên thông thường mà chưa chọn lý do và ghi chú.",
       "bien_the_theo_trang_thai": [],
       "di_toi": null,
       "hoi_tiep": [
@@ -397,7 +397,7 @@
       ],
       "chu_de": "k_dx",
       "cau_hoi": "Khi nào bắt chọn lý do và ghi chú?",
-      "tra_loi": "Chỉ khi tổng bạn nhập cao hơn P75 (\"Cao hơn thường lệ\"). Khi đó phải chọn lý do đề xuất và ghi chú căn cứ. Số từ P75 trở xuống, kể cả thấp hơn P50, không phải giải trình. Đợt bổ sung không áp luật này.",
+      "tra_loi": "Chỉ khi tổng bạn nhập cao hơn mức \"Cận trên thông thường\" (P75). Khi đó phải chọn lý do đề xuất và ghi chú căn cứ. Số từ mức đó trở xuống, kể cả thấp hơn \"Mức thường dùng\" (P50), không phải giải trình. Đợt bổ sung không áp luật này.",
       "bien_the_theo_trang_thai": [],
       "di_toi": null,
       "hoi_tiep": [
@@ -414,15 +414,15 @@
       ],
       "chu_de": "k_dx",
       "cau_hoi": "Giỏ đề xuất nằm ở đâu?",
-      "tra_loi": "Giỏ là thanh dính ở đáy màn Đề xuất số lượng, ghi \"Giỏ: N mã quản lý\". Bấm \"Xem giỏ\" sẽ mở ngăn \"Giỏ đề xuất\"; nút gửi nằm ở đáy ngăn và ngay trên thanh giỏ.",
+      "tra_loi": "Giỏ là thanh dính ở đáy màn Đề xuất số lượng, ghi \"Giỏ: N nhóm\". Nút \"Gửi đề xuất (N nhóm)\" nằm ngay trên thanh giỏ; bấm \"Xem giỏ\" để mở ngăn \"Giỏ đề xuất\" kiểm lại, nút gửi cũng có ở đáy ngăn.",
       "bien_the_theo_trang_thai": [
         {
           "khi": "Giỏ đang có mã · khoa.soMaTrongGio > 0",
-          "tra_loi": "Giỏ của bạn đang có {khoa.soMaTrongGio} mã hàng. Bấm \"Xem giỏ\" trên thanh giỏ ở đáy màn, kiểm lại rồi bấm \"Gửi đề xuất (… mã quản lý)\"."
+          "tra_loi": "Giỏ của bạn đang có {khoa.soMaTrongGio} mã hàng. Bấm \"Xem giỏ\" trên thanh giỏ ở đáy màn, kiểm lại rồi bấm \"Gửi đề xuất (… nhóm)\"."
         },
         {
           "khi": "Giỏ trống · khoa.soMaTrongGio == 0",
-          "tra_loi": "Giỏ đang trống. Chọn một nhóm, chốt tổng, chia xuống mã hàng rồi bấm \"Thêm cả mã quản lý vào giỏ\"."
+          "tra_loi": "Giỏ đang trống. Chọn một nhóm, nhập tổng, chia xuống mã hàng rồi bấm \"Thêm cả nhóm vào giỏ\" (hoặc Enter ở ô cuối)."
         }
       ],
       "di_toi": {
@@ -442,7 +442,7 @@
       ],
       "chu_de": "k_dx",
       "cau_hoi": "Vì sao nút gửi trong giỏ bị mờ?",
-      "tra_loi": "Nút \"Gửi đề xuất (… mã quản lý)\" ở đáy giỏ mờ khi: giỏ trống; gói chưa mở đợt; có nhiều đợt đang mở mà bạn chưa chọn ở ô \"— Chọn đợt gửi đề xuất —\"; hoặc hệ đang tải trạng thái đợt.",
+      "tra_loi": "Nút \"Gửi đề xuất (… nhóm)\" mờ khi: giỏ trống; gói chưa mở đợt; có nhiều đợt đang mở mà bạn chưa chọn đợt ở dòng \"Gửi vào đợt:\" đầu màn; hoặc hệ đang tải trạng thái đợt.",
       "bien_the_theo_trang_thai": [
         {
           "khi": "Gói chưa mở đợt · !ctx.dotDangMo",
@@ -450,11 +450,11 @@
         },
         {
           "khi": "Có nhiều đợt hợp lệ mà chưa chọn · ctx.soDotHopLe > 1 && !ctx.dotDaChon",
-          "tra_loi": "Đang mở {ctx.soDotHopLe} đợt. Chọn đợt ở ô \"— Chọn đợt gửi đề xuất —\" ngay trên nút gửi, nút sẽ sáng."
+          "tra_loi": "Đang mở {ctx.soDotHopLe} đợt. Bấm một đợt ở dòng \"Gửi vào đợt:\" đầu màn (vd T9/2026), nút gửi sẽ sáng."
         },
         {
           "khi": "Giỏ trống · khoa.soMaTrongGio == 0",
-          "tra_loi": "Giỏ đang trống nên chưa có gì để gửi. Thêm ít nhất một mã quản lý vào giỏ trước."
+          "tra_loi": "Giỏ đang trống nên chưa có gì để gửi. Thêm ít nhất một nhóm vào giỏ trước."
         }
       ],
       "di_toi": null,
@@ -472,7 +472,7 @@
       ],
       "chu_de": "k_dx",
       "cau_hoi": "Bấm gửi thì báo lỗi?",
-      "tra_loi": "\"Mã … còn thiếu kỳ sử dụng, … lý do hoặc ghi chú\": mã đó thiếu thông tin bắt buộc. Bấm \"Xem giỏ\", bấm dấu X cạnh mã quản lý đó để bỏ khỏi giỏ, rồi chọn lại mã quản lý đó và nhập đủ.",
+      "tra_loi": "\"Mã … còn thiếu kỳ sử dụng, … lý do hoặc ghi chú\": mã đó thiếu thông tin bắt buộc. Bấm \"Xem giỏ\", bấm \"Bỏ khỏi giỏ\" ở nhóm đó, rồi chọn lại nhóm đó và nhập đủ.",
       "bien_the_theo_trang_thai": [],
       "di_toi": null,
       "hoi_tiep": [
@@ -488,7 +488,7 @@
       ],
       "chu_de": "k_dx",
       "cau_hoi": "Mã tôi vừa gửi biến mất khỏi danh sách?",
-      "tra_loi": "Bình thường. Mã đã vào giỏ hoặc đã gửi ở đợt này thì cả mã quản lý bị ẩn khỏi danh sách tìm suốt đợt này, để khỏi đề xuất trùng. Mở một đợt khác (đợt bổ sung hoặc kỳ sau) thì mã hiện lại. Muốn đổi số sau khi gửi, sửa trên Danh mục đề xuất của khoa.",
+      "tra_loi": "Bình thường. Mã đã vào giỏ hoặc đã gửi ở đợt này thì cả nhóm bị ẩn khỏi danh sách tìm suốt đợt này, để khỏi đề xuất trùng. Mở một đợt khác (đợt bổ sung hoặc kỳ sau) thì nhóm hiện lại. Muốn đổi số sau khi gửi, sửa trên Danh mục đề xuất của khoa.",
       "bien_the_theo_trang_thai": [],
       "di_toi": {
         "nhan": "Đi tới Danh mục đề xuất",
@@ -682,8 +682,8 @@
         "pdd"
       ],
       "chu_de": "k_so",
-      "cau_hoi": "\"Cao hơn thường lệ (P75)\" là gì?",
-      "tra_loi": "Là mức P50 cộng thêm phần dao động hay gặp giữa các tháng. Từ P50 đến P75 là khoảng thường dùng, không phải giải trình. Nhập cao hơn P75 thì phải chọn lý do và ghi chú căn cứ.",
+      "cau_hoi": "\"Cận trên thông thường (P75)\" là gì?",
+      "tra_loi": "Là mức P50 cộng thêm phần dao động hay gặp giữa các tháng — mép trên của khoảng thường dùng. Từ \"Mức thường dùng\" (P50) đến mức này không phải giải trình. Nhập cao hơn thì phải chọn lý do và ghi chú căn cứ.",
       "bien_the_theo_trang_thai": [],
       "di_toi": null,
       "hoi_tiep": [
@@ -825,7 +825,7 @@
       ],
       "chu_de": "k_thau",
       "cau_hoi": "Mã rớt thầu thì đi đâu?",
-      "tra_loi": "Khi PĐD bấm \"Xác nhận rớt\", phần rớt chưa đổ sang mã tương đương vào GIỎ của khoa ở đợt bổ sung gần nhất (T1, T5 hoặc T9). Bấm \"Xem giỏ\": mã đó có nhãn vàng \"⟳ rớt thầu · gợi ý N\". Khoa tự gửi. Chuông báo khi có thông báo mới.",
+      "tra_loi": "Khi PĐD bấm \"Xác nhận rớt\", phần rớt chưa đổ sang mã tương đương vào GIỎ của khoa ở đợt bổ sung gần nhất (T1, T5 hoặc T9). Bấm \"Xem giỏ\": mã đó có nhãn vàng \"⟳ Mã rớt thầu · số gợi ý N\". Khoa tự gửi. Chuông báo khi có thông báo mới.",
       "bien_the_theo_trang_thai": [
         {
           "khi": "Có mã rớt mới trong giỏ bổ sung · khoa.soMaRotMoi > 0",
@@ -1030,7 +1030,7 @@
       ],
       "chu_de": "p_tiep",
       "cau_hoi": "Tôi phải làm gì tiếp?",
-      "tra_loi": "Mọi thao tác sửa làm trên bảng Tổng hợp của từng gói con. Thứ tự: khoa gửi và xác nhận → \"Chốt số đi thầu\" → Chào giá, Mở thầu, Đánh giá (gõ R1·R2·R3) → chia số trúng về khoa → đổ sang mã tương đương → \"Xác nhận rớt\" → \"Chốt trình ký\".",
+      "tra_loi": "Mọi thao tác sửa làm trên bảng Tổng hợp của từng gói con. Thứ tự: khoa gửi và xác nhận → \"Chốt số đi thầu\" → Chào giá, Mở thầu, Đánh giá (gõ số rớt ở từng giai đoạn) → chia số trúng về khoa → đổ sang mã tương đương → \"Xác nhận rớt\" → \"Chốt trình ký\".",
       "bien_the_theo_trang_thai": [
         {
           "khi": "Chưa chốt Q, còn khoa chưa xác nhận · !pdd.coPhienQ && pdd.khoaChuaXacNhan.length > 0",
@@ -1042,7 +1042,7 @@
         },
         {
           "khi": "Còn mã chưa chia đủ số trúng · pdd.soMaChuaChiaDu > 0",
-          "tra_loi": "Còn {pdd.soMaChuaChiaDu} mã chưa chia đủ số trúng về khoa. Bấm băng vàng đầu bảng để lọc ra, rồi gõ từng khoa hoặc bấm \"Chia\"."
+          "tra_loi": "Còn {pdd.soMaChuaChiaDu} mã chưa chia đủ số trúng về khoa. Bấm \"Lọc ra\" ở nhãn vàng đầu bảng để lọc các mã đó, rồi gõ từng khoa hoặc bấm \"Chia\"."
         },
         {
           "khi": "Còn phần rớt chưa xử lý, đã chia xong · pdd.tongRotChuaXuLy > 0 && pdd.soChuaChia == 0",
@@ -1050,11 +1050,11 @@
         },
         {
           "khi": "Đang chạy một giai đoạn thầu · pdd.giaiDoanDangChay != null",
-          "tra_loi": "Đang ở giai đoạn {pdd.giaiDoanDangChay}. Gõ số rớt của giai đoạn này, xong bấm \"Hoàn thành\" để mở giai đoạn kế."
+          "tra_loi": "Đang ở giai đoạn {pdd.giaiDoanDangChay}. Gõ số rớt của giai đoạn này, xong bấm \"✓ Hoàn thành {pdd.giaiDoanDangChay}\" cạnh dải giai đoạn để mở giai đoạn kế."
         },
         {
           "khi": "Ba giai đoạn xong, chưa chốt trình ký · pdd.baGiaiDoanXong && !pdd.coPhienTrinhKy",
-          "tra_loi": "Ba giai đoạn thầu đã xong. Trước khi chốt trình ký, mọi mã phải chia đủ số trúng về khoa và xử lý xong phần rớt — nếu đầu bảng Tổng hợp còn băng vàng \"Còn N mã chưa chia đủ\" thì làm phần đó trước. Xong thì bấm \"Chốt trình ký\" rồi \"CHỐT TRÌNH KÝ TOÀN BỘ\"."
+          "tra_loi": "Ba giai đoạn thầu đã xong. Trước khi chốt trình ký, mọi mã phải chia đủ số trúng về khoa và xử lý xong phần rớt — nếu đầu bảng Tổng hợp còn nhãn vàng \"Còn N mã chưa chia đủ số trúng\" thì làm phần đó trước. Xong thì bấm \"✓ Chốt trình ký\" rồi \"CHỐT TRÌNH KÝ TOÀN BỘ\" (hệ hỏi lại)."
         },
         {
           "khi": "Còn mã rớt nằm trong giỏ khoa · pdd.rotTrongGio.soKhoa > 0",
@@ -1084,7 +1084,7 @@
       ],
       "chu_de": "p_tiep",
       "cau_hoi": "Tôi sửa số, làm thầu ở màn nào?",
-      "tra_loi": "Bàn điều hành chỉ để xem. Chọn loại gói, đợt, rồi bấm nút \"Tổng hợp\" ở cuối dòng gói con cần làm. Bảng Tổng hợp mở ở tab mới để bạn giữ Bàn điều hành đối chiếu.",
+      "tra_loi": "Bàn điều hành chỉ để xem. Chọn loại gói, đợt, rồi bấm nút \"Tổng hợp\" ở cuối dòng gói con cần làm. Bảng Tổng hợp mở ngay trong trang đang dùng; bấm \"‹ Về trang chính\" để quay lại Bàn điều hành.",
       "bien_the_theo_trang_thai": [],
       "di_toi": {
         "nhan": "Đi tới Bàn điều hành",
@@ -1131,7 +1131,7 @@
       "bien_the_theo_trang_thai": [
         {
           "khi": "Đã chốt số đi thầu · pdd.coPhienQ",
-          "tra_loi": "Đợt đã chốt số đi thầu nên cột số lượng đang khoá. Muốn sửa số thì bấm \"Mở chốt để sửa\" (hệ hỏi lý do), sửa xong chốt lại."
+          "tra_loi": "Đợt đã chốt số đi thầu nên cột số lượng đang khoá. Muốn sửa số thì bấm ⋯ (góc phải đầu bảng) → \"Mở chốt để sửa…\" (hệ hỏi lý do), sửa xong chốt lại."
         }
       ],
       "di_toi": {
@@ -1160,7 +1160,7 @@
         },
         {
           "khi": "Đã chốt · pdd.coPhienQ",
-          "tra_loi": "Đợt đã chốt số đi thầu. Nút lúc này đổi thành \"Mở chốt để sửa\"."
+          "tra_loi": "Đợt đã chốt số đi thầu nên nút \"Chốt số đi thầu\" không còn. Muốn mở lại thì bấm ⋯ (góc phải đầu bảng) → \"Mở chốt để sửa…\"."
         }
       ],
       "di_toi": {
@@ -1197,7 +1197,7 @@
       ],
       "chu_de": "p_q",
       "cau_hoi": "Chốt số đi thầu xong thì chuyện gì xảy ra?",
-      "tra_loi": "Hệ lưu bản Q cố định cho từng mã × khoa. Cột số lượng khoá, không thêm mã được nữa. Cột chữ như tiêu chí kỹ thuật vẫn sửa được tới khi chốt trình ký. Cụm Q · R1 · R2 · R3 · Trúng bắt đầu có số và dải giai đoạn thầu hiện ra.",
+      "tra_loi": "Hệ lưu bản số đi thầu cố định cho từng mã × khoa. Cột số lượng khoá, không thêm mã được nữa. Cột chữ như tiêu chí kỹ thuật vẫn sửa được tới khi chốt trình ký. Cụm \"Số đi thầu · Rớt ở Chào giá / Mở thầu / Đánh giá · Trúng\" bắt đầu có số và dải giai đoạn thầu hiện ra.",
       "bien_the_theo_trang_thai": [],
       "di_toi": {
         "nhan": "Mở bảng Tổng hợp",
@@ -1217,7 +1217,7 @@
       ],
       "chu_de": "p_q",
       "cau_hoi": "Đã chốt số đi thầu mà cần sửa số?",
-      "tra_loi": "Bấm \"Mở chốt để sửa\" trên bảng Tổng hợp và nhập lý do. Sửa số xong, bấm \"Chốt số đi thầu\" để chốt lại. Lưu ý mở chốt là mở cả gói con, không phải một dòng.",
+      "tra_loi": "Bấm ⋯ (góc phải đầu bảng Tổng hợp) → \"Mở chốt để sửa…\" và nhập lý do. Sửa số xong, bấm \"Chốt số đi thầu\" để chốt lại. Lưu ý mở chốt là mở cả gói con, không phải một dòng.",
       "bien_the_theo_trang_thai": [],
       "di_toi": {
         "nhan": "Mở bảng Tổng hợp",
@@ -1234,11 +1234,11 @@
       ],
       "chu_de": "p_thau",
       "cau_hoi": "Chuyển giai đoạn thầu thế nào?",
-      "tra_loi": "Dải \"Giai đoạn thầu\" trên bảng Tổng hợp: Chào giá → Mở thầu → Đánh giá, chạy lần lượt. Bấm \"Bắt đầu\", gõ rớt, xong bấm \"Hoàn thành\". Chữ \"chờ giai đoạn trước\" nghĩa là giai đoạn trước chưa xong. \"mở lại\" bắt nhập lý do và làm kết quả các giai đoạn sau hết hiệu lực.",
+      "tra_loi": "Dải \"Giai đoạn thầu\" trên bảng Tổng hợp: Chào giá → Mở thầu → Đánh giá, chạy lần lượt. Bấm \"▶ Bắt đầu <giai đoạn>\", gõ rớt, xong bấm \"✓ Hoàn thành <giai đoạn>\" (hệ hỏi lại). Chữ \"· chờ\" nghĩa là giai đoạn trước chưa xong. \"Mở lại giai đoạn…\" ở menu ⋯, bắt nhập lý do và làm kết quả các giai đoạn sau hết hiệu lực.",
       "bien_the_theo_trang_thai": [
         {
           "khi": "Chưa chốt Q · !pdd.coPhienQ",
-          "tra_loi": "Chưa chốt số đi thầu nên chưa có giai đoạn nào. Cụm Q · R1 · R2 · R3 · Trúng để trống là đúng. Chốt số đi thầu xong mới nhập được số rớt."
+          "tra_loi": "Chưa chốt số đi thầu nên chưa có giai đoạn nào. Cụm \"Số đi thầu · Rớt ở … · Trúng\" để trống là đúng. Chốt số đi thầu xong mới nhập được số rớt."
         }
       ],
       "di_toi": {
@@ -1257,8 +1257,8 @@
         "pdd"
       ],
       "chu_de": "p_thau",
-      "cau_hoi": "Nhập số rớt R1, R2, R3 thế nào?",
-      "tra_loi": "Bấm ô R của giai đoạn đang chạy; hai ô kia chỉ đọc. Hộp nhập bắt số rớt và lý do. Tích \"Rớt toàn bộ phần còn lại của mã này\" nếu rớt sạch. Tổng R1+R2+R3 vượt Q thì bị chặn ngay. Mã không nhập rớt mặc định trúng hết.",
+      "cau_hoi": "Nhập số rớt ở Chào giá, Mở thầu, Đánh giá thế nào?",
+      "tra_loi": "Bấm ô \"Rớt ở <giai đoạn>\" của giai đoạn đang chạy; hai cột kia chỉ đọc. Hộp nhập bắt số rớt và lý do. Tích \"Rớt toàn bộ phần còn lại của mã này\" nếu rớt sạch. Tổng rớt ba giai đoạn vượt \"Số đi thầu\" thì bị chặn ngay. Mã không nhập rớt mặc định trúng hết.",
       "bien_the_theo_trang_thai": [],
       "di_toi": {
         "nhan": "Mở bảng Tổng hợp",
@@ -1276,12 +1276,12 @@
         "pdd"
       ],
       "chu_de": "p_thau",
-      "cau_hoi": "Chia số trúng về khoa thế nào? Ô \"Đã chia\" đỏ là sao?",
-      "tra_loi": "Ghi rớt xong, số trúng của các khoa về trống, hệ không tự chia. Ô \"Đã chia\" nền đỏ là dòng còn lệch. Bấm \"Chia\" để chia theo tỉ lệ Q, hoặc sổ dòng ra gõ từng khoa rồi \"Xác nhận chia\". Còn thiếu thì \"Lưu tạm\"; gõ dư bị chặn.",
+      "cau_hoi": "Chia số trúng về khoa thế nào? Ô \"Đã chia về khoa\" đỏ là sao?",
+      "tra_loi": "Ghi rớt xong, số trúng của các khoa về trống, hệ không tự chia. Ô \"Đã chia về khoa\" nền đỏ là dòng còn lệch. Bấm \"Chia\" để chia theo tỉ lệ số đi thầu, hoặc sổ dòng ra gõ từng khoa rồi \"Xác nhận chia\". Còn thiếu thì \"Lưu tạm\"; gõ dư bị chặn.",
       "bien_the_theo_trang_thai": [
         {
           "khi": "Còn mã chưa chia đủ · pdd.soMaChuaChiaDu > 0",
-          "tra_loi": "Còn {pdd.soMaChuaChiaDu} mã chưa chia đủ số trúng. Bấm băng vàng \"Còn N mã chưa chia đủ số trúng về khoa\" đầu bảng để lọc ra đúng các dòng đó."
+          "tra_loi": "Còn {pdd.soMaChuaChiaDu} mã chưa chia đủ số trúng. Bấm \"Lọc ra\" ở nhãn vàng \"Còn N mã chưa chia đủ số trúng — chưa xác nhận rớt được\" đầu bảng để lọc ra đúng các dòng đó."
         }
       ],
       "di_toi": {
@@ -1321,11 +1321,11 @@
       ],
       "chu_de": "p_thau",
       "cau_hoi": "Sao không thấy nút \"Xác nhận rớt\"?",
-      "tra_loi": "Nút đỏ \"Xác nhận rớt (N)\" chỉ hiện khi còn phần rớt chưa xử lý VÀ mọi mã đã chia xong số trúng. Thấy băng vàng \"Còn N mã chưa chia hết số trúng về khoa\" thì chia xong nút mới hiện. Bấm xong phải chọn \"Đồng ý, đẩy vào giỏ\".",
+      "tra_loi": "Nút đỏ \"Xác nhận rớt (N)\" chỉ hiện khi còn phần rớt chưa xử lý VÀ mọi mã đã chia xong số trúng, kể cả mã vừa nhận từ mã rớt phải chia lại. Thấy nhãn vàng \"Còn N mã chưa chia đủ số trúng\" thì chia xong nút mới hiện. Bấm xong phải chọn \"Đồng ý, đẩy vào giỏ\".",
       "bien_the_theo_trang_thai": [
         {
           "khi": "Còn mã chưa chia · pdd.soChuaChia > 0",
-          "tra_loi": "Còn {pdd.soChuaChia} mã chưa chia hết số trúng về khoa, nên nút \"Xác nhận rớt\" chưa hiện. Chia xong các mã đó trước."
+          "tra_loi": "Còn {pdd.soChuaChia} mã chưa chia đủ số trúng về khoa (kể cả mã vừa nhận từ mã rớt), nên nút \"Xác nhận rớt\" chưa hiện. Chia xong các mã đó trước."
         },
         {
           "khi": "Không còn phần rớt chưa xử lý · pdd.tongRotChuaXuLy == 0",
@@ -1437,7 +1437,7 @@
       ],
       "chu_de": "p_tk",
       "cau_hoi": "Mở lại bảng trình ký của một khoa?",
-      "tra_loi": "Trong khung \"Chốt trình ký\", mục \"Mở lại bảng của một khoa\": chọn khoa, nhập lý do, bấm \"Mở lại\". Bản chốt chính thức hiện tại hết hiệu lực; sửa xong phải chốt lại để có bản số mới.",
+      "tra_loi": "Bấm ⋯ (góc phải đầu bảng Tổng hợp) → \"Mở lại bảng của một khoa…\": chọn khoa, nhập lý do, bấm \"Mở lại\". Bản chốt chính thức hiện tại hết hiệu lực; sửa xong phải chốt lại để có bản số mới.",
       "bien_the_theo_trang_thai": [],
       "di_toi": {
         "nhan": "Mở bảng Tổng hợp",

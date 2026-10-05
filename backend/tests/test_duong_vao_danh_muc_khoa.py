@@ -22,7 +22,9 @@ def test_khong_sinh_duong_dan_thieu_ma_dot(f1: str) -> None:
     """Thà không có nút còn hơn có nút dẫn vào màn rỗng."""
     assert "goiIdDanhMuc && dotDung?.id && (" in f1, \
         "nút mở danh mục phải đòi có dotDung.id"
-    assert "Chọn đợt ở ô" in f1, "chưa chọn đợt thì phải NÓI RA, đừng im lặng ẩn nút"
+    # 03/10/2026 (Q9, G9): dòng nhắc "Chọn đợt ở ô 'Gửi vào đợt nào'" chỉ tới
+    # ô đang bị ẩn nên đã bỏ; chưa chọn đợt thì khung gõ NÓI RA câu này.
+    assert "Chọn đợt gửi ở dòng trên trước" in f1, "chưa chọn đợt thì phải NÓI RA, đừng im lặng ẩn nút"
 
 
 def test_loc_dot_theo_goi_con_dang_dung(f1: str) -> None:
