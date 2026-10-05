@@ -16,6 +16,7 @@ import QuanLyDot from "./features/QuanLyDot";
 import QuanLyNguoiDung from "./features/QuanLyNguoiDung";
 import PhanGoiConMaQuanLy from "./features/PhanGoiConMaQuanLy";
 import GioRotCuaKhoa from "./features/GioRotCuaKhoa";
+import GioRotToanVien from "./features/GioRotToanVien";
 import HopThuThongBao from "./features/HopThuThongBao";
 import TheoDoiChuyenTiep from "./features/TheoDoiChuyenTiep";
 import TongHopKetQuaThau from "./features/TongHopKetQuaThau";
@@ -252,7 +253,8 @@ export default function App() {
     quanlydot: "Quản lý đợt đề xuất",
     nguoidung: "Quản trị người dùng",
     phangoicon: "Phân gói con cho mã quản lý",
-    giorot: "Giỏ rớt của khoa",
+    // PĐD xem bản toàn viện (N5 05/10) nên tên trang khớp tiêu đề màn.
+    giorot: xemDuocTongHop ? "Giỏ rớt của các khoa" : "Giỏ rớt của khoa",
     choduyet: "Công việc chờ duyệt",
     ketquathau: "Tổng hợp kết quả thầu",
     chuyentiep: "Theo dõi chuyển tiếp mã rớt",
@@ -286,6 +288,24 @@ export default function App() {
     // theo role === "admin", nếu không người PĐD không quản trị được tài khoản.
     : chon.man === "nguoidung" && xemDuocTongHop ? <QuanLyNguoiDung profile={profile} />
     : chon.man === "phangoicon" && xemDuocTongHop ? <PhanGoiConMaQuanLy />
+    // N5 (05/10/2026, vòng 2): PĐD mở thẻ "Giỏ rớt của khoa" (hub Nghiệp vụ
+    // dùng chung) trước đây rơi vào GioRotCuaKhoa với khoa = profile.khoa =
+    // "Phòng Điều dưỡng" → luôn "Khoa không có mã nào bị thiếu", dù view có
+    // mục của các khoa. Màn dẫn tới không chọn khoa nào, nên PĐD xem bản TOÀN
+    // VIỆN (mục VII.3, 01_NGHIEP_VU_HIEN_HANH.md: PĐD theo dõi/nhắc, thao tác
+    // thay khoa có audit) — gom theo từng khoa, cùng luật đếm Q-F. Bản này mất
+    // đường vào khi gỡ tab "hộp rớt" của Bàn điều hành (dọn 05/10).
+    : chon.man === "giorot" && xemDuocTongHop ? (
+      <div className="space-y-3">
+        <div>
+          <h2 className="text-base font-semibold text-slate-900">Giỏ rớt của các khoa</h2>
+          <p className="mt-0.5 text-sm text-slate-600">
+            Phần số lượng đã mang đi thầu nhưng <b>chưa được đáp ứng</b>, gom theo từng khoa.
+          </p>
+        </div>
+        <GioRotToanVien />
+      </div>
+    )
     : chon.man === "giorot" ? (
       <GioRotCuaKhoa
         profile={profile}
@@ -354,10 +374,10 @@ export default function App() {
             )}
 
             <div className="hidden items-center gap-2.5 border-l border-slate-200 pl-3 md:flex">
-              <span className="umc-avatar" aria-hidden="true">{chuCai}</span>
+              <span className="umc-avatar !text-xs" aria-hidden="true">{chuCai}</span>
               <div className="max-w-48 leading-tight">
                 <p className="truncate text-xs font-semibold text-slate-800">{tenHienThi}</p>
-                <p className="truncate text-[11px] text-slate-500">
+                <p className="truncate text-xs text-slate-500">
                   {profile.role === "dvsd" ? profile.khoa : TEN_VAI_TRO[profile.role]}
                 </p>
               </div>

@@ -10,7 +10,7 @@
  *   man       — khoá màn đang đứng, chỉ để ghi log (vd "goi.de_xuat", "tong_hop_pdd")
  *   nguCanh   — { goi, goiId, dotId, khoa, dotDangMo, loiDocDot, soDotHopLe, dotDaChon }
  *               trường nào không biết thì bỏ trống → "chưa rõ" → câu trả lời gốc
- *   nhichLen  — px từ đáy cửa sổ tới đáy bong bóng (mặc định 24)
+ *   nhichLen  — px từ đáy cửa sổ tới đáy nút trợ giúp (mặc định 24)
  *   onDiToi   — (manKey, huongDan) => void; huongDan do giaiDichDen() dựng,
  *               App thực hiện bằng thucHienDiToi(huongDan, setChon)
  *
@@ -30,7 +30,12 @@ import { taiTrangThaiKhoa, taiTrangThaiPddTheoDot } from "../lib/useTienTrinh";
 import { tinhTienTrinhKhoa, tinhTienTrinhPdd } from "../lib/tienTrinh";
 
 const PHIEN_BAN = noiDung.phien_ban ?? null;
-const CO_BONG = 56;   // đường kính bong bóng
+// V03 (05/10/2026): nút trợ giúp là một "thẻ nhỏ dán mép phải" thay cho bong
+// bóng tròn 56px nổi giữa màn. Bong bóng cũ đè lên nút "Nhắc", "Kích hoạt" và
+// con số cuối hàng ở mọi bảng sát mép phải. Vùng làm việc (`.umc-workspace`)
+// luôn chừa lề phải 20px nên thẻ rộng 20px nằm trọn trong lề đó, không đè nội
+// dung nào; rê chuột/tiêu điểm bàn phím thì nở ra 44px cho dễ thấy, dễ bấm.
+const CO_BONG = 64;   // chiều CAO thẻ (cũng là cỡ dùng để tính đáy khung chat); bề rộng nghỉ = w-5 = 20px
 const KHE = 12;       // khe giữa bong bóng và khung chat
 
 /** Đọc trạng thái (chỉ ĐỌC, dùng lại loader của thanh tiến trình). */
@@ -66,6 +71,11 @@ export default function ChatbotTroGiup({ profile, man = null, nguCanh = {}, nhic
   );
 
   const [mo, setMo] = useState(false);
+  // N4 (05/10/2026, vòng 2): đóng khung (Esc / nút X) thì tiêu điểm trả về thẻ
+  // trợ giúp — trình duyệt coi đó là tiêu điểm bàn phím nên `focus-visible`
+  // làm thẻ nở 44px và GIỮ nở tới khi bấm chỗ khác. Cờ này giữ thẻ ở bề rộng
+  // nghỉ ngay sau khi đóng (vẫn có viền tiêu điểm); rời tiêu điểm là hết cờ.
+  const [vuaDong, setVuaDong] = useState(false);
   const [phien, setPhien] = useState(null);
   const [luot, setLuot] = useState([]);
   const [trangThai, setTrangThai] = useState(null);
@@ -107,6 +117,7 @@ export default function ChatbotTroGiup({ profile, man = null, nguCanh = {}, nhic
 
   const dongKhung = useCallback(() => {
     setMo(false);
+    setVuaDong(true);
     ghiLuot(coSo({ loai: "dong" }));
     // Trả tiêu điểm về bong bóng cho người dùng bàn phím.
     setTimeout(() => refBong.current?.focus(), 0);
@@ -320,7 +331,7 @@ export default function ChatbotTroGiup({ profile, man = null, nguCanh = {}, nhic
               <ArrowLeft size={14} aria-hidden />
               Chủ đề khác
             </button>
-            <span className="ml-auto text-[11px] text-slate-500">Esc để đóng</span>
+            <span className="ml-auto text-xs text-slate-500">Esc để đóng</span>
           </footer>
         </section>
       )}
@@ -329,13 +340,14 @@ export default function ChatbotTroGiup({ profile, man = null, nguCanh = {}, nhic
         ref={refBong}
         type="button"
         onClick={mo ? dongKhung : moKhung}
+        onBlur={() => setVuaDong(false)}
         aria-label={mo ? "Đóng trợ giúp" : "Mở trợ giúp"}
         aria-expanded={mo}
         title={mo ? "Đóng trợ giúp" : "Trợ giúp — bấm chọn câu hỏi"}
-        className="fixed right-4 z-[45] inline-flex items-center justify-center rounded-full bg-umc-600 text-white shadow-[0_10px_28px_rgba(18,61,121,0.35)] transition hover:bg-umc-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-umc-600"
-        style={{ bottom: nhichLen, width: CO_BONG, height: CO_BONG }}
+        className={`fixed right-0 z-[45] inline-flex w-5 items-center justify-center overflow-hidden rounded-l-xl bg-umc-600 text-white shadow-[-4px_6px_18px_rgba(18,61,121,0.30)] transition-[width,background-color] duration-150 hover:w-11 hover:bg-umc-700 ${vuaDong ? "" : "focus-visible:w-11"} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-umc-600`}
+        style={{ bottom: nhichLen, height: CO_BONG }}
       >
-        {mo ? <X size={24} aria-hidden /> : <MessageCircleQuestion size={26} aria-hidden />}
+        {mo ? <X size={16} aria-hidden /> : <MessageCircleQuestion size={18} aria-hidden />}
       </button>
     </>,
     document.body,

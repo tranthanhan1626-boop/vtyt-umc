@@ -1703,8 +1703,10 @@ export default function Function1({
   );
 
   // Ba khung giữa: chọn đợt trước (Q9) · chưa chọn nhóm · đang gõ một nhóm.
+  // V34 (rà thị giác 05/10/2026, CHUẨN 2): khung rỗng chỉ cao theo nội dung
+  // (trước đây ép cao tới đáy màn → vùng trắng > 500px).
   const khungChonDot = (
-    <div className="flex min-h-[18rem] flex-col items-center justify-center rounded-lg border border-slate-200 bg-white px-6 py-8 text-center lg:min-h-[calc(100vh-17rem)]">
+    <div className="flex min-h-[18rem] flex-col items-center justify-center rounded-lg border border-slate-200 bg-white px-6 py-8 text-center">
       <ArrowUp size={26} className="text-umc-700" aria-hidden />
       <p className="mt-2 text-xl font-semibold text-slate-900">Chọn đợt gửi ở dòng trên trước.</p>
       <p className="mt-1 text-sm text-slate-600">Mỗi đợt có một giỏ riêng — chọn trước để số vừa gõ không bị lạc giỏ.</p>
@@ -1712,7 +1714,7 @@ export default function Function1({
     </div>
   );
   const khungDaKhoa = (
-    <div className="flex min-h-[18rem] flex-col items-center justify-center rounded-lg border border-slate-200 bg-white px-6 py-8 text-center lg:min-h-[calc(100vh-17rem)]">
+    <div className="flex min-h-[12rem] flex-col items-center justify-center rounded-lg border border-slate-200 bg-white px-6 py-8 text-center">
       <AlertTriangle size={26} className="text-amber-600" aria-hidden />
       <p className="mt-2 text-xl font-semibold text-slate-900">Đợt này chưa nhận thêm đề xuất của khoa.</p>
       <p className="mt-1 text-sm text-slate-600">{khoaGuiThem ? CAU_KHOA_GUI[khoaGuiThem] : ""}</p>
@@ -1725,7 +1727,7 @@ export default function Function1({
     </div>
   );
   const khungChuaChonNhom = (
-    <div className="flex min-h-[18rem] flex-col items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white/70 px-6 py-8 text-center lg:min-h-[calc(100vh-17rem)]">
+    <div className="flex min-h-[18rem] flex-col items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white/70 px-6 py-8 text-center">
       <p className="text-lg font-semibold text-slate-800">Chọn một nhóm ở cột bên trái để bắt đầu.</p>
       <p className="mt-1 text-sm text-slate-600">Bấm một nhóm là gõ số ngay — con trỏ đã nằm sẵn trong ô.</p>
       <BaBuoc />

@@ -241,23 +241,27 @@ export default function DeXuatCuaToi({ profile, goi }) {
               )}
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
+                  {/* V36: `!text-xs` thắng luật chung `.umc-content table thead th` (11px) —
+                      tiêu đề cột đủ 12px (G14). */}
                   {/* V9: bảng thiếu <thead> — thêm tiêu đề cột (đọc từ chính
                       các trường mỗi cột đang hiện). */}
                   <thead>
                     <tr className="border-b border-slate-100 text-left text-xs text-slate-500">
-                      <th className="px-4 py-1.5 font-medium">Mã hàng · tên vật tư · mã quản lý</th>
-                      <th className="px-4 py-1.5 text-right font-medium">Số lượng</th>
-                      <th className="px-4 py-1.5 font-medium">Lý do đề xuất</th>
-                      <th className="px-4 py-1.5 font-medium">Loại mua sắm · thời gian</th>
+                      <th className="px-4 py-1.5 font-medium !text-xs">Tên vật tư · mã hàng · mã quản lý</th>
+                      <th className="px-4 py-1.5 text-right font-medium !text-xs">Số lượng</th>
+                      <th className="px-4 py-1.5 font-medium !text-xs">Lý do đề xuất</th>
+                      <th className="px-4 py-1.5 font-medium !text-xs">Loại mua sắm · thời gian</th>
                     </tr>
                   </thead>
                   <tbody>
                     {g.items.map((r) => (
                       <tr key={r.id} className="border-b border-slate-50 last:border-0">
                         <td className="px-4 py-2 align-top">
-                          <div className="font-mono text-xs text-slate-600">{r.ma_hang}</div>
-                          <div className="text-xs text-slate-500 leading-tight max-w-md">{r.ten_vat_tu}</div>
-                          <div className="text-xs text-slate-500 font-mono mt-0.5">{r.ma_quan_ly}</div>
+                          {/* V36 / G8: TÊN trước (≥ 15px, đậm), mã sau (≤ 13px, xám). */}
+                          <div className="max-w-md text-[15px] font-semibold leading-snug text-slate-900">{r.ten_vat_tu}</div>
+                          <div className="mt-0.5 font-mono text-[13px] text-slate-500">
+                            <span title="Mã hàng">{r.ma_hang}</span> · <span title="Mã quản lý">{r.ma_quan_ly}</span>
+                          </div>
                         </td>
                         <td className="px-4 py-2 text-right font-mono align-top whitespace-nowrap">
                           {fmt(r.so_luong)} <span className="text-slate-500 text-xs">{r.dvt}</span>
@@ -319,8 +323,9 @@ export default function DeXuatCuaToi({ profile, goi }) {
                   </div>
                 ) : coTheRut ? (
                   <div className="flex justify-end">
+                    {/* V36 / G12: hành động nguy hiểm — chữ đỏ, nút đủ cao (≥ 36px), vẫn luôn hỏi lại. */}
                     <button type="button" onClick={() => moXacNhan(g)}
-                      className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-red-700">
+                      className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-red-200 bg-white px-3 text-sm font-medium text-red-600 hover:bg-red-50">
                       {g.trangThai === "xet_duyet" ? <Undo2 size={14} /> : <Trash2 size={14} />}
                       {g.trangThai === "xet_duyet" ? "Rút đề xuất" : "Xoá đề xuất"}
                     </button>

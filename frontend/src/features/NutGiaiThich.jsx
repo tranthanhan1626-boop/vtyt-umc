@@ -9,8 +9,8 @@ import { createPortal } from "react-dom";
  * PORTAL vào <body> (lỗi N3: màn nằm trong <motion.main> có transform, và cột
  * trái có `overflow` — vẽ tại chỗ sẽ bị cắt).
  *
- * Vòng tròn nhìn thấy 24px, vùng bấm nới ra bằng lớp `before:` để đủ ~36px
- * (G14) mà không làm dòng chữ cao thêm.
+ * Vòng tròn nhìn thấy 24px; chính nút là ô 32×32px (CHUẨN THỊ GIÁC 3: mục tiêu
+ * bấm ≥ 32px — V07, 05/10/2026), kéo lề dọc -4px để không làm dòng chữ cao thêm.
  */
 export default function NutGiaiThich({ children, nhan = "Giải thích", className = "", rong = 320 }) {
   const [mo, setMo] = useState(false);
@@ -51,8 +51,8 @@ export default function NutGiaiThich({ children, nhan = "Giải thích", classNa
     <>
       <button type="button" ref={nut} aria-label={nhan} aria-expanded={mo} title={nhan}
         onClick={(e) => { e.stopPropagation(); setMo((v) => !v); }}
-        className={`relative inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-umc-300 bg-white align-middle text-xs font-bold text-umc-700 hover:bg-umc-50 before:absolute before:-inset-1.5 before:content-[''] ${className}`}>
-        ?
+        className={`group relative -my-1 inline-flex h-8 w-8 shrink-0 items-center justify-center align-middle text-xs font-bold text-umc-700 ${className}`}>
+        <span aria-hidden className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-umc-300 bg-white group-hover:bg-umc-50">?</span>
       </button>
       {mo && viTri && typeof document !== "undefined" && createPortal(
         <div ref={khung} role="dialog" aria-label={nhan}

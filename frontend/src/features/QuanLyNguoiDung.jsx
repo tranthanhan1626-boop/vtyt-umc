@@ -59,10 +59,10 @@ export default function QuanLyNguoiDung({ profile }) {
     <div className="rounded-xl border border-slate-200 bg-white p-4">
       <div className="flex flex-wrap items-start gap-3"><span className="rounded-lg bg-umc-700 p-2 text-white"><UserCog size={18} /></span>
         <div className="mr-auto"><h2 className="font-semibold text-slate-800">Quản trị người dùng</h2>
-          <p className="mt-1 text-xs text-slate-500">Gán họ tên, khoa và vai trò cho tài khoản đã tồn tại. Việc tạo/xóa tài khoản đăng nhập vẫn thực hiện qua Supabase Auth.</p></div>
-        <label className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <p className="mt-1 text-xs text-slate-600">Gán họ tên, khoa và vai trò cho tài khoản đã tồn tại. Việc tạo hoặc xóa tài khoản đăng nhập làm ở nơi khác, không làm ở màn này.</p></div>
+        <label className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
           <input value={tim} onChange={(e) => setTim(e.target.value)} placeholder="Tìm email, tên, khoa"
-            className="w-64 rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-xs" /></label>
+            className="min-h-9 w-64 rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-[13px]" /></label>
       </div>
       {loi && <p className="mt-3 rounded bg-red-50 px-3 py-2 text-xs text-red-700">{loi}</p>}
       {thongBao && <p className="mt-3 rounded bg-emerald-50 px-3 py-2 text-xs text-emerald-700">{thongBao}</p>}
@@ -72,17 +72,17 @@ export default function QuanLyNguoiDung({ profile }) {
       <thead className="bg-slate-100 text-xs text-slate-500"><tr><th className="px-4 py-2 text-left">Email</th><th className="px-3 py-2 text-left">Họ tên</th>
         <th className="px-3 py-2 text-left">Vai trò</th><th className="px-3 py-2 text-left">Khoa</th><th className="px-4 py-2 text-right">Thao tác</th></tr></thead>
       <tbody>{hien.map((r) => { const sua = dangSua === r.email; return <tr key={r.id} className="border-t border-slate-100">
-        <td className="px-4 py-2"><span className="font-medium text-slate-800">{r.email}</span>{r.email === profile.email && <span className="ml-2 rounded bg-blue-50 px-2 py-0.5 text-[10px] text-blue-700">Bạn</span>}</td>
-        <td className="px-3 py-2">{sua ? <input value={form.ho_ten} onChange={(e) => setForm((p) => ({ ...p, ho_ten: e.target.value }))} className="w-full rounded border border-slate-300 px-2 py-1.5 text-xs" /> : (r.ho_ten || "—")}</td>
+        <td className="px-4 py-2"><span className="font-medium text-slate-800">{r.email}</span>{r.email === profile.email && <span className="ml-2 whitespace-nowrap rounded bg-umc-50 px-2 py-0.5 text-xs text-umc-700">Bạn</span>}</td>
+        <td className="px-3 py-2">{sua ? <input value={form.ho_ten} onChange={(e) => setForm((p) => ({ ...p, ho_ten: e.target.value }))} className="min-h-8 w-full rounded border border-slate-300 px-2 py-1.5 text-[13px]" /> : (r.ho_ten || "—")}</td>
         <td className="px-3 py-2">{sua ? <select value={form.role} disabled={r.email === profile.email}
-          onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))} className="rounded border border-slate-300 bg-white px-2 py-1.5 text-xs">
+          onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))} className="min-h-8 rounded border border-slate-300 bg-white px-2 py-1.5 text-[13px]">
           {Object.entries(NHAN_QUYEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
           : <span className="inline-flex items-center gap-1"><ShieldCheck size={13} className="text-umc-600" />{NHAN_QUYEN[r.role] || r.role}</span>}</td>
         <td className="px-3 py-2">{sua && form.role === "dvsd" ? <select value={form.khoa} onChange={(e) => setForm((p) => ({ ...p, khoa: e.target.value }))}
-          className="max-w-64 rounded border border-slate-300 bg-white px-2 py-1.5 text-xs"><option value="">— chọn khoa —</option>{dsKhoa.map((k) => <option key={k}>{k}</option>)}</select> : (r.khoa || "—")}</td>
-        <td className="px-4 py-2 text-right">{sua ? <div className="flex justify-end gap-2"><button onClick={() => { setDangSua(null); setForm(null); }} className="rounded border border-slate-300 px-2 py-1 text-xs">Hủy</button>
-          <button onClick={() => luu(r)} className="inline-flex items-center gap-1 rounded bg-umc-700 px-2 py-1 text-xs text-white"><Save size={12} />Lưu</button></div>
-          : <button onClick={() => moSua(r)} className="rounded border border-umc-300 px-2 py-1 text-xs text-umc-700">Chỉnh sửa</button>}</td>
+          className="min-h-8 max-w-64 rounded border border-slate-300 bg-white px-2 py-1.5 text-[13px]"><option value="">— chọn khoa —</option>{dsKhoa.map((k) => <option key={k}>{k}</option>)}</select> : (r.khoa || "—")}</td>
+        <td className="px-4 py-2 text-right">{sua ? <div className="flex justify-end gap-2"><button onClick={() => { setDangSua(null); setForm(null); }} className="inline-flex min-h-8 items-center rounded border border-slate-300 px-3 py-1 text-xs">Hủy</button>
+          <button onClick={() => luu(r)} className="inline-flex min-h-8 items-center gap-1 rounded bg-umc-700 px-3 py-1 text-xs text-white"><Save size={12} />Lưu</button></div>
+          : <button onClick={() => moSua(r)} className="inline-flex min-h-8 items-center rounded border border-umc-300 px-3 py-1 text-xs text-umc-700 hover:bg-umc-50">Chỉnh sửa</button>}</td>
       </tr>; })}</tbody>
     </table></div>
   </div>;

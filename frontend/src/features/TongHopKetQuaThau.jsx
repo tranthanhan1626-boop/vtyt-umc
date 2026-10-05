@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { GOI_ID_MAP } from "../lib/cotChuan";
+import NutGiaiThich from "./NutGiaiThich";
 
 // QĐ-23 — Tổng hợp kết quả thầu HAI TẦNG cho Phòng Điều dưỡng.
 //
@@ -144,13 +145,22 @@ export default function TongHopKetQuaThau({ profile }) {
   return (
     <div className="space-y-3">
       <div>
-        <h2 className="text-base font-semibold text-slate-900">Tổng hợp kết quả thầu</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-base font-semibold text-slate-900">Tổng hợp kết quả thầu</h2>
+          <NutGiaiThich nhan="Màn này cho xem gì" rong={380}>
+            <p>
+              Chỉ gồm các mã của gói con <b>đã hoàn thành đủ ba giai đoạn đấu thầu</b> (Chào giá · Mở thầu ·
+              Đánh giá). Dòng gộp theo mã hàng trong từng đợt / gói con; bấm để bung ra xem{" "}
+              <b>từng khoa đề xuất bao nhiêu, trúng bao nhiêu</b>.
+            </p>
+            <p className="mt-2">
+              Màn này chỉ để xem. Muốn sửa kết quả thầu (rớt / trúng), làm trên bảng Tổng hợp danh mục: ở các cột{" "}
+              <b>Rớt ở Chào giá / Mở thầu / Đánh giá</b> và nút <b>Xác nhận rớt</b>.
+            </p>
+          </NutGiaiThich>
+        </div>
         <p className="mt-0.5 text-sm text-slate-500">
-          Màn này chỉ gồm các mã thuộc gói con <b>đã hoàn thành đủ ba giai đoạn đấu thầu</b>{" "}
-          (chào giá · mở thầu · đánh giá). Dòng gộp theo mã hàng trong từng đợt/gói con. Bấm để
-          bung ra xem <b>từng khoa đề xuất bao nhiêu, trúng bao nhiêu</b>. Màn này chỉ để xem —
-          sửa kết quả thầu (rớt/trúng) làm trên bảng Tổng hợp danh mục, cụm cột <b>R1/R2/R3</b> và
-          nút <b>Xác nhận rớt</b>.
+          Chỉ xem: các mã của gói con đã xong đủ ba giai đoạn thầu. Bấm một dòng để xem từng khoa.
         </p>
       </div>
 
@@ -169,7 +179,7 @@ export default function TongHopKetQuaThau({ profile }) {
                   <span className="min-w-0 flex-1 truncate text-sm text-slate-800">{g.ten_vat_tu}</span>
                 </span>
                 {(g.tenDot || g.tenGoiCon) && (
-                  <span className="mt-0.5 block truncate text-xs text-slate-400">
+                  <span className="mt-0.5 block truncate text-xs text-slate-500">
                     {g.tenDot ? `Đợt: ${g.tenDot}` : null}
                     {g.tenDot && g.tenGoiCon ? " · " : null}
                     {g.tenGoiCon ? `Gói con: ${g.tenGoiCon}` : null}
@@ -183,7 +193,7 @@ export default function TongHopKetQuaThau({ profile }) {
                 <span className={thieu > 0 ? "font-medium text-red-700" : "font-medium text-umc-800"}>
                   {so(g.tongTrung)}
                 </span>
-                <span className="ml-1 text-xs text-slate-400">{g.dvt}</span>
+                <span className="ml-1 text-xs text-slate-500">{g.dvt}</span>
               </span>
             </button>
 

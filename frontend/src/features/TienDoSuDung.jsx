@@ -177,13 +177,13 @@ export default function TienDoSuDung({ profile, onNapDuLieu }) {
             <AlertTriangle size={21} /> CẢNH BÁO: {tongTre} mã chậm tiến độ
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1.5 rounded-md bg-umc-50 px-2.5 py-1 text-sm text-umc-800">
+          <span className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-800">
             <CheckCircle2 size={14} /> Tất cả đang đạt tiến độ
           </span>
         )}
         {tongSom > 0 && (
           <span className="inline-flex items-center gap-2 rounded-xl border-2 border-orange-400 bg-orange-50 px-4 py-3 text-base font-bold text-orange-950 shadow-sm">
-            <PackageOpen size={21} /> CAUTION: {tongSom} mã sắp hết trước khi xong kỳ
+            <PackageOpen size={21} /> LƯU Ý: {tongSom} mã sắp hết trước khi xong kỳ
           </span>
         )}
         {rows.length > 0 && (
@@ -197,7 +197,7 @@ export default function TienDoSuDung({ profile, onNapDuLieu }) {
         {laPdd && (
           <>
             <button type="button" onClick={onNapDuLieu}
-              className="inline-flex items-center gap-1.5 rounded-md border border-umc-300 px-3 py-1.5 text-sm font-medium text-umc-800 hover:bg-umc-50">
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-umc-300 bg-white px-3 py-1.5 text-sm font-medium text-umc-800 hover:bg-umc-50">
               <UploadCloud size={15} /> Nạp dữ liệu HIS
             </button>
             <NguongCamKet moc={moc} onLuuXong={tai} />
@@ -209,7 +209,7 @@ export default function TienDoSuDung({ profile, onNapDuLieu }) {
         <div className="rounded-lg border border-slate-200 bg-white p-6 text-center">
           <Clock size={28} className="mx-auto mb-2 text-slate-300" />
           <p className="text-sm font-medium text-slate-600">Chưa có mã nào vào diện theo dõi</p>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-slate-500">
             Mã chỉ được đếm sau khi gói thầu đánh dấu mốc <b>“Hàng về đợt đầu”</b> hoàn thành
             và đã có số lượng trúng thầu.
           </p>
@@ -223,8 +223,8 @@ export default function TienDoSuDung({ profile, onNapDuLieu }) {
           <div key={g.goi_id} className="overflow-hidden rounded-lg border border-slate-200 bg-white">
             <button onClick={() => bat(`g${g.goi_id}`)} aria-expanded={moGoi}
               className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left hover:bg-slate-50">
-              {moGoi ? <ChevronDown size={16} className="shrink-0 text-slate-400" />
-                     : <ChevronRight size={16} className="shrink-0 text-slate-400" />}
+              {moGoi ? <ChevronDown size={16} className="shrink-0 text-slate-500" />
+                     : <ChevronRight size={16} className="shrink-0 text-slate-500" />}
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-slate-900">{g.ten_goi}</p>
                 <p className="mt-0.5 text-xs text-slate-500">
@@ -238,7 +238,7 @@ export default function TienDoSuDung({ profile, onNapDuLieu }) {
                 <p className="text-sm font-semibold tabular-nums text-slate-900">
                   {g.pt == null ? "—" : `${g.pt.toFixed(1)}%`}
                 </p>
-                <p className="text-[11px] text-slate-400">trung bình theo mã</p>
+                <p className="text-xs text-slate-500">trung bình theo mã</p>
               </div>
               <div className="ml-2 flex shrink-0 flex-col items-end gap-1">
                 {g.soTre > 0 && (
@@ -252,7 +252,7 @@ export default function TienDoSuDung({ profile, onNapDuLieu }) {
 
             {moGoi && (
               <div className="border-t border-slate-100 bg-slate-50/60 px-2 py-2">
-                <p className="px-1 pb-1.5 text-[11px] text-slate-400">
+                <p className="px-1 pb-1.5 text-xs text-slate-500">
                   Tỷ lệ của gói là <b>trung bình theo mã</b> — mỗi mã một đơn vị tính khác nhau
                   (Đôi · Miếng · Cái) nên không cộng số lượng lại được.
                 </p>
@@ -265,17 +265,17 @@ export default function TienDoSuDung({ profile, onNapDuLieu }) {
                     <div key={kn} className="mb-1.5 overflow-hidden rounded-md border border-slate-200 bg-white last:mb-0">
                       <button onClick={() => bat(kn)} aria-expanded={moNhom}
                         className="flex w-full items-center gap-2 px-2.5 py-2 text-left hover:bg-slate-50">
-                        {moNhom ? <ChevronDown size={13} className="shrink-0 text-slate-400" />
-                                : <ChevronRight size={13} className="shrink-0 text-slate-400" />}
+                        {moNhom ? <ChevronDown size={13} className="shrink-0 text-slate-500" />
+                                : <ChevronRight size={13} className="shrink-0 text-slate-500" />}
                         <span className="font-mono text-xs text-slate-500">{n.ma_quan_ly}</span>
                         <span className="min-w-0 flex-1 truncate text-sm text-slate-800">{n.ten_quan_ly}</span>
                         {n.tre > 0 && (
-                          <span className="shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[11px] text-red-700">{n.tre} chậm</span>
+                          <span className="shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-700">{n.tre} chậm</span>
                         )}
                         {n.som > 0 && (
-                          <span className="shrink-0 rounded bg-orange-100 px-1.5 py-0.5 text-[11px] text-orange-800">{n.som} sắp hết</span>
+                          <span className="shrink-0 rounded bg-orange-100 px-1.5 py-0.5 text-xs text-orange-800">{n.som} sắp hết</span>
                         )}
-                        <span className="shrink-0 text-xs text-slate-400">{n.hang.length} mã hàng</span>
+                        <span className="shrink-0 text-xs text-slate-500">{n.hang.length} mã hàng</span>
                       </button>
 
                       {/* ───────── TẦNG 3 · MÃ HÀNG (tổng toàn viện) ───────── */}
@@ -291,15 +291,15 @@ export default function TienDoSuDung({ profile, onNapDuLieu }) {
                                 <button onClick={() => bat(kh)} aria-expanded={moHang}
                                   className="w-full px-2.5 py-2.5 text-left hover:bg-slate-50">
                                   <div className="mb-1.5 flex flex-wrap items-baseline gap-2">
-                                    {moHang ? <ChevronDown size={12} className="text-slate-400" />
-                                            : <ChevronRight size={12} className="text-slate-400" />}
+                                    {moHang ? <ChevronDown size={12} className="text-slate-500" />
+                                            : <ChevronRight size={12} className="text-slate-500" />}
                                     <span className="font-mono text-xs text-slate-500">{h.ma_hang}</span>
                                     <span className="min-w-0 flex-1 truncate text-sm text-slate-800">{h.ten_vat_tu}</span>
                                     <span className="text-sm tabular-nums">
                                       <span className={h.tre ? "font-semibold text-red-700" : "font-semibold text-umc-800"}>
                                         {so(h.da_dung)}
                                       </span>
-                                      <span className="text-slate-400"> / {so(h.sl_trung)} {h.dvt}</span>
+                                      <span className="text-slate-500"> / {so(h.sl_trung)} {h.dvt}</span>
                                     </span>
                                   </div>
 
@@ -328,7 +328,7 @@ export default function TienDoSuDung({ profile, onNapDuLieu }) {
                                       Dự kiến hết {thangNam(h.ngay_du_kien_het)}
                                       {h.som ? " — cần thầu bổ sung" : ""}
                                     </span>
-                                    {laPdd && <span className="text-slate-400">{h.soKhoa} khoa</span>}
+                                    {laPdd && <span className="text-slate-500">{h.soKhoa} khoa</span>}
                                   </div>
                                   {(h.tre || h.som) && (
                                     <div className={`mt-2 flex items-start gap-2 rounded-lg border-2 px-3 py-2 text-sm font-bold ${
@@ -351,7 +351,7 @@ export default function TienDoSuDung({ profile, onNapDuLieu }) {
                                   <div className="overflow-x-auto border-t border-slate-100 bg-slate-50/70 px-2.5 py-2">
                                     <table className="w-full min-w-[640px] text-xs">
                                       <thead>
-                                        <tr className="text-left text-[11px] uppercase tracking-wide text-slate-400">
+                                        <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
                                           <th className="pb-1 font-medium">Khoa</th>
                                           <th className="pb-1 text-right font-medium">Đề xuất</th>
                                           <th className="pb-1 text-right font-medium">Trúng thầu</th>

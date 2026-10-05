@@ -293,10 +293,10 @@
   .umc-nav-label {
     margin-bottom: 0.55rem;
     padding: 0 0.55rem;
-    color: #8a9aaf;
-    font-size: 0.6875rem;
+    color: #64748b;
+    font-size: 0.75rem;
     font-weight: 800;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
   }
 

@@ -154,7 +154,7 @@ export default function ManChaoKhoa({ profile, doiChon, dsDotTheoGoi = {}, dangT
             nhập dùng) — chỉ trang trí, mờ, nằm dưới chữ. */}
         <img src="/brand/umc-pattern.png" alt="" aria-hidden
           className="pointer-events-none absolute -bottom-2 right-0 h-[140%] w-auto max-w-none select-none opacity-30 mix-blend-screen" />
-        <p className="relative text-[11px] font-extrabold uppercase tracking-[0.17em] text-[#9fe6fb]">Trang chính của khoa</p>
+        <p className="relative text-xs font-extrabold uppercase tracking-[0.17em] text-[#9fe6fb]">Trang chính của khoa</p>
         <h1 className="relative mt-1.5 text-2xl font-bold tracking-tight">{khoa || "Khoa"}</h1>
         <div className="relative mt-3 flex flex-wrap items-center gap-2 text-sm">
           <span className="text-white/80">Đợt đang mở:</span>
@@ -183,7 +183,7 @@ export default function ManChaoKhoa({ profile, doiChon, dsDotTheoGoi = {}, dangT
                   <button key={g.ma} type="button" onClick={() => { setGoi(g.ma); setDotId(null); }}
                     className={nutChip(goi === g.ma)} title={soDot ? `${soDot} đợt đang mở` : "Chưa mở đợt"}>
                     {g.ten}
-                    <span className={`ml-1.5 text-[11px] font-normal ${goi === g.ma ? "text-white/85" : soDot ? "text-umc-700" : "text-slate-500"}`}>
+                    <span className={`ml-1.5 text-xs font-normal ${goi === g.ma ? "text-white/85" : soDot ? "text-umc-700" : "text-slate-500"}`}>
                       {soDot ? "· đang mở" : "· chưa mở"}
                     </span>
                   </button>
@@ -241,11 +241,14 @@ export default function ManChaoKhoa({ profile, doiChon, dsDotTheoGoi = {}, dangT
 
       <div className="grid gap-3 md:grid-cols-3">
         <button type="button" onClick={moDeXuat} disabled={!daChonDu}
-          className="flex min-h-[5.5rem] items-center gap-3 rounded-xl bg-umc-600 px-5 py-4 text-left text-white shadow-sm transition-colors hover:bg-umc-700 disabled:cursor-not-allowed disabled:opacity-50">
+          // V32 (05/10/2026): đây là việc chính — chưa chọn gói thì chỉ đổi con
+          // trỏ, KHÔNG làm mờ cả thẻ (trước đây `disabled:opacity-50` khiến thẻ
+          // chính nhạt hơn hai thẻ phụ). Dòng chữ nhỏ trong thẻ đã nói cần chọn gì.
+          className="flex min-h-[5.5rem] items-center gap-3 rounded-xl bg-umc-600 px-5 py-4 text-left text-white shadow-sm transition-colors hover:bg-umc-700 disabled:cursor-not-allowed disabled:hover:bg-umc-600">
           <ClipboardList size={26} className="shrink-0" />
           <span className="min-w-0">
             <span className="block text-base font-semibold">Đề xuất số lượng</span>
-            <span className="block text-xs text-white/85">
+            <span className="block text-[13px] text-white">
               {daChonDu ? `${GOI.find((g) => g.ma === goi)?.ten}${tenGoiCon ? ` · ${tenGoiCon}` : ""}` : "Chọn gói / gói con ở trên trước"}
             </span>
           </span>

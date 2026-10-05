@@ -19,7 +19,11 @@ const LOC = [
   { ma: "tat_ca", nhan: "Tất cả" },
 ];
 
-export default function GioRotToanVien({ dotGoiIds = [] }) {
+// Mặc định là MỘT mảng cố định: `[]` viết thẳng ở tham số tạo mảng mới mỗi lần
+// vẽ → `tai` đổi → useEffect tải lại liên tục (App gọi không truyền dotGoiIds).
+const MOI_DOT = [];
+
+export default function GioRotToanVien({ dotGoiIds = MOI_DOT }) {
   const [rows, setRows] = useState([]);
   const [dangTai, setDangTai] = useState(true);
   const [loi, setLoi] = useState("");
@@ -58,7 +62,11 @@ export default function GioRotToanVien({ dotGoiIds = [] }) {
           khoa,
           muc,
           chuaXuLy,
-          tongThieu: muc.reduce((s, x) => s + Number(x.so_luong_thieu || 0), 0),
+          // Q-F 05/10/2026: cùng luật với GioRotCuaKhoa — mục "không còn nhu cầu"
+          // không tính vào số thiếu; "đã gửi bổ sung" vẫn tính.
+          tongThieu: muc
+            .filter((x) => x.trang_thai !== "khong_con_nhu_cau")
+            .reduce((s, x) => s + Number(x.so_luong_thieu || 0), 0),
           ngayLauNhat: ngay.length ? Math.max(...ngay) : null,
         };
       })
@@ -69,7 +77,9 @@ export default function GioRotToanVien({ dotGoiIds = [] }) {
   const tongQuan = useMemo(() => ({
     khoaConNo: new Set(rows.filter((r) => !DA_XU_LY.has(r.trang_thai)).map((r) => r.khoa)).size,
     mucChuaXuLy: rows.filter((r) => !DA_XU_LY.has(r.trang_thai)).length,
-    tongThieu: rows.reduce((s, r) => s + Number(r.so_luong_thieu || 0), 0),
+    tongThieu: rows
+      .filter((r) => r.trang_thai !== "khong_con_nhu_cau")
+      .reduce((s, r) => s + Number(r.so_luong_thieu || 0), 0),
   }), [rows]);
 
   // Luôn HIỆN nội dung nhắc ra màn, rồi mới thử copy. Nếu chỉ dựa vào
@@ -117,20 +127,20 @@ export default function GioRotToanVien({ dotGoiIds = [] }) {
         ].map((t) => (
           <div key={t.nhan} className={`border rounded-lg px-3 py-2 ${t.mau}`}>
             <p className="text-lg font-semibold leading-none">{t.so.toLocaleString("vi-VN")}</p>
-            <p className="text-[11px] mt-1">{t.nhan}</p>
+            <p className="text-xs mt-1">{t.nhan}</p>
           </div>
         ))}
         <div className="flex items-center gap-1.5 ml-auto">
           {LOC.map((l) => (
             <button key={l.ma} type="button" onClick={() => setLoc(l.ma)}
-              className={`px-2.5 py-1 text-xs rounded-md border ${
+              className={`inline-flex min-h-9 items-center px-3 py-1.5 text-xs rounded-md border ${
                 loc === l.ma ? "border-umc-400 bg-umc-50 text-umc-800 font-medium"
                              : "border-slate-300 text-slate-600 hover:bg-slate-50"}`}>
               {l.nhan}
             </button>
           ))}
           <button type="button" onClick={tai}
-            className="flex items-center gap-1 px-2.5 py-1 text-xs rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50">
+            className="inline-flex min-h-9 items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50">
             <RotateCcw size={12} /> Tải lại
           </button>
         </div>
@@ -141,19 +151,19 @@ export default function GioRotToanVien({ dotGoiIds = [] }) {
       {nhacDangXem && (
         <div className="rounded-md border border-umc-200 bg-umc-50/50 px-3 py-2">
           <div className="flex items-center gap-2">
-            <p className="flex-1 text-[11px] font-semibold text-umc-900">
+            <p className="flex-1 text-xs font-semibold text-umc-900">
               Nội dung nhắc — {nhacDangXem.khoa}
               {daCopy === nhacDangXem.khoa && <span className="ml-2 font-normal text-emerald-700">đã copy vào clipboard</span>}
             </p>
             <button type="button" onClick={() => setNhacDangXem(null)}
-              className="px-2 py-0.5 text-[11px] rounded border border-slate-300 text-slate-600 hover:bg-white">
+              className="min-h-8 px-3 py-1 text-xs rounded border border-slate-300 text-slate-600 hover:bg-white">
               Đóng
             </button>
           </div>
           <textarea readOnly rows={8} value={nhacDangXem.noiDung}
             onFocus={(e) => e.target.select()}
-            className="mt-1.5 w-full rounded border border-slate-300 bg-white px-2 py-1.5 text-[11px] font-mono" />
-          <p className="mt-1 text-[10px] text-slate-500">
+            className="mt-1.5 w-full rounded border border-slate-300 bg-white px-2 py-1.5 text-xs font-mono" />
+          <p className="mt-1 text-xs text-slate-500">
             Web không gửi tin nhắn thay ai — copy nội dung này sang Teams.
           </p>
         </div>
@@ -179,21 +189,21 @@ export default function GioRotToanVien({ dotGoiIds = [] }) {
             </div>
             {k.chuaXuLy.length > 0 && (
               <button type="button" onClick={() => copyNhac(k)}
-                className="flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-md border border-umc-300 text-umc-800 hover:bg-umc-50">
+                className="inline-flex min-h-8 items-center gap-1 px-3 py-1 text-xs rounded-md border border-umc-300 text-umc-800 hover:bg-umc-50">
                 {daCopy === k.khoa ? <><Check size={11} /> Đã copy</> : <><ClipboardCopy size={11} /> Nhắc</>}
               </button>
             )}
           </div>
 
-          <table className="mt-2 w-auto text-[11px]">
+          <table className="mt-2 w-auto text-xs">
             <thead>
               <tr className="text-slate-500">
-                <th className="px-2 py-0.5 text-left font-medium">Mã quản lý</th>
-                <th className="px-2 py-0.5 text-right font-medium">Đi thầu</th>
-                <th className="px-2 py-0.5 text-right font-medium">Trúng</th>
-                <th className="px-2 py-0.5 text-right font-medium">Thiếu</th>
-                <th className="px-2 py-0.5 text-left font-medium">Trạng thái</th>
-                <th className="px-2 py-0.5 text-left font-medium">Thao tác thay khoa</th>
+                <th className="px-2 py-1 text-left font-medium">Mã quản lý</th>
+                <th className="px-2 py-1 text-right font-medium">Đi thầu</th>
+                <th className="px-2 py-1 text-right font-medium">Trúng</th>
+                <th className="px-2 py-1 text-right font-medium">Thiếu</th>
+                <th className="px-2 py-1 text-left font-medium">Trạng thái</th>
+                <th className="px-2 py-1 text-left font-medium">Thao tác thay khoa</th>
               </tr>
             </thead>
             <tbody>
@@ -203,22 +213,22 @@ export default function GioRotToanVien({ dotGoiIds = [] }) {
                 const daXong = DA_XU_LY.has(r.trang_thai);
                 return (
                   <tr key={key} className="border-t border-slate-100">
-                    <td className="px-2 py-0.5 font-mono">{r.ma_quan_ly}</td>
-                    <td className="px-2 py-0.5 text-right font-mono">{Number(r.so_luong_q).toLocaleString("vi-VN")}</td>
-                    <td className="px-2 py-0.5 text-right font-mono">{Number(r.so_luong_trung).toLocaleString("vi-VN")}</td>
-                    <td className="px-2 py-0.5 text-right font-mono font-semibold text-red-700">
+                    <td className="px-2 py-1 font-mono">{r.ma_quan_ly}</td>
+                    <td className="px-2 py-1 text-right tabular-nums">{Number(r.so_luong_q).toLocaleString("vi-VN")}</td>
+                    <td className="px-2 py-1 text-right tabular-nums">{Number(r.so_luong_trung).toLocaleString("vi-VN")}</td>
+                    <td className="px-2 py-1 text-right font-semibold tabular-nums text-red-700">
                       {Number(r.so_luong_thieu).toLocaleString("vi-VN")}
                     </td>
-                    <td className="px-2 py-0.5">
+                    <td className="px-2 py-1">
                       <span className={`px-1.5 py-0.5 rounded border ${tt.mau}`}>{tt.nhan}</span>
                     </td>
-                    <td className="px-2 py-0.5">
+                    <td className="px-2 py-1">
                       {daXong ? (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-slate-500">—</span>
                       ) : (
                         <button type="button" disabled={dangLuu === key}
                           onClick={() => thayKhoa(r, "khong_con_nhu_cau")}
-                          className="px-2 py-0.5 rounded border border-slate-300 text-slate-600 hover:bg-slate-50 disabled:opacity-60">
+                          className="min-h-8 px-2.5 py-1 rounded border border-slate-300 text-slate-600 hover:bg-slate-50 disabled:opacity-60">
                           Đánh dấu không còn nhu cầu
                         </button>
                       )}

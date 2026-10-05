@@ -9,6 +9,7 @@ import {
   COT_KHOA, NHOM_COT_KHOA, GOI_ID_MAP, sapXepFreezeTruoc, tinhLeftFreeze,
   tinhSegmentsGroup, taoCotLichSu, thayCotLichSu, suyRaNamCoDuLieu,
   taoCotLichSuNhom, chenCotLichSuNhom, cotKhoaSangPdd, cotPddSangKhoa, rongTrenManHinh,
+  NHAN_HIEN_KHOA,
 } from "../lib/cotChuan";
 import { xuatExcelDong, tenFileAnToan } from "../lib/xuatExcelDong";
 import { docTenCotTuMau, ganTenMau } from "../lib/tenCotBieuMau";
@@ -201,7 +202,7 @@ async function taiDuLieuKhoa(goiId, khoa, dotId = null) {
   const dsMaQuanLy = [...new Set((vatTuRows || []).map((v) => v.ma_quan_ly).filter(Boolean))];
 
   // Ba truy vấn độc lập nhau — chạy song song thay vì cộng dồn 3 lượt chờ mạng.
-  const [nhomRes, usageRes, nhomNamRes] = await Promise.all([
+  const [nhomRes, usageRes, nhomNamRes, thangCuoiRes] = await Promise.all([
     dsMaQuanLy.length
       ? fetchAllRows((f, t) => supabase.from("nhom_ky_thuat")
           .select("ma_quan_ly, ten_quan_ly").in("ma_quan_ly", dsMaQuanLy).range(f, t), { order: "ma_quan_ly" })
@@ -220,6 +221,9 @@ async function taiDuLieuKhoa(goiId, khoa, dotId = null) {
           .select("ma_quan_ly, nam, so_luong")
           .eq("don_vi", khoa).in("ma_quan_ly", dsMaQuanLy).range(f, t), { order: ["ma_quan_ly", "nam"] })
       : Promise.resolve({ data: [] }),
+    // Tháng HIS mới nhất TOÀN VIỆN (giống Function1.jsx, bước ②) — mốc cuối
+    // cửa sổ của dải P50–P75. Lỗi/thiếu view thì để null, lùi về mốc riêng khoa.
+    supabase.from("v_thang_cuoi_his").select("nam, thang").limit(1),
   ]);
 
   const tenNhomTheoMa = new Map((nhomRes.data || []).map((n) => [n.ma_quan_ly, n.ten_quan_ly]));
@@ -233,8 +237,16 @@ async function taiDuLieuKhoa(goiId, khoa, dotId = null) {
   const dsNamCoDuLieu = suyRaNamCoDuLieu(usageRows);
   // Mốc cuối cửa sổ phải là tháng HIS MỚI NHẤT CHUNG, không phải tháng gần
   // nhất của riêng từng mã — bẫy đã đo trên mã 67340, xem chuoiNhuCau().
+  // Đọc từ v_thang_cuoi_his (cùng công thức nam*12 + thang-1 như Function1.jsx).
+  // Chỉ khi view lỗi/trống mới lùi về tháng cuối của riêng khoa. Các cột lịch
+  // sử theo năm (dsNamCoDuLieu) KHÔNG đổi.
   const namCuoi = dsNamCoDuLieu[dsNamCoDuLieu.length - 1];
-  const thangCuoiHIS = namCuoi ? monthId(namCuoi.nam, namCuoi.thangCuoi) : null;
+  const thangCuoiViewHIS = (!thangCuoiRes?.error && thangCuoiRes?.data?.length)
+    ? Number(thangCuoiRes.data[0].nam) * 12 + (Number(thangCuoiRes.data[0].thang) - 1)
+    : null;
+  const thangCuoiHIS = thangCuoiViewHIS != null
+    ? thangCuoiViewHIS
+    : (namCuoi ? monthId(namCuoi.nam, namCuoi.thangCuoi) : null);
   const soThangKy = doDaiKyMacDinh(bo.loai_mua_sam);
 
   const nhomNamTheoMa = new Map();
@@ -694,7 +706,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
     return () => { huy = true; };
   }, [khoaHienTai, khoaDsMa]);
   const groupSegments = useMemo(
-    () => tinhSegmentsGroup(cotTrenManHinh, NHOM_COT_KHOA, doRongNhanNhom),
+    () => tinhSegmentsGroup(cotTrenManHinh, NHOM_COT_KHOA, doRongNhanNhom12),
     [cotTrenManHinh]
   );
 
@@ -1187,6 +1199,34 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
 
   const soMaRot = rows.filter((r) => r.rot).length;
 
+  // Chữ dải đỏ theo TRẠNG THÁI THẬT của từng mã rớt (05/10/2026). Chỉ dùng cột
+  // đã có sẵn trên màn: `rot.da_xu_ly` (view v_ket_qua_thau_theo_khoa: phần rớt
+  // còn lại chưa xử lý <= 0) và `da_do_di` / `do_sang_ma` (view điều chuyển).
+  //   - chưa xử lý xong        -> còn chờ Phòng Điều dưỡng
+  //   - đã xử lý, có đổ sang mã -> "đã đổ sang mã …"
+  //   - đã xử lý, phần không đổ -> đã vào giỏ đợt bổ sung (chuyển tiếp)
+  // Tên đợt bổ sung KHÔNG có trong dữ liệu màn này nên không ghi.
+  const chuDaiRot = (() => {
+    const mucRot = rows.filter((r) => r.rot);
+    const choPdd = mucRot.filter((r) => !r.rot.da_xu_ly);
+    const daXuLy = mucRot.filter((r) => r.rot.da_xu_ly);
+    const daDo = daXuLy.filter((r) => Number(r.da_do_di) > 0);
+    const daVaoGio = daXuLy.filter((r) => !(Number(r.da_do_di) > 0)
+      || Number(r.rot.so_luong_thieu) > Number(r.da_do_di));
+    const maNhan = [...new Set(daDo.map((r) => r.do_sang_ma).filter(Boolean))];
+    const phan = [];
+    if (choPdd.length) {
+      phan.push(`${choPdd.length} mã còn chờ Phòng Điều dưỡng xử lý (đổ sang mã tương đương nếu có, phần còn lại vào giỏ đợt bổ sung)`);
+    }
+    if (daDo.length) {
+      phan.push(`${daDo.length} mã đã đổ sang mã ${maNhan.length ? maNhan.join(", ") : "tương đương"}`);
+    }
+    if (daVaoGio.length) {
+      phan.push(`${daVaoGio.length} mã đã vào giỏ đợt bổ sung của khoa`);
+    }
+    return `${mucRot.length} mã rớt — ${phan.join("; ")}`;
+  })();
+
   // Xuất ĐÚNG các cột đang hiện: ẩn cột trên web thì Excel cũng không có cột
   // đó (chốt 07/08/2026, áp cho cả màn này lẫn Danh mục tổng hợp PĐD). Vì số
   // cột đổi theo lúc xuất nên không đổ vào file mẫu 34 cột cố định được nữa —
@@ -1289,7 +1329,8 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
               Cột theo mẫu bệnh viện · Gói {boThau.nhan} · {rows.length} mã hàng
-              {soMaRot > 0 && <> · <span className="text-red-700 font-medium">{soMaRot} mã đang rớt thầu</span></>}
+              {/* V40 (05/10/2026): bớt đỏ lặp — dải đỏ bên dưới đã nói mã rớt. */}
+              {soMaRot > 0 && <> · <span className="text-slate-700 font-medium">{soMaRot} mã đang rớt thầu</span></>}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -1348,7 +1389,10 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
                                   <label className="flex flex-1 items-center gap-2 cursor-pointer">
                                     <input type="checkbox" checked={!anCotNay}
                                       onChange={() => luuCauHinhCot(c.key, { an: !anCotNay })} />
-                                    <span className={anCotNay ? "text-slate-500 line-through" : "text-slate-700"}>{c.nhan}</span>
+                                    <span className={anCotNay ? "text-slate-500 line-through" : "text-slate-700"}
+                                      title={NHAN_HIEN_KHOA[c.key] ? `Tên gốc: ${c.nhan}` : undefined}>
+                                      {NHAN_HIEN_KHOA[c.key] || c.nhan}
+                                    </span>
                                   </label>
                                   <label className="flex items-center gap-1 cursor-pointer text-slate-500" title="Khóa sửa — không ai sửa được ô trong cột này">
                                     <input type="checkbox" checked={khoaSuaNay}
@@ -1411,10 +1455,14 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
         {loiLuuO && <p className="mt-1.5 text-xs text-red-600">{loiLuuO}</p>}
         <div className="mt-1.5 flex items-center gap-1.5 text-[11px] flex-wrap">
           {daXacNhan && (
-            <span className="qtdx-badge green">
+            // V11 (05/10/2026, G10): email người bấm và giờ-phút-giây vào rê
+            // chuột; trên nhãn chỉ còn ngày.
+            <span className="qtdx-badge green"
+              title={`Xác nhận bởi ${trangThaiChot.chot_boi || "không rõ"} lúc `
+                + `${new Date(trangThaiChot.chot_luc).toLocaleString("vi-VN")}.`}>
               <CheckCircle2 size={11} className="mr-1" />
-              Đã xác nhận lần {trangThaiChot.lan} · {trangThaiChot.chot_boi}
-              {" · "}{new Date(trangThaiChot.chot_luc).toLocaleString("vi-VN")}
+              Đã xác nhận lần {trangThaiChot.lan}
+              {" · "}{new Date(trangThaiChot.chot_luc).toLocaleDateString("vi-VN")}
               {trangThaiChot.khong_phat_sinh ? " · Không phát sinh nhu cầu" : ""}
               {" · ô vẫn sửa được, sửa thì phải xác nhận lại"}
             </span>
@@ -1422,11 +1470,13 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
           {/* Xác nhận bị huỷ: nói rõ VÌ SAO, nếu không khoa mở ra thấy nút
               nhảy từ "lần 1" sang "lần 2" mà không hiểu chuyện gì xảy ra. */}
           {trangThaiChot && !trangThaiChot.hieu_luc && (
-            <span className="qtdx-badge amber">
+            <span className="qtdx-badge amber"
+              title={trangThaiChot.huy_luc
+                ? `Hết hiệu lực lúc ${new Date(trangThaiChot.huy_luc).toLocaleString("vi-VN")}.` : undefined}>
               <AlertTriangle size={11} className="mr-1" />
               Xác nhận lần {trangThaiChot.lan} đã hết hiệu lực
               {trangThaiChot.huy_do ? ` — ${thayTenCot(trangThaiChot.huy_do)}` : ""}
-              {trangThaiChot.huy_luc ? ` (${new Date(trangThaiChot.huy_luc).toLocaleString("vi-VN")})` : ""}
+              {trangThaiChot.huy_luc ? ` (${new Date(trangThaiChot.huy_luc).toLocaleDateString("vi-VN")})` : ""}
               {" "}· kiểm lại rồi bấm “Xác nhận thông tin đề xuất lần {trangThaiChot.lan + 1}”
             </span>
           )}
@@ -1455,8 +1505,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
           </span>
           {soMaRot > 0 && (
             <span className="qtdx-badge red">
-              {soMaRot} mã rớt — Phòng Điều dưỡng sẽ đổ phần rớt sang mã tương đương nếu có;
-              phần còn lại vào giỏ đợt bổ sung của khoa
+              {chuDaiRot}
             </span>
           )}
           {laPdd && <span className="qtdx-badge blue">Đang xem với quyền PĐD</span>}
@@ -1506,7 +1555,11 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
         )}
       </div>
       {/* Table */}
-      <div className="flex-1 overflow-auto bg-white">
+      {/* N3 (05/10/2026, vòng 2): màn này phủ kín cửa sổ (fixed inset-0), không
+          nằm trong .umc-workspace nên không có lề phải 20px — thẻ trợ giúp
+          (ChatbotTroGiup, rộng 20px, dán mép phải) đè chữ ô cuối khi bảng tràn
+          hết bề ngang. Chừa đúng 20px (mr-5) ở khung cuộn của bảng. */}
+      <div className="mr-5 flex-1 overflow-auto bg-white">
         <table className={`qtdx-table border-collapse w-max ${dongGon ? "dong-gon" : ""}`}>
           <colgroup>
             {cotTrenManHinh.map((c) => <col key={c.key} style={{ width: c.width }} />)}
@@ -1539,28 +1592,33 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
               {cotTrenManHinh.map((c) => (
                 <th key={c.key}
                   className={c.freeze ? "freeze" : ""}
+                  // V39 (05/10/2026, G4): nhãn lời thường chỉ ở lớp hiển thị,
+                  // rê chuột thấy tên gốc (`c.nhan` — tên đi vào Excel).
+                  title={NHAN_HIEN_KHOA[c.key] ? `Tên gốc: ${c.nhan}` : undefined}
                   style={c.freeze ? { left: tinhLeftFreeze(cotTrenManHinh, c.key) } : {}}>
                   <span className="inline-flex items-center gap-1">
-                    {c.nhan}
+                    {NHAN_HIEN_KHOA[c.key] || c.nhan}
                     {c.freeze && <span title="Cột này luôn hiện khi cuộn ngang">📌</span>}
                     {/* 18/09/2026: biểu tượng ẩn/khoá trên tiêu đề chỉ cho PĐD.
                         Khoa vẫn chỉnh được qua menu "Hiển thị ▾ → Ẩn/khóa cột";
                         cột đang khoá thì mọi người vẫn thấy dấu khoá. */}
                     {c.chiXem ? null : laPdd ? (
                       <>
+                        {/* V10 (05/10/2026): vùng bấm 24px thay cho icon 10px;
+                            lề âm để tiêu đề không cao thêm. */}
                         <button onClick={() => anCot(c.key)}
-                          className="opacity-50 hover:opacity-100 hover:text-rose-600"
+                          className="-my-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded opacity-50 hover:bg-white/60 hover:opacity-100 hover:text-rose-600"
                           title="Ẩn cột này">
-                          <EyeOff size={10} />
+                          <EyeOff size={12} />
                         </button>
                         <button onClick={() => doiKhoaSua(c.key)}
-                          className={daKhoaSua(c.key)
+                          className={`-my-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded hover:bg-white/60 ${daKhoaSua(c.key)
                             ? "text-amber-600 hover:text-amber-700"
-                            : "opacity-50 hover:opacity-100 hover:text-amber-600"}
+                            : "opacity-50 hover:opacity-100 hover:text-amber-600"}`}
                           title={daKhoaSua(c.key)
                             ? "Cột đang KHÓA — bấm để mở cho sửa lại"
                             : "Khóa cột này, không ai sửa được nội dung"}>
-                          {daKhoaSua(c.key) ? <Lock size={10} /> : <LockOpen size={10} />}
+                          {daKhoaSua(c.key) ? <Lock size={12} /> : <LockOpen size={12} />}
                         </button>
                       </>
                     ) : daKhoaSua(c.key) && (
@@ -1608,7 +1666,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
               <div className="text-xs">
                 <div className="font-semibold text-slate-800">Lịch sử sửa ô</div>
                 <div className="text-slate-400">
-                  {audit.maHang} · {cotDayDu.find((c) => c.key === audit.cot)?.nhan || audit.cot}
+                  {audit.maHang} · {NHAN_HIEN_KHOA[audit.cot] || cotDayDu.find((c) => c.key === audit.cot)?.nhan || audit.cot}
                 </div>
               </div>
               <button onClick={() => setAudit(null)} className="text-slate-400 hover:text-slate-700 text-xs">Đóng</button>
@@ -1729,7 +1787,8 @@ function RowKhoa({
             oChung ? "pdd-sua" : "",
             vuotP75 && (c.key === COT_SO_KHOA || c.key === "dai_p50_p75") ? "vuot-p75" : "",
             isEditing ? "editing" : "",
-            c.kieu === "num" ? "num" : "",
+            // V39: khoảng số căn phải, chữ số đều cột như ô số.
+            c.kieu === "num" || c.key === "dai_p50_p75" ? "num" : "",
             c.freeze ? "freeze" : "",
           ].filter(Boolean).join(" ");
           return (
@@ -1755,13 +1814,22 @@ function RowKhoa({
                 && setODangChon({ maHang: r.ma_hang, colKey: c.key, giaTriMoLuc: value })}
             >
               {c.key === "dai_p50_p75" ? (
+                // V39 (05/10/2026): lời thường như bước ② (không "P50/P75");
+                // mỗi con số không gãy giữa chừng — hẹp thì xuống dòng ở dấu "–".
                 <span title={coDai
-                  ? `Dải thông thường của riêng khoa này: ${fmt(r._daiTu)}–${fmt(r._daiDen)}. `
+                  ? `Khoảng thường dùng của riêng khoa này: ${fmt(r._daiTu)}–${fmt(r._daiDen)}. `
                     + `Số đang đề xuất ${fmt(r[COT_SO_KHOA])}. `
-                    + (vuotP75 ? "VƯỢT P75 — cần theo dõi lý do." : "Nằm trong dải hoặc dưới P50 — không sao.")
-                    + " Dải tính theo kỳ mặc định của gói; ở màn Nhập đề xuất khoa có thể đã đổi mốc từ/đến nên dải bên đó có thể khác."
-                  : "Chưa đủ lịch sử sử dụng để dựng dải cho mã này."}>
-                  {value}
+                    + (vuotP75
+                      ? "Cao hơn cận trên thông thường nên ô tô đỏ — chỉ để lưu ý, không chặn."
+                      : "Nằm trong khoảng hoặc thấp hơn — không sao.")
+                    + " Khoảng tính theo kỳ mặc định của gói; ở màn Nhập đề xuất khoa có thể đã đổi mốc từ/đến nên khoảng bên đó có thể khác."
+                  : "Chưa đủ lịch sử sử dụng để dựng khoảng thường dùng cho mã này."}>
+                  {coDai ? (
+                    <span className="tabular-nums">
+                      <span className="whitespace-nowrap">{fmt(r._daiTu)} –</span>{" "}
+                      <span className="whitespace-nowrap">{fmt(r._daiDen)}</span>
+                    </span>
+                  ) : <span className="text-slate-500">—</span>}
                 </span>
               ) : isEditing ? (
                 c.kieu === "num" ? (
@@ -1785,7 +1853,7 @@ function RowKhoa({
                 <span>
                   {/* L6: chỉ PHẦN CHỮ bị cắt ở chế độ Gọn (.o-chu); nhãn nhỏ
                       đi kèm (đã đổ, rớt, ai sửa cuối, lịch sử) luôn thấy. */}
-                  <span className="o-chu"
+                  <span className={`o-chu${laOChuDai(value, c.width) ? " o-dai" : ""}`}
                     title={typeof value === "string" && value.length > 30 ? value : undefined}>
                     {formatCell(value, c.kieu)}
                   </span>
@@ -1812,7 +1880,9 @@ function RowKhoa({
                         + (r.rot.ly_do_khong_trung ? ` · ${r.rot.ly_do_khong_trung}` : "")}
                       className={`ml-1.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium align-middle ${
                         Number(r.rot.so_luong_trung) > 0
-                          ? "bg-amber-100 text-amber-900" : "bg-red-600 text-white"}`}>
+                          // V40 (05/10/2026): nền đỏ nhạt thay đỏ đặc — hàng đã
+                          // nền hồng, dải đỏ phía trên đã báo; bớt đỏ dày.
+                          ? "bg-amber-100 text-amber-900" : "bg-red-100 text-red-800"}`}>
                       <XCircle size={10} />
                       {Number(r.rot.so_luong_trung) > 0
                         ? `Rớt ${fmt(r.rot.so_luong_thieu)} ở ${NHAN_GIAI_DOAN[r.rot.ma_moc_rot] || r.rot.ma_moc_rot} · trúng ${fmt(r.rot.so_luong_trung)}`
@@ -1841,11 +1911,13 @@ function RowKhoa({
                         + "sửa ở đây thì mọi khoa và bản Tổng hợp đều đổi theo. "
                         + "Bấm biểu tượng lịch sử để xem các lần sửa trước."} />
                   )}
+                  {/* V10 (05/10/2026): vùng bấm 16×24px thay cho 9px; lề âm để
+                      dòng không cao thêm, bề ngang chỉ thêm ~3px. */}
                   <button
                     onClick={(e) => { e.stopPropagation(); xemAudit(r.ma_hang, c.key); }}
-                    className="ml-1 opacity-40 hover:opacity-100"
+                    className="ml-0.5 -my-1 inline-flex h-6 w-4 items-center justify-center align-middle opacity-40 hover:opacity-100"
                     title="Xem lịch sử sửa ô này (cả khoa và PĐD)">
-                    <History size={9} className="inline text-slate-400" />
+                    <History size={10} className="text-slate-500" />
                   </button>
                 </span>
               )}
@@ -2043,8 +2115,9 @@ export function StyleTable() {
       thead th { position: sticky; top: 0; background: #dbeafb; color: #143462; z-index: 20; font-weight: 700; font-size: 12px; line-height: 1.35; padding: 6px 10px; border: 0; box-shadow: inset -1px 0 0 #bfdbf7, inset 0 -1px 0 #a9cdf3; text-align: left; }
       /* Dòng nhóm: umc-200, đậm hơn dòng tên cột một bậc. Khoá đúng 30px, một
          dòng (lỗi N5); nhãn được CHỌN cho vừa ô ở tinhSegmentsGroup (NẶNG-2),
-         nên không còn "…" — tên đủ nằm ở tooltip. */
-      thead tr.group-row th { background: #bfdbf7; color: #143462; text-transform: uppercase; letter-spacing: 0.03em; font-size: 11px; font-weight: 600; top: 0; height: 30px; box-sizing: border-box; padding: 0 6px; line-height: 30px; white-space: nowrap; overflow: hidden; text-overflow: clip; box-shadow: inset -1px 0 0 #92c3f1, inset 0 -1px 0 #92c3f1; }
+         nên không còn "…" — tên đủ nằm ở tooltip. Chữ 12px (rà thị giác
+         05/10/2026, V20: CHUAN 3 >= 12px) — đo bề ngang bằng doRongNhanNhom12. */
+      thead tr.group-row th { background: #bfdbf7; color: #143462; text-transform: uppercase; letter-spacing: 0.03em; font-size: 12px; font-weight: 600; top: 0; height: 30px; box-sizing: border-box; padding: 0 6px; line-height: 30px; white-space: nowrap; overflow: hidden; text-overflow: clip; box-shadow: inset -1px 0 0 #92c3f1, inset 0 -1px 0 #92c3f1; }
       thead tr.col-row th { top: 30px; z-index: 22; }
       /* Cột đang KHÓA SỬA (patch_zi) — nền vàng nhạt để phân biệt với ô chỉ
          đọc do bản chất dữ liệu (readonly, nền xám). */
@@ -2081,6 +2154,16 @@ export function StyleTable() {
       table.qtdx-table.dong-gon td.qtdx-cell:not(.editing) .o-chu {
         display: -webkit-inline-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
         overflow: hidden; max-height: calc(1.45em * 2); max-width: 100%; vertical-align: top;
+      }
+      /* Rà thị giác 05/10/2026 (V01/V04): ở "Đầy đủ" một ô chữ cực dài (Mã SP
+         3.695 ký tự trong cột hẹp) làm dòng cao 7.645px. CHUAN 5: dòng không
+         cao quá 1/3 màn. Giữ QĐ 08/08 + L6 (Đầy đủ KHÔNG cắt chữ): chỉ ô ước
+         tính trên 12 dòng (laOChuDai) mới bị chặn ở 12 dòng và CUỘN TRONG Ô —
+         chữ vẫn đủ, rê chuột thấy nguyên văn, bấm sửa thấy đủ. Bóng mờ ở đáy
+         báo còn chữ phía dưới. Ô thường không đổi gì. Excel không đổi. */
+      table.qtdx-table:not(.dong-gon) td.qtdx-cell:not(.editing) .o-chu.o-dai {
+        display: block; max-height: calc(1.45em * 12); overflow-y: auto;
+        box-shadow: inset 0 -10px 8px -8px rgba(15, 23, 42, 0.18);
       }
     `}</style>
   );
@@ -2143,8 +2226,26 @@ function soDongSua(v, rong, nhieuDong) {
   return nhieuDong ? Math.min(12, Math.max(3, dong)) : Math.min(6, Math.max(1, dong));
 }
 
+/** Ô chữ có dài quá 12 dòng ở độ rộng `rong` không (ước lượng ~7px/ký tự,
+ *  cùng cách soDongSua). Chỉ để gắn lớp `.o-dai` (cuộn trong ô) — xem StyleTable. */
+export function laOChuDai(v, rong) {
+  const chu = chuThuanCuaO(v);
+  if (chu.length < 100) return false;
+  const kyTuMoiDong = Math.max(8, Math.floor(((Number(rong) || 160) - 20) / 7));
+  const dong = chu.split("\n").reduce((t, d) => t + Math.max(1, Math.ceil(d.length / kyTuMoiDong)), 0);
+  return dong > 12;
+}
+
+/** Bề ngang nhãn dòng nhóm ở cỡ chữ 12px (V20). `doRongNhanNhom` đo theo 11px;
+ *  bề ngang chữ tỉ lệ thuận với cỡ chữ nên nhân 12/11. */
+export function doRongNhanNhom12(chu) {
+  return doRongNhanNhom(chu) * 12 / 11;
+}
+
 export function formatCell(v, kieu) {
-  if (v == null || v === "") return <span className="text-slate-300">—</span>;
+  // V09 (05/10/2026): "—" chưa có số dùng slate-500 (đủ tương phản), không
+  // còn slate-300 (1,35:1) — CHUAN 3.
+  if (v == null || v === "") return <span className="text-slate-500">—</span>;
   if (kieu === "num" && typeof v === "number") return fmt(v);
   if (typeof v === "string" && v.includes("\n")) {
     return v.split("\n").map((line, i) => (

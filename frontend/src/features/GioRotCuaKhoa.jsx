@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CalendarClock, Check, Copy, PackageX, RotateCcw } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { dichLoi } from "../lib/dichLoi";
+import NutGiaiThich from "./NutGiaiThich";
 
 // Mục VII của workflow v3 — "Xử lý phần rớt".
 //
@@ -59,6 +60,10 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
   // để vừa ghi "Rớt từ: …" vừa loại đợt gốc khỏi cảnh báo trùng (N4).
   const [dotGoiInfoById, setDotGoiInfoById] = useState({});
   const [dotChuaMa, setDotChuaMa] = useState({});   // ma_quan_ly -> [{dotId, ten}]
+  // V02 (rà thị giác 05/10/2026, G8): tên nhóm vật tư để ghi TRƯỚC mã. Cùng
+  // nguồn màn Đề xuất số lượng dùng (`v_nhom_co_ma_hang`: ma_quan_ly -> ten_quan_ly).
+  // Không đọc được thì mục vẫn hiện, chỉ còn mã (như trước).
+  const [tenNhomByMa, setTenNhomByMa] = useState({});
 
   const tai = useCallback(async () => {
     setDangTai(true);
@@ -83,12 +88,19 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
         setDaGuiByKey({});
         setDotGoiInfoById({});
         setDotChuaMa({});
+        setTenNhomByMa({});
         setDangTai(false);
         return;
       }
 
       const dsMa = [...new Set(muc.map((r) => r.ma_quan_ly))];
       const dsPhien = [...new Set(muc.map((r) => r.phien_q_id))];
+
+      const { data: dsTenNhom } = await supabase
+        .from("v_nhom_co_ma_hang")
+        .select("ma_quan_ly, ten_quan_ly")
+        .in("ma_quan_ly", dsMa);
+      setTenNhomByMa(Object.fromEntries((dsTenNhom || []).map((n) => [n.ma_quan_ly, n.ten_quan_ly])));
 
       // L08b (KIEM_DINH_DOC_LAP.md #3) — ĐỢT THẬT của từng mục, không đoán
       // "đợt sớm nhất đang mở". `xac_nhan_rot_v3` ghi đúng đợt đích vào
@@ -227,7 +239,12 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
     // Q04 — mục "đã gửi ở đợt bổ sung" đếm vào đã xử lý, không phải chưa xử lý.
     choXuLy: rows.filter((r) => !DA_XU_LY.has(r.trang_thai)
       && !daGuiByKey[`${r.phien_q_id}|${r.ma_quan_ly}`]).length,
-    tongThieu: rows.reduce((s, r) => s + Number(r.so_luong_thieu || 0), 0),
+    // QĐ Q-F 05/10/2026: mục khoa đã bấm "Không còn nhu cầu" thì KHÔNG còn
+    // thiếu nữa → trừ khỏi tổng. Mục "đã gửi bổ sung" vẫn tính (số thiếu thật
+    // vẫn đó, chỉ là đã có đường xử lý).
+    tongThieu: rows
+      .filter((r) => r.trang_thai !== "khong_con_nhu_cau")
+      .reduce((s, r) => s + Number(r.so_luong_thieu || 0), 0),
   }), [rows, daGuiByKey]);
 
   const doiTrangThai = async (r, trangThai) => {
@@ -257,13 +274,21 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
             vào giỏ SAU khi PĐD bấm "Xác nhận rớt"; phần đã đổ sang mã tương
             đương thì không vào giỏ; số điền sẵn cộng thêm vào số khoa đã có,
             không ghi đè. */}
-        <p className="text-sm text-slate-500 mt-0.5">
-          Phần số lượng đã mang đi thầu nhưng <b>chưa được đáp ứng</b>. Sau khi Phòng Điều
-          dưỡng bấm <b>"Xác nhận rớt"</b>, phần <b>chưa đổ sang mã tương đương</b> mới được
-          đưa vào <b>giỏ</b> của khoa ở đợt bổ sung — số lượng điền sẵn chỉ là <b>gợi ý</b>{" "}
-          (khoa đã có số ở đợt đó thì cộng thêm, không ghi đè); khoa tự sửa lại cho đúng nhu
-          cầu rồi bấm <b>"Gửi đề xuất"</b> ở Gói bổ sung, chưa gửi thì chưa thành đề xuất
-          chính thức.
+        {/* V12 (rà thị giác 05/10/2026, G2): câu mở đầu còn MỘT dòng; phần giải
+            thích dài (đúng chữ cũ) vào nút ?. */}
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-slate-600">
+          <span>Phần số lượng đã mang đi thầu nhưng <b>chưa được đáp ứng</b>.</span>
+          <NutGiaiThich nhan="Phần rớt đi về đâu" rong={420}>
+            <p>
+              Sau khi Phòng Điều dưỡng bấm <b>"Xác nhận rớt"</b>, phần <b>chưa đổ sang mã
+              tương đương</b> mới được đưa vào <b>giỏ</b> của khoa ở đợt bổ sung — số lượng
+              điền sẵn chỉ là <b>gợi ý</b> (khoa đã có số ở đợt đó thì cộng thêm, không ghi đè).
+            </p>
+            <p className="mt-2">
+              Khoa tự sửa lại cho đúng nhu cầu rồi bấm <b>"Gửi đề xuất"</b> ở Gói bổ sung,
+              chưa gửi thì chưa thành đề xuất chính thức.
+            </p>
+          </NutGiaiThich>
         </p>
       </div>
 
@@ -284,7 +309,7 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
             ].map((t) => (
               <div key={t.nhan} className={`border rounded-lg px-3 py-2 ${t.mau}`}>
                 <p className="text-lg font-semibold leading-none">{t.so.toLocaleString("vi-VN")}</p>
-                <p className="text-[11px] mt-1">{t.nhan}</p>
+                <p className="text-xs mt-1">{t.nhan}</p>
               </div>
             ))}
             <button type="button" onClick={tai}
@@ -316,7 +341,15 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
                 <div key={key} className="bg-white border border-slate-200 rounded-lg px-3 py-2.5">
                   <div className="flex items-start gap-3 flex-wrap">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-800 font-mono">{r.ma_quan_ly}</p>
+                      {/* V02 / G8: TÊN trước (≥ 15px, đậm), mã sau (≤ 13px, xám). */}
+                      {tenNhomByMa[r.ma_quan_ly] ? (
+                        <>
+                          <p className="text-[15px] font-semibold leading-snug text-slate-900">{tenNhomByMa[r.ma_quan_ly]}</p>
+                          <p className="mt-0.5 font-mono text-[13px] text-slate-500" title="Mã quản lý">{r.ma_quan_ly}</p>
+                        </>
+                      ) : (
+                        <p className="font-mono text-[15px] font-semibold text-slate-900">{r.ma_quan_ly}</p>
+                      )}
                       <p className="text-xs text-slate-500 mt-0.5">
                         Mang đi thầu <b>{Number(r.so_luong_q).toLocaleString("vi-VN")}</b>
                         {" · "}trúng <b>{Number(r.so_luong_trung).toLocaleString("vi-VN")}</b>
@@ -326,19 +359,19 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
                         {r.rot_toan_bo && " · rớt toàn bộ"}
                       </p>
                       {dotGoc?.nhan && (
-                        <p className="text-[11px] text-slate-500 mt-0.5">
+                        <p className="text-xs text-slate-500 mt-0.5">
                           Rớt từ: <b>{dotGoc.nhan}</b>
                         </p>
                       )}
                     </div>
-                    <span className={`text-[11px] px-2 py-0.5 rounded border ${tt.mau}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded border ${tt.mau}`}>
                       {tt.nhan}
                       {ngay !== null && !daXong && ngay > 0 ? ` · ${ngay} ngày` : ""}
                     </span>
                   </div>
 
                   {r.rot_toan_bo && (
-                    <p className="mt-1.5 flex items-start gap-1.5 text-[11px] text-red-700">
+                    <p className="mt-1.5 flex items-start gap-1.5 text-xs text-red-700">
                       <AlertTriangle size={12} className="shrink-0 mt-px" />
                       Toàn bộ mã quản lý rớt — nếu còn nhu cầu thì phải đề xuất lại ở đợt bổ sung.
                     </p>
@@ -352,11 +385,11 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
                   {!daXong && (
                     <div className="mt-1.5 rounded border border-slate-200 bg-slate-50 px-2 py-1.5">
                       {thongTinDot ? (
-                        <p className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-700">
+                        <p className="flex flex-wrap items-center gap-1.5 text-xs text-slate-700">
                           <CalendarClock size={12} className="shrink-0 text-umc-700" />
                           Đã chuyển tiếp vào đợt bổ sung: <b>{thongTinDot.nhan}</b>
                           <button type="button" onClick={() => moDotBoSung?.(thongTinDot.dotId)}
-                            className="rounded-md bg-umc-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-umc-700">
+                            className="inline-flex min-h-8 items-center rounded-md border border-umc-300 bg-white px-3 py-1.5 text-xs font-medium text-umc-800 hover:bg-umc-50">
                             Sang đợt này để đề xuất lại
                           </button>
                         </p>
@@ -365,7 +398,7 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
                         // trên chính thẻ <p>: ở 1280×800, mỗi đoạn xen giữa
                         // các <b> từng thành một ô flex riêng và câu vỡ cột.
                         // Gói toàn bộ chữ vào một <span>, chỉ icon đứng ngoài.
-                        <p className="text-[11px] text-amber-800">
+                        <p className="text-xs text-amber-800">
                           <CalendarClock size={12} className="inline-block mr-1.5 -mt-px align-text-top shrink-0" />
                           <span>
                             <b>Chưa vào đợt bổ sung nào</b> — có thể do Phòng Điều dưỡng
@@ -375,7 +408,7 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
                         </p>
                       )}
                       {canhBaoTrungDot.length > 0 && (
-                        <p className="mt-1 text-[11px] text-sky-800">
+                        <p className="mt-1 text-xs text-sky-800">
                           Mã này khoa đã có ở đợt bổ sung: <b>{canhBaoTrungDot.join(" · ")}</b>
                           {" "}— xem lại để khỏi đề xuất trùng (cảnh báo, không chặn).
                         </p>
@@ -400,11 +433,11 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
                     // N6a (KIEM_DINH_DOC_LAP_LUOT2.md) — không lặp lại "Đã gửi
                     // ở đợt …" lần hai; nhãn xanh ở góc phải phía trên đã ghi
                     // rõ tên đợt rồi.
-                    <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-emerald-700">
+                    <p className="mt-1.5 flex items-center gap-1.5 text-xs text-emerald-700">
                       <Check size={12} /> Đã xử lý
                     </p>
                   ) : (
-                    <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-emerald-700">
+                    <p className="mt-1.5 flex items-center gap-1.5 text-xs text-emerald-700">
                       <Check size={12} /> Đã xử lý
                       {r.ghi_chu ? ` — ${r.ghi_chu}` : ""}
                     </p>
@@ -415,7 +448,7 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
                       bỏ; mục đóng lại khi khoa bấm nút đó (Q04), không phải
                       khi thêm mã vào giỏ nháp. */}
                   {r.trang_thai === "da_vao_gio_nhap" && !daGui && (
-                    <p className="mt-1.5 text-[11px] text-sky-800">
+                    <p className="mt-1.5 text-xs text-sky-800">
                       Mới là giỏ nháp — <b>chưa tính là đã xử lý</b>. Bấm <b>"Gửi đề xuất"</b> ở
                       Gói bổ sung thì mục này mới đóng lại.
                     </p>

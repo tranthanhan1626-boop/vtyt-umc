@@ -61,6 +61,12 @@ export function nhanDot(d) {
   return d.thang_moc ? `T${d.thang_moc}/${d.nam}` : (d.ten || `Đợt ${d.id}`);
 }
 
+// V06 (rà thị giác 05/10/2026): nhãn đợt trong chip menu hẹp, xuống dòng thì
+// KHÔNG được gãy giữa một khoảng số ("2027-" / "2028") — giữ liền cả khoảng.
+const giuLienKhoangSo = (chu) => String(chu)
+  .split(/(\d[\d/]*\s*[-–]\s*\d[\d/]*)/)
+  .map((p, i) => (i % 2 ? <span key={i} className="whitespace-nowrap">{p}</span> : p));
+
 export const MUC_CHUNG = [
   { ma: "thieuhang", ten: "Sổ thiếu hàng", mo_ta: "Báo thiếu, theo dõi xử lý và xác nhận cuối tháng", icon: Archive },
   { ma: "makythuat", ten: "Mã kỹ thuật khoa tự thêm", mo_ta: "Khai mã tương đương hoặc mã mới hoàn toàn", icon: FileSearch },
@@ -184,16 +190,24 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
   }, [khoaChon, menuMo]);
 
   // Badge đỏ ở mục gói bổ sung (QĐ D5, 23/08/2026): khoa phải THẤY NGAY là có
-  // mã vừa rớt và vừa được chuyển tiếp về đợt bổ sung của mình. Đọc chính hộp
-  // thư — xem xong xoá noti thì badge tắt theo, không cần cờ riêng.
+  // mã rớt đang nằm trong giỏ của mình. Từ 05/10/2026 đọc từ giỏ rớt thật
+  // (v_gio_rot_v3, cùng nguồn màn ③), không còn đếm dòng hộp thư.
   const [soMaRotMoi, setSoMaRotMoi] = useState(0);
   useEffect(() => {
     if (laPdd) { setSoMaRotMoi(0); return; }
     let huy = false;
     const dem = async () => {
-      const { count } = await supabase.from("thong_bao")
-        .select("id", { count: "exact", head: true })
-        .eq("pham_vi", "khoa").eq("loai", "ma_rot_ve_khoa");
+      // 05/10/2026: đếm đúng số MỤC (mã quản lý) rớt đang trong giỏ của khoa —
+      // CÙNG NGUỒN với màn ③ "Mã rớt" (GioRotCuaKhoa: v_gio_rot_v3, chỉ mục
+      // còn thiếu > 0; RLS tự giới hạn đúng khoa). Trước đây đếm số dòng
+      // `thong_bao`, mà một thông báo gộp nhiều mã nên "1 mã rớt" lệch "2 mục".
+      // Nhãn đỏ là lời NHẮC VIỆC: chỉ đếm mục còn chờ khoa xử lý — bỏ mục đã
+      // "Không còn nhu cầu" / đã gửi bổ sung (DA_XU_LY của màn ③), để khoa xử
+      // lý xong thì nhãn tắt.
+      const { count } = await supabase.from("v_gio_rot_v3")
+        .select("phien_q_id", { count: "exact", head: true })
+        .gt("so_luong_thieu", 0)
+        .or("trang_thai.is.null,trang_thai.not.in.(da_submit_bo_sung,khong_con_nhu_cau)");
       if (!huy) setSoMaRotMoi(count || 0);
     };
     dem();
@@ -276,15 +290,15 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
             <span className="block text-sm font-semibold leading-tight">
               {g.ten}
               {g.ma === "mua_sam_bo_sung" && soMaRotMoi > 0 && (
-                <span title="Có mã rớt vừa được đưa vào đợt bổ sung của khoa"
-                  className="ml-1.5 inline-flex items-center whitespace-nowrap rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-bold text-white">
+                <span title="Số mã rớt đang trong giỏ rớt của khoa (màn ③ Mã rớt)"
+                  className="ml-1.5 inline-flex items-center whitespace-nowrap rounded-full bg-red-600 px-1.5 py-0.5 text-xs font-bold text-white">
                   {soMaRotMoi} mã rớt
                 </span>
               )}
             </span>
             {tenDangO
-              ? <span className="mt-1 block text-[11px] font-semibold leading-tight">Đang ở: {tenDangO}</span>
-              : <span className="mt-1 block text-[11px] leading-tight opacity-70">{g.mo_ta}</span>}
+              ? <span className="mt-1 block text-xs font-semibold leading-tight">Đang ở: {tenDangO}</span>
+              : <span className="mt-1 block text-xs leading-tight opacity-80">{g.mo_ta}</span>}
           </span>
           {/* ▸ khi thu, ▾ khi mở. */}
           <ChevronDown size={14} aria-hidden className={`mt-0.5 shrink-0 transition-transform ${nhanhMo ? "" : "-rotate-90"}`} />
@@ -292,12 +306,12 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
 
         <div className="pl-11">
           <span
-            className={`umc-round-status ${dotMo ? "is-open" : ""} ${loiDot && !dotMo ? "is-error" : ""}`}
+            className={`umc-round-status text-xs ${dotMo ? "is-open" : ""} ${loiDot && !dotMo ? "is-error" : ""}`}
             title={loiDot || undefined}
           >
             {dangTaiDot ? "Đang kiểm tra đợt…"
               : loiDot && !dotMo ? "Không đọc được trạng thái"
-              : dotMo ? (soDot > 1 ? `${soDot} đợt đang mở` : `Đang mở: ${nhanDot(dotMo)}`)
+              : dotMo ? (soDot > 1 ? `${soDot} đợt đang mở` : <span>Đang mở: {giuLienKhoangSo(nhanDot(dotMo))}</span>)
               : "Chưa mở đợt"}
           </span>
         </div>
@@ -313,7 +327,7 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
               {/* Gói có gói con: mỗi gói con → Đề xuất số lượng */}
               {coGoiCon && (
                 <>
-                  <div className="px-3 py-1 text-[11px] uppercase tracking-wider text-slate-500">Gói con</div>
+                  <div className="px-3 py-1 text-xs uppercase tracking-wider text-slate-500">Gói con</div>
                   {dsGoiCon.map((gc) => (
                     <button
                       type="button"
@@ -376,7 +390,7 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-semibold leading-tight">Gói tùy chọn mua thêm</span>
-        <span className="mt-1 block text-[11px] leading-tight opacity-70">Kích hoạt tối đa 30% từ gói gốc</span>
+        <span className="mt-1 block text-xs leading-tight opacity-80">Kích hoạt tối đa 30% từ gói gốc</span>
       </span>
       <ChevronDown size={14} className={`mt-0.5 shrink-0 -rotate-90 ${chon.nhom === "tuy_chon_mua_them" ? "text-white" : ""}`} />
     </button>
@@ -440,7 +454,7 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-semibold leading-tight">Bàn điều hành</span>
-          <span className="mt-1 block text-[11px] leading-tight opacity-70">
+          <span className="mt-1 block text-xs leading-tight opacity-80">
             Theo dõi khoa theo từng gói — chỉ để xem
           </span>
         </span>
@@ -511,7 +525,7 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
   const goiChoDanhMuc = chon.nhom === "goi" && chon.goi && chon.goi !== "chi_dinh_thau"
     ? chon.goi : "dau_thau_rong_rai";
   const soThuTu = (so) => (
-    <span aria-hidden className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-umc-600 text-[11px] font-bold text-white">
+    <span aria-hidden className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-umc-600 text-xs font-bold text-white">
       {so}
     </span>
   );
@@ -580,8 +594,8 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
       <div className="umc-sidebar-note">
         <img src="/brand/umc-mark.png" alt="" className="h-9 w-9 object-contain opacity-90" />
         <div>
-          <p className="text-[11px] font-semibold text-[var(--umc-navy)]">Phòng Điều dưỡng</p>
-          <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">Sổ làm việc VTYT dùng chung toàn viện</p>
+          <p className="text-xs font-semibold text-[var(--umc-navy)]">Phòng Điều dưỡng</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-slate-500">Sổ làm việc VTYT dùng chung toàn viện</p>
         </div>
       </div>
     </>

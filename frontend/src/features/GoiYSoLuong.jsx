@@ -114,7 +114,7 @@ export default function GoiYSoLuong({ lichSu, thieu, H, abc, giaTri, onChon, tha
           <AlertTriangle size={14} className="shrink-0" />
           <span className="min-w-0 truncate">
             {soLuuY > 0
-              ? `Gợi ý chỉ để tham khảo — có ${soLuuY} lưu ý về dữ liệu lịch sử`
+              ? `Có ${soLuuY} lưu ý về dữ liệu lịch sử — gợi ý chỉ để tham khảo`
               : "Số đang nhập cao hơn cận trên thông thường — cần lý do và ghi chú ở bước 3"}
           </span>
           {soLuuY > 0 && (

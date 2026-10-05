@@ -845,16 +845,35 @@ export function BangSoTrungTheoKhoa({ dotGoiId, maHang, phaiChia, onLuuXong, cha
                       {r.da_nhan > 0 ? <span className="text-umc-700">+{fmt(r.da_nhan)}</span> : <span className="text-slate-400">—</span>}
                     </td>
                     <td className="px-2 py-1 text-right">
-                      <input type="number" min="0" step="1" value={go[r.khoa] ?? ""}
+                      {/* V18 (05/10/2026): ô số có dấu chấm nghìn như mọi chỗ khác
+                          (5.681), không còn mũi tên tăng/giảm; ô cao 36px, chữ 16px.
+                          Giá trị giữ trong `go` là chuỗi chỉ gồm chữ số — luật lưu
+                          không đổi. */}
+                      <input type="text" inputMode="numeric" autoComplete="off"
+                        value={go[r.khoa] ? fmt(Number(go[r.khoa])) : ""}
                         ref={(el) => { oRef.current[i] = el; }}
                         autoFocus={i === 0}
                         // Con trỏ nằm sẵn ở ô đầu (G13) thì lăn chuột cuộn bảng
-                        // sẽ lăn luôn SỐ trong ô number — bỏ focus trước khi lăn.
+                        // sẽ lăn luôn SỐ trong ô nhập — bỏ focus trước khi lăn.
                         onWheel={(e) => e.currentTarget.blur()}
                         onFocus={(e) => e.target.select()}
                         onKeyDown={(e) => phimTat(e, i, r.khoa)}
-                        onChange={(e) => setGo((p) => ({ ...p, [r.khoa]: e.target.value }))}
-                        className="w-28 rounded border border-slate-300 px-2 py-1 text-right text-base tabular-nums" />
+                        onChange={(e) => {
+                          const o = e.target;
+                          // Đếm số chữ số đứng trước con trỏ để đặt lại con trỏ sau
+                          // khi thêm/bớt dấu chấm nghìn.
+                          const truoc = o.value.slice(0, o.selectionStart ?? o.value.length).replace(/\D/g, "").length;
+                          const so = o.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+                          setGo((p) => ({ ...p, [r.khoa]: so }));
+                          requestAnimationFrame(() => {
+                            if (document.activeElement !== o) return;
+                            const chuoi = so ? fmt(Number(so)) : "";
+                            let dem = 0, vt = 0;
+                            while (vt < chuoi.length && dem < truoc) { if (/\d/.test(chuoi[vt])) dem += 1; vt += 1; }
+                            o.setSelectionRange(vt, vt);
+                          });
+                        }}
+                        className="h-9 w-32 rounded border border-slate-300 px-2 text-right text-base tabular-nums" />
                     </td>
                   </tr>
                 );

@@ -154,7 +154,7 @@ export default function DieuChinhTieuChi({ profile }) {
           )}
           {!dangSua && !cho && (
             <button onClick={() => moSua(cap, cu, ma_quan_ly)}
-              className="ml-auto rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50">
+              className="ml-auto inline-flex min-h-8 items-center rounded-md border border-slate-300 px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-50">
               Đề nghị sửa
             </button>
           )}
@@ -162,7 +162,7 @@ export default function DieuChinhTieuChi({ profile }) {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <p className="mb-1 text-xs font-medium uppercase text-slate-400">Hiện tại</p>
+            <p className="mb-1 text-xs font-medium uppercase text-slate-500">Hiện tại</p>
             <dl className="space-y-1.5">
               {truong.map((t) => (
                 <div key={t.k}>
@@ -196,9 +196,9 @@ export default function DieuChinhTieuChi({ profile }) {
                   className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm" />
                 <div className="flex gap-2 pt-1">
                   <button onClick={() => guiDeNghi(cu)}
-                    className="rounded-md bg-umc-700 px-3 py-1 text-xs font-medium text-white">Gửi PĐD duyệt</button>
+                    className="inline-flex min-h-8 items-center rounded-md bg-umc-700 px-3 py-1 text-xs font-medium text-white">Gửi PĐD duyệt</button>
                   <button onClick={() => setSua(null)}
-                    className="rounded-md border border-slate-300 px-3 py-1 text-xs text-slate-600">Huỷ</button>
+                    className="inline-flex min-h-8 items-center rounded-md border border-slate-300 px-3 py-1 text-xs text-slate-600">Huỷ</button>
                 </div>
               </div>
             ) : cho ? (
@@ -223,18 +223,18 @@ export default function DieuChinhTieuChi({ profile }) {
                       <input value={lyDo} onChange={(e) => setLyDo(e.target.value)}
                         placeholder="Lý do từ chối" className="flex-1 rounded border border-red-300 px-2 py-1 text-xs" />
                       <button onClick={() => tuChoiDeNghi(cho, lyDo.trim())} disabled={!lyDo.trim()}
-                        className="rounded bg-red-600 px-2 py-1 text-xs text-white disabled:opacity-40">Lưu</button>
+                        className="inline-flex min-h-8 items-center rounded border border-red-300 bg-white px-2.5 py-1 text-xs font-medium text-red-700 disabled:opacity-40">Lưu</button>
                       <button onClick={() => setTuChoi(null)}
-                        className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-600">Huỷ</button>
+                        className="inline-flex min-h-8 items-center rounded border border-slate-300 px-2.5 py-1 text-xs text-slate-600">Huỷ</button>
                     </div>
                   ) : (
                     <div className="mt-2 flex gap-2">
                       <button onClick={() => duyet(cho)}
-                        className="flex items-center gap-1 rounded-md bg-umc-700 px-3 py-1 text-xs font-medium text-white">
+                        className="flex min-h-8 items-center gap-1 rounded-md bg-umc-700 px-3 py-1 text-xs font-medium text-white">
                         <Check size={11} /> Duyệt, ghi vào danh mục
                       </button>
                       <button onClick={() => { setTuChoi(cho.id); setLyDo(""); }}
-                        className="flex items-center gap-1 rounded-md border border-red-300 px-2 py-1 text-xs text-red-700">
+                        className="flex min-h-8 items-center gap-1 rounded-md border border-red-300 px-2.5 py-1 text-xs text-red-700">
                         <X size={11} /> Từ chối
                       </button>
                     </div>
@@ -242,7 +242,7 @@ export default function DieuChinhTieuChi({ profile }) {
                 )}
               </>
             ) : (
-              <p className="text-sm text-slate-400">Bấm “Đề nghị sửa” để soạn bản mới.</p>
+              <p className="text-sm text-slate-500">Bấm “Đề nghị sửa” để soạn bản mới.</p>
             )}
           </div>
         </div>
@@ -264,7 +264,7 @@ export default function DieuChinhTieuChi({ profile }) {
       </div>
 
       <div className="relative">
-        <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+        <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
         <input value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)}
           placeholder="Tìm mã quản lý hoặc tên nhóm"
           className="w-full rounded-md border border-slate-300 py-2 pl-8 pr-2 text-sm" />
@@ -280,12 +280,12 @@ export default function DieuChinhTieuChi({ profile }) {
           <div key={n.ma_quan_ly} className="overflow-hidden rounded-lg border border-slate-200 bg-white">
             <button onClick={() => moNhom(n.ma_quan_ly)} aria-expanded={mo}
               className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-slate-50">
-              {mo ? <ChevronDown size={14} className="shrink-0 text-slate-400" />
-                  : <ChevronRight size={14} className="shrink-0 text-slate-400" />}
+              {mo ? <ChevronDown size={14} className="shrink-0 text-slate-500" />
+                  : <ChevronRight size={14} className="shrink-0 text-slate-500" />}
               <span className="font-mono text-xs text-slate-500">{n.ma_quan_ly}</span>
               <span className="min-w-0 flex-1 truncate text-sm text-slate-800">{n.ten_quan_ly}</span>
               {cho && <Clock size={13} className="shrink-0 text-amber-600" />}
-              <span className="shrink-0 text-xs text-slate-400">{n.so_ma_hang} mã hàng</span>
+              <span className="shrink-0 text-xs text-slate-500">{n.so_ma_hang} mã hàng</span>
             </button>
 
             {mo && (

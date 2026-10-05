@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, Check, X } from "lucide-react";
 import { supabase } from "../supabaseClient";
+import { dinhDangSoThongBao } from "../lib/dinhDangThongBao";
 
 /*
  * HopThuThongBao — hộp thư hai chiều PĐD ↔ khoa (QĐ D5, 23/08/2026).
@@ -16,6 +17,12 @@ import { supabase } from "../supabaseClient";
  *      không nằm ở đây.
  */
 
+// V11/V31 (05/10/2026, G10): giờ hiện "10:24 5/10/2026" (không giây); giờ-phút-giây
+// đầy đủ nằm ở rê chuột.
+const gioNgan = (x) => new Date(x).toLocaleString("vi-VN", {
+  hour: "2-digit", minute: "2-digit", day: "numeric", month: "numeric", year: "numeric",
+});
+
 export default function HopThuThongBao({ profile }) {
   const [rows, setRows] = useState([]);
   const [mo, setMo] = useState(false);
@@ -27,7 +34,7 @@ export default function HopThuThongBao({ profile }) {
   const tai = useCallback(async () => {
     if (!profile) return;
     let q = supabase.from("thong_bao")
-      .select("id, loai, tieu_de, noi_dung, so_lan, mau, created_at, updated_at")
+      .select("id, loai, tieu_de, noi_dung, du_lieu, so_lan, mau, created_at, updated_at")
       .order("updated_at", { ascending: false }).limit(100);
     q = laPdd ? q.eq("pham_vi", "pdd") : q.eq("pham_vi", "khoa").eq("khoa", profile.khoa);
     const { data } = await q;
@@ -101,32 +108,33 @@ export default function HopThuThongBao({ profile }) {
               <p className="px-3 py-6 text-center text-sm text-slate-500">Không có thông báo nào.</p>
             ) : rows.map((r) => (
               <div key={r.id}
-                className={`border-b border-slate-50 px-3 py-2 ${r.mau === "do" ? "bg-red-50/60" : ""}`}>
+                className={`border-b border-slate-100 border-l-[3px] px-3 py-2.5 ${r.mau === "do" ? "border-l-red-500" : "border-l-transparent"}`}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className={`text-[13px] font-semibold ${r.mau === "do" ? "text-red-800" : "text-slate-800"}`}>
+                    <p className="text-[13px] font-semibold text-slate-800">
                       {r.tieu_de}
                       {r.so_lan > 1 && (
-                        <span className="ml-1.5 rounded bg-slate-200 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">
+                        <span className="ml-1.5 rounded bg-slate-200 px-1.5 py-0.5 text-xs font-medium text-slate-600">
                           ×{r.so_lan}
                         </span>
                       )}
                     </p>
-                    {r.noi_dung && <p className="mt-0.5 text-xs leading-relaxed text-slate-600">{r.noi_dung}</p>}
-                    <p className="mt-0.5 text-[11px] text-slate-500">
-                      {new Date(r.updated_at || r.created_at).toLocaleString("vi-VN")}
+                    {r.noi_dung && <p className="mt-0.5 text-xs leading-relaxed text-slate-600">{dinhDangSoThongBao(r.noi_dung, r.du_lieu)}</p>}
+                    <p className="mt-0.5 text-xs text-slate-500"
+                      title={new Date(r.updated_at || r.created_at).toLocaleString("vi-VN")}>
+                      {gioNgan(r.updated_at || r.created_at)}
                     </p>
                   </div>
                   <button type="button" onClick={() => daXem([r.id])}
                     title="Đã xem — xoá dòng này"
-                    className="-mr-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"><Check size={14} /></button>
+                    className="-mr-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700"><Check size={16} /></button>
                 </div>
               </div>
             ))}
           </div>
 
           {rows.length > 0 && (
-            <div className="border-t border-slate-100 bg-slate-50 px-3 py-1.5 text-[11px] text-slate-500">
+            <div className="border-t border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-500">
               Xác nhận đã xem là xoá hẳn. Dấu vết đầy đủ vẫn nằm ở lịch sử sửa của từng ô.
             </div>
           )}

@@ -74,7 +74,12 @@ def test_n5_khong_flex_tren_p_chua_vao_dot_bo_sung():
 
 def test_n6a_them_khoang_trang_goi_y_khoa():
     text = GIO_ROT.read_text(encoding="utf-8")
-    assert '<b>gợi ý</b>{" "}' in text
+    # 05/10/2026 (V12, rà thị giác): câu giải thích dài của màn Mã rớt chuyển vào
+    # nút "?" (G2), nên dấu cách sau </b> nay là dấu cách thật trong cùng dòng,
+    # không còn là {" "} cuối dòng. Ý của test giữ nguyên: có khoảng trắng giữa
+    # "gợi ý" và "(khoa đã có số", không dính liền.
+    assert "<b>gợi ý</b> (khoa đã có số" in text
+    assert "gợi ý</b>(khoa" not in text
 
 
 def test_n6a_khong_lap_dong_da_gui_o_dot_hai_lan():
@@ -217,8 +222,13 @@ def test_n1_khong_go_khoa_da_chot_tu_truoc_luot_bam():
 
 def test_n6b_them_khoang_trang_dau_thau_chao_gia():
     text = KET_QUA_THAU_N6B.read_text(encoding="utf-8")
-    assert "đấu thầu</b>{\" \"}" in text
+    # 05/10/2026 (V12, rà thị giác): câu giải thích dài của màn chuyển vào nút "?"
+    # (G2), nên dấu cách sau thẻ </b> nay là dấu cách thật trong dòng, không còn
+    # là {" "} cuối dòng. Ý của test vẫn giữ: có khoảng trắng giữa "đấu thầu" và
+    # "(Chào giá", không dính liền.
+    assert "đấu thầu</b> (Chào giá" in text
     assert "đấu thầu(chào giá" not in text
+    assert "đấu thầu(Chào giá" not in text
 
 
 """

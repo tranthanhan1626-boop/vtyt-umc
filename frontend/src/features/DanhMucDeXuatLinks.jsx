@@ -84,9 +84,11 @@ export default function DanhMucDeXuatLinks({ profile, goi }) {
         <span className="rounded-lg bg-umc-50 p-2 text-umc-700"><Sheet size={18} /></span>
         <div className="min-w-0 flex-1">
           <h2 className="text-base font-semibold text-slate-900">Danh mục đề xuất của khoa</h2>
-          <p className="mt-0.5 text-sm text-slate-500">
-            Mỗi dòng là một kỳ/đợt độc lập. Số đỏ là mã rớt chưa xử lý của đúng kỳ đó.
-            Danh mục đã xác nhận của kỳ nào chính là bộ hồ sơ của kỳ đó.
+          {/* V38 (rà thị giác 05/10/2026, G2): chữ giải thích một dòng; câu
+              thứ hai vào rê chuột. */}
+          <p className="mt-0.5 text-sm text-slate-500"
+            title="Danh mục đã xác nhận của kỳ nào chính là bộ hồ sơ của kỳ đó.">
+            Mỗi dòng là một kỳ/đợt. Số đỏ là mã rớt chưa xử lý của kỳ đó.
           </p>
         </div>
       </div>
@@ -103,9 +105,15 @@ export default function DanhMucDeXuatLinks({ profile, goi }) {
               className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 hover:border-umc-300 hover:bg-umc-50/30">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">{index + 1}</span>
               <div className="min-w-48 flex-1">
-                <div className="text-sm font-semibold text-slate-800">{x.dot.ten}</div>
+                {/* V38 (G16/G8): ba dòng cùng tên đợt "Gói 18 tháng 2027-2028" chỉ
+                    khác nhau ở dòng phụ viết tắt "18T / GMHS" — đưa tên gói con
+                    lên dòng tên; dòng phụ không lặp chữ viết tắt "18T". */}
+                <div className="text-sm font-semibold text-slate-800">
+                  {x.dot.ten}
+                  {GOI_ID_MAP[x.goiId]?.goi && <> — {GOI_ID_MAP[x.goiId].goi}</>}
+                </div>
                 <div className="mt-0.5 text-xs text-slate-500">
-                  {GOI_ID_MAP[x.goiId]?.nhan || x.goiId} · năm {x.dot.nam}
+                  {GOI_ID_MAP[x.goiId]?.goi ? "" : `${GOI_ID_MAP[x.goiId]?.nhan || x.goiId} · `}năm {x.dot.nam}
                   {x.dot.thang_moc ? ` · đợt T${x.dot.thang_moc}` : ""}
                 </div>
                 {x.files.length > 0 && (

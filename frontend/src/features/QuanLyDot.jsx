@@ -123,8 +123,8 @@ export default function QuanLyDot() {
                   {mo ? "Đang mở" : "Đã đóng"}
                 </span>
                 <button onClick={() => doiTrangThai(d)}
-                  className={`flex items-center gap-1 px-2.5 py-1 text-xs rounded-md border ${
-                    mo ? "border-red-300 text-red-700 hover:bg-red-50"
+                  className={`flex min-h-9 items-center gap-1 px-3 text-xs rounded-md border ${
+                    mo ? "mr-4 border-red-600 font-medium text-red-600 hover:bg-red-50"
                        : "border-umc-300 text-umc-800 hover:bg-umc-50"}`}>
                   {mo ? <><Lock size={12} /> Đóng đợt</> : <><Unlock size={12} /> Mở đợt</>}
                 </button>

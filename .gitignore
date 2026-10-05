@@ -47,3 +47,7 @@ frontend/.nghiemthu-*/
 Cải tiến */
 .scratch/test-toan-bo/bao-cao/*/anh/
 .claude/launch.json
+.scratch/*/anh/
+.scratch/*/anh-kiem/
+.scratch/*/anh-kiem2/
+.scratch/*/*.xlsx

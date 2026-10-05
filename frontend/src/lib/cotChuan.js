@@ -132,6 +132,15 @@ export const NHAN_HIEN_PDD = {
   dai_p50_p75: "Khoảng thường dùng",
 };
 
+// Cùng lớp HIỂN THỊ cho bảng Danh mục đề xuất của KHOA (rà thị giác 05/10/2026,
+// V39): tiêu đề "Dải thường P50–P75" lộ mã hiệu thống kê, trong khi bước ② và
+// bảng PĐD gọi "Khoảng thường dùng". `COT_KHOA.nhan` giữ nguyên (đi vào Excel,
+// rê chuột thấy "Tên gốc"). Các cột theo mẫu bệnh viện (HIS QĐ1599, Mã Thông tư
+// 04…) KHÔNG đổi ở đây — Q8 (CDA 03/10/2026) giữ tên mẫu.
+export const NHAN_HIEN_KHOA = {
+  dai_p50_p75: "Khoảng thường dùng",
+};
+
 // Tám cột theo mẫu bệnh viện mà PĐD gõ tay (nguồn: danh mục chuẩn theo kỳ).
 // Q8 (CDA 03/10/2026): giữ nguyên tên mẫu, không giải nghĩa, rê chuột ghi
 // "Cột theo mẫu bệnh viện — PĐD gõ tay".
@@ -404,6 +413,15 @@ export function suyRaNamCoDuLieu(rows = [], soNam = 4) {
 export const RONG_MAN_HINH = {
   tskt_2526: 560,
   tskt_2627: 560,
+  // Rà thị giác 05/10/2026 (V01): cột Mã SP 100px chứa cả chuỗi mã cách nhau
+  // dấu ";" (đo được 3.695 ký tự) — dòng cao 7.645px. Nới vừa phải; phần quá
+  // dài còn lại do ô chữ dài tự cuộn trong ô (StyleTable `.o-dai`).
+  ma_sp_2526: 160,
+  ma_sp_2627: 160,
+  ma_sp: 160,
+  // V16/V39: khoảng số (chữ đậm khi vượt) phải nằm một dòng — đo 05/10/2026:
+  // "8.673.547 – 8.824.508" đậm rộng 154px + đệm 20px.
+  dai_p50_p75: 176,
 };
 
 /** Trả bản sao danh sách cột với độ rộng dùng để VẼ. Không dùng cho Excel. */

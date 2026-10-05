@@ -11,7 +11,7 @@ export default function ThanhDauUmc({ duongDan = [], tenMan, profile, khoa }) {
   const tenNguoi = profile?.ho_ten || profile?.email?.split("@")[0] || "";
   const khoaNguoi = khoa ?? profile?.khoa ?? "";
   return (
-    <div className="umc-thanh-dau flex h-11 shrink-0 items-center gap-3 border-b border-umc-100 bg-white px-4">
+    <div className="umc-thanh-dau flex h-10 shrink-0 items-center gap-3 border-b border-umc-100 bg-white px-4">
       <a href="#" onClick={(e) => { e.preventDefault(); window.location.hash = ""; }}
         className="flex shrink-0 items-center" title="Về trang chính">
         <img src="/brand/umc-mark.png" alt="" className="h-7 w-7 object-contain lg:hidden" />

@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, ChevronDown, ChevronRight, Lock, Unlock, Users } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Check, ChevronDown, ChevronRight, Lock, MoreHorizontal, Unlock, Users } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { dichLoi } from "../lib/dichLoi";
+import { useDongKhiRaNgoai } from "../components/ThanhDauUmc";
 
 // Giai đoạn 1, bước 4 và 5 của workflow v3.
 //
@@ -27,6 +28,13 @@ export default function DotGoiCuaDot({ dot, dsKhoa }) {
   const [moKhoa, setMoKhoa] = useState(null);   // dot_goi_id đang mở bảng khoa
   const [nhap, setNhap] = useState(new Set());  // bản nháp của bảng đang mở
   const [dangLuu, setDangLuu] = useState(false);
+  // V28 (05/10/2026, theo G12): "Đóng gói con" là việc khó gỡ nên vào menu ⋯ ở
+  // mép phải từng dòng (chữ đỏ), không còn nút đỏ cạnh huy hiệu "Đang mở" lặp
+  // ở mọi gói con. Hành vi giữ nguyên: chọn mục này đóng gói con như nút cũ.
+  const [moMenu, setMoMenu] = useState(null);   // dot_goi_id đang mở menu ⋯
+  const refMenu = useRef(null);
+  const dongMenu = useCallback(() => setMoMenu(null), []);
+  useDongKhiRaNgoai(moMenu !== null, dongMenu, refMenu);
 
   const tai = useCallback(async () => {
     setDangTai(true);
@@ -113,8 +121,8 @@ export default function DotGoiCuaDot({ dot, dsKhoa }) {
   return (
     <div className="w-full">
       <button type="button" onClick={() => setMo((p) => !p)} aria-expanded={mo}
-        className="flex items-center gap-1 text-xs text-umc-800 hover:underline">
-        {mo ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+        className="flex min-h-8 items-center gap-1 text-[13px] font-medium text-umc-800 hover:underline">
+        {mo ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
         Gói con của đợt{tomTat ? ` — ${tomTat}` : ""}
       </button>
 
@@ -132,43 +140,59 @@ export default function DotGoiCuaDot({ dot, dsKhoa }) {
             return (
               <div key={dg.id} className="border border-slate-200 rounded-md bg-slate-50/60">
                 <div className="flex items-center gap-2 flex-wrap px-2.5 py-1.5">
-                  <span className="text-xs font-medium text-slate-800 flex-1 min-w-0 truncate">
+                  <span className="text-[13px] font-medium text-slate-800 flex-1 min-w-0 truncate">
                     {nhanGoi[dg.goi_id] || dg.goi_id}
                   </span>
-                  <span className={`text-[11px] px-1.5 py-0.5 rounded ${
+                  <span className={`whitespace-nowrap text-xs px-2 py-1 rounded ${
                     goiDangMo ? "bg-umc-100 text-umc-800" : "bg-slate-200 text-slate-600"}`}>
                     {goiDangMo ? "Đang mở" : "Đã đóng"}
                   </span>
                   <button type="button" onClick={() => moBangKhoa(dg)}
-                    className="flex items-center gap-1 px-2 py-0.5 text-[11px] rounded border border-slate-300 text-slate-700 hover:bg-white">
-                    <Users size={11} /> Khoa tham gia: {soThamGia}/{dsKhoa.length}
+                    className="inline-flex min-h-8 items-center gap-1 whitespace-nowrap px-2.5 py-1 text-xs rounded border border-slate-300 text-slate-700 hover:bg-white">
+                    <Users size={12} /> Khoa tham gia: {soThamGia}/{dsKhoa.length}
                   </button>
-                  <button type="button" onClick={() => doiTrangThaiGoi(dg)}
-                    className={`flex items-center gap-1 px-2 py-0.5 text-[11px] rounded border ${
-                      goiDangMo ? "border-red-300 text-red-700 hover:bg-red-50"
-                                : "border-umc-300 text-umc-800 hover:bg-umc-50"}`}>
-                    {goiDangMo ? <><Lock size={11} /> Đóng gói con</> : <><Unlock size={11} /> Mở gói con</>}
-                  </button>
+                  {goiDangMo ? (
+                    <div className="relative" ref={moMenu === dg.id ? refMenu : null}>
+                      <button type="button" onClick={() => setMoMenu((v) => (v === dg.id ? null : dg.id))}
+                        aria-expanded={moMenu === dg.id} aria-label={`Thêm thao tác cho gói con ${nhanGoi[dg.goi_id] || dg.goi_id}`}
+                        className="inline-flex min-h-8 items-center rounded border border-slate-300 bg-white px-2 text-slate-600 hover:bg-slate-50">
+                        <MoreHorizontal size={16} />
+                      </button>
+                      {moMenu === dg.id && (
+                        <div className="absolute right-0 top-full z-30 mt-1 w-56 rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+                          <button type="button" onClick={() => { setMoMenu(null); doiTrangThaiGoi(dg); }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50">
+                            <Lock size={14} /> Đóng gói con
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => doiTrangThaiGoi(dg)}
+                      className="inline-flex min-h-8 items-center gap-1 whitespace-nowrap px-2.5 py-1 text-xs rounded border border-umc-300 text-umc-800 hover:bg-umc-50">
+                      <Unlock size={12} /> Mở gói con
+                    </button>
+                  )}
                 </div>
 
                 {moKhoa === dg.id && (
                   <div className="border-t border-slate-200 px-2.5 py-2 bg-white">
                     <div className="flex items-center gap-2 mb-2">
                       <button type="button" onClick={() => setNhap(new Set(dsKhoa))}
-                        className="px-2 py-0.5 text-[11px] rounded border border-slate-300 text-slate-600 hover:bg-slate-50">
+                        className="inline-flex min-h-8 items-center px-2.5 py-1 text-xs rounded border border-slate-300 text-slate-600 hover:bg-slate-50">
                         Chọn tất cả
                       </button>
                       <button type="button" onClick={() => setNhap(new Set())}
-                        className="px-2 py-0.5 text-[11px] rounded border border-slate-300 text-slate-600 hover:bg-slate-50">
+                        className="inline-flex min-h-8 items-center px-2.5 py-1 text-xs rounded border border-slate-300 text-slate-600 hover:bg-slate-50">
                         Bỏ chọn tất cả
                       </button>
-                      <span className="text-[11px] text-slate-500">
+                      <span className="text-xs text-slate-500">
                         Đang chọn {nhap.size}/{dsKhoa.length}
                       </span>
                     </div>
                     <div className="max-h-64 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-3 gap-y-0.5">
                       {dsKhoa.map((k) => (
-                        <label key={k} className="flex items-start gap-1.5 text-[11px] text-slate-700 py-0.5">
+                        <label key={k} className="flex items-start gap-1.5 text-xs text-slate-700 py-1">
                           <input type="checkbox" checked={nhap.has(k)}
                             onChange={(e) => setNhap((p) => {
                               const q = new Set(p);
@@ -182,11 +206,11 @@ export default function DotGoiCuaDot({ dot, dsKhoa }) {
                     </div>
                     <div className="flex gap-2 mt-2">
                       <button type="button" disabled={dangLuu} onClick={() => luuKhoa(dg)}
-                        className="flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-md bg-umc-700 text-white font-medium disabled:opacity-60">
+                        className="flex min-h-8 items-center gap-1 px-3 py-1 text-xs rounded-md bg-umc-700 text-white font-medium disabled:opacity-60">
                         <Check size={11} /> {dangLuu ? "Đang lưu…" : "Lưu danh sách khoa"}
                       </button>
                       <button type="button" onClick={() => setMoKhoa(null)}
-                        className="px-2.5 py-1 text-[11px] rounded-md border border-slate-300 text-slate-600">
+                        className="min-h-8 px-3 py-1 text-xs rounded-md border border-slate-300 text-slate-600">
                         Huỷ
                       </button>
                     </div>

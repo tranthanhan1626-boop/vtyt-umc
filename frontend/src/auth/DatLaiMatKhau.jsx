@@ -28,7 +28,7 @@ export default function DatLaiMatKhau({ updatePassword }) {
         animate={{ opacity: 1, transform: "translateY(0)" }}
       >
         <img src="/brand/umc-mark.png" alt="UMC" className="mb-5 h-14 w-14 object-contain" />
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--umc-blue)]">Bảo mật tài khoản</p>
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--umc-blue)]">Bảo mật tài khoản</p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Đặt lại mật khẩu</h1>
         <p className="mb-6 mt-2 text-sm leading-6 text-slate-500">Nhập mật khẩu mới cho tài khoản UMC của bạn.</p>
 

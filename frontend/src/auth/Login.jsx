@@ -100,7 +100,7 @@ export default function Login({ signIn, signUp, sendPasswordReset }) {
           </div>
           <div className="mt-auto max-w-xl">
             <div className="mb-5 h-1 w-14 rounded-full bg-[var(--umc-cyan)]" />
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-sky-200">Hệ thống nghiệp vụ nội bộ</p>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-sky-200">Hệ thống nghiệp vụ nội bộ</p>
             <h1 className="mt-3 text-3xl font-semibold leading-tight text-white xl:text-4xl">
               Dự trù & đấu thầu<br />vật tư y tế
             </h1>
@@ -108,7 +108,7 @@ export default function Login({ signIn, signUp, sendPasswordReset }) {
               Không gian làm việc thống nhất giữa các đơn vị sử dụng và Phòng Điều dưỡng.
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs text-sky-100/80">
+          <div className="mt-6 flex items-center gap-2 text-xs text-sky-100">
             <ShieldCheck size={15} />
             Dữ liệu được phân quyền theo khoa và vai trò
           </div>
@@ -133,12 +133,12 @@ export default function Login({ signIn, signUp, sendPasswordReset }) {
               exit={{ opacity: 0, transform: "translateY(-4px)" }}
             >
               {cheDo !== CHE_DO.DANG_NHAP && (
-                <button type="button" onClick={() => doiCheDo(CHE_DO.DANG_NHAP)} className="umc-back-button">
+                <button type="button" onClick={() => doiCheDo(CHE_DO.DANG_NHAP)} className="umc-back-button min-h-8">
                   <ArrowLeft size={15} /> Quay lại đăng nhập
                 </button>
               )}
 
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--umc-blue)]">Hệ thống VTYT</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--umc-blue)]">Hệ thống VTYT</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">{tieuDe}</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">{moTa}</p>
 
@@ -193,7 +193,7 @@ export default function Login({ signIn, signUp, sendPasswordReset }) {
                             {dsKhoa.map((k) => <option key={k} value={k}>{k}</option>)}
                           </select>
                         </span>
-                        <small>
+                        <small className="!text-xs !leading-5 !text-slate-600">
                           Thông tin này được cố định sau khi đăng ký. Chọn “Phòng Điều dưỡng” nếu bạn thuộc Phòng Điều dưỡng.
                         </small>
                       </label>
@@ -218,12 +218,12 @@ export default function Login({ signIn, signUp, sendPasswordReset }) {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 {cheDoDangKy === "chi_admin"
                   ? <p>Tài khoản do quản trị cấp — liên hệ Phòng Điều dưỡng nếu chưa có.</p>
-                  : <p>Chưa có tài khoản? <button type="button" onClick={() => doiCheDo(CHE_DO.DANG_KY)} className="umc-auth-link">Đăng ký ngay</button></p>}
-                <button type="button" onClick={() => doiCheDo(CHE_DO.QUEN_MK)} className="umc-auth-link">Quên mật khẩu?</button>
+                  : <p>Chưa có tài khoản? <button type="button" onClick={() => doiCheDo(CHE_DO.DANG_KY)} className="umc-auth-link inline-flex min-h-8 items-center">Đăng ký ngay</button></p>}
+                <button type="button" onClick={() => doiCheDo(CHE_DO.QUEN_MK)} className="umc-auth-link inline-flex min-h-8 items-center">Quên mật khẩu?</button>
               </div>
             </div>
           )}
-          <p className="mt-9 text-center text-[11px] text-slate-500">Chỉ dành cho nhân sự được phân quyền của UMC</p>
+          <p className="mt-9 text-center text-xs text-slate-500">Chỉ dành cho nhân sự được phân quyền của UMC</p>
         </div>
       </section>
     </main>

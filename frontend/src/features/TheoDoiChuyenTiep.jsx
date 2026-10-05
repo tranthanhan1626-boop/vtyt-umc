@@ -35,7 +35,7 @@ import { dichLoi } from "../lib/dichLoi";
 
 const NHAN_TRANG_THAI = {
   con_no_xu_ly: { nhan: "Còn nợ xử lý", mau: "bg-amber-100 text-amber-800", icon: AlertTriangle },
-  da_do_sang_ma: { nhan: "Đã đổ sang mã khác", mau: "bg-sky-100 text-sky-800", icon: ArrowRightLeft },
+  da_do_sang_ma: { nhan: "Đã đổ sang mã khác", mau: "bg-umc-100 text-umc-800", icon: ArrowRightLeft },
   chuyen_tiep_hong: { nhan: "CHUYỂN TIẾP HỎNG", mau: "bg-red-600 text-white", icon: AlertTriangle },
   da_chuyen_tiep: { nhan: "Đã vào đợt bổ sung", mau: "bg-emerald-100 text-emerald-800", icon: Check },
   // QĐ D12 (24/08/2026): rớt thêm ở giai đoạn sau làm hệ chia lại số trúng theo
@@ -146,7 +146,7 @@ export default function TheoDoiChuyenTiep({ profile, dotGoiId = null }) {
     <div className="flex h-full flex-col">
       <div className="shrink-0 border-b border-slate-200 bg-white px-4 py-3">
         <h1 className="text-lg font-semibold text-slate-900">Theo dõi chuyển tiếp mã rớt</h1>
-        <p className="mt-0.5 text-xs text-slate-500">
+        <p className="mt-0.5 text-xs text-slate-600">
           Đọc theo từng mã hàng rớt. <b className="text-red-700">Ô đỏ “— TRỐNG” ở cột “Đợt bổ
           sung” nghĩa là chuyển tiếp hỏng</b> — bấm <b>“Chạy lại”</b> để hệ đẩy lại. Dòng ghi
           “Chưa xác nhận rớt” là mã <b>chưa bấm “Xác nhận rớt”</b> lần nào — làm trên{" "}
@@ -154,33 +154,33 @@ export default function TheoDoiChuyenTiep({ profile, dotGoiId = null }) {
         </p>
 
         <div className="mt-2 flex flex-wrap items-center gap-3">
-          <span className="rounded bg-slate-100 px-2 py-1 text-[11px] text-slate-700">
+          <span className="rounded bg-slate-100 px-2.5 py-1 text-xs text-slate-700">
             {tong.ma} mã rớt
           </span>
           {tong.hong > 0 && (
-            <span className="rounded bg-red-600 px-2 py-1 text-[11px] font-semibold text-white">
+            <span className="rounded bg-red-600 px-2.5 py-1 text-xs font-semibold text-white">
               {tong.hong} mã chuyển tiếp hỏng
             </span>
           )}
           {tong.no > 0 && (
-            <span className="rounded bg-amber-100 px-2 py-1 text-[11px] font-medium text-amber-800">
+            <span className="rounded bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800">
               {tong.no} mã còn nợ xử lý
             </span>
           )}
           {tong.thua > 0 && (
-            <span className="rounded bg-amber-100 px-2 py-1 text-[11px] font-medium text-amber-900"
+            <span className="rounded bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-900"
               title="Rớt thêm ở giai đoạn sau làm hệ chia lại số trúng theo tỉ lệ Q. Hệ không tự trừ lại — khoa tự cân nhắc giảm.">
               {tong.thua} mã đã đưa nhiều hơn số rớt
             </span>
           )}
           <div className="relative">
-            <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500" />
             <input value={tim} onChange={(e) => setTim(e.target.value)}
               placeholder="Tìm mã hàng, tên, mã quản lý"
-              className="w-64 rounded border border-slate-300 py-1 pl-7 pr-2 text-xs" />
+              className="min-h-9 w-64 rounded border border-slate-300 py-1.5 pl-7 pr-2 text-[13px]" />
           </div>
           <select value={locTrangThai} onChange={(e) => setLocTrangThai(e.target.value)}
-            className="rounded border border-slate-300 px-2 py-1 text-xs">
+            className="min-h-9 rounded border border-slate-300 px-2 py-1.5 text-[13px]">
             <option value="tat_ca">Mọi trạng thái</option>
             <option value="chuyen_tiep_hong">Chuyển tiếp hỏng</option>
             <option value="con_no_xu_ly">Còn nợ xử lý</option>
@@ -188,14 +188,17 @@ export default function TheoDoiChuyenTiep({ profile, dotGoiId = null }) {
             <option value="chuyen_tiep_thua">Đã đưa nhiều hơn số rớt</option>
             <option value="da_chuyen_tiep">Đã vào đợt bổ sung</option>
           </select>
-          <button type="button" onClick={tai} className="qtdx-tb"><RefreshCw size={13} /> Tải lại</button>
+          <button type="button" onClick={tai}
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
+            <RefreshCw size={13} /> Tải lại
+          </button>
         </div>
         {loi && <div className="mt-2 rounded bg-red-50 px-2.5 py-1.5 text-xs text-red-700">{loi}</div>}
       </div>
 
       <div className="flex-1 overflow-auto px-4 py-3">
         {dangTai ? (
-          <p className="text-xs text-slate-400">Đang tải…</p>
+          <p className="text-xs text-slate-500">Đang tải…</p>
         ) : hienThi.length === 0 ? (
           <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
             <p className="text-sm font-medium text-slate-600">Chưa có mã nào rớt</p>
@@ -205,15 +208,22 @@ export default function TheoDoiChuyenTiep({ profile, dotGoiId = null }) {
             </p>
           </div>
         ) : (
-          <table className="w-full border-collapse text-sm">
+          <table className="w-full border-collapse bg-white text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-left text-[11px] uppercase text-slate-500">
+              <tr className="border-b border-slate-200 text-left text-xs uppercase text-slate-500">
+                {/* N2 (05/10/2026, vòng 2): ở 1280 bảng rộng hơn khung 52px vì
+                    tiêu đề chữ hoa bị ép một dòng (luật chung index.css) và cột
+                    Đợt bổ sung không xuống dòng → cột Trạng thái cụt, cột Mã
+                    hàng còn 135px. Cho tiêu đề dài và chữ ở cột Đợt bổ sung
+                    xuống dòng (cột ngắn đặt bề rộng gọn), phần còn lại dồn cho
+                    tên vật tư (tối thiểu 10rem). Huy hiệu và số vẫn một dòng. Bảng vẫn rộng hơn khung thì cuộn ngang TRONG
+                    khung (div overflow-auto bên ngoài). */}
                 <th className="py-2 pr-3">Mã hàng</th>
                 <th className="px-3 py-2 text-right">Tổng rớt</th>
-                <th className="px-3 py-2 text-right">Số khoa</th>
-                <th className="px-3 py-2">Đợt bổ sung</th>
-                <th className="px-3 py-2">Khoa đã sửa số</th>
-                <th className="px-3 py-2">Khoa đã xác nhận</th>
+                <th className="w-[4.5rem] px-3 py-2 text-right !whitespace-normal">Số khoa</th>
+                <th className="w-[9.5rem] px-3 py-2 !whitespace-normal">Đợt bổ sung</th>
+                <th className="w-[6rem] px-3 py-2 !whitespace-normal">Khoa đã sửa số</th>
+                <th className="w-[6.5rem] px-3 py-2 !whitespace-normal">Khoa đã xác nhận</th>
                 <th className="px-3 py-2">Trạng thái</th>
                 <th className="px-3 py-2"></th>
               </tr>
@@ -229,38 +239,38 @@ export default function TheoDoiChuyenTiep({ profile, dotGoiId = null }) {
                     <tr className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="py-2 pr-3">
                         <button type="button" onClick={() => doiMo(g.ma_hang)} aria-expanded={mo}
-                          className="inline-flex items-start gap-1.5 text-left">
-                          {mo ? <ChevronDown size={13} className="mt-1 text-slate-400" />
-                              : <ChevronRight size={13} className="mt-1 text-slate-400" />}
-                          <span>
+                          className="inline-flex min-h-8 items-start gap-1.5 text-left">
+                          {mo ? <ChevronDown size={16} className="mt-0.5 shrink-0 text-slate-500" />
+                              : <ChevronRight size={16} className="mt-0.5 shrink-0 text-slate-500" />}
+                          <span className="min-w-[10rem]">
                             <span className="block font-mono text-xs text-slate-500">{g.ma_hang}</span>
                             <span className="block text-slate-800">{g.ten_vat_tu}</span>
-                            <span className="block text-[11px] text-slate-400">{g.ma_quan_ly}</span>
+                            <span className="block text-xs text-slate-500">{g.ma_quan_ly}</span>
                           </span>
                         </button>
                       </td>
-                      <td className="px-3 py-2 text-right font-mono">{fmt(g.tongRot)} {g.dvt}</td>
-                      <td className="px-3 py-2 text-right font-mono">{g.khoa.length}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums">{fmt(g.tongRot)} {g.dvt}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{g.khoa.length}</td>
                       <td className="px-3 py-2 text-xs">
                         {dot ? (
                           <span className="text-slate-700">
                             {dot.goi_bo_sung} · T{dot.thang_bo_sung}/{dot.nam_bo_sung}
                           </span>
                         ) : g.doMa === g.khoa.length ? (
-                          <span className="text-slate-400">— (đã đổ sang mã khác)</span>
+                          <span className="text-slate-500">— (đã đổ sang mã khác)</span>
                         ) : g.hong > 0 ? (
                           // P3+Q09 (28/09/2026): TRỐNG đỏ chỉ đúng nghĩa cho dòng
                           // chuyển tiếp HỎNG (đã xác nhận rớt nhưng hệ đẩy đi thất
                           // bại) — không phải cho dòng chưa xác nhận rớt.
                           <span className="font-semibold text-red-700">— TRỐNG</span>
                         ) : (
-                          <span className="text-slate-500">Chưa xác nhận rớt — làm trên bảng Tổng hợp</span>
+                          <span className="inline-block min-w-[9rem] text-slate-600">Chưa xác nhận rớt — làm trên bảng Tổng hợp</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-xs font-mono">{g.daSuaSo}/{g.khoa.length}</td>
-                      <td className="px-3 py-2 text-xs font-mono">{g.daXacNhan}/{g.khoa.length}</td>
-                      <td className="px-3 py-2">
-                        <span className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-medium ${tt.mau}`}>
+                      <td className="px-3 py-2 text-xs tabular-nums">{g.daSuaSo}/{g.khoa.length}</td>
+                      <td className="px-3 py-2 text-xs tabular-nums">{g.daXacNhan}/{g.khoa.length}</td>
+                      <td className="whitespace-nowrap px-3 py-2">
+                        <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded px-2 py-1 text-xs font-medium ${tt.mau}`}>
                           <Icon size={11} /> {tt.nhan}
                         </span>
                       </td>
@@ -274,7 +284,7 @@ export default function TheoDoiChuyenTiep({ profile, dotGoiId = null }) {
                         {g.hong > 0 && (
                           <button type="button" disabled={dangChay === g.ma_hang}
                             onClick={() => chayLaiChuyenTiep(g.ma_hang)}
-                            className="inline-flex items-center gap-1 rounded border border-red-300 bg-white px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-50 disabled:opacity-50">
+                            className="inline-flex min-h-8 items-center gap-1 whitespace-nowrap rounded border border-red-300 bg-white px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50">
                             <RotateCcw size={11} />
                             {dangChay === g.ma_hang ? "Đang chạy…" : "Chạy lại"}
                           </button>
@@ -286,8 +296,8 @@ export default function TheoDoiChuyenTiep({ profile, dotGoiId = null }) {
                       return (
                         <tr key={`${g.ma_hang}-${k.khoa}`} className="border-b border-slate-50 bg-slate-50/50 text-xs">
                           <td className="py-1.5 pl-8 pr-3 text-slate-600">{k.khoa}</td>
-                          <td className="px-3 py-1.5 text-right font-mono">{fmt(k.so_rot)}</td>
-                          <td className="px-3 py-1.5 text-right font-mono text-slate-400">
+                          <td className="px-3 py-1.5 text-right tabular-nums">{fmt(k.so_rot)}</td>
+                          <td className="whitespace-nowrap px-3 py-1.5 text-right tabular-nums text-slate-500">
                             {Number(k.con_lai) > 0
                               ? `còn ${fmt(k.con_lai)}`
                               : Number(k.thua_so_voi_rot) > 0
@@ -298,7 +308,7 @@ export default function TheoDoiChuyenTiep({ profile, dotGoiId = null }) {
                             {k.goi_bo_sung
                               ? <span>{k.goi_bo_sung} · số {fmt(k.so_khoa_dang_de_xuat ?? k.da_chuyen_tiep)}</span>
                               : k.ma_hang_nhan
-                                ? <span className="text-sky-700">→ {k.ma_hang_nhan}
+                                ? <span className="text-umc-700">→ {k.ma_hang_nhan}
                                     {k.khoa_chua_tung_dung && <b className="text-amber-700"> (khoa chưa từng dùng)</b>}
                                   </span>
                                 // P3+Q09: cùng luật với dòng mã ở trên — TRỐNG đỏ chỉ
@@ -306,12 +316,12 @@ export default function TheoDoiChuyenTiep({ profile, dotGoiId = null }) {
                                 // nhận rớt, không phải hỏng.
                                 : k.trang_thai === "chuyen_tiep_hong"
                                   ? <span className="font-semibold text-red-700">— TRỐNG</span>
-                                  : <span className="text-slate-500">Chưa xác nhận rớt</span>}
+                                  : <span className="text-slate-600">Chưa xác nhận rớt</span>}
                           </td>
                           <td className="px-3 py-1.5">{k.khoa_da_sua_so ? "có" : "chưa"}</td>
                           <td className="px-3 py-1.5">{k.khoa_da_xac_nhan ? "rồi" : "chưa"}</td>
-                          <td className="px-3 py-1.5">
-                            <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] ${ktt.mau}`}>
+                          <td className="whitespace-nowrap px-3 py-1.5">
+                            <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-xs ${ktt.mau}`}>
                               {ktt.nhan}
                             </span>
                           </td>

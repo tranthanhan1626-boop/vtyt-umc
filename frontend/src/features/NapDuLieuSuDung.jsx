@@ -5,6 +5,7 @@ import {
   docWorksheetExport, kiemDichVaLamSach, FileLevelRejection,
 } from "../lib/napDuLieuSuDung";
 import { dichLoi } from "../lib/dichLoi";
+import NutGiaiThich from "./NutGiaiThich";
 
 // H. mới (06/08/2026) — Phòng Điều dưỡng tự nạp file HIS mỗi tháng, không phụ
 // thuộc ai chạy script tay. Chạy hoàn toàn ở trình duyệt (đọc + kiểm dịch +
@@ -17,7 +18,15 @@ import { dichLoi } from "../lib/dichLoi";
 const CHUNK = 500;
 
 const fmt = (n) => (n ?? 0).toLocaleString("vi-VN");
-const fmtNgay = (x) => (x ? new Date(x).toLocaleString("vi-VN") : "");
+// V11 (05/10/2026, G10): hiện giờ:phút + ngày, không giây; email chỉ hiện phần
+// tên trước dấu @. Đủ giờ-phút-giây và email đầy đủ nằm ở rê chuột (title).
+const fmtNgay = (x) => (x
+  ? new Date(x).toLocaleString("vi-VN", {
+    hour: "2-digit", minute: "2-digit", day: "numeric", month: "numeric", year: "numeric",
+  })
+  : "");
+const fmtNgayDayDu = (x) => (x ? new Date(x).toLocaleString("vi-VN") : "");
+const tenNguoi = (e) => String(e || "").split("@")[0];
 
 export default function NapDuLieuSuDung({ profile }) {
   const [tenFile, setTenFile] = useState("");
@@ -139,19 +148,22 @@ export default function NapDuLieuSuDung({ profile }) {
     <div className="space-y-5">
       <div>
         <h2 className="text-base font-semibold text-slate-900">Nạp dữ liệu sử dụng</h2>
-        <p className="mt-0.5 text-sm text-slate-500">
-          Nạp file HIS mới mỗi tháng — cùng định dạng với{" "}
-          <code className="rounded bg-slate-100 px-1 py-0.5 text-[12px]">
-            SỐ LƯỢNG SỬ DỤNG THEO THÁNG.xlsx
-          </code>{" "}
-          (sheet <b>Export</b>). Ghi đè theo khoá đơn vị + kho xuất + mã hàng + năm +
-          tháng — nạp lại file cũ không tạo trùng, chỉ cập nhật số nếu có đổi.
-        </p>
+        <div className="mt-0.5 flex items-center gap-2">
+          <p className="text-sm text-slate-600">
+            Nạp file HIS mới mỗi tháng, cùng định dạng với file <b>SỐ LƯỢNG SỬ DỤNG THEO THÁNG</b> (sheet <b>Export</b>).
+          </p>
+          <NutGiaiThich nhan="Nạp lại file cũ có sao không" rong={380}>
+            <p>
+              Ghi đè theo khoá đơn vị + kho xuất + mã hàng + năm + tháng: nạp lại file cũ không tạo
+              trùng, chỉ cập nhật số nếu có đổi.
+            </p>
+          </NutGiaiThich>
+        </div>
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white p-4">
         <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-600 hover:border-umc-400 hover:bg-umc-50/40">
-          <UploadCloud size={18} className="text-slate-400" />
+          <UploadCloud size={18} className="text-slate-500" />
           {tenFile || "Chọn file .xlsx"}
           <input type="file" accept=".xlsx" className="hidden" onChange={chonFile} disabled={dangDoc || dangNap} />
         </label>
@@ -203,7 +215,7 @@ export default function NapDuLieuSuDung({ profile }) {
             )}
 
             <button type="button" onClick={napThat} disabled={chanNap}
-              className="mt-1 rounded-md bg-umc-600 px-3 py-2 text-sm font-medium text-white hover:bg-umc-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+              className="mt-1 inline-flex min-h-10 items-center rounded-md bg-umc-600 px-4 py-2 text-sm font-medium text-white hover:bg-umc-700 disabled:cursor-not-allowed disabled:bg-slate-300">
               {dangNap ? `Đang nạp ${fmt(tienDo.done)}/${fmt(tienDo.total)}...` : "Nạp dữ liệu"}
             </button>
 
@@ -253,15 +265,15 @@ export default function NapDuLieuSuDung({ profile }) {
               <tbody>
                 {lichSu.map((b) => (
                   <tr key={b.id} className="border-t border-slate-100">
-                    <td className="py-1.5 pr-3 whitespace-nowrap text-slate-600">{fmtNgay(b.imported_at)}</td>
+                    <td className="py-1.5 pr-3 whitespace-nowrap text-slate-600 tabular-nums" title={fmtNgayDayDu(b.imported_at)}>{fmtNgay(b.imported_at)}</td>
                     <td className="py-1.5 pr-3 text-slate-600">{b.source_filename}</td>
-                    <td className="py-1.5 pr-3 text-slate-600">{b.imported_by}</td>
-                    <td className="py-1.5 pr-3 text-right font-mono text-slate-600">{fmt(b.row_count_raw)}</td>
-                    <td className="py-1.5 pr-3 text-right font-mono text-slate-600">{fmt(b.row_count_rejected)}</td>
-                    <td className="py-1.5 pr-3 text-right font-mono text-slate-600">{fmt(b.row_count_upserted)}</td>
-                    <td className="py-1.5">
+                    <td className="py-1.5 pr-3 text-slate-600" title={b.imported_by || ""}>{tenNguoi(b.imported_by)}</td>
+                    <td className="py-1.5 pr-3 text-right tabular-nums text-slate-600">{fmt(b.row_count_raw)}</td>
+                    <td className="py-1.5 pr-3 text-right tabular-nums text-slate-600">{fmt(b.row_count_rejected)}</td>
+                    <td className="py-1.5 pr-3 text-right tabular-nums text-slate-600">{fmt(b.row_count_upserted)}</td>
+                    <td className="whitespace-nowrap py-1.5">
                       {b.has_truncation_warning && (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] text-amber-800">
+                        <span className="inline-block whitespace-nowrap rounded-full bg-amber-100 px-2.5 py-1 text-xs text-amber-800">
                           {b.acknowledged_incomplete ? "cắt dữ liệu (đã xác nhận)" : "cắt dữ liệu"}
                         </span>
                       )}

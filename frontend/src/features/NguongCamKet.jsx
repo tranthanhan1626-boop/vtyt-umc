@@ -103,7 +103,7 @@ export default function NguongCamKet({ moc, onLuuXong }) {
   if (!mo) {
     return (
       <button onClick={batDauSua}
-        className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-2.5 py-1 text-sm text-slate-600 hover:bg-slate-50">
+        className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-slate-300 px-3 text-sm text-slate-700 hover:bg-slate-50">
         <SlidersHorizontal size={14} />
         Chỉnh ngưỡng cam kết
         <ChevronRight size={13} aria-hidden className="text-slate-400" />

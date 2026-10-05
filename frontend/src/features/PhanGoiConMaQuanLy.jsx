@@ -12,6 +12,9 @@ import { dichLoi } from "../lib/dichLoi";
 // `gan_goi_con_ma_quan_ly_v3` ghi cả cụm trong một lệnh và chặn ở server khi
 // mã đã nằm trong snapshot Q đang hiệu lực (sau chốt Q thì phạm vi đã khóa).
 
+// V27 (05/10/2026): 322 dòng từng nằm trong một trang cao ~14.600px, đầu bảng trôi
+// mất. Nay bảng tự cuộn trong khung cao theo màn, đầu bảng dính.
+
 // Nhãn gói con lấy từ `goi_con.goi` của gói 18 tháng — cùng chuỗi đang lưu ở
 // `vat_tu.goi`, không phải goi_id.
 const NHAN_GOI = {
@@ -119,7 +122,7 @@ export default function PhanGoiConMaQuanLy() {
         ].map((t) => (
           <div key={t.nhan} className={`border rounded-lg px-3 py-2 ${t.mau}`}>
             <p className="text-lg font-semibold leading-none">{t.so.toLocaleString("vi-VN")}</p>
-            <p className="text-[11px] mt-1">{t.nhan}</p>
+            <p className="text-xs mt-1">{t.nhan}</p>
           </div>
         ))}
       </div>
@@ -129,7 +132,7 @@ export default function PhanGoiConMaQuanLy() {
           <AlertTriangle size={14} className="shrink-0 mt-px" />
           <span>
             {thongKe.vatNgang} mã quản lý đang có mã hàng nằm ở nhiều gói con khác nhau —
-            vi phạm invariant 2. Chọn lại một gói cho cả cụm để dồn về đúng một gói.
+            trái luật mỗi mã quản lý chỉ thuộc một gói con. Chọn lại một gói cho cả cụm để dồn về đúng một gói.
           </span>
         </p>
       )}
@@ -137,20 +140,20 @@ export default function PhanGoiConMaQuanLy() {
       <div className="flex flex-wrap items-center gap-2">
         {LOC.map((l) => (
           <button key={l.ma} type="button" onClick={() => setLoc(l.ma)}
-            className={`px-2.5 py-1 text-xs rounded-md border ${
+            className={`inline-flex min-h-9 items-center px-3 py-1.5 text-xs rounded-md border ${
               loc === l.ma ? "border-umc-400 bg-umc-50 text-umc-800 font-medium"
                            : "border-slate-300 text-slate-600 hover:bg-slate-50"}`}>
             {l.nhan}
           </button>
         ))}
         <div className="relative">
-          <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500" />
           <input value={tim} onChange={(e) => setTim(e.target.value)}
             placeholder="Tìm mã hoặc tên…"
-            className="border border-slate-300 rounded-md pl-7 pr-2 py-1 text-xs w-56" />
+            className="min-h-9 border border-slate-300 rounded-md pl-7 pr-2 py-1.5 text-[13px] w-56" />
         </div>
         <button type="button" onClick={tai}
-          className="flex items-center gap-1 px-2.5 py-1 text-xs rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50">
+          className="inline-flex min-h-9 items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50">
           <RotateCcw size={12} /> Tải lại
         </button>
         <span className="text-xs text-slate-500">{hienThi.length.toLocaleString("vi-VN")} dòng</span>
@@ -164,9 +167,9 @@ export default function PhanGoiConMaQuanLy() {
           Không còn mã quản lý nào ở bộ lọc này.
         </div>
       ) : (
-        <div className="bg-white border border-slate-200 rounded-lg overflow-x-auto">
+        <div className="bg-white border border-slate-200 rounded-lg max-h-[calc(100vh-15rem)] overflow-auto">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+            <thead className="sticky top-0 z-10 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 shadow-[0_1px_0_#e2e8f0]">
               <tr>
                 <th className="text-left px-3 py-2 font-semibold">Mã quản lý</th>
                 <th className="text-left px-3 py-2 font-semibold">Tên</th>
@@ -182,9 +185,9 @@ export default function PhanGoiConMaQuanLy() {
                 return (
                   <tr key={r.ma_quan_ly} className="border-t border-slate-100">
                     <td className="px-3 py-1.5 font-mono text-xs text-slate-700">{r.ma_quan_ly}</td>
-                    <td className="px-3 py-1.5 text-xs text-slate-600 max-w-[22rem] truncate"
-                        title={r.ten_quan_ly || ""}>{r.ten_quan_ly || "—"}</td>
-                    <td className="px-3 py-1.5 text-right text-xs text-slate-600">{r.so_ma_hang}</td>
+                    <td className="px-3 py-1.5 text-[13px] text-slate-600 max-w-[26rem]"
+                        title={r.ten_quan_ly || ""}><span className="line-clamp-2">{r.ten_quan_ly || "—"}</span></td>
+                    <td className="px-3 py-1.5 text-right text-[13px] tabular-nums text-slate-600">{r.so_ma_hang}</td>
                     <td className="px-3 py-1.5 text-xs">
                       {vatNgang ? (
                         <span className="text-red-700 font-medium">
@@ -192,7 +195,7 @@ export default function PhanGoiConMaQuanLy() {
                           {chuaPhan ? ` · ${r.so_ma_chua_phan} mã chưa phân` : ""}
                         </span>
                       ) : chuaPhan ? (
-                        <span className="text-amber-700">Chưa phân gói</span>
+                        <span className="text-slate-600">Chưa phân gói</span>
                       ) : (
                         <span className="text-slate-700">{r.goi_dai_dien}</span>
                       )}
@@ -203,7 +206,7 @@ export default function PhanGoiConMaQuanLy() {
                           value={vatNgang || chuaPhan ? "" : (r.goi_dai_dien || "")}
                           disabled={dangLuu === r.ma_quan_ly}
                           onChange={(e) => gan(r.ma_quan_ly, e.target.value)}
-                          className="border border-slate-300 rounded-md px-2 py-1 text-xs">
+                          className="min-h-9 border border-slate-300 rounded-md px-2 py-1 text-[13px]">
                           <option value="">— chọn gói con —</option>
                           {DS_GOI.map((g) => <option key={g} value={g}>{g}</option>)}
                         </select>

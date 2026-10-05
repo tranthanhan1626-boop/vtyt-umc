@@ -132,7 +132,9 @@ export default function SoThieuHang({ profile }) {
 
       {!laPdd && !moForm && (
         <button onClick={() => setMoForm(true)}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700">
+          // V37 (05/10/2026, G15): báo thiếu là việc làm hằng ngày, không phải nguy
+          // hiểm → nút chính xanh UMC, không đỏ đặc, không kéo rộng hết dòng.
+          className="inline-flex min-h-10 items-center justify-center gap-2 px-5 py-2 rounded-lg bg-umc-600 text-white font-medium hover:bg-umc-700">
           <AlertTriangle size={18} /> Báo Phòng Điều dưỡng: không lĩnh được hàng
         </button>
       )}
@@ -199,7 +201,7 @@ export default function SoThieuHang({ profile }) {
 
           <div className="flex gap-2">
             <button onClick={gui} disabled={!sanSang || dangGui}
-              className="flex-1 py-3 rounded-md bg-red-600 text-white font-medium disabled:opacity-40">
+              className="flex-1 py-3 rounded-md bg-umc-600 text-white font-medium hover:bg-umc-700 disabled:opacity-40">
               {dangGui ? "Đang gửi..." : "Gửi ngay"}
             </button>
             <button onClick={() => { setMoForm(false); datLai(); }}
@@ -222,7 +224,7 @@ export default function SoThieuHang({ profile }) {
               className="px-3 py-2 text-sm rounded-md border border-umc-300 text-umc-800 hover:bg-umc-50">
               Tháng này khoa không thiếu gì
             </button>
-            <p className="text-xs text-slate-400 mt-1.5">
+            <p className="text-xs text-slate-500 mt-1.5">
               Bấm xác nhận thì tháng này mới được tính là “đủ hàng”. Không bấm thì
               hệ thống ghi là <b>chưa phản hồi</b>, không phải “không thiếu”.
             </p>

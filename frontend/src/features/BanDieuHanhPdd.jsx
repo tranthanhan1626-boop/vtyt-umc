@@ -69,7 +69,7 @@ const MAU_DUNG_LUONG = {
 };
 const NHAN_DUNG_LUONG = {
   de_y:      "— bắt đầu để ý",
-  canh_bao:  "— nên chạy nén lịch sử (patch_zn) trong quý này",
+  canh_bao:  "— nên nén bớt lịch sử trong quý này",
   nguy_hiem: "— SẮP KHOÁ GHI, xử lý ngay",
 };
 
@@ -319,7 +319,7 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
       .select("id, goi_id").eq("dot_id", dot.id).order("id");
     if (luot !== luotTai.current) return; // L13: có lượt mới hơn, bỏ kết quả cũ
     if (loiDotGoi) {
-      setLoi(`Không đọc được DOT_GOI: ${dichLoi(loiDotGoi)}`);
+      setLoi(`Không đọc được danh sách gói con của đợt: ${dichLoi(loiDotGoi)}`);
       setDangTai(false);
       return;
     }
@@ -435,7 +435,7 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
         setKhoaDaChot(new Set());
         setCanhBaoChot(
           loiChot.code === "42P01" || /danh_muc_khoa_chot/i.test(loiChot.message || "")
-            ? "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_zj_ban_dieu_hanh_pdd) — cột \"Đã xác nhận\" tạm để trống. Vui lòng báo Phòng Điều dưỡng."
+            ? "Hệ thống chưa được cập nhật đủ để làm việc này — cột \"Đã xác nhận\" tạm để trống. Vui lòng báo Phòng Điều dưỡng."
             : dichLoi(loiChot)
         );
       } else {
@@ -604,7 +604,7 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
               đổ thẳng mọi đợt của mọi loại vào một danh sách. */}
           <select value={dotId} onChange={(e) => setDotId(e.target.value)}
             disabled={!loaiGoi}
-            className="min-w-64 rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400">
+            className="min-h-9 min-w-64 rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-500">
             <option value="">
               {loaiGoi ? `— chọn đợt (${dsDotTheoLoai.length}) —` : "— chọn loại gói trước —"}
             </option>
@@ -624,7 +624,7 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
               ))}
           </select>
           <button type="button" onClick={() => { tai(); taiLaiTienTrinh(); }}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50">
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50">
             <RefreshCw size={13} /> Tải lại
           </button>
           {/* 18/09/2026 (V7) → 03/10/2026 (G12): nút nguy hiểm vào menu ⋯ ở mép
@@ -658,12 +658,12 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
           {LOAI_GOI.map((l) => (
             <button key={l.ma} type="button" onClick={() => setLoaiGoi(l.ma)}
               title={l.moTa}
-              className={`rounded-full px-3 py-1 text-xs font-medium ${
+              className={`inline-flex min-h-9 items-center rounded-full px-3.5 py-1.5 text-[13px] font-medium ${
                 loaiGoi === l.ma
                   ? "bg-umc-800 text-white"
                   : "border border-slate-300 text-slate-600 hover:bg-slate-50"}`}>
               {l.ten}
-              <span className={loaiGoi === l.ma ? "ml-1 opacity-80" : "ml-1 text-slate-400"}>
+              <span className={loaiGoi === l.ma ? "ml-1 opacity-80" : "ml-1 text-slate-500"}>
                 {(() => {
                   const t = soDotTheoLoai[l.ma];
                   if (!t) return "chưa có đợt";
@@ -685,7 +685,7 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
             <span className="mr-1 text-xs text-slate-500">Gói con:</span>
             {dsGoiCon.map((g) => (
               <button key={g.goiId} type="button" onClick={() => setGoiConId(g.goiId)}
-                className={`rounded-full px-3 py-1 text-xs font-medium ${
+                className={`inline-flex min-h-9 items-center rounded-full px-3.5 py-1.5 text-[13px] font-medium ${
                   goiConId === g.goiId ? "bg-[var(--umc-blue)] text-white" : "border border-slate-300 text-slate-600 hover:bg-slate-50"}`}>
                 {g.goi}
               </button>
@@ -750,11 +750,12 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
               (GMHS · RHM · Tim mạch) chỉ vài khoa dự (QĐ 26/08/2026). */}
           {/* G11 (03/10/2026): chưa chọn gói con thì chưa có số — hiện "—",
               không hiện 0 (0 đọc như "chưa khoa nào", là sai). */}
-          <ONhanh nhan="Khoa tham gia gói" so={goiConId ? tongQuan.soKhoaToanVien : "—"} vach="bg-slate-300" />
+          <ONhanh nhan="Khoa tham gia gói" so={goiConId ? tongQuan.soKhoaToanVien : "—"}
+            mau={goiConId ? "text-slate-800" : "text-slate-500"} vach="bg-slate-300" />
           <ONhanh nhan="Đã đề xuất" so={goiConId ? tongQuan.soKhoaDaDeXuat : "—"}
-            mau={goiConId ? "text-emerald-600" : "text-slate-400"} vach={goiConId ? "bg-emerald-500" : "bg-slate-200"} />
+            mau={goiConId ? "text-emerald-600" : "text-slate-500"} vach={goiConId ? "bg-emerald-500" : "bg-slate-200"} />
           <ONhanh nhan="Chưa đề xuất" so={goiConId ? tongQuan.soKhoaChuaDeXuat : "—"}
-            mau={!goiConId ? "text-slate-400" : tongQuan.soKhoaChuaDeXuat > 0 ? "text-red-600" : "text-slate-800"}
+            mau={!goiConId ? "text-slate-500" : tongQuan.soKhoaChuaDeXuat > 0 ? "text-red-600" : "text-slate-800"}
             vach={!goiConId ? "bg-slate-200" : tongQuan.soKhoaChuaDeXuat > 0 ? "bg-red-500" : "bg-emerald-500"} />
           <ONhanh nhan="Đã xác nhận bản hiện tại"
             so={goiConId && tongQuan.soKhoaCanChot ? `${tongQuan.soKhoaDaChot}/${tongQuan.soKhoaCanChot}` : "—"}
@@ -773,7 +774,7 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
                 {fmt(tomTatRotTrongGio.soKhoa)} khoa chưa gửi
               </span>
               <button type="button" onClick={() => setXemRotTrongGio((v) => !v)} aria-expanded={xemRotTrongGio}
-                className="rounded border border-amber-400 bg-white px-2 py-0.5 text-xs font-medium text-amber-800 hover:bg-amber-100">
+                className="inline-flex min-h-8 items-center rounded border border-amber-400 bg-white px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100">
                 {xemRotTrongGio ? "Thu lại" : "Bấm để xem khoa nào"}
               </button>
             </div>
@@ -821,14 +822,14 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
           )}
           {/* Mọi số lịch sử trên màn này đều tính từ dữ liệu HIS đã nạp — nên
               hiện thẳng mốc mới nhất cạnh nút nạp, thay vì bắt PĐD tự nhớ. */}
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1">
-            <Database size={12} className="text-slate-400" />
+          <span className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-0.5">
+            <Database size={12} className="text-slate-500" />
             Dữ liệu HIS mới nhất:
             <b className="text-slate-700">
               {mocHis ? `T${mocHis.thang}/${mocHis.nam}` : "chưa có"}
             </b>
             <button type="button" onClick={() => onMoManKhac?.({ nhom: "chung", man: "napdulieu" })}
-              className="ml-1 rounded border border-umc-200 bg-white px-2 py-0.5 font-medium text-umc-700 hover:bg-umc-50">
+              className="ml-1 inline-flex min-h-8 items-center rounded border border-umc-200 bg-white px-2.5 py-1 font-medium text-umc-700 hover:bg-umc-50">
               Nạp thêm dữ liệu
             </button>
           </span>
@@ -884,7 +885,7 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
               : dsGoiCon.length > 1 ? "Chọn một gói con"
               : "Đợt này chưa có gói con nào — kiểm lại dữ liệu đợt"}
           </p>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-slate-500">
             Loại gói → đợt → gói con → bảng điều hành. Mỗi gói con đi thầu riêng
             nên số liệu cũng riêng.
           </p>
@@ -922,11 +923,11 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
             {/* patch_zzzzx — ba dòng đầu đã đếm theo ĐÚNG đợt đang chọn. Dòng
                 cấu hình cột thì chưa: bảng đó không có neo đợt nên vẫn tính
                 theo (gói con, năm). Nói thẳng ra để người bấm biết. */}
-            <p className="mt-2 text-[11px] text-amber-800">
+            <p className="mt-2 text-xs text-amber-800">
               Ba dòng đầu chỉ thuộc <b>đợt đang chọn</b>. Riêng <b>cấu hình ẩn/khoá cột</b>{" "}
               chưa neo theo đợt nên tính chung cho cả gói con trong năm {NAM_DE_XUAT}.
             </p>
-            <p className="mt-2 text-[11px] text-slate-500">
+            <p className="mt-2 text-xs text-slate-500">
               <b>KHÔNG</b> đụng tới: đề xuất của khoa, lịch sử HIS,
               kết quả thầu và toàn bộ lịch sử chỉnh sửa (audit).
             </p>
@@ -955,7 +956,7 @@ function ONhanh({ nhan, so, mau = "text-slate-800", vach = "bg-slate-200" }) {
   return (
     <div className="relative overflow-hidden rounded-lg border border-slate-200 bg-white px-3 py-2 pl-3.5 transition-colors hover:border-umc-200">
       <span aria-hidden className={`absolute inset-y-0 left-0 w-[3px] ${vach}`} />
-      <p className="text-[11px] leading-tight text-slate-500">{nhan}</p>
+      <p className="text-xs leading-tight text-slate-500">{nhan}</p>
       <p className={`mt-0.5 text-lg font-semibold leading-tight tabular-nums ${mau}`}>{so}</p>
     </div>
   );
@@ -979,15 +980,15 @@ function TabKhoa({
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3">
         {BO_LOC.map((b) => (
           <button key={b.ma} type="button" onClick={() => setLocKhoa(b.ma)}
-            className={`rounded-full px-3 py-1 text-xs font-medium ${
+            className={`inline-flex min-h-9 items-center rounded-full px-3.5 py-1.5 text-[13px] font-medium ${
               locKhoa === b.ma ? "bg-umc-800 text-white" : "border border-slate-300 text-slate-600 hover:bg-white"}`}>
             {b.ten}
           </button>
         ))}
         <div className="relative ml-auto">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
           <input value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)} placeholder="Tìm khoa…"
-            className="rounded-lg border border-slate-300 py-1.5 pl-8 pr-3 text-xs" />
+            className="min-h-9 rounded-lg border border-slate-300 py-2 pl-8 pr-3 text-sm" />
         </div>
       </div>
 
@@ -1013,36 +1014,36 @@ function TabKhoa({
             ) : khoaHienThi.map((k) => (
               <Fragment key={k.don_vi}>
               {/* Sọc ngựa vằn + đổi nền khi rê chuột: mắt phải dò ngang từ tên
-                  khoa sang cột "Xác nhận đề xuất" tận bên phải. Hàng khoa CHƯA
-                  đề xuất giữ nền đỏ nhạt, đè lên sọc.
+                  khoa sang cột "Xác nhận đề xuất" tận bên phải. V15 (05/10/2026):
+                  bỏ nền đỏ nhạt của hàng khoa CHƯA đề xuất — gói bổ sung có tới
+                  62 hàng như vậy, đỏ lặp hàng chục dòng; cột "Đề xuất" ghi "Chưa".
                   CẢNH BÁO: chú thích ở đây phải là chú thích JSX trong ngoặc
                   nhọn, KHÔNG được dùng hai gạch chéo. Từ 26/08/2026 khối này
                   nằm trong Fragment nên hai gạch chéo biến thành CHỮ HIỆN RA
                   TRÊN BẢNG — chủ dự án chụp màn hình báo. */}
-              <tr className={`border-b border-slate-100 transition-colors last:border-0 hover:bg-umc-50/70 ${
-                !k.daDeXuat ? "bg-red-50/40" : "even:bg-slate-50/60"}`}>
+              <tr className="border-b border-slate-100 transition-colors last:border-0 even:bg-slate-50/60 hover:bg-umc-50/70">
                 <td className="px-4 py-2 font-medium text-slate-800">{k.don_vi}</td>
                 <td className="px-3 py-2 text-center">
                   {k.daDeXuat
                     ? <CheckCircle2 size={15} className="mx-auto text-emerald-600" />
-                    : <span className="text-xs font-medium text-slate-500">Chưa</span>}
+                    : <span className="text-xs font-medium text-slate-600">Chưa</span>}
                 </td>
-                <td className="px-3 py-2 text-right font-mono text-xs">{k.daDeXuat ? fmt(k.soMaQuanLy) : "—"}</td>
-                <td className="px-3 py-2 text-right font-mono text-xs">{k.daDeXuat ? fmt(k.soMaHang) : "—"}</td>
-                <td className="px-3 py-2 text-right font-mono text-xs">{k.daDeXuat ? fmt(k.tongSoLuong) : "—"}</td>
+                <td className="px-3 py-2 text-right text-[13px] tabular-nums">{k.daDeXuat ? fmt(k.soMaQuanLy) : "—"}</td>
+                <td className="px-3 py-2 text-right text-[13px] tabular-nums">{k.daDeXuat ? fmt(k.soMaHang) : "—"}</td>
+                <td className="px-3 py-2 text-right text-[13px] tabular-nums">{k.daDeXuat ? fmt(k.tongSoLuong) : "—"}</td>
                 {/* QĐ 26/08/2026 — khoa này đang đề xuất ở BAO NHIÊU GÓI, tính
                     trên toàn hệ chứ không riêng gói con đang đứng. Bấm vào số
                     thì xổ ra từng gói kèm số mã quản lý / mã hàng của gói đó. */}
                 <td className="px-3 py-2 text-center">
                   {(() => {
                     const ds = goiCuaKhoa.get(k.don_vi) || [];
-                    if (!ds.length) return <span className="text-xs text-slate-300">—</span>;
+                    if (!ds.length) return <span className="text-xs text-slate-500">—</span>;
                     return (
                       <button type="button"
                         onClick={() => setKhoaMoGoi((cu) => (cu === k.don_vi ? "" : k.don_vi))}
                         aria-expanded={khoaMoGoi === k.don_vi}
                         title="Bấm để xem khoa này đang đề xuất ở những gói nào"
-                        className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        className={`inline-flex min-h-8 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${
                           khoaMoGoi === k.don_vi
                             ? "bg-umc-700 text-white"
                             : "border border-umc-300 bg-umc-50 text-umc-800 hover:bg-umc-100"}`}>
@@ -1053,21 +1054,21 @@ function TabKhoa({
                 </td>
                 <td className="px-3 py-2 text-center">
                   {k.daChot ? <CheckCircle2 size={15} className="mx-auto text-emerald-600" />
-                    : <span className="text-xs text-slate-300">—</span>}
+                    : <span className="text-xs text-slate-500">—</span>}
                 </td>
                 <td className="px-3 py-2">
                   <div className="flex flex-wrap items-center justify-end gap-1">
                     {k.daDeXuat && (
                       <>
                         <button type="button" onClick={() => moDanhMucKhoa(k.don_vi)}
-                          className="inline-flex items-center gap-1 rounded border border-umc-200 bg-umc-50 px-2 py-1 text-xs font-medium text-umc-700 hover:bg-umc-100">
+                          className="inline-flex min-h-8 items-center gap-1 rounded border border-umc-200 bg-umc-50 px-2.5 py-1.5 text-xs font-medium text-umc-700 hover:bg-umc-100">
                           Danh mục ›
                         </button>
                       </>
                     )}
                     {!k.duHoSo && (
                       <button type="button" onClick={() => copyNhac(k)}
-                        className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                        className="inline-flex min-h-8 items-center gap-1 rounded border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
                         {khoaDaCopy === k.don_vi ? <Copy size={11} /> : <Bell size={11} />}
                         {khoaDaCopy === k.don_vi ? "Đã copy" : "Nhắc"}
                       </button>
@@ -1083,12 +1084,12 @@ function TabKhoa({
                 <tr key={`${k.don_vi}:goi`} className="bg-umc-50/40">
                   <td colSpan={8} className="px-4 py-2">
                     <div className="rounded-lg border border-umc-200 bg-white p-2">
-                      <p className="mb-1 text-[11px] font-semibold text-umc-900">
+                      <p className="mb-1 text-xs font-semibold text-umc-900">
                         {k.don_vi} — đang đề xuất ở {(goiCuaKhoa.get(k.don_vi) || []).length} gói
                       </p>
                       <table className="w-full">
                         <thead>
-                          <tr className="text-[11px] uppercase tracking-wide text-slate-500">
+                          <tr className="text-xs uppercase tracking-wide text-slate-500">
                             <th className="px-2 py-1 text-left">Gói</th>
                             <th className="px-2 py-1 text-left">Đợt</th>
                             <th className="px-2 py-1 text-right">Mã QL</th>
@@ -1104,11 +1105,11 @@ function TabKhoa({
                                 {g.ten_dot}
                                 {g.trang_thai_dot === "mo"
                                   ? <span className="ml-1 text-emerald-600">· đang mở</span>
-                                  : <span className="ml-1 text-slate-400">· đã đóng</span>}
+                                  : <span className="ml-1 text-slate-500">· đã đóng</span>}
                               </td>
-                              <td className="px-2 py-1 text-right font-mono text-xs">{fmt(g.so_ma_quan_ly)}</td>
-                              <td className="px-2 py-1 text-right font-mono text-xs">{fmt(g.so_ma_hang)}</td>
-                              <td className="px-2 py-1 text-right font-mono text-xs">{fmt(g.tong_so_luong)}</td>
+                              <td className="px-2 py-1 text-right text-[13px] tabular-nums">{fmt(g.so_ma_quan_ly)}</td>
+                              <td className="px-2 py-1 text-right text-[13px] tabular-nums">{fmt(g.so_ma_hang)}</td>
+                              <td className="px-2 py-1 text-right text-[13px] tabular-nums">{fmt(g.tong_so_luong)}</td>
                             </tr>
                           ))}
                         </tbody>

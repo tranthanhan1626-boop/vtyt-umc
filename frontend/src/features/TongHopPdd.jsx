@@ -13,7 +13,7 @@ import {
 import { docTenCotTuMau, ganTenMau } from "../lib/tenCotBieuMau";
 import { taiLichSuTheoThang, gomTheoThang } from "../lib/lichSuSuDung";
 import { taiDotIdCuaGoi, locTheoDot } from "../lib/dotBoSung";
-import { StyleTable, StyleToolbar, formatCell, chuThuanCuaO, tenNguoiSuaNgan } from "./DanhMucDeXuatKhoa";
+import { StyleTable, StyleToolbar, formatCell, chuThuanCuaO, tenNguoiSuaNgan, laOChuDai, doRongNhanNhom12 } from "./DanhMucDeXuatKhoa";
 import { xuatExcelDong, tenFileAnToan } from "../lib/xuatExcelDong";
 import { daiP50P75, doDaiKyMacDinh } from "../lib/congThucSoLuong";
 import {
@@ -32,7 +32,7 @@ import {
 } from "./CumThauTongHop";
 import { dichLoi } from "../lib/dichLoi";
 import ThanhTienTrinh, { diToiPhanTu } from "../components/ThanhTienTrinh";
-import ThanhDauUmc, { useDongKhiRaNgoai, doRongNhanNhom } from "../components/ThanhDauUmc";
+import ThanhDauUmc, { useDongKhiRaNgoai } from "../components/ThanhDauUmc";
 import { tinhTienTrinhPdd } from "../lib/tienTrinh";
 import { dauVaoPdd, useKhoaThamGiaVaDaGui } from "../lib/useTienTrinh";
 import { giaTriKhongDoi } from "../lib/oKhongDoi";
@@ -106,7 +106,7 @@ const RONG_GO_ROT = {
 };
 // Trước chốt số chỉ có 6 cột: dành chỗ cho tên vật tư (bản vẽ M2_truoc-thau).
 const RONG_TRUOC_THAU = {
-  stt: 56, ten_vt_2627: 640, dvt: 90, sl_de_xuat_2627: 150, dai_p50_p75: 170,
+  stt: 56, ten_vt_2627: 640, dvt: 90, sl_de_xuat_2627: 150, dai_p50_p75: 176,
 };
 // Bảy cột cụm "Khoa đề xuất" + thầu: [khoa, Q, R1, R2, R3, Trúng, Đã chia, Xử lý rớt]
 const RONG_CUM_THAU = [160, 84, 76, 76, 76, 88, 104, 200];
@@ -145,6 +145,43 @@ function ChamSuaCuoi({ updatedBy, updatedAt }) {
       title={`Sửa cuối: ${tenNguoiSuaNgan(updatedBy)}${updatedBy ? ` (${updatedBy})` : ""} · ${luc}`}
       className="ml-1 inline-block h-2 w-2 shrink-0 cursor-help rounded-full bg-violet-500 align-middle" />
   );
+}
+
+// ---- Mã đã đổ sang mã tương đương (QĐ 26/08/2026, 01 mục 5.3b · Q-A 05/10/2026)
+// Ba hàm thuần (không JSX) để kiểm được bằng node. Lỗi 05/10 (đợt 207): đổ hết
+// 66326 sang 66142 thì cả ba dòng (mã × khoa) của 66326 về 0, bộ lọc `> 0` cũ
+// bỏ sạch, dòng 66326 biến khỏi bảng và Excel — PĐD mất dấu phần rớt và mất
+// đường bỏ đổ.
+
+/** Dòng (mã × khoa) nào vào bảng tổng hợp.
+ *  - Có số hiện hành > 0: giữ.
+ *  - Số 0 vì ĐÃ ĐỔ sang mã tương đương (`da_do_di > 0`): GIỮ, hiện 0 kèm nhãn.
+ *  - Số 0 vì lý do khác: bỏ như trước. Bộ lọc gốc (11/08/2026) bỏ "dòng nguồn
+ *    đã xử lý sau rớt 1 phần, RPC giảm về 0" — ở mô hình cũ (`proposals`) RPC
+ *    đẩy số rớt sang mã khác trừ thẳng `so_luong` của mã nguồn; nay việc đó là
+ *    đổ mã và 5.3b đổi luật thành giữ dòng. Các dòng 0 còn lại (vd khoa tự sửa
+ *    về 0) giữ nguyên cách cũ: không vào bảng, không thêm mã rỗng.
+ *  - Đường cũ không có đợt (đọc `proposals`) giữ nguyên bộ lọc `> 0`. */
+function giuDongPhanBo(r, laPhanBoV3) {
+  if (!laPhanBoV3) return Number(r.so_luong) > 0;
+  return Number(r.so_luong_hien_hanh) > 0 || Number(r.da_do_di) > 0;
+}
+
+/** Cộng phần đã đổ của mọi khoa trên một mã. View cho mỗi (mã, khoa) MỘT mã
+ *  nhận (`min(ma_hang_nhan)`); các khoa có thể đổ sang mã khác nhau nên gom
+ *  lại không trùng. */
+function gomDaDo(khoaDeXuat) {
+  const da = (khoaDeXuat || []).filter((k) => Number(k.da_do_di) > 0);
+  return {
+    da_do_di: da.reduce((s, k) => s + Number(k.da_do_di), 0),
+    do_sang_ma: [...new Set(da.map((k) => k.do_sang_ma).filter(Boolean))].sort().join(", ") || null,
+  };
+}
+
+/** Chữ nhãn — null khi mã chưa đổ gì. Cùng chữ với màn Danh mục khoa. */
+function nhanDaDo(row) {
+  if (!(Number(row?.da_do_di) > 0)) return null;
+  return `↪ đã đổ ${fmt(row.da_do_di)} sang ${row.do_sang_ma || "mã tương đương"}`;
 }
 
 function monthId(nam, thang) { return nam * 12 + thang - 1; }
@@ -196,7 +233,7 @@ async function taiDuLieuGoc(goiId, dotId = null) {
       // `gốc − đã đổ đi + nhận về`; không ghi đè vì `phan_bo_khoa` bị khoá
       // cứng 1 chặn sau chốt Q, và số đã mang đi thầu là bằng chứng.
     qProposals = () => supabase.from("v_phan_bo_sau_dieu_chuyen_v3")
-      .select("ma_hang, khoa, so_luong_hien_hanh, so_luong_goc, sua_boi_khoa")
+      .select("ma_hang, khoa, so_luong_hien_hanh, so_luong_goc, sua_boi_khoa, da_do_di, do_sang_ma")
       .eq("dot_goi_id", dotGoiId);
   } else {
     qProposals = () => {
@@ -219,15 +256,18 @@ async function taiDuLieuGoc(goiId, dotId = null) {
   if (loiProposals) throw loiProposals;
 
   const theoMa = new Map();
-  // Dòng nguồn đã được khoa xử lý sau rớt 1 phần được RPC giảm về 0. Nó chỉ
-  // còn là dòng audit trong dữ liệu, không được tiếp tục xuất hiện trong danh
-  // mục tổng hợp PĐD hay làm tổng số giả.
-  (propRows || []).filter((r) => Number(laPhanBoV3 ? r.so_luong_hien_hanh : r.so_luong) > 0).forEach((r) => {
+  // Lọc dòng số 0 — xem `giuDongPhanBo`: dòng đã ĐỔ sang mã tương đương phải
+  // ở lại (5.3b, Q-A 05/10/2026), các dòng 0 khác vẫn bỏ như trước.
+  (propRows || []).filter((r) => giuDongPhanBo(r, laPhanBoV3)).forEach((r) => {
     if (!theoMa.has(r.ma_hang)) theoMa.set(r.ma_hang, []);
     theoMa.get(r.ma_hang).push({
       don_vi: laPhanBoV3 ? r.khoa : r.don_vi,
       so_luong: Number(laPhanBoV3 ? r.so_luong_hien_hanh : r.so_luong) || 0,
       so_luong_goc: Number(laPhanBoV3 ? r.so_luong_goc : r.so_luong) || 0,
+      // Q-A 05/10/2026 — PHẢI chép sang đây (bẫy 26/08: chọn cột trong
+      // `.select()` thôi là chưa đủ, chỗ vẽ đọc undefined và nhãn không hiện).
+      da_do_di: laPhanBoV3 ? Number(r.da_do_di) || 0 : 0,
+      do_sang_ma: laPhanBoV3 ? r.do_sang_ma || null : null,
       // V2: khoa sửa được số của mình, nên tổng ở đây có thể đã đổi sau lần
       // PĐD chia gần nhất. Cờ do trigger `trg_phan_bo_danh_dau_ai_sua` đặt
       // ngay tại nguồn — không đoán từ email người sửa.
@@ -348,6 +388,9 @@ async function taiDuLieuGoc(goiId, dotId = null) {
       })),
       khoaTuSuaSo: khoaDeXuat.filter((k) => k.suaBoiKhoa).map((k) => k.don_vi),
       tongToanVien: slDeXuat,
+      // Q-A 05/10/2026 (5.3b) — phần đã đổ sang mã tương đương, cộng mọi khoa.
+      // Đọc ở nhãn "↪ đã đổ … sang …" trên bảng và trong Excel (`nhanDaDo`).
+      ...gomDaDo(khoaDeXuat),
     };
     // Tám cột PĐD gõ tay. Trước 27/08/2026 chúng bị ép `null` vì không có chỗ
     // nào trong DB để sống — mỗi đợt PĐD gõ lại từ đầu. Nay đọc từ danh mục
@@ -754,8 +797,14 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
     window.addEventListener("resize", doi);
     return () => window.removeEventListener("resize", doi);
   }, []);
+  // V16 (rà thị giác 05/10/2026): phần dư chia trước tối đa 72px cho cột
+  // "Khoảng thường dùng" (104 → 176) để khoảng số nằm một dòng; ở 1280 không
+  // dư thì khoảng xuống dòng gọn ở dấu "–" (mỗi số không gãy). Còn lại cho Tên.
+  const duRongGoRot = Math.max(0, rongCuaSo - 1248 - 24);
+  const themDaiGoRot = Math.min(72, duRongGoRot);
   const rongTenGoRot = Math.max(RONG_GO_ROT.ten_vt_2627,
-    Math.min(420, RONG_GO_ROT.ten_vt_2627 + (rongCuaSo - 1248 - 24)));
+    Math.min(420, RONG_GO_ROT.ten_vt_2627 + duRongGoRot - themDaiGoRot));
+  const rongDaiGoRot = RONG_GO_ROT.dai_p50_p75 + themDaiGoRot;
 
   const cotHienThi = useMemo(() => {
     // Độ rộng đổi ở đây là độ rộng VẼ (TSKT nới 560, lăng kính thu hẹp).
@@ -782,11 +831,11 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       }));
     // Có thêm nhóm cột thì bảng đã rộng — trả tên vật tư về độ rộng thường.
     return rongTrenManHinh(sapXepFreezeTruoc(ds),
-      coQ ? (coThem ? RONG_GO_ROT : { ...RONG_GO_ROT, ten_vt_2627: rongTenGoRot })
+      coQ ? (coThem ? RONG_GO_ROT : { ...RONG_GO_ROT, ten_vt_2627: rongTenGoRot, dai_p50_p75: rongDaiGoRot })
         : coThem ? {} : RONG_TRUOC_THAU);
-  }, [cotAn, cotDayDu, laTheoViec, nhomThem, coQ, rongTenGoRot]);
+  }, [cotAn, cotDayDu, laTheoViec, nhomThem, coQ, rongTenGoRot, rongDaiGoRot]);
   const groupSegments = useMemo(
-    () => tinhSegmentsGroup(cotHienThi, laTheoViec ? NHOM_COT_THEO_VIEC : NHOM_COT_PDD, doRongNhanNhom),
+    () => tinhSegmentsGroup(cotHienThi, laTheoViec ? NHOM_COT_THEO_VIEC : NHOM_COT_PDD, doRongNhanNhom12),
     [cotHienThi, laTheoViec]
   );
   // Mã "anh em" của mã đang mở hộp đổ: cùng mã quản lý, khác chính nó, và
@@ -924,6 +973,11 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
 
       const duLieu = rowsXuat.map((r) => {
         const dong = { ...r };
+        // Q-A 05/10/2026 (5.3b): mã đã đổ sang mã tương đương có mặt trong file
+        // với số 0, nhãn "↪ đã đổ … sang …" xuống dòng ngay dưới tên vật tư
+        // (đúng chỗ nhãn đứng trên màn); ô số vẫn là SỐ để Excel cộng/lọc được.
+        const nhan = nhanDaDo(r);
+        if (nhan) dong.ten_vt_2627 = `${r.ten_vt_2627 ?? r.ma_hang}\n${nhan}`;
         if (hienChiTietKhoa) {
           r.khoaDeXuat.forEach((k) => { dong[`khoa::${k.khoaTen}`] = k.soLuong; });
           dong["khoa::__tong"] = r.tongToanVien;
@@ -1295,22 +1349,6 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
             <h1 className="text-lg font-semibold text-slate-900 leading-tight">
               Danh mục tổng hợp — Gói {boThau.nhan}
             </h1>
-            <p className="text-[13px] text-slate-500 mt-0.5 flex flex-wrap items-center gap-x-1.5">
-              <span>{tongMaHang} mã hàng · {tongKhoaThamGia} khoa đã đề xuất</span>
-              {locChuaChiaDu && <span>· đang lọc {rowsHien.length} mã</span>}
-              {!coQ && hienChiTietKhoa && <span>· bấm ▸ ở đầu dòng để xem và sửa số từng khoa</span>}
-              {chot && (
-                /* Băng chốt số rút 1 nhãn; người chốt + giờ vào rê chuột (G10).
-                   Nói đúng cái đang khoá: chốt Q chỉ đóng băng CỘT SỐ, cột chữ
-                   còn sửa được tới khi chốt trình ký. */
-                <span className="inline-flex items-center gap-1 rounded-full border border-umc-200 bg-umc-50 px-2 py-0.5 text-xs text-umc-800 cursor-help"
-                  title={`Chốt bởi ${chot.chot_boi || "không rõ"} lúc ${new Date(chot.chot_luc).toLocaleString("vi-VN")}. `
-                    + "Cột số lượng đang khoá; cột chữ vẫn sửa được tới khi chốt trình ký."}>
-                  <Lock size={11} /> Đã chốt số đi thầu · bản số {chot.revision}
-                  {chot.so_khoa_chua_chot > 0 ? ` · lúc chốt còn ${chot.so_khoa_chua_chot} khoa chưa gửi` : ""}
-                </span>
-              )}
-            </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[13px] text-slate-500">Cách xem:</span>
@@ -1452,6 +1490,24 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
             </div>
           </div>
         </div>
+        {/* 05/10/2026 (V17): dòng phụ (số mã, băng chốt) xuống DƯỚI hàng tên + nút, để
+            hàng nút không bị đẩy xuống dòng riêng ở 1280px — đầu trang thấp hơn. */}
+        <p className="text-[13px] text-slate-500 mt-0.5 flex flex-wrap items-center gap-x-1.5">
+          <span>{tongMaHang} mã hàng · {tongKhoaThamGia} khoa đã đề xuất</span>
+          {locChuaChiaDu && <span>· đang lọc {rowsHien.length} mã</span>}
+          {!coQ && hienChiTietKhoa && <span>· bấm ▸ ở đầu dòng để xem và sửa số từng khoa</span>}
+          {chot && (
+            /* Băng chốt số rút 1 nhãn; người chốt + giờ vào rê chuột (G10).
+               Nói đúng cái đang khoá: chốt Q chỉ đóng băng CỘT SỐ, cột chữ
+               còn sửa được tới khi chốt trình ký. */
+            <span className="inline-flex items-center gap-1 rounded-full border border-umc-200 bg-umc-50 px-2 py-0.5 text-xs text-umc-800 cursor-help"
+              title={`Chốt bởi ${chot.chot_boi || "không rõ"} lúc ${new Date(chot.chot_luc).toLocaleString("vi-VN")}. `
+                + "Cột số lượng đang khoá; cột chữ vẫn sửa được tới khi chốt trình ký."}>
+              <Lock size={11} /> Đã chốt số đi thầu · bản số {chot.revision}
+              {chot.so_khoa_chua_chot > 0 ? ` · lúc chốt còn ${chot.so_khoa_chua_chot} khoa chưa gửi` : ""}
+            </span>
+          )}
+        </p>
 
         {/* Dòng 2 — trước chốt số: điều kiện chốt + nút chính "Chốt số đi thầu".
             V2: danh sách khoa chưa xác nhận phải nằm ngay đầu bảng chứ không giấu
@@ -1600,7 +1656,11 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       </div>
 
       {/* Table */}
-      <div className={`flex-1 overflow-auto bg-white ${rows.length === 0 ? "flex flex-col" : ""}`}>
+      {/* N3 (05/10/2026, vòng 2): màn này phủ kín cửa sổ (fixed inset-0), không
+          nằm trong .umc-workspace nên không có lề phải 20px — thẻ trợ giúp
+          (ChatbotTroGiup, rộng 20px, dán mép phải) đè chữ ô cuối khi bảng tràn
+          hết bề ngang. Chừa đúng 20px (mr-5) ở khung cuộn của bảng. */}
+      <div className={`mr-5 flex-1 overflow-auto bg-white ${rows.length === 0 ? "flex flex-col" : ""}`}>
         {/* L3 (bấm thử 03/10/2026): ở lăng kính mọi ô canh GIỮA theo chiều dọc
             — cột trái canh trên, cụm thầu canh giữa làm số lệch hàng. "Đủ cột"
             giữ canh trên (ô TSKT dài). Chỉ là cách vẽ, không đổi cột/Excel. */}
@@ -1657,7 +1717,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
               {/* NẶNG-2: ở lăng kính cột này chỉ 100px — "KHOA ĐỀ X…". */}
               {!(laTheoViec && groupSegments[groupSegments.length - 1]?.groupKey === "de_xuat") && (
                 <th title="Khoa đề xuất">
-                  {chonNhanVua(["Khoa đề xuất", "Khoa"], rongCumThau[0], doRongNhanNhom)}
+                  {chonNhanVua(["Khoa đề xuất", "Khoa"], rongCumThau[0], doRongNhanNhom12)}
                 </th>
               )}
               {!anCumThau && <th colSpan={7} title="Kết quả đấu thầu">Kết quả đấu thầu</th>}
@@ -1673,6 +1733,10 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                   nhanHien !== c.nhan ? `Tên gốc: ${c.nhan}` : null,
                   COT_MAU_PDD_GO_TAY.has(c.key) ? "Cột theo mẫu bệnh viện — PĐD gõ tay" : null,
                   c.key === "sl_de_xuat_2627" && !chot ? "Gõ được tới khi chốt số đi thầu" : null,
+                  // V19: nói nghĩa của ô tô đỏ.
+                  c.key === "dai_p50_p75" || c.key === "sl_de_xuat_2627"
+                    ? "Ô tô đỏ: tổng đề xuất cao hơn cận trên của khoảng thường dùng toàn viện — chỉ để lưu ý, không chặn"
+                    : null,
                 ].filter(Boolean).join(" · ") || undefined;
                 return (
                   <th key={c.key}
@@ -1684,24 +1748,26 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                         {nhanHien}
                         {c.key === "sl_de_xuat_2627" && !chot && <span aria-hidden className="ml-0.5 font-normal">✎</span>}
                         {laTheoViec && c.key === "dai_p50_p75" && (
-                          <span className="block text-[11px] font-normal opacity-80">toàn viện</span>
+                          <span className="block text-xs font-normal opacity-80">toàn viện</span>
                         )}
                       </span>
                       {/* G12 — lăng kính bỏ biểu tượng ghim/khoá/ẩn ở tiêu đề;
                           "Đủ cột" giữ như cũ, riêng ẩn cột phải hỏi lại (1e). */}
                       {!laTheoViec && c.freeze && <span title="Cột này luôn hiện khi cuộn ngang">📌</span>}
                       {!laTheoViec && (
+                        // V10 (05/10/2026): vùng bấm 24px thay icon 10px; lề âm
+                        // để tiêu đề không cao thêm.
                         <button onClick={() => toggleKhoa("cot", c.key, cotLocked.has(c.key))}
-                          className="opacity-50 hover:opacity-100"
+                          className="-my-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded opacity-50 hover:bg-white/60 hover:opacity-100"
                           title={cotLocked.has(c.key) ? "Mở khoá cột" : "Khoá cột"}>
-                          {cotLocked.has(c.key) ? <Lock size={10} /> : <Unlock size={10} />}
+                          {cotLocked.has(c.key) ? <Lock size={12} /> : <Unlock size={12} />}
                         </button>
                       )}
                       {!laTheoViec && (
                         <button onClick={() => setHoi({ loai: "an_mot_cot", cot: c })}
-                          className="opacity-50 hover:opacity-100 hover:text-rose-600"
+                          className="-my-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded opacity-50 hover:bg-white/60 hover:opacity-100 hover:text-rose-600"
                           title="Ẩn cột này khỏi bảng và file Excel (hỏi lại trước)">
-                          <EyeOff size={10} />
+                          <EyeOff size={12} />
                         </button>
                       )}
                     </span>
@@ -1719,7 +1785,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                   <th title="Tên gốc: Q — số đã chốt đi thầu, không đổi">Số đi thầu</th>
                   {GIAI_DOAN.map((g, i) => (
                     <th key={g.ma} title={`Tên gốc: R${i + 1} — rớt ở giai đoạn ${g.nhan}`}>
-                      Rớt ở<span className="block text-[11px] font-normal opacity-80">{g.nhan}</span>
+                      Rớt ở<span className="block text-xs font-normal opacity-80">{g.nhan}</span>
                     </th>
                   ))}
                   <th title="Số đi thầu trừ rớt ở ba giai đoạn">Trúng</th>
@@ -1795,7 +1861,8 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                       daSuaDe ? "sua-de" : "",
                       isLocked ? "locked" : "",
                       isEditing ? "editing" : "",
-                      c.kieu === "num" ? "num" : "",
+                      // V16: khoảng số căn phải, chữ số đều cột như ô số.
+                      c.kieu === "num" || c.key === "dai_p50_p75" ? "num" : "",
                       c.key === "stt" ? "stt" : "",
                       c.freeze ? "freeze" : "",
                     ].filter(Boolean).join(" ");
@@ -1823,6 +1890,10 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                             : null,
                           dsKhoaGhi.length
                             ? dsKhoaGhi.map((x) => `${x.khoa}: ${x.giaTri}`).join("\n")
+                            : null,
+                          // V19 (05/10/2026): ô tô đỏ phải tự nói vì sao đỏ.
+                          vuotP75 && (c.key === "sl_de_xuat_2627" || c.key === "dai_p50_p75")
+                            ? `Tô đỏ: tổng đề xuất ${fmt(r.sl_de_xuat_2627)} cao hơn cận trên của khoảng thường dùng toàn viện (${fmt(r._daiDen)}) — chỉ để lưu ý, không chặn.`
                             : null,
                         ].filter(Boolean).join("\n") || undefined}
                         onClick={() => c.key !== "dai_p50_p75" && canSua && !isEditing
@@ -1896,7 +1967,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                             {/* 05/10/2026: ô SỐ cho phép xuống hàng — cột hẹp thì nhãn
                                 ("N khoa tự sửa", "N khoa"…) rơi xuống dưới số, thay vì ép
                                 chính con số gãy dọc từng chữ số (chuẩn thị giác mục 5). */}
-                            <span className={`flex items-center gap-x-1 ${c.kieu === "num" ? "flex-wrap justify-end gap-y-0.5" : ""}`}>
+                            <span className={`flex items-center gap-x-1 ${c.kieu === "num" || c.key === "dai_p50_p75" ? "flex-wrap justify-end gap-y-0.5" : ""}`}>
                             {/* Lăng kính trước chốt số: ô Tổng đề xuất vẽ như ô nhập
                                 để thấy là gõ được (bản vẽ M2_truoc-thau). */}
                             {laTheoViec && c.key === "sl_de_xuat_2627" && canSua ? (
@@ -1905,7 +1976,16 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                               </span>
                             ) : c.kieu === "num"
                               ? <span className="shrink-0 whitespace-nowrap tabular-nums">{formatCell(value, c.kieu)}</span>
-                              : <span className="o-chu min-w-0">{formatCell(value, c.kieu)}</span>}
+                              // V16 (05/10/2026): khoảng thường dùng — căn phải, chữ
+                              // số đều cột; hẹp thì xuống dòng ở dấu "–", không gãy số.
+                              : c.key === "dai_p50_p75"
+                              ? (coDai
+                                ? <span className="min-w-0 text-right tabular-nums">
+                                    <span className="whitespace-nowrap">{fmt(r._daiTu)} –</span>{" "}
+                                    <span className="whitespace-nowrap">{fmt(r._daiDen)}</span>
+                                  </span>
+                                : <span className="text-slate-500">—</span>)
+                              : <span className={`o-chu min-w-0${laOChuDai(value, c.width) ? " o-dai" : ""}`}>{formatCell(value, c.kieu)}</span>}
                             {/* P6p (KĐ lượt 4, 28/09/2026) — "số gốc" chỉ đúng cho ô
                                 SỐ; ô chữ phải ghi "giá trị gốc". 1e (03/10/2026):
                                 bỏ sửa đè phải HỎI LẠI, không làm ngay. */}
@@ -1940,7 +2020,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                                 duyệt. Bấm để sổ danh sách từng khoa. */}
                             {dsKhoaGhi.length > 0 && !daSuaDe && (
                               <button
-                                onClick={(e) => { e.stopPropagation(); setKhoaGhiDangXem({ maHang: r.ma_hang, cot: c.key, nhan: c.nhan, ds: dsKhoaGhi }); }}
+                                onClick={(e) => { e.stopPropagation(); setKhoaGhiDangXem({ maHang: r.ma_hang, cot: c.key, nhan: NHAN_HIEN_PDD[c.key] || c.nhan, ds: dsKhoaGhi }); }}
                                 className={`shrink-0 rounded px-1 text-[11px] font-semibold ${
                                   khoaLech ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600"}`}
                                 title={khoaLech
@@ -1981,6 +2061,17 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                                 tên, không đẩy thêm một dòng (L3). */}
                             {c.key === "ten_vt_2627" && r.ma_hang && value !== r.ma_hang && (
                               <span className="block text-[12px] font-normal text-slate-500">{r.ma_hang}</span>
+                            )}
+                            {/* Q-A 05/10/2026 (5.3b): mã đổ sang mã tương đương ở lại
+                                bảng với số 0 — phải nói RA MẶT số đi đâu. Cùng chữ,
+                                cùng màu với màn Danh mục khoa. */}
+                            {c.key === "ten_vt_2627" && nhanDaDo(r) && (
+                              <span className="block">
+                                <span title={`Số đề xuất của mã này đã chuyển sang mã ${r.do_sang_ma}. Số gốc vẫn giữ trong hồ sơ thầu (cột Q). Bỏ đổ thì số tự về.`}
+                                  className="mt-0.5 inline-flex items-center rounded bg-slate-200 px-1.5 py-0.5 text-[11px] font-medium text-slate-700">
+                                  {nhanDaDo(r)}
+                                </span>
+                              </span>
                             )}
                           </span>
                         )}
@@ -2237,7 +2328,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
             <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100">
               <div className="text-xs">
                 <div className="font-semibold text-slate-800">Lịch sử sửa ô</div>
-                <div className="text-slate-400">{audit.maHang} · {cotDayDu.find((c) => c.key === audit.cot)?.nhan || audit.cot}</div>
+                <div className="text-slate-500">{audit.maHang} · {NHAN_HIEN_PDD[audit.cot] || cotDayDu.find((c) => c.key === audit.cot)?.nhan || audit.cot}</div>
               </div>
               <button onClick={() => setAudit(null)} className="text-slate-400 hover:text-slate-700 text-xs">Đóng</button>
             </div>
@@ -2292,7 +2383,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       )}
       {hoi?.loai === "an_mot_cot" && (
         <HopHoiLai
-          tieuDe={`Ẩn cột “${hoi.cot.nhan}” khỏi bảng và file Excel?`}
+          tieuDe={`Ẩn cột “${NHAN_HIEN_PDD[hoi.cot.key] || hoi.cot.nhan}” khỏi bảng và file Excel?`}
           nguyHiem
           noiDung="Lưu trên máy chủ, áp cho mọi người PĐD. Hiện lại ở Thêm cột ▾ → Ẩn cột khỏi bảng và Excel."
           nhanDongY="Ẩn cột"
@@ -2325,7 +2416,10 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                             if (moi.has(c.key)) moi.delete(c.key); else moi.add(c.key);
                             return { ...h, banNhap: moi };
                           })} />
-                        <span className={hoi.banNhap.has(c.key) ? "text-slate-500 line-through" : "text-slate-700"}>{c.nhan}</span>
+                        <span className={hoi.banNhap.has(c.key) ? "text-slate-500 line-through" : "text-slate-700"}
+                          title={NHAN_HIEN_PDD[c.key] ? `Tên gốc: ${c.nhan}` : undefined}>
+                          {NHAN_HIEN_PDD[c.key] || c.nhan}
+                        </span>
                       </label>
                     ))}
                   </div>
