@@ -151,12 +151,17 @@ thêm nối tiếp vào `backend/sql/` theo đúng thứ tự tên, chạy trự
 staging như một dự án bình thường, **không cần** duy trì riêng một bundle gộp
 cho "nhánh production" nữa.
 
-Có hai site Netlify khác nhau, đừng nhầm:
+Site Netlify (đo 05/10/2026 bằng `netlify api listSites`: tài khoản chỉ còn MỘT site):
 
 | Site | Nhánh Git theo dõi | DB Supabase | Ai dùng |
 |---|---|---|---|
-| `vtyt-umc` (production hiện có) | `main` | `jttucjnkqxckphmmilaa`, đang ở schema nền, chưa có các bảng/RPC A2→Z | chưa ai dùng thật |
-| **Site test — https://vtyt-umc-test.netlify.app** | `phase-a-luong-de-xuat` | `ihgfafubwyxnbubmppbj` | người được mời test |
+| **https://vtyt-umc.netlify.app** (id `883aef7e…`) | `phase-a-luong-de-xuat` | `ihgfafubwyxnbubmppbj` (staging) | demo 14/10 và người được mời |
+
+05/10/2026 đổi tên site `vtyt-umc-test` → `vtyt-umc` (chủ dự án yêu cầu bỏ chữ test
+trước buổi demo 14/10); địa chỉ cũ trả 404. Supabase staging → Authentication → URL
+Configuration đã đổi theo: Site URL `https://vtyt-umc.netlify.app`, Redirect URLs
+`https://vtyt-umc.netlify.app/**` và `http://localhost:4173/**` (trước đó Site URL là
+`http://localhost:3000` và danh sách redirect trống — link quên mật khẩu chưa từng trỏ đúng).
 
 > 🔴 **QĐ 25/08/2026 — TỪ NAY TEST Ở LOCALHOST, KHÔNG DÙNG NETLIFY.**
 > Tài khoản Netlify là bản **miễn phí** và đã **hết credits build của tháng**.
@@ -209,7 +214,7 @@ trên máy của họ. Dựng sẵn ở máy mình rồi tải file lên thì kh
 # 1. cài + đăng nhập (một lần; `netlify login` mở trình duyệt, PHẢI người thật bấm)
 npm install -g netlify-cli
 netlify login
-netlify link --id 883aef7e-fc50-4b29-bc27-2d97557f353e     # site vtyt-umc-test
+netlify link --id 883aef7e-fc50-4b29-bc27-2d97557f353e     # site vtyt-umc
 
 # 2. mỗi lần deploy
 cd frontend && npm run build && cd ..
@@ -221,7 +226,7 @@ netlify api restoreSiteDeploy \
   --data '{"site_id":"883aef7e-fc50-4b29-bc27-2d97557f353e","deploy_id":"<deploy id>"}'
 
 # 4. kiểm — hai tên bundle PHẢI trùng
-curl -s https://vtyt-umc-test.netlify.app/ | grep -o 'index-[A-Za-z0-9_-]*\.js'
+curl -s https://vtyt-umc.netlify.app/ | grep -o 'index-[A-Za-z0-9_-]*\.js'
 ls frontend/dist/assets/index-*.js
 ```
 

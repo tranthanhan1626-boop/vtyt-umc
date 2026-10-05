@@ -168,7 +168,7 @@ cd frontend && npm run build && cd ..
 netlify deploy --dir=frontend/dist          # in ra Draft URL kèm deploy id
 netlify api restoreSiteDeploy \
   --data '{"site_id":"883aef7e-fc50-4b29-bc27-2d97557f353e","deploy_id":"<id>"}'
-curl -s https://vtyt-umc-test.netlify.app/ | grep -o 'index-[A-Za-z0-9_-]*\.js'
+curl -s https://vtyt-umc.netlify.app/ | grep -o 'index-[A-Za-z0-9_-]*\.js'
 ```
 
 `netlify login` mở trình duyệt nên **phải người thật bấm** — bảo chủ dự án gõ

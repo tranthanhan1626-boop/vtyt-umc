@@ -1,24 +1,28 @@
 # Đọc trước tiên — hệ thống dự trù & đấu thầu VTYT (UMC)
 
-> ## 📍 HIỆN TRẠNG 28/09/2026 (chốt tối) — đọc khối này trước
+> ## 📍 HIỆN TRẠNG 05/10/2026 — đọc khối này trước
 >
-> - **Không còn mốc thời gian** (QĐ 18/09/2026, "vừa học vừa làm"). Mọi chữ
->   "go-live giữa T9" hay "01/01/2027" trong bộ tài liệu là lịch sử.
-> - **Đợt test toàn bộ 28/09 đã xong:** 6 vòng test–vá–bấm lại, 4 lượt kiểm định
->   độc lập; không còn lỗi nặng/vừa đang mở. Commit cuối `f5e6a63`. Chín quyết định
->   Q01–Q09 đã vào `01`/`06`; nhật ký ở `07` khối 28/09; báo cáo
->   `.scratch/test-toan-bo/BAO_CAO_TONG_KET.md`.
-> - Netlify **đã là bản mới nhất** (`60ddbf9`, bundle `index-BlnlMBxw.js`) — đẩy tay
->   từ máy ngày 03/10/2026. GitHub thì **chưa push** 5 commit đợt 28/09.
-> - **Database staging:** vẫn là **dữ liệu test** #202–#206 (#202 "Gói 18 tháng
->   1/2028 - 6/2029", 4 đợt bổ sung T9/2026 · T1/2027 · T5/2027 · T9/2027), nay đã
->   chạy thêm giai đoạn thầu/chốt trình ký trong lúc test. 3 bản vá SQL mới
->   (`patch_zzzzzzzi`, `zzzzzzzj`, `zzzzzzzk`) đã chạy. Sao lưu cuối: 28/09 tối.
-> - **Mở web:** bấm đúp `MO_WEB.command` ở gốc repo → tự build, mở
->   `localhost:4173`. Mật khẩu mọi tài khoản thử `111111`.
-> - **Lộ trình tự bấm thử:** `08_LO_TRINH_TEST.md`.
+> - **Không còn mốc thời gian** (QĐ 18/09/2026). Mốc gần nhất do chủ dự án đặt:
+>   **demo 14/10/2026** (vẫn là bản demo trên staging).
+> - **Web: https://vtyt-umc.netlify.app** (đổi tên từ `vtyt-umc-test` ngày 05/10; địa chỉ
+>   cũ trả 404). Bản đang chạy: commit `6d63b2b`, bundle `index-DKSA8G-_.js`, đẩy tay.
+>   GitHub **chưa push** (từ đợt 28/09).
+> - **Database staging SẠCH từ 05/10:** 0 đợt, 0 đề xuất — chủ dự án tự đi lại từ đầu
+>   cả hai vai. Dữ liệu nền giữ nguyên (3.327 mã, HIS tới T6/2026, 5.082 dòng kỳ trước,
+>   khả dụng hợp đồng). Sao lưu ngay trước khi dọn: `backend/sao_luu/staging/2026-10-05`.
+> - **Tài khoản (mật khẩu `111111`, email không đổi), tên đã bỏ chữ "Test" 05/10:**
+>   `pdd@` Phòng Điều dưỡng · `admin@` Quản trị hệ thống · `dvsd1@` ĐD Phòng mổ ·
+>   `dvsd2@` ĐD Răng Hàm Mặt · `dvsd3@` ĐD Ngoại thần kinh.
+> - **Nút dọn/xoá dữ liệu kiểm thử ẨN mặc định** — muốn hiện: build với
+>   `VITE_HIEN_NUT_KIEM_THU=1` (`frontend/src/lib/hienNutKiemThu.js`).
+> - **05/10 đã dọn dự án** (commit `6d63b2b`): gỡ 3 tab chết màn PĐD, luồng nhập từng mã
+>   cũ, màn Tiến độ gói thầu, xuất Word, 12 component + 10 thư viện thừa, 8 script cũ
+>   (smoke cũ thay bằng `kiem_truoc_deploy` + `kiem_moi_man` + bấm thật). Bản cũ còn trong git.
+> - Cải tiến giao diện 03/10 (16 quy tắc G1–G16) đã commit `1754424`; hồ sơ ở
+>   `Cải tiến 03-10-2026/` (chỉ trên máy, không đưa git).
+> - **Mở web trên máy:** bấm đúp `MO_WEB.command` → `localhost:4173`.
 > - **Hướng dẫn sử dụng cho người dùng cuối:** `huong-dan-su-dung/HuongDan_SuDung_VTYT.pdf`
->   — trang 18, 24, 25, 26, 43, 46 đã lệch với web sau đợt 28/09, cần sửa.
+>   — lệch với web ở trang 18, 24, 25, 26, 43, 46 và chưa theo giao diện 03/10.
 > - Việc còn mở: mục **"Việc còn mở"** cuối file này và `05` mục 7.
 
 > ## 🔴🔴 TUYỆT ĐỐI KHÔNG BỊA — QĐ 27/08/2026
@@ -279,9 +283,12 @@ mục 4b.
 1. **Q07** — cột HIS QĐ1599 rỗng 3.327/3.327 mã → Excel trình ký không có cột mã hàng; chủ dự án tìm nguồn.
 2. Nạp HIS **T7–T8/2026** (hiện tới T6).
 3. Sửa pptx các trang **18, 24, 25, 26, 43, 46**; thêm trang cho màn "Tổng hợp kết quả thầu" nếu muốn.
-4. ~~Đẩy Netlify~~ — xong 03/10 (đẩy tay). Còn: push 5 commit lên GitHub khi chủ dự án đồng ý.
-5. Dọn dữ liệu test #202–#206 khi xong test (nhờ Claude xem phạm vi trước).
-6. Ghi nhận, chưa vá: M8 (xác nhận rớt lần 2 sau khi khoa đã gửi vẫn báo "Đã gửi"); chữ sai trong vài hàm DB ("Gửi giỏ", "Khoa Khoa"); code chết `TabKetQua` còn đường chốt rời. Chi tiết: `05` mục 7.
+4. ~~Đẩy Netlify~~ — xong 05/10 (đẩy tay, `6d63b2b`). Còn: push các commit từ 28/09 lên GitHub khi chủ dự án đồng ý.
+5. ~~Dọn dữ liệu test #202–#206~~ — xong 05/10 (dọn sạch mọi đợt, có sao lưu).
+6. Ghi nhận, chưa vá: M8 (xác nhận rớt lần 2 sau khi khoa đã gửi vẫn báo "Đã gửi"); chữ sai trong vài hàm DB ("Gửi giỏ", "Khoa Khoa"); ~~code chết `TabKetQua`~~ đã gỡ 05/10. Chi tiết: `05` mục 7.
+7. Q10b (kỳ sử dụng đợt bổ sung T1/T5/T9) và Q14 (PĐD mở lại cho khoa sau xác nhận) — treo từ 03/10, xem `Cải tiến 03-10-2026/00_DOC_TRUOC.md`.
+8. Đợt riêng về mẫu Excel (khoa 35 cột / PĐD 31 cột, thống nhất tên + thứ tự cột) — từ 03/10.
+9. `huong-dan-su-dung/` và `.scratch/huong-dan/` chưa theo dõi git — chủ dự án quyết có đưa vào git không.
 
 ## Ghi chú sửa
 
@@ -292,6 +299,8 @@ mục 4b.
 - 03/10/2026 — sổ ghi Netlify đứng ở `d357019` là sai: lịch sử deploy cho thấy 19/09 Netlify đã tự build `ff894bd` từ GitHub. Trước khi nói Netlify đang ở bản nào, đọc `listSiteDeploys` hoặc curl tên bundle, đừng tin sổ.
 
 ## Nhật ký chốt
+
+- 05/10/2026 — Chuẩn bị demo 14/10: dọn sạch DB staging (13.228 dòng / 35 bảng + 54 lý do mồ côi, sao lưu trước), đổi tên 5 tài khoản bỏ chữ Test, ẩn 8 nút dọn test, đổi site Netlify → `vtyt-umc` + sửa URL Configuration Supabase, gỡ code chết/thư viện/script cũ (commit `1754424`, `6d63b2b`). Vào Thùng rác: 8 script cũ, sao lưu staging 17/08 · 19/09 · 28/09 (~127 MB), `kha-dung-hop-dong-staging.json`, bộ nhớ đệm pytest, `.DS_Store`.
 
 - 28/09/2026 — Đợt test toàn bộ (6 vòng, 4 kiểm định độc lập, ~45 lỗi vá, Q01–Q09, 3 patch SQL, commit `b164c95` · `ecdf408` · `9e1a559` · `f5e6a63`). Dọn vào Thùng rác: 62 tệp `snap_*.txt`, 2 thư mục `.pytest_cache`, 11 ảnh test không được trích — 75 mục, ~13 MB. Sáng cùng ngày đã dọn ~268 MB (sao lưu cũ, rác máy, ảnh nghiệm thu cũ) và gom nháp vào `.scratch/_da-xong/`.
 
