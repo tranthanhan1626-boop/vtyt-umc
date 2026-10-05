@@ -69,18 +69,10 @@ backend/.venv/bin/pytest -q backend/tests
 `backend/tests` phải chạy **từ trong thư mục `backend/`** (`cd backend && \
 .venv/bin/pytest -q tests`) — chạy từ gốc repo thì Python không thấy gói `app`.
 
-Smoke pipeline hiện tại (ghi dữ liệu thật rồi tự dọn, ~30 bước, cả hai vai trò):
-
-```bash
-cd "/Users/tranhien/Downloads/9.vtyt/backend"
-set -a && . ./.env.local && . ../frontend/.env && set +a
-.venv/bin/python scripts/smoke_pipeline_hien_tai.py --xac-nhan-staging
-```
-
-Nó đối chiếu lại số dòng của 8 bảng dữ liệu nền và 18 bảng workflow sau khi
-dọn, nên "chạy xong sạch" là điều kiện nghiệm thu chứ không phải niềm tin.
-`smoke_full_workflow_staging.py` là bản CŨ, kiểm workflow đã bị đảo — giữ để
-tra cứu, không dùng làm cổng nghiệm thu.
+Hai script smoke cũ (`smoke_pipeline_hien_tai.py`, `smoke_full_workflow_staging.py`)
+đã gỡ ngày 05/10/2026 vì lỗi thời (phần chốt còn dùng bảng gói+năm cũ). Cổng nghiệm
+thu hiện nay: `kiem_truoc_deploy.py` (mục 5b) + `kiem_moi_man.py` (mục 5c) + bấm
+thật hai vai trò. Bản cũ còn trong lịch sử git nếu cần tra.
 
 Ngoài test tự động, phải smoke test hai vai trò ĐVSD/PĐD trên staging và kiểm
 Word/Excel thật — **mở file .xlsx tải về bằng openpyxl để đối chiếu**, đừng chỉ
@@ -283,7 +275,7 @@ Thứ tự bắt buộc:
 3. Chạy `xoa_du_lieu_kiem_thu` **lần cuối** để dọn sạch dữ liệu thử — làm
    TRƯỚC bước 1, không phải sau.
 4. Nạp lại dữ liệu nền thật bằng script, đối chiếu số dòng.
-5. Chạy `kiem_truoc_deploy.py` và `smoke_pipeline_hien_tai.py`.
+5. Chạy `kiem_truoc_deploy.py` và `kiem_moi_man.py`, rồi bấm thật hai vai trò.
 6. Đổi site `vtyt-umc` sang theo dõi nhánh phát triển (hoặc merge vào `main`).
 
 Đây là quyết định rủi ro cao, phải làm theo đúng thứ tự và có xác nhận của chủ
@@ -363,8 +355,7 @@ Chỉ đọc, vài giây, thoát mã 1 nếu có lỗi chặn deploy. Kiểm: đ
 (bẫy 18) · ranh giới quyền khoa↔PĐD · số chốt hai vai trò khớp nhau ·
 `goi_con` khớp `GOI_ID_MAP`.
 
-Khác `smoke_full_workflow_staging.py`: cái đó kiểm LUỒNG NGHIỆP VỤ và có ghi
-dữ liệu, chạy lâu hơn. Hai thứ bổ sung nhau, không thay thế nhau.
+Không kiểm luồng nghiệp vụ — phần đó do `kiem_moi_man.py` (5c) và bấm thật hai vai trò đảm nhận.
 
 ### 🆕 5c. Kiểm MỌI MÀN — bắt lớp lỗi "hiện rỗng mà không báo lỗi"
 

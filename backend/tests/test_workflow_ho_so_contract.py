@@ -38,7 +38,9 @@ def test_trong_khoang_mac_dinh_lich_su_ngoai_khoang_bat_buoc_ly_do_va_ghi_chu():
     assert "LY_DO_GIAI_TRINH_OPTIONS" in FUNCTION_1
     # Chốt sau này: chỉ CHẶN khi vượt P75 (dưới P50 là tiết kiệm, không bắt
     # giải trình). Ràng buộc "ra ngoài dải phải có ghi chú" vẫn còn.
-    assert "Số lượng > P75 bắt buộc nhập ghi chú thêm." in FUNCTION_1
+    # 05/10/2026: câu cũ "Số lượng > P75 bắt buộc nhập ghi chú thêm." nằm trong
+    # `themVaoGio` (hàm chết đã gỡ). Câu đang chạy ở luồng nhóm là câu dưới đây.
+    assert "Tổng cao hơn cận trên thông thường — nhập ghi chú." in FUNCTION_1
     # Câu chặn lúc LƯU cả giỏ (không chỉ lúc gõ từng dòng) — vẫn bắt buộc.
     assert "ghi chú bắt buộc khi chọn ngoài khoảng" in FUNCTION_1
     # 03/10/2026: nhãn ô theo bản vẽ M1_3 là "Ghi chú *"; ô bắt buộc khi

@@ -5,17 +5,9 @@ QUAN TRỌNG: HIS_COLUMN_MAP hardcode tên cột, KHÔNG auto-detect.
 Đây là tên cột THẬT lấy trực tiếp từ file:
   "SỐ LƯỢNG SỬ DỤNG THEO THÁNG.xlsx" (sheet "Export", export từ Power BI).
 
-Nếu HIS đổi tên/thứ tự cột, CHỈ sửa map này — không sửa validator.py hay
-transformer.py. File sai cột phải bị từ chối nạp kèm thông báo rõ cột thiếu.
+Nếu HIS đổi tên/thứ tự cột, CHỈ sửa map này — không sửa validator.py.
+File sai cột phải bị từ chối nạp kèm thông báo rõ cột thiếu.
 """
-import os
-
-# --- Kết nối Supabase (điền qua biến môi trường, không hardcode secret) -----
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
-SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
-
-# --- Domain cho phép đăng nhập ----------------------------------------------
-ALLOWED_EMAIL_DOMAIN = "umc.edu.vn"
 
 # --- Map tên cột file HIS (key) -> tên cột nội bộ (value) -------------------
 # Thứ tự đúng như file thật, giữ nguyên để dễ đối chiếu khi HIS đổi cấu trúc.
@@ -39,7 +31,6 @@ REQUIRED_HIS_COLUMNS = list(HIS_COLUMN_MAP.keys())
 
 # Cột thực sự cần có GIÁ TRỊ hợp lệ ở từng dòng để dòng đó được nạp.
 # ("Kho xuất", "Tên quản lý", "Mã quản lý" có thể null hợp lệ theo dữ liệu thật.)
-REQUIRED_NON_NULL_FIELDS = ["don_vi", "ma_hang", "nam", "thang_text", "so_luong"]
 
 # --- Nhận diện dòng rác / cảnh báo cắt bớt dữ liệu của Power BI -------------
 # Xác nhận từ dữ liệu thật: dòng cuối file luôn có nguyên văn 1 trong các cụm

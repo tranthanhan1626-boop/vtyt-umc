@@ -43,7 +43,7 @@ from openpyxl.utils import get_column_letter
 
 from tao_mau_du_lieu_benh_vien import (
     BLUE, GRAY, GREEN, NAVY, ORANGE, TEXT, WHITE, YELLOW,
-    Field, SheetSpec, add_data_sheet, f, fill, style_header, style_title,
+    SheetSpec, add_data_sheet, f, fill, style_header, style_title,
 )
 
 DATE = "YYYY-MM-DD"

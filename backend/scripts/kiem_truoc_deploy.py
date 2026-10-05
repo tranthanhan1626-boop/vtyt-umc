@@ -3,7 +3,7 @@
 
 VÌ SAO CÓ SCRIPT NÀY (08/08/2026)
 ---------------------------------
-`smoke_full_workflow_staging.py` kiểm LUỒNG NGHIỆP VỤ và có ghi dữ liệu. Script
+Các script smoke cũ kiểm LUỒNG NGHIỆP VỤ và có ghi dữ liệu (đã gỡ 05/10/2026). Script
 này khác hẳn: **chỉ đọc**, chạy nhanh, và trả lời đúng một câu hỏi —
 "bản deploy sắp tới có gãy vì thiếu thứ gì ở database không?".
 

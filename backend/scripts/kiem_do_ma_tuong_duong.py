@@ -121,7 +121,6 @@ def main() -> int:
         assert float(chia) == 0 and not khop, "đổ xong phải XOÁ TRẮNG mã nhận để PĐD chia lại"
         ok(f"mã B: trúng {int(trung)} + nhận 80 = phải chia {int(phai)}, ô về trống chờ PĐD")
 
-        from json import dumps  # noqa: PLC0415
         try:
             pdd.rpc("cap_nhat_phan_bo_trung_v3", {"p_dot_goi_id": dg, "p_ma_hang": maB,
                 "p_phan_bo": {khoa[0]: str(int(trung)), khoa[1]: "0"}, "p_ly_do": None}).execute()

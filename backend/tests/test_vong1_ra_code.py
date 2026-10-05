@@ -110,7 +110,11 @@ def test_l09_truy_van_danh_muc_khoa_chot_xu_ly_dotGoiIds_rong():
     vi_tri_in = doan.index('.in("dot_goi_id", dotGoiIds)')
     assert vi_tri_in > vi_tri_if
     assert "setKhoaDaChot(new Set())" in doan
-    assert "setChotDanhMucV3([])" in doan
+    # 05/10/2026 (chủ dự án duyệt gỡ code chết): state `chotDanhMucV3` chỉ
+    # nuôi tab "Kết quả thầu" (TabKetQua) — tab đó không còn đường vào từ QĐ A2
+    # 21/08/2026 và đã gỡ hẳn khỏi BanDieuHanhPdd.jsx, nên bỏ điều kiện
+    # `setChotDanhMucV3([])`. Cái L09 bảo vệ (dotGoiIds rỗng ⇒ ✓ "Đã xác
+    # nhận" rỗng) vẫn nằm ở `khoaDaChot`, kiểm ngay dòng trên.
 
 
 def test_q01_khong_con_form_sua_nut_nhap_ket_qua():

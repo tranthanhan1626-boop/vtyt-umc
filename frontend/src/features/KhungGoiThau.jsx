@@ -9,13 +9,11 @@ import {
   FileSearch,
   Gauge,
   Grid2X2,
-  History,
   LayoutDashboard,
   LayoutList,
   Menu,
   PackageCheck,
   PackagePlus,
-  Sheet,
   ShieldAlert,
   UploadCloud,
   UserCog,
@@ -61,23 +59,6 @@ export const GOI_CON = {
 export function nhanDot(d) {
   if (!d) return "";
   return d.thang_moc ? `T${d.thang_moc}/${d.nam}` : (d.ten || `Đợt ${d.id}`);
-}
-
-export function manHinhTheoVaiTro(goi, laPdd) {
-  const ds = [
-    { ma: "de_xuat", ten: "Đề xuất số lượng", icon: ClipboardList },
-    { ma: "cua_toi", ten: laPdd ? "Đề xuất các khoa" : "Đề xuất của tôi", icon: LayoutList },
-  ];
-  if (!laPdd && goi !== "chi_dinh_thau") {
-    ds.push({ ma: "danh_muc_khoa", ten: "Danh mục đề xuất của khoa", icon: Sheet });
-  }
-  // (Bỏ 09/08/2026) PĐD từng có thêm tab "Tổng hợp & xuất hồ sơ" ở đây, dựng
-  // trên snapshot `phien_tong_hop`. Đó là workflow CŨ đã bị đảo — bản tổng hợp
-  // hiện tại là Danh mục tổng hợp live sync (#tong-hop-pdd/<goiId>), mở từ Bàn
-  // điều hành. Hai đường tổng hợp song song chỉ tạo cơ hội lệch số.
-  // QĐ 26/08/2026 — bỏ "Cam kết của khoa" (Word) và "Hồ sơ chỉ định thầu".
-  // Danh mục đề xuất đã được khoa xác nhận LÀ hồ sơ, không cần bản Word riêng.
-  return ds;
 }
 
 export const MUC_CHUNG = [

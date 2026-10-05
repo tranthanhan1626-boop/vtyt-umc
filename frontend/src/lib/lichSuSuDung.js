@@ -29,34 +29,6 @@ const thieuView = (error) =>
   !!error && (error.code === "PGRST205" || /Could not find the table/i.test(error.message || ""));
 
 /**
- * Lịch sử theo NĂM.
- * @returns {Promise<{data: {[maHang: string]: {[nam: number]: number}}, error}>}
- */
-export async function taiLichSuTheoNam(codes) {
-  if (!codes?.length) return { data: {}, error: null };
-
-  let r = await fetchAllRows((f, t) => supabase.from("v_usage_nam_toan_vien")
-    .select("ma_hang, nam, so_luong").in("ma_hang", codes).range(f, t),
-  { order: ["ma_hang", "nam"] });
-
-  if (thieuView(r.error)) {
-    r = await fetchAllRows((f, t) => supabase.from("v_usage_monthly")
-      .select("ma_hang, nam, so_luong").in("ma_hang", codes).range(f, t),
-    { order: ["don_vi", "ma_hang", "nam", "thang"] });
-  }
-  if (r.error) return { data: {}, error: r.error };
-
-  // Vẫn cộng dồn ở đây: bản lùi (v_usage_monthly) trả nhiều dòng cho cùng một
-  // (mã, năm), bản mới trả đúng một dòng — cộng dồn đúng cho cả hai.
-  const acc = {};
-  r.data.forEach((x) => {
-    acc[x.ma_hang] = acc[x.ma_hang] || {};
-    acc[x.ma_hang][x.nam] = (acc[x.ma_hang][x.nam] || 0) + Number(x.so_luong);
-  });
-  return { data: acc, error: null };
-}
-
-/**
  * Lịch sử theo THÁNG (vẫn cần cho tổng trượt 18 tháng).
  * @returns {Promise<{data: Array<{ma_hang, nam, thang, so_luong}>, error}>}
  */

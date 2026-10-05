@@ -254,14 +254,6 @@ export function soTheoHeSoK(ch, H, abc) {
   return { so: Math.round((ch.tong12 / 12) * H * k), k, nhom: abc.nhom_abc };
 }
 
-/** Vị trí % trên thước tham khảo P50 → P95, để vẽ thanh. */
-export function viTriTrongDai(gt, kq) {
-  if (!kq) return null;
-  const lo = kq.p50, hi = kq.muc.P95;
-  if (!(hi > lo)) return null;
-  return Math.max(0, Math.min(100, ((gt - lo) / (hi - lo)) * 100));
-}
-
 /**
  * Kiểm tra số khoa nhập có nằm trong dải THÔNG THƯỜNG P50–P75 hay không.
  * P90/P95 vẫn hiển thị để chọn cho tình huống lâm sàng đặc biệt, nhưng bị

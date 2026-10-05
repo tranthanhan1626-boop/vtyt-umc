@@ -47,7 +47,9 @@ def test_the_gio_khong_con_word_cam_ket_chi_con_link_excel_danh_muc():
 def test_ma_da_gui_an_den_khi_pdd_chot_da_di_thau():
     assert "maDangChoDiThau" in FUNCTION_1
     assert '.eq("da_di_thau", false)' in FUNCTION_1
-    assert "!maDangChoDiThau.has(m.ma_hang)" in FUNCTION_1
+    # 05/10/2026: bản cũ khẳng định "!maDangChoDiThau.has(m.ma_hang)" — dòng nằm
+    # trong `maHangHienThi`, hàm chết đã gỡ. Màn hiện ẩn theo NHÓM, không theo mã.
+    assert "!nhomDangChoDiThau.has(n.ma_quan_ly)" in FUNCTION_1
     assert "add column if not exists da_di_thau" in PATCH_X
     assert "chot_danh_muc_da_di_thau" in PATCH_X
 

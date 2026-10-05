@@ -11,7 +11,6 @@ import DeXuatCuaToi from "./features/DeXuatCuaToi";
 import DanhMucDeXuatLinks from "./features/DanhMucDeXuatLinks";
 import BanDieuHanhPdd from "./features/BanDieuHanhPdd";
 import ChoDuyet, { demViecChoDuyet } from "./features/ChoDuyet";
-import TienDoGoiThau from "./features/TienDoGoiThau";
 import KhungGoiThau, { useDotDangMo } from "./features/KhungGoiThau";
 import QuanLyDot from "./features/QuanLyDot";
 import QuanLyNguoiDung from "./features/QuanLyNguoiDung";
@@ -249,7 +248,6 @@ export default function App() {
 
   const TEN_TRANG_CHUNG = {
     thieuhang: "Sổ thiếu hàng",
-    tiendo: "Tiến độ gói thầu",
     makythuat: "Mã kỹ thuật khoa tự thêm",
     quanlydot: "Quản lý đợt đề xuất",
     nguoidung: "Quản trị người dùng",
@@ -275,17 +273,6 @@ export default function App() {
     ? <TrangDungChung doiChon={setChon} laPdd={xemDuocTongHop} soChoDuyet={soChoDuyet} dotTheoGoi={dotTheoGoi}
         profile={profile} dsDotTheoGoi={dsDotTheoGoi} dangTaiDot={dangTaiDot} loiDot={loiDot} />
     : chon.man === "thieuhang" ? <SoThieuHang profile={profile} />
-    : chon.man === "tiendo" ? (
-      <TienDoGoiThau
-        profile={profile}
-        onChuyenGoiBoSung={(dotId) => setChon({
-          nhom: "goi",
-          goi: "mua_sam_bo_sung",
-          man: "de_xuat",
-          dotId,
-        })}
-      />
-    )
     : chon.man === "makythuat" ? <NhomKyThuatCuaKhoa profile={profile} />
     : chon.man === "duyetmakythuat" && xemDuocTongHop ? <DuyetNhomKyThuat />
     : chon.man === "ketquathau" && xemDuocTongHop ? <TongHopKetQuaThau profile={profile} />

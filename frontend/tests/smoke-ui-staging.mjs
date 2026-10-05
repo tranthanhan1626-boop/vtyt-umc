@@ -273,7 +273,6 @@ async function testRole(account, role) {
     "Điều chỉnh tiêu chí kỹ thuật",
     "Tiến độ sử dụng",
     "Lịch sử hồ sơ đề xuất",
-    "Tiến độ gói thầu",
   ]) {
     await clickText(cdp, common, common === "Gói tùy chọn mua thêm");
   }

@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Search, ChevronDown, ChevronLeft, Check, ChevronRight, AlertTriangle, ShoppingCart, X, MoreHorizontal, ArrowUp } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
@@ -459,10 +459,6 @@ export default function Function1({
   // ở nhiều nhóm kỹ thuật khác nhau). Đổi KHOA thì ĐỔI GIỎ chứ không xoá —
   // giỏ nằm ở localStorage tách theo khoa (xem docGio/ghiGio).
   const [nhapLieu, setNhapLieu] = useState({});
-  // BẢN ĐANG SOẠN tách khỏi giỏ. Bấm P75/P90/P95 hay gõ số chỉ cập nhật đây;
-  // mã hàng chỉ đi vào nhapLieu sau khi người dùng bấm “Thêm vào giỏ”.
-  const [banNhap, setBanNhap] = useState({});
-  const [loiBanNhap, setLoiBanNhap] = useState({});
   const [banNhapNhom, setBanNhapNhom] = useState({});
   const [loiNhapNhom, setLoiNhapNhom] = useState("");
   const [moGio, setMoGio] = useState(false);
@@ -471,20 +467,14 @@ export default function Function1({
   const [formQuyDoi, setFormQuyDoi] = useState({ dvtChuan: "", heSoTheoDvt: {} });
   const [coSchemaMaQuanLy, setCoSchemaMaQuanLy] = useState(true);
   const [lichSuThang, setLichSuThang] = useState({}); // {ma_hang: {nam: number[12]}}
-  const [dangTaiLichSu, setDangTaiLichSu] = useState(false);
   // Số đề xuất kỳ trước theo mã hàng — CHỈ ĐỂ XEM (QĐ 18/09 mục p).
   const [kyTruoc, setKyTruoc] = useState(() => new Map());
-  // Phân nhóm ABC toàn viện — CHỈ để hiện mốc đối chiếu của công thức hệ số k
-  // (QĐ-27). Không dùng để chọn mức phục vụ: Đề án Bảng 7 cấm gộp trục ABC vào
-  // trục thiết yếu lâm sàng. 878 dòng, tải một lần cho cả phiên.
-  const [abcTheoNhom, setAbcTheoNhom] = useState({});
   // Nhu cầu KHÔNG được đáp ứng theo tháng -> phục hồi phần bị che trước khi
   // tính μ/σ. {ma_hang: {"nam-thang": {...}}}
   const [thieuTheoThang, setThieuTheoThang] = useState({});
   // Tháng HIS mới nhất TOÀN VIỆN (month-id = nam*12+thang-1) — mốc cuối cửa sổ
   // 24 tháng dùng CHUNG cho mọi mã. Xem chú thích dài trong congThucSoLuong.js.
   const [thangCuoiHIS, setThangCuoiHIS] = useState(null);
-  const [maMoRong, setMaMoRong] = useState(null);     // mã hàng đang bung chart + nhập
   // Mã đã nằm trong BẤT KỲ giỏ đã gửi của khoa nhưng chưa được PĐD chốt
   // "Đã đi thầu". Nguồn server giúp ẩn đúng qua nhiều giỏ, nhiều máy.
   const [maDangChoDiThau, setMaDangChoDiThau] = useState(new Set());
@@ -546,7 +536,6 @@ export default function Function1({
   // Q10: năm của đợt 18 tháng làm mốc kỳ mặc định (xem MAC_DINH_NHAP).
   const namDot18T = goi === "dau_thau_rong_rai" && Number(dotDung?.nam) > 0
     ? Number(dotDung.nam) : null;
-  const macDinhNhap = () => MAC_DINH_NHAP(goi, namDot18T);
   const macDinhNhom = () => MAC_DINH_NHAP_NHOM(goi, namDot18T);
 
   // Toàn viện = cộng gộp số liệu 66 khoa, CHỈ ĐỂ XEM. Không gửi đề xuất được
@@ -688,20 +677,6 @@ export default function Function1({
     })();
   }, [chonDuocDonVi, profile.khoa]);
 
-  // --- Phân nhóm ABC cho hệ số k -------------------------------------------
-  // Thiếu view thì chỉ mất khoảng gợi ý, KHÔNG chặn nhập đề xuất — công thức là
-  // thứ hỗ trợ, không phải điều kiện để khoa làm việc.
-  useEffect(() => {
-    let huy = false;
-    (async () => {
-      const r = await fetchAllRows((f, t) => supabase.from("v_abc_ma_quan_ly")
-        .select("ma_quan_ly, nhom_abc, he_so_k, canh_bao_abc").range(f, t), { order: "ma_quan_ly" });
-      if (huy || r.error || !r.data) return;
-      setAbcTheoNhom(Object.fromEntries(r.data.map((d) => [d.ma_quan_ly, d])));
-    })();
-    return () => { huy = true; };
-  }, []);
-
   // --- Tháng HIS mới nhất, TOÀN VIỆN, không lọc mã/khoa --------------------
   // BẪY ĐÃ MẮC (đo trên mã 67340, gói Răng Hàm Mặt, 08/2026): nếu công thức tự
   // suy mốc cuối cửa sổ từ tháng gần nhất CÓ xuất kho của RIÊNG từng mã, một mã
@@ -761,8 +736,6 @@ export default function Function1({
     // Q9: đang phải chọn đợt thì không nạp giỏ "khong_dot" của máy — giỏ đó
     // không gửi được và sẽ biến mất ngay khi chọn đợt.
     setNhapLieu(canChonDot ? {} : docGioDeXuat(khoaHienTai, dotId));
-    setBanNhap({});
-    setLoiBanNhap({});
     setDaGui([]);
     setLoiLuu("");
     if (!dotId) return;
@@ -800,7 +773,6 @@ export default function Function1({
       }
       if (error || !data) return;
       setMaHangTrongNhom(data);
-      setMaMoRong(null);
       // KHÔNG setNhapLieu({}) ở đây — giỏ phải sống qua việc đổi nhóm.
 
       // Lịch sử theo THÁNG cho từng mã hàng — để tính tổng năm hiện ở bảng,
@@ -810,8 +782,6 @@ export default function Function1({
       // thì cộng gộp cả 66 khoa (chốt 21/07/2026).
       const codes = data.map((d) => d.ma_hang);
       if (codes.length === 0 || !khoaHienTai) { setLichSuThang({}); return; }
-      setDangTaiLichSu(true);
-
       const { data: us } = await fetchAllRows((f, t) => {
         let q = supabase.from("v_usage_monthly").select("ma_hang, nam, thang, so_luong").in("ma_hang", codes);
         if (!toanVien) q = q.eq("don_vi", khoaHienTai);
@@ -844,8 +814,6 @@ export default function Function1({
         gomThieu[r.ma_hang][`${r.nam}-${r.thang}`] = o;
       });
       setThieuTheoThang(gomThieu);
-
-      setDangTaiLichSu(false);
     })();
   }, [nhomChon, khoaHienTai, toanVien]);
 
@@ -860,26 +828,6 @@ export default function Function1({
     return () => { huy = true; };
   }, [maHangTrongNhom, khoaHienTai, toanVien]);
 
-  // Mã hàng đã dùng (tại khoa đang chọn) xếp lên đầu — dễ tìm hơn dò A-Z cả
-  // nhóm có khi vài chục mã hàng.
-  // Chỉ sắp lại SAU KHI lịch sử tải xong, tránh nhảy thứ tự giữa chừng.
-  const maHangHienThi = useMemo(() => {
-    // Mã trong giỏ nháp HOẶC đã gửi ở một giỏ khác đều bị ẩn. Chỉ khi PĐD
-    // chốt "Đã đi thầu" trên Excel chính thức, server mới giải phóng mã.
-    const trongGio = new Set(
-      Object.entries(nhapLieu).filter(([, v]) => Number(v.soLuong) > 0).map(([k]) => k)
-    );
-    const con = maHangTrongNhom.filter((m) =>
-      !trongGio.has(m.ma_hang) && !maDangChoDiThau.has(m.ma_hang)
-    );
-    if (dangTaiLichSu) return con;
-    return [...con].sort((a, b) => {
-      const aDung = !!lichSuThang[a.ma_hang];
-      const bDung = !!lichSuThang[b.ma_hang];
-      if (aDung !== bDung) return aDung ? -1 : 1;
-      return a.ma_hang.localeCompare(b.ma_hang);
-    });
-  }, [maHangTrongNhom, lichSuThang, dangTaiLichSu, nhapLieu, maDangChoDiThau]);
   const soMaDangTamAn = useMemo(() => {
     const tap = new Set(maDangChoDiThau);
     Object.entries(nhapLieu).forEach(([maHang, nd]) => {
@@ -1145,8 +1093,6 @@ export default function Function1({
     return () => document.body.classList.remove("co-thanh-gio");
   }, [toanVien]);
 
-  const layNhap = (maHang) => banNhap[maHang] || macDinhNhap();
-
   // Mọi thay đổi giỏ đi qua đây để state và localStorage không bao giờ lệch nhau.
   // Ghi ngay trong updater (thay vì useEffect riêng) để tránh cảnh giỏ đã đổi mà
   // storage chưa kịp ghi thì người dùng F5 mất dữ liệu.
@@ -1171,50 +1117,6 @@ export default function Function1({
       return next;
     });
 
-  // Thay đổi form chỉ ghi vào BẢN ĐANG SOẠN, tuyệt đối chưa đụng giỏ.
-  const capNhatNhap = (m, field, value) => {
-    setBanNhap((prev) => {
-      const tiep = {
-        ...(prev[m.ma_hang] || macDinhNhap()),
-        [field]: value,
-      };
-      const danhGia = CO_GOI_Y_SO_LUONG(goi)
-        ? danhGiaSoLuong(
-            lichSuThang[m.ma_hang],
-            thieuTheoThang[m.ma_hang],
-            doDaiKy(tiep),
-            tiep.soLuong,
-            thangCuoiHIS
-          )
-        : null;
-      tiep.goiYTu = danhGia?.tu ?? null;
-      tiep.goiYDen = danhGia?.den ?? null;
-      tiep.coKhoangGoiY = !!danhGia;
-      tiep.ngoaiKhoang = Number(tiep.soLuong) > 0
-        && CO_GOI_Y_SO_LUONG(goi)
-        && (!danhGia || danhGia.ngoaiKhoang);
-      if (!tiep.ngoaiKhoang && CO_GOI_Y_SO_LUONG(goi)) {
-        tiep.loaiLyDo = "theo_lich_su";
-        tiep.tenKyThuatMoi = "";
-        tiep.uocCaThang = "";
-        tiep.ghiChu = "";
-      } else if (
-        tiep.ngoaiKhoang
-        && tiep.loaiLyDo === "theo_lich_su"
-        && ["soLuong", "tuThang", "tuNam", "denThang", "denNam"].includes(field)
-      ) {
-        tiep.loaiLyDo = "";
-      }
-      return { ...prev, [m.ma_hang]: tiep };
-    });
-    setLoiBanNhap((prev) => {
-      if (!prev[m.ma_hang]) return prev;
-      const next = { ...prev };
-      delete next[m.ma_hang];
-      return next;
-    });
-  };
-
   const nhapNhom = banNhapNhom[nhomChon] || macDinhNhom();
   const danhGiaNhom = CO_GOI_Y_SO_LUONG(goi)
     ? danhGiaSoLuong(lichSuNhom, thieuNhom, doDaiKy(nhapNhom), nhapNhom.soLuong, thangCuoiHIS)
@@ -1225,15 +1127,6 @@ export default function Function1({
   const tongDaPhanBo = tongPhanBoQuyDoi(
     maHangQuyDoi, nhapNhom.phanBo, dvtChuan,
   );
-  // Kiểm P50-P75 realtime cho TỔNG PHÂN BỔ (sau quy đổi), tách khỏi kiểm ở
-  // cấp mã quản lý. Cần cả hai vì trong lúc gõ, tổng phân bổ có thể lệch xa
-  // khỏi con số tổng MQ đã chọn — user cần thấy cảnh báo sớm.
-  const danhGiaPhanBo = CO_GOI_Y_SO_LUONG(goi) && tongDaPhanBo > 0
-    ? danhGiaSoLuong(lichSuNhom, thieuNhom, doDaiKy(nhapNhom), tongDaPhanBo, thangCuoiHIS)
-    : null;
-  const ngoaiKhoangPhanBo = tongDaPhanBo > 0
-    && CO_GOI_Y_SO_LUONG(goi)
-    && (!danhGiaPhanBo || danhGiaPhanBo.ngoaiKhoang);
 
   const capNhatNhapNhom = (field, value) => {
     if (!nhomChon) return;
@@ -1385,70 +1278,6 @@ export default function Function1({
     setCanFocus("tim");
   };
 
-  // Chỉ nút này mới biến bản đang soạn thành một dòng trong giỏ bền vững.
-  const themVaoGio = (m) => {
-    const nhap = layNhap(m.ma_hang);
-    const danhGia = CO_GOI_Y_SO_LUONG(goi)
-      ? danhGiaSoLuong(
-          lichSuThang[m.ma_hang],
-          thieuTheoThang[m.ma_hang],
-          doDaiKy(nhap),
-          nhap.soLuong,
-          thangCuoiHIS
-        )
-      : null;
-    const dong = {
-      ...nhap,
-      ma_hang: m.ma_hang, ten_vat_tu: m.ten_vat_tu, dvt: m.dvt,
-      ma_quan_ly: nhomChon, ten_quan_ly: nhomDangChon?.ten_quan_ly || "",
-      goi: m.goi || null,
-      goiYTu: danhGia?.tu ?? null,
-      goiYDen: danhGia?.den ?? null,
-      coKhoangGoiY: !!danhGia,
-      ngoaiKhoang: Number(nhap.soLuong) > 0
-        && CO_GOI_Y_SO_LUONG(goi)
-        && (!danhGia || danhGia.ngoaiKhoang),
-    };
-    if (!dong.ngoaiKhoang && CO_GOI_Y_SO_LUONG(goi)) {
-      dong.loaiLyDo = "theo_lich_su";
-      dong.tenKyThuatMoi = "";
-      dong.uocCaThang = "";
-      dong.ghiChu = "";
-    }
-    let loi = "";
-    if (!(Number(dong.soLuong) > 0)) loi = "Vui lòng nhập số lượng lớn hơn 0.";
-    else if (doDaiKy(dong) < 1) loi = "Mốc kết thúc phải sau mốc bắt đầu.";
-    else if (dong.loaiLyDo === "ky_thuat_moi" && !(dong.tenKyThuatMoi || "").trim())
-      loi = "Vui lòng nhập tên kỹ thuật mới.";
-    else if (CAN_GIAI_TRINH(goi) && !(dong.noiDungChiDinh || "").trim())
-      loi = "Gói chỉ định thầu bắt buộc nhập nội dung và căn cứ.";
-    else if (CO_GOI_Y_SO_LUONG(goi) && dong.ngoaiKhoang
-             && (!dong.loaiLyDo || dong.loaiLyDo === "theo_lich_su"))
-      loi = dong.coKhoangGoiY
-        ? `Số lượng vượt P75 (${fmt(dong.goiYDen)}); vui lòng chọn lý do đề xuất.`
-        : "Chưa có P75 hợp lệ; vui lòng chọn lý do đề xuất.";
-    else if (CO_GOI_Y_SO_LUONG(goi) && dong.ngoaiKhoang && !(dong.ghiChu || "").trim())
-      loi = "Số lượng > P75 bắt buộc nhập ghi chú thêm.";
-    if (loi) {
-      setLoiBanNhap((prev) => ({ ...prev, [m.ma_hang]: loi }));
-      return;
-    }
-
-    datGio((prev) => ({ ...prev, [m.ma_hang]: dong }));
-    setBanNhap((prev) => {
-      const next = { ...prev };
-      delete next[m.ma_hang];
-      return next;
-    });
-    setLoiBanNhap((prev) => {
-      const next = { ...prev };
-      delete next[m.ma_hang];
-      return next;
-    });
-    setMaMoRong(null);
-  };
-  const boKhoiGio = (maHang) =>
-    datGio((prev) => { const n = { ...prev }; delete n[maHang]; return n; });
   const boNhomKhoiGio = (maQuanLy) =>
     datGio((prev) => Object.fromEntries(
       Object.entries(prev).filter(([, n]) => n.ma_quan_ly !== maQuanLy)

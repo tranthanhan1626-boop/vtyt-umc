@@ -1,3 +1,5 @@
 supabase
 pandas
 openpyxl
+psycopg[binary]
+pytest

@@ -21,12 +21,8 @@ dist/
 .DS_Store
 .Rhistory
 
-# Graphify (đồ thị sinh ra từ code, dựng lại được bất cứ lúc nào)
-graphify-out/
-
 # Dữ liệu xuất từ production để nạp sang staging — KHÔNG commit
 backend/du_lieu_staging/
-frontend/src/data/kha-dung-hop-dong-staging.json
 
 # Bản sao lưu — KHÔNG commit (chứa dữ liệu bệnh viện)
 backend/sao_luu/
@@ -45,3 +41,9 @@ Form biểu mẫu/
 
 # Ảnh chụp màn của các đợt nghiệm thu bằng trình duyệt — dựng lại được, nặng vài MB
 frontend/.nghiemthu-*/
+
+# 05/10/2026 — để trên máy, không đưa git (chủ dự án chọn): thư mục cải tiến theo ngày,
+# ảnh bằng chứng đợt test (nặng), cấu hình khung xem trước của Claude
+Cải tiến */
+.scratch/test-toan-bo/bao-cao/*/anh/
+.claude/launch.json

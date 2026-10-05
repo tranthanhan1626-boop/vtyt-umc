@@ -14,10 +14,10 @@ PATCH = GOC / "sql" / "patch_zzzzza_hoi_sinh_view_v3.sql"
 FE = GOC.parent / "frontend" / "src" / "features"
 BANG_CHET = ("goi_thau_ket_qua_ma", "goi_thau_tien_do", "goi_thau_moc")
 
-# Ba màn được phép còn nhắc tới bảng chết, kèm lý do:
-#   TienDoGoiThau     — nhánh sau (QĐ D6), đã gỡ khỏi menu, giữ mã để viết lại
-#   QuanLyDuLieuTest  — chỉ còn trong chú thích giải thích vì sao bỏ mục
-MAN_DUOC_MIEN = {"TienDoGoiThau"}
+# Màn được phép còn nhắc tới bảng chết, kèm lý do. Hiện không còn màn nào:
+# TienDoGoiThau (nhánh sau, QĐ D6) đã gỡ hẳn khỏi mã nguồn ngày 05/10/2026
+# (git rm; lịch sử git giữ bản cũ) nên không cần miễn trừ nữa.
+MAN_DUOC_MIEN: set[str] = set()
 
 
 @pytest.fixture(scope="module")

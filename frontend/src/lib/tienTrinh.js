@@ -19,8 +19,6 @@
  *   chuaRo — không xác định được chắc chắn
  */
 
-export const TRANG_THAI_BUOC = ["xong", "dang", "chua", "chuaRo"];
-
 // Ba giai đoạn thầu — cùng mã và thứ tự với GIAI_DOAN ở CumThauTongHop.jsx
 // (bảng `giai_doan_thau_v3`, cột `giai_doan`). Không import từ file JSX đó để
 // file này còn chạy được bằng node.

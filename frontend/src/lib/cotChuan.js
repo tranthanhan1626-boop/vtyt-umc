@@ -190,14 +190,6 @@ export const COT_QUA_TRINH_MO_RONG = [
   { key: "co",            nhan: "Cờ",                      width: 60,  group: "ghi_chu" },
 ];
 
-export const NHOM_COT_QUA_TRINH = [
-  ...NHOM_COT_KHOA,
-  { key: "tskt_cong_tac",    nhan: "TSKT cộng tác (khoa ↔ PĐD)",    nhanNgan: "TSKT cộng tác", mau: "bg-indigo-800" },
-  { key: "cong_thuc",        nhan: "Công thức TSB & mức chọn",      nhanNgan: "Công thức",     mau: "bg-slate-600" },
-  { key: "ket_qua_thau",     nhan: "Kết quả thầu 3 giai đoạn",      nhanNgan: "Kết quả thầu",  mau: "bg-rose-800" },
-  { key: "ghi_chu",          nhan: "Ghi chú & cờ",                  nhanNgan: "Ghi chú",       mau: "bg-slate-500" },
-];
-
 export const COT_QUA_TRINH = [...COT_KHOA, ...COT_QUA_TRINH_MO_RONG];
 
 // -------- goiId dạng "18t-dung-chung" -> {loai_mua_sam, goi} -----------------

@@ -249,11 +249,6 @@ const RE_CHO_TRONG = /\{([A-Za-z_][\w.]*)\}/g;
 
 const fmtSo = (x) => (typeof x === "number" ? x.toLocaleString("vi-VN") : String(x));
 
-/** Khoá có trong chỗ trống của một câu. */
-export function choTrongCua(cau) {
-  return [...String(cau || "").matchAll(RE_CHO_TRONG)].map((m) => m[1]);
-}
-
 /**
  * Điền chỗ trống. Trả `null` nếu có khoá chưa rõ — người gọi phải bỏ câu này,
  * không được hiện câu có lỗ hổng hay tự bịa số.
@@ -453,7 +448,7 @@ export function giaiDichDen(manKey, ctx = {}) {
         duPhong: !goi,
       };
     case "khoa.bo_sung_de_xuat":
-      // Như App.jsx (TienDoGoiThau/GioRotCuaKhoa): không truyền goiCon.
+      // Như App.jsx (GioRotCuaKhoa): không truyền goiCon.
       return {
         man: manKey, kieu: "chon",
         chon: {

@@ -206,7 +206,6 @@ checkpoint này.
 - [patch_zz_tach_ky_goi_va_thong_bao_rot.sql](../../backend/sql/patch_zz_tach_ky_goi_va_thong_bao_rot.sql): chốt theo `dot_id` và quyền mua thêm.
 - [patch_zzz_mac_dinh_trung_va_hang_ve.sql](../../backend/sql/patch_zzz_mac_dinh_trung_va_hang_ve.sql): trigger tạo tracker, 5 mốc và kết quả mặc định trúng.
 - [patch_zg_cho_phep_day_sl_ghi_ket_qua.sql](../../backend/sql/patch_zg_cho_phep_day_sl_ghi_ket_qua.sql): chuyển số lượng rớt và xác nhận bổ sung.
-- [smoke_pipeline_hien_tai.py](../../backend/scripts/smoke_pipeline_hien_tai.py): tuyến smoke được coi là hiện hành, nhưng phần chốt vẫn dùng bảng gói+năm cũ.
 
 ### Tài liệu nghiệp vụ
 

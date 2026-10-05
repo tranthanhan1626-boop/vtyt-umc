@@ -32,8 +32,8 @@ import ThanhDauUmc, { useDongKhiRaNgoai, doRongNhanNhom } from "../components/Th
  * MỚI: mục 4.3 "rớt 1 phần" — ĐVSD đẩy SL của mã rớt sang mã hàng tương
  * đương CÙNG mã quản lý CÒN TRÚNG, tổng mã quản lý giữ nguyên (chặn cứng ở
  * RPC day_so_luong_rot, xem patch_ze). "Rớt hoàn toàn" / thêm vào giỏ bổ
- * sung vẫn xử lý ở Tiến độ gói thầu (TienDoGoiThau.jsx) — không lặp lại ở
- * đây, chỉ hiển thị dấu rớt + link sang đó.
+ * sung từng xử lý ở màn Tiến độ gói thầu (đã gỡ 05/10/2026, mã còn trong lịch
+ * sử git) — không lặp lại ở đây, chỉ hiển thị dấu rớt.
  *
  * CHƯA LÀM (để sau, ghi rõ để không quên):
  *   - sl_de_xuat_18t để READONLY ở đây — sửa số lượng TRƯỚC đấu thầu vẫn làm
@@ -247,7 +247,6 @@ async function taiDuLieuKhoa(goiId, khoa, dotId = null) {
     const vt = vatTuTheoMa.get(maHang) || {};
     const prop = propTheoMa.get(maHang);
     const theoThang = usageTheoMa.get(maHang) || new Map();
-    const tongNam = (nam) => tongKhoang(theoThang, monthId(nam, 1), monthId(nam, 12));
     const slDeXuat = Number(laPhanBoV3 ? prop.so_luong_hien_hanh : prop.so_luong) || 0;
     // Giai đoạn 4 của workflow: "Khoa thấy số cũ, số mới, người sửa và lý do
     // ngay trên bảng của mình." `so_luong_goc` là số khoa đã gửi, không bao

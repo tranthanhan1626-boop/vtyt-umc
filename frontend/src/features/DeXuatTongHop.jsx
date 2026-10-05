@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, ChevronDown, Download, FileText, ExternalLink, Trash2, Package, Sheet } from "lucide-react";
+import { Search, ChevronDown, Download, Trash2, Package, Sheet } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import { NHAN_GOI_THAU } from "./Function1";

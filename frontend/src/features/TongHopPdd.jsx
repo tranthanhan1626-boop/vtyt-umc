@@ -196,7 +196,7 @@ async function taiDuLieuGoc(goiId, dotId = null) {
       // `gốc − đã đổ đi + nhận về`; không ghi đè vì `phan_bo_khoa` bị khoá
       // cứng 1 chặn sau chốt Q, và số đã mang đi thầu là bằng chứng.
     qProposals = () => supabase.from("v_phan_bo_sau_dieu_chuyen_v3")
-      .select("ma_hang, khoa, so_luong_hien_hanh, so_luong_goc, sua_boi_khoa, da_do_di, nhan_ve, do_sang_ma, nhan_tu_ma")
+      .select("ma_hang, khoa, so_luong_hien_hanh, so_luong_goc, sua_boi_khoa")
       .eq("dot_goi_id", dotGoiId);
   } else {
     qProposals = () => {
@@ -220,7 +220,7 @@ async function taiDuLieuGoc(goiId, dotId = null) {
 
   const theoMa = new Map();
   // Dòng nguồn đã được khoa xử lý sau rớt 1 phần được RPC giảm về 0. Nó chỉ
-  // còn là audit ở Tiến độ gói thầu, không được tiếp tục xuất hiện trong danh
+  // còn là dòng audit trong dữ liệu, không được tiếp tục xuất hiện trong danh
   // mục tổng hợp PĐD hay làm tổng số giả.
   (propRows || []).filter((r) => Number(laPhanBoV3 ? r.so_luong_hien_hanh : r.so_luong) > 0).forEach((r) => {
     if (!theoMa.has(r.ma_hang)) theoMa.set(r.ma_hang, []);
@@ -299,7 +299,6 @@ async function taiDuLieuGoc(goiId, dotId = null) {
   const rows = dsMaHang.map((maHang, idx) => {
     const vt = vatTuTheoMa.get(maHang) || {};
     const theoThang = usageTheoMa.get(maHang) || new Map();
-    const tongNam = (nam) => tongKhoang(theoThang, monthId(nam, 1), monthId(nam, 12));
     // "Theo 18T/20XX" = tổng thực tế 18 tháng KẾT THÚC cuối năm đó — mốc so
     // sánh lịch sử, không phải dự báo. Ví dụ 2025: 07/2024 -> 12/2025.
     const theo18t = (nam) => tongKhoang(theoThang, monthId(nam - 1, 7), monthId(nam, 12));
@@ -381,7 +380,7 @@ async function taiOverrideVaKhoa(goiId, namDeXuat) {
     dotGoiIdKhoa = dg?.id || null;
   }
   const [{ data: oRows, error: loiO }, { data: khoaRows, error: loiKhoa },
-    { data: oKhoaRows, error: loiOKhoa }] = await Promise.all([
+    { data: oKhoaRows }] = await Promise.all([
     // `updated_by` + `updated_at` (20/08/2026): hai cột này đã có sẵn trong
     // bảng từ patch_zd, chỉ là trước giờ màn này không đọc. Phải đọc vì luật
     // "ai sửa sau đè" cho phép KHOA đè lên giá trị PĐD vừa duyệt — không có
@@ -985,15 +984,14 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       setLoiO("Chưa xác định được gói con của đợt này nên chưa chốt được. Bấm Tải lại rồi thử lần nữa.");
       return;
     }
-    let data;
     let error;
     if (dangChot) {
       if (!lyDo || !String(lyDo).trim()) { setDangChot(false); return; }
-      ({ data, error } = await supabase.rpc("mo_chot_so_tham_gia_thau_v3", {
+      ({ error } = await supabase.rpc("mo_chot_so_tham_gia_thau_v3", {
         p_dot_goi_id: dotGoiId, p_ly_do: String(lyDo).trim(),
       }));
     } else {
-      ({ data, error } = await supabase.rpc("chot_so_tham_gia_thau_v3", {
+      ({ error } = await supabase.rpc("chot_so_tham_gia_thau_v3", {
         p_dot_goi_id: dotGoiId,
       }));
     }

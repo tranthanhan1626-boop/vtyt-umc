@@ -467,7 +467,6 @@ comment/docstring, không chỗ nào đọc file:
 | `frontend/src/features/BanDieuHanhPdd.jsx` | 16 · 125 |
 | `frontend/src/lib/congThucSoLuong.js` | 3 |
 | `frontend/src/features/DeXuatTongHop.jsx` | 24 · 196 |
-| `backend/scripts/smoke_pipeline_hien_tai.py` | 7 · 10 |
 
 ---
 
