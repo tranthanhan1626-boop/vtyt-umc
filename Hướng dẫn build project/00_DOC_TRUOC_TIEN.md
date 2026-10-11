@@ -10,7 +10,7 @@
 > - **Đợt test trọn vòng hai vai đêm 10/10:** 25 lỗi tìm được, 18 lỗi giao diện đã sửa + 3 patch SQL đã chạy
 >   (`backend/sql/patch_zzzzzzzm/n/o_*`, có `rollback_*`). Báo cáo + **10 câu hỏi nghiệp vụ chờ chủ dự án**:
 >   `Test và hướng dẫn 10-10-2026/BAO_CAO_TONG_KET.md` mục 5 (câu 4–13). Hồ sơ: `.scratch/test-10-10/SO_CHUNG.md`.
-> - **Tài liệu hướng dẫn người dùng = bộ slide 30 trang** `Test và hướng dẫn 10-10-2026/HuongDan_VTYT_10-2026.pptx`
+> - **Tài liệu hướng dẫn người dùng = bộ slide 32 trang** `Test và hướng dẫn 10-10-2026/HuongDan_VTYT_10-2026.pptx`
 >   (+ PDF). Bản 48 trang 05/10 đã mất khỏi máy và chủ dự án chọn thôi dùng (11/10).
 > - **Tài khoản (mật khẩu `111111`):** `pdd@` Phòng Điều dưỡng · `admin@` Quản trị hệ thống ·
 >   `dvsd1@` ĐD Phòng mổ · `dvsd2@` ĐD Răng Hàm Mặt · `dvsd3@` ĐD Ngoại thần kinh. Claude không gõ mật khẩu lên
@@ -262,7 +262,7 @@ mục 4b.
 | `frontend/`, `backend/` (mã nguồn, SQL patch, test) | web dự trù & đấu thầu VTYT | theo luật `AGENTS.md`; sửa xong phải build + bấm thật |
 | `Hướng dẫn build project/` (00–08, docx, sơ đồ, báo cáo công thức) | bộ tài liệu chính thức duy nhất | sửa tại chỗ; quyết định mới ghi vào `01`/`06`, nhật ký `07` |
 | `AGENTS.md`, `MO_WEB.command`, `netlify.toml` | luật cho agent · nút mở web · cấu hình deploy | — |
-| `Test và hướng dẫn 10-10-2026/` (`HuongDan_VTYT_10-2026.pptx` 30 trang + `_xem_nhanh.pdf`, `BAO_CAO_TONG_KET.md`, `patch_SQL_cho_duyet/`) | **tài liệu hướng dẫn người dùng hiện hành** (big picture "đi chợ online" + từng bước hai vai) và báo cáo đợt test 10/10 | dựng lại slide: `.scratch/test-10-10/slide/dung_slide.py` (cài thư viện: `python3 -m venv .scratch/test-10-10/slide/.venv && .scratch/test-10-10/slide/.venv/bin/pip install -r .scratch/test-10-10/slide/requirements.txt`); thay ảnh ở `.scratch/test-10-10/anh/` rồi dựng lại; pptx/pdf không đưa git (nặng) |
+| `Test và hướng dẫn 10-10-2026/` (`HuongDan_VTYT_10-2026.pptx` 32 trang + `_xem_nhanh.pdf`, `BAO_CAO_TONG_KET.md`, `patch_SQL_cho_duyet/`) | **tài liệu hướng dẫn người dùng hiện hành** (big picture "đi chợ online" + từng bước hai vai) và báo cáo đợt test 10/10 | dựng lại slide: `.scratch/test-10-10/slide/dung_slide.py` (cài thư viện: `python3 -m venv .scratch/test-10-10/slide/.venv && .scratch/test-10-10/slide/.venv/bin/pip install -r .scratch/test-10-10/slide/requirements.txt`); thay ảnh ở `.scratch/test-10-10/anh/` rồi dựng lại; pptx/pdf không đưa git (nặng) |
 | `.scratch/test-10-10/` (SO_CHUNG, KIEM_DINH_DOC_LAP, DAN_SLIDE, `anh/` 80 ảnh, `minh-hoa/` 4 ảnh Higgsfield, `slide/`, `patch_de_xuat/` gồm bản gốc để hoàn tác) | hồ sơ đợt test trọn vòng + slide 10–11/10 | không sửa; ảnh không commit |
 | `.scratch/test-toan-bo/` (BAO_CAO_TONG_KET, SO_CHUNG, KIEM_DINH_DOC_LAP*, `bao-cao/`, 172 ảnh bằng chứng) | hồ sơ đợt test toàn bộ 28/09 | không sửa; ảnh không commit (nặng) |
 | `.scratch/test-tu-dau-05-10/` (NHAT_KY, LOI, 9 ảnh) | hồ sơ test trọn vòng hai vai 05/10 | không sửa; ảnh không commit |
@@ -276,7 +276,7 @@ mục 4b.
 - `Form biểu mẫu/` — biểu mẫu thật của bệnh viện.
 - `backend/du_lieu_staging/` — dữ liệu xuất từ production để dựng staging.
 - `backend/sao_luu/` — sao lưu database (production 04/08; staging 03/10, `2026-10-05_toi_truoc_khi_don`, `2026-10-10_truoc_test_toi`, `2026-10-11_sau_test_truoc_khi_don`).
-- `.scratch/huong-dan/` — nguồn dựng tài liệu hướng dẫn cũ (bản 19/09 ở gốc; bản 48 trang 05/10 ở `ban-05-10/`, `dung_pptx.py` + `README_DUNG.md`). Tệp pptx/pdf 48 trang đã mất khỏi máy; chủ dự án chọn thôi dùng 11/10 (thay bằng slide 30 trang). Giữ vì code/tài liệu cũ còn trỏ tới ảnh ở đây.
+- `.scratch/huong-dan/` — nguồn dựng tài liệu hướng dẫn cũ (bản 19/09 ở gốc; bản 48 trang 05/10 ở `ban-05-10/`, `dung_pptx.py` + `README_DUNG.md`). Tệp pptx/pdf 48 trang đã mất khỏi máy; chủ dự án chọn thôi dùng 11/10 (thay bằng slide 32 trang). Giữ vì code/tài liệu cũ còn trỏ tới ảnh ở đây.
 - `ghi-chu-key/`, `backend/.env.local` — khoá bí mật, không bao giờ đưa lên git.
 - `.scratch/` các thư mục ghi chép đợt cũ (`_da-xong`, `chatbot`, `demo`, `giao-dien`, `is-current`, `link-tong-hop-xuong-khoa`, `mot-mat-ban`, `test-full-2roles`, `tien-do-goi-thau`, `vong-khep-kin`) — code, patch SQL và tài liệu còn trỏ tới; `giao-dien/CHUAN_THI_GIAC.md` là chuẩn bắt buộc theo `AGENTS.md`.
 - `phan-tich-cong-thuc/` — script sinh báo cáo công thức (T8/2026).
@@ -286,7 +286,7 @@ mục 4b.
 
 1. **Q07** — cột HIS QĐ1599 rỗng 3.327/3.327 mã → Excel trình ký không có cột mã hàng; chủ dự án tìm nguồn.
 2. Nạp HIS **T7–T8/2026** (hiện tới T6).
-3. ~~Sửa pptx hướng dẫn~~ — thay bằng slide 30 trang 11/10 (ảnh chụp lại sau khi sửa lỗi).
+3. ~~Sửa pptx hướng dẫn~~ — thay bằng slide 32 trang 11/10 (ảnh chụp lại sau khi sửa lỗi).
 4. ~~Đẩy Netlify + push GitHub~~ — xong 05/10.
 5. ~~Dọn dữ liệu test #202–#206~~ — xong 05/10 (dọn sạch mọi đợt, có sao lưu).
 6. Ghi nhận, chưa vá: M8 (xác nhận rớt lần 2 sau khi khoa đã gửi vẫn báo "Đã gửi"); chữ "Gửi giỏ" trong hàm DB. ~~"Khoa Khoa"~~ sửa 11/10 (patch zzzzzzzn). Chi tiết: `05` mục 7.
@@ -311,7 +311,7 @@ mục 4b.
 
 ## Nhật ký chốt
 
-- 11/10/2026 — Chốt đợt test trọn vòng hai vai + slide 30 trang: 18 lỗi giao diện sửa, 3 patch SQL chạy, Netlify đẩy bằng đường tải lên, commit `af486c8`/`fac33f1` `[skip netlify]`; DB dọn đợt test, chỉ còn đợt 211 mở. Bản 48 trang 05/10 mất khỏi máy → thôi dùng, slide 30 trang thay. Vào Thùng rác (`.scratch/test-10-10/`): thư viện dựng slide `.venv`, bản xuất thử `render/` `xem/` `build/`, ảnh xem nhanh, 24 ảnh cũ `anh/_cu`, Excel tạm `tmp/`, biên lai Higgsfield, `backend/.pytest_cache` — ~332 MB.
+- 11/10/2026 — Chốt đợt test trọn vòng hai vai + slide 32 trang: 18 lỗi giao diện sửa, 3 patch SQL chạy, Netlify đẩy bằng đường tải lên, commit `af486c8`/`fac33f1` `[skip netlify]`; DB dọn đợt test, chỉ còn đợt 211 mở. Bản 48 trang 05/10 mất khỏi máy → thôi dùng, slide 32 trang thay. Vào Thùng rác (`.scratch/test-10-10/`): thư viện dựng slide `.venv`, bản xuất thử `render/` `xem/` `build/`, ảnh xem nhanh, 24 ảnh cũ `anh/_cu`, Excel tạm `tmp/`, biên lai Higgsfield, `backend/.pytest_cache` — ~332 MB.
 
 - 05/10/2026 (chốt khuya) — Chốt toàn ngày: web + tài liệu bản 10/2026, DB sạch lần 2 cho chủ dự án tự test. Xếp nhóm hồ sơ `test-tu-dau-05-10/`, `ra-thi-giac-05-10/`, nguồn dựng `ban-05-10/`. Vào Thùng rác: `ban-05-10/_tam`, `xem_truoc`, pptx/pdf trùng, `anh_sang_05-10`, file Excel test, `backend/.pytest_cache` — ~104 MB.
 

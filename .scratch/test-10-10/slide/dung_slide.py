@@ -912,6 +912,114 @@ steps(s, 5.1, below(sh, sh2), 4.45, [
     (5, "Bấm **Xuất Excel CHÍNH THỨC**.", 0.3),
 ], size=13, gap=0.05)
 
+# ================================================================ TRANG 25b — KẾT QUẢ: EXCEL TRÌNH KÝ
+# Nguồn: Excel CHÍNH THỨC web xuất ra trong đợt test (gói Dùng chung, 2 khoa), ở ../ket-qua/.
+# Ảnh trái = bản in cả trang (ép vừa 1 tờ A3 cho thấy hình dáng); bảng phải = bảng PowerPoint
+# chép đúng số từ file Excel (5 dòng, 6 cột) để đọc được ở cỡ 12pt.
+KQ = os.path.join(HERE, "..", "ket-qua")
+
+
+def excel_toan_trang():
+    import pymupdf
+    out = os.path.join(BUILD, "excel_toan_trang.png")
+    d = pymupdf.open(os.path.join(KQ, "excel_chinh_thuc_A3.pdf"))
+    pg = d[0]
+    z = 2000 / pg.rect.width
+    pix = pg.get_pixmap(matrix=pymupdf.Matrix(z, z), clip=pymupdf.Rect(25 / z, 38 / z, 1955 / z, 648 / z))
+    pix.save(out)
+    return out, (pix.width, pix.height)
+
+
+def excel_dong(stt_chon):
+    import openpyxl
+    ws = openpyxl.load_workbook(os.path.join(KQ, "excel_chinh_thuc_dung_chung.xlsx"), data_only=True).active
+    hdr = [ws.cell(5, c).value for c in range(1, ws.max_column + 1)]
+    ci = {k: hdr.index(k) + 1 for k in hdr if k}
+    c_sl = [k for k in hdr if k and str(k).startswith("Số lượng \nđề xuất")][0]
+    rows = []
+    for r in range(6, ws.max_row + 1):
+        stt = ws.cell(r, ci["Stt"]).value
+        if stt in stt_chon:
+            g = lambda k: ws.cell(r, ci[k]).value
+            rows.append([str(stt), str(g("Tên vật tư mời thầu 2026-2027")).replace("\n", " "),
+                         g("Đơn vị tính"), g(c_sl), g("Khoa GMHS - Phòng mổ"), g("Khoa Ngoại thần kinh")])
+    tieu_de = [ws.cell(i, 1).value for i in (1, 2, 3, 4)]
+    return tieu_de, rows
+
+
+s = new_slide("Kết quả: bản Excel trình ký")
+section_tag(s, "PĐD")
+lead(s, "Kết quả cuối của vòng: Excel CHÍNH THỨC, in khổ A3 ngang để trình ký.")
+tieu_de, rows = excel_dong({1, 2, 7, 10})
+pth, size = excel_toan_trang()
+sh = Shot(s, "excel_toan_trang", 0.5, 1.62, w=4.7, path=pth, size=size)
+sh.mark((6, 4, 372, 36), 1, "tr", pad=2, d=0.25)
+sh.mark((1213, 44, 1272, 604), 2, "t", pad=2, d=0.25)
+sh.mark((1790, 44, 1922, 604), 3, "t", pad=2, d=0.25)
+steps(s, 5.45, 1.6, 4.15, [
+    (1, f"**{tieu_de[2]}** · {tieu_de[3]}", 0.62),
+    (2, "**Số lượng đề xuất** toàn viện.", 0.27),
+    (3, "Số **từng khoa** ở cuối bảng; cộng lại bằng tổng.", 0.27),
+], size=12, gap=0.03, d=0.25)
+X0, W, Y0 = 0.5, 9.1, below(sh, gap=0.16)
+cols = [("STT", 0.5), ("Tên vật tư mời thầu", 4.0), ("ĐVT", 0.6), ("Số lượng đề xuất", 1.3),
+        ("Khoa GMHS - Phòng mổ", 1.4), ("Khoa Ngoại thần kinh", 1.3)]
+tbl = s.shapes.add_table(len(rows) + 1, len(cols), Inches(X0), Inches(Y0), Inches(W), Inches(0.28)).table
+HEAD = RGBColor(0xD9, 0xE1, 0xF2)
+for j, (h, w) in enumerate(cols):
+    tbl.columns[j].width = Inches(w)
+for i in range(len(rows) + 1):
+    tbl.rows[i].height = Inches(0.27)
+
+
+def _o(cell, val, bold=False, align=PP_ALIGN.LEFT, fill=WHITE, color=INK):
+    cell.fill.solid()
+    cell.fill.fore_color.rgb = fill
+    cell.margin_left = cell.margin_right = Inches(0.05)
+    cell.margin_top = cell.margin_bottom = Inches(0.01)
+    cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+    tf = cell.text_frame
+    tf.word_wrap = True
+    tf.text = ""
+    par = tf.paragraphs[0]
+    par.alignment = align
+    r = par.add_run()
+    r.text = "" if val is None else (f"{val:,}".replace(",", ".") if isinstance(val, (int, float)) else str(val))
+    r.font.size, r.font.bold, r.font.name = Pt(12), bold, "Times New Roman"
+    r.font.color.rgb = color
+
+
+for j, (h, _) in enumerate(cols):
+    _o(tbl.cell(0, j), h, bold=True, align=PP_ALIGN.CENTER, fill=HEAD)
+for i, row in enumerate(rows, start=1):
+    for j, v in enumerate(row):
+        _o(tbl.cell(i, j), v, align=PP_ALIGN.RIGHT if j >= 3 or j == 0 else PP_ALIGN.LEFT)
+tblPr = tbl._tbl.tblPr
+for k in ("firstRow", "bandRow"):
+    tblPr.set(k, "0")
+
+# ================================================================ TRANG 25c — KẾT QUẢ: BẢN CAM KẾT (MINH HOẠ)
+s = new_slide("Kết quả: bản cam kết của khoa")
+section_tag(s, "KHOA")
+lead(s, "Khoa in bản cam kết số lượng kèm danh mục; trưởng khoa ký.")
+sh = Shot(s, "cam_ket_minh_hoa", 0.5, 1.62, w=5.9, path=os.path.join(KQ, "cam_ket_minh_hoa.png"),
+          size=(2880, 1800))
+k = 2  # ảnh chụp ở mật độ 2x: toạ độ trang 1440 nhân 2
+sh.mark((406 * k, 373 * k, 523 * k, 388 * k), 1, "l", pad=6)
+sh.mark((560 * k, 513 * k, 736 * k, 527 * k), 1, "b", pad=6)
+sh.mark((846 * k, 315 * k, 1420 * k, 560 * k), 2, "tl", pad=4)
+sh.mark((430 * k, 697 * k, 770 * k, 737 * k), 3, "l", pad=6)
+sh.mark((1260 * k, 93 * k, 1401 * k, 128 * k), 4, "bl", pad=6)
+X1 = 6.6
+steps(s, X1, 1.66, 3.0, [
+    (1, "Ô tô xanh: web **tự điền** tên khoa, năm, gói thầu.", 0.5),
+    (2, "**Danh mục đính kèm** lấy từ danh mục khoa đã xác nhận.", 0.5),
+    (3, "**Trưởng khoa** ghi họ tên, chức vụ, ngày và ký.", 0.5),
+    (4, "**Tải Word** hoặc **In** bản cam kết.", 0.3),
+], size=13, gap=0.08)
+text(s, X1, 4.45, 3.0, 0.6, "Chữ theo mẫu “Cam kết số lượng đề xuất thầu dùng chung” của bệnh viện.",
+     size=12, color=MUTED)
+
 # ================================================================ TRANG 26 — THEO DÕI
 s = new_slide("Theo dõi sau thầu")
 section_tag(s, "PĐD")

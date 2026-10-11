@@ -3,7 +3,7 @@
 Soạn lại 05/10/2026 (tối), cho database TRỐNG — chủ dự án tự đi từ đầu. (11/10: DB đã có sẵn
 đợt 211 "Gói 18 tháng 2027-2028" đang mở cùng 5 gói con — bỏ qua bước tạo/mở đợt ở mục 0.3.)
 Lộ trình này **không tả nút bấm** — tả nút là việc của
-bộ slide `Test và hướng dẫn 10-10-2026/HuongDan_VTYT_10-2026.pptx` (30 trang, 11/10/2026). Đây chỉ là
+bộ slide `Test và hướng dẫn 10-10-2026/HuongDan_VTYT_10-2026.pptx` (32 trang, 11/10/2026). Đây chỉ là
 thứ tự đi và chỗ cần soi.
 
 ## 0. Trước khi bấm
