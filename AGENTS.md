@@ -18,7 +18,7 @@ Mọi chữ "go-live giữa T9" hay "01/01/2027" bên dưới là lịch sử, �
 pytest 404 · test:formula 10 ✓
 DB staging: chỉ đợt 211 "Gói 18 tháng 2027-2028" đang mở, 5 gói con mở, 0 đề xuất. Dữ liệu nền giữ nguyên.
 Nút dọn dữ liệu kiểm thử ẨN mặc định (cờ build VITE_HIEN_NUT_KIEM_THU=1 để hiện).
-Tài liệu người dùng: slide 32 trang `Test và hướng dẫn 10-10-2026/HuongDan_VTYT_10-2026.pptx`
+Tài liệu người dùng: slide 33 trang `Test và hướng dẫn 10-10-2026/HuongDan_VTYT_10-2026.pptx`
   (dựng lại: .scratch/test-10-10/slide/dung_slide.py). Bản 48 trang 05/10 đã thôi dùng.
 Việc còn lại: mục "Việc còn mở" trong 00_DOC_TRUOC_TIEN.md (có 10 câu hỏi chờ chủ dự án).
 ```
@@ -26,7 +26,7 @@ Việc còn lại: mục "Việc còn mở" trong 00_DOC_TRUOC_TIEN.md (có 10 c
 - **Mở web để test:** bấm đúp `MO_WEB.command` → tự build rồi mở bản chuẩn ở
   `localhost:4173`. Mật khẩu mọi tài khoản thử `111111` (sửa 28/09: file này
   trước in nhầm `Test123456` và chạy bản dev cổng 5173).
-- **Hướng dẫn sử dụng cho người dùng cuối:** slide 32 trang
+- **Hướng dẫn sử dụng cho người dùng cuối:** slide 33 trang
   `Test và hướng dẫn 10-10-2026/HuongDan_VTYT_10-2026.pptx` (+ PDF xem nhanh), ảnh chụp
   sau khi sửa lỗi đợt test 10/10. Claude KHÔNG gõ mật khẩu thử lên web (mật khẩu đi ra
   Supabase) — chủ dự án tự đăng nhập các tab chrome-devtools.
