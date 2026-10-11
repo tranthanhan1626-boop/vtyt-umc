@@ -1,6 +1,9 @@
 """Dựng bộ slide hướng dẫn sử dụng web VTYT trên template UMC.
 
-Chạy lại (từ gốc repo 9.vtyt):
+Chạy lại (từ gốc repo 9.vtyt). Lần đầu / sau khi dọn thư viện, cài lại:
+    python3 -m venv .scratch/test-10-10/slide/.venv
+    .scratch/test-10-10/slide/.venv/bin/pip install -r .scratch/test-10-10/slide/requirements.txt
+rồi:
     .scratch/test-10-10/slide/.venv/bin/python .scratch/test-10-10/slide/dung_slide.py
 
 Đầu vào : ảnh màn hình .scratch/test-10-10/anh/*.png (1440x900),

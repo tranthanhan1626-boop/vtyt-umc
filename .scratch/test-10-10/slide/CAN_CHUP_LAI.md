@@ -9,6 +9,8 @@ SO_CHUNG mục 2 điều 5), rồi chạy lại:
 
 ```bash
 cd "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt"
+# thư viện đã dọn 11/10 — cài lại nếu chưa có:
+python3 -m venv .scratch/test-10-10/slide/.venv && .scratch/test-10-10/slide/.venv/bin/pip install -r .scratch/test-10-10/slide/requirements.txt
 .scratch/test-10-10/slide/.venv/bin/python .scratch/test-10-10/slide/dung_slide.py
 .scratch/test-10-10/slide/xem_thu.sh          # ảnh xem thử ra .scratch/test-10-10/slide/xem/
 ```

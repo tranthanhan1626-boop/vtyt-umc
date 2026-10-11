@@ -2,7 +2,7 @@
 
 Hướng dẫn cho người và cho agent khi làm việc trong repo này.
 
-## 📍 BẮT ĐẦU SESSION MỚI — TÌNH HÌNH TỚI 28/09/2026
+## 📍 BẮT ĐẦU SESSION MỚI — TÌNH HÌNH TỚI 11/10/2026
 
 **Cổng vào: `Hướng dẫn build project/00_DOC_TRUOC_TIEN.md`** (hiện trạng · cách
 mở web · việc còn lại). Lộ trình để chủ dự án tự bấm thử từ đầu:
@@ -12,21 +12,24 @@ mở web · việc còn lại). Lộ trình để chủ dự án tự bấm th�
 Mọi chữ "go-live giữa T9" hay "01/01/2027" bên dưới là lịch sử, đừng sắp việc theo nó.
 
 ```
-05/10/2026 tối: GitHub = Netlify = dfe5be6 · bundle index-Dps3s9ef.js · site https://vtyt-umc.netlify.app
-  (push lên nhánh phase-a-luong-de-xuat → Netlify TỰ build; commit chỉ tài liệu ghi [skip netlify])
-pytest 404 · test:formula 10 ✓ · eslint no-undef/no-unused sạch
-DB staging SẠCH (05/10 tối): 0 đợt, 0 đề xuất — chủ dự án tự test từ đầu hai vai. Dữ liệu nền giữ nguyên.
+11/10/2026: GitHub = Netlify = af486c8 (+fac33f1 tài liệu) · bundle index-DGTpMIHI.js · https://vtyt-umc.netlify.app
+  push lên nhánh phase-a-luong-de-xuat → Netlify TỰ build, tốn 15/300 điểm/tháng (hết điểm = site bị khoá)
+  → commit ghi [skip netlify], đẩy web bằng đường tải lên (04 mục "ĐẨY LÊN NETLIFY KHI ĐÃ HẾT CREDITS")
+pytest 404 · test:formula 10 ✓
+DB staging: chỉ đợt 211 "Gói 18 tháng 2027-2028" đang mở, 5 gói con mở, 0 đề xuất. Dữ liệu nền giữ nguyên.
 Nút dọn dữ liệu kiểm thử ẨN mặc định (cờ build VITE_HIEN_NUT_KIEM_THU=1 để hiện).
-Tài liệu người dùng: huong-dan-su-dung/ bản 10/2026 (nguồn dựng .scratch/huong-dan/ban-05-10/).
-Việc còn lại: mục "Việc còn mở" trong 00_DOC_TRUOC_TIEN.md và 05 mục 7.
+Tài liệu người dùng: slide 30 trang `Test và hướng dẫn 10-10-2026/HuongDan_VTYT_10-2026.pptx`
+  (dựng lại: .scratch/test-10-10/slide/dung_slide.py). Bản 48 trang 05/10 đã thôi dùng.
+Việc còn lại: mục "Việc còn mở" trong 00_DOC_TRUOC_TIEN.md (có 10 câu hỏi chờ chủ dự án).
 ```
 
 - **Mở web để test:** bấm đúp `MO_WEB.command` → tự build rồi mở bản chuẩn ở
   `localhost:4173`. Mật khẩu mọi tài khoản thử `111111` (sửa 28/09: file này
   trước in nhầm `Test123456` và chạy bản dev cổng 5173).
-- **Hướng dẫn sử dụng cho người dùng cuối:** `huong-dan-su-dung/HuongDan_SuDung_VTYT.pdf`
-  (bản 10/2026, 48 trang, kiểm định độc lập 05/10 ĐẠT; lỗi nhẹ còn lại ở
-  `.scratch/huong-dan/ban-05-10/KIEM_LAI_05-10.md`).
+- **Hướng dẫn sử dụng cho người dùng cuối:** slide 30 trang
+  `Test và hướng dẫn 10-10-2026/HuongDan_VTYT_10-2026.pptx` (+ PDF xem nhanh), ảnh chụp
+  sau khi sửa lỗi đợt test 10/10. Claude KHÔNG gõ mật khẩu thử lên web (mật khẩu đi ra
+  Supabase) — chủ dự án tự đăng nhập các tab chrome-devtools.
 
 - **Gói giao diện 5 đợt đã lên web** (không đổi chức năng): chữ dễ hiểu + `lib/dichLoi.js` ·
   thanh tiến trình (`lib/tienTrinh.js`) · màn chào khoa, menu theo việc, đề xuất 3 bước,
