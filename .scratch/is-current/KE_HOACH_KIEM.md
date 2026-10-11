@@ -5,7 +5,7 @@ Số "trước" đo trên DB lúc 18/09/2026 bằng phiên READ ONLY. Mọi câu
 ## 0. Chạy patch (chủ dự án gõ)
 
 ```
-! cd /Users/tranhien/Downloads/9.vtyt/backend && set -a && . ./.env.local && set +a && .venv/bin/python scripts/chay_patch.py sql/patch_zzzzzzzh_is_current_theo_dot.sql
+! cd "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt/backend" && set -a && . ./.env.local && set +a && .venv/bin/python scripts/chay_patch.py sql/patch_zzzzzzzh_is_current_theo_dot.sql
 ```
 
 Nếu patch báo lỗi thì cả file đã rollback, DB không đổi gì. Đọc câu `raise exception` để biết vì sao dừng.
@@ -61,7 +61,7 @@ Mở màn bằng Chrome (tải lại bỏ cache) rồi mới báo xong: build �
 ## 4. Nếu phải gỡ
 
 ```
-! cd /Users/tranhien/Downloads/9.vtyt/backend && set -a && . ./.env.local && set +a && .venv/bin/python scripts/chay_patch.py sql/rollback_zzzzzzzh_is_current_theo_dot.sql
+! cd "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt/backend" && set -a && . ./.env.local && set +a && .venv/bin/python scripts/chay_patch.py sql/rollback_zzzzzzzh_is_current_theo_dot.sql
 ```
 
 Đọc điều kiện ở đầu file rollback trước khi chạy. Rollback hạ is_current dòng cũ hơn trong mỗi bộ (mã, khoa, năm) trùng. Nó tự dừng nếu dòng sắp bị hạ đã qua bước gửi.

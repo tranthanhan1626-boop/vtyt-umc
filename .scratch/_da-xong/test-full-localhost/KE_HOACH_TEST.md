@@ -13,7 +13,7 @@ test. Mọi con số dữ liệu trong file này **đo thật trên staging
 ### 0.1 Chạy web
 
 ```bash
-cd /Users/tranhien/Downloads/9.vtyt/frontend
+cd "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt/frontend"
 npm run build && npm run preview        # → http://localhost:4173
 ```
 
@@ -74,7 +74,7 @@ nào có dữ liệu.
 | #118, #68 | Được | `tao_du_lieu_test_day_du.py` cho #118 |
 
 ```bash
-cd /Users/tranhien/Downloads/9.vtyt/backend
+cd "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt/backend"
 set -a && . ./.env.local && . ../frontend/.env && set +a
 .venv/bin/python scripts/tao_du_lieu_test_quy_mo_that.py --xac-nhan-staging --bo B
 ```
@@ -254,7 +254,7 @@ Chạy sau khi đã bấm nửa ngày thì bạn không phân biệt được l�
 mình vừa tạo.
 
 ```bash
-cd /Users/tranhien/Downloads/9.vtyt/backend
+cd "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt/backend"
 set -a && . ./.env.local && . ../frontend/.env && set +a
 ```
 
@@ -743,7 +743,7 @@ không có dữ liệu cũ.
 Không có màn nào trên web đọc `hop_dong_v3` / `giao_hang`. Kiểm bằng CLI.
 
 ```bash
-cd /Users/tranhien/Downloads/9.vtyt/backend
+cd "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt/backend"
 set -a && . ./.env.local && . ../frontend/.env && set +a
 .venv/bin/python scripts/kiem_mau_gom_du_lieu.py \
     ../database/MAU_GOM_DU_LIEU_SAU_THAU.xlsx --xac-nhan-staging
@@ -831,7 +831,7 @@ chạy tất cả trên bộ B.
 ## 5. Bảng tổng kết phép kiểm tự động (dán lại cho tiện)
 
 ```bash
-cd /Users/tranhien/Downloads/9.vtyt/backend
+cd "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt/backend"
 set -a && . ./.env.local && . ../frontend/.env && set +a
 
 .venv/bin/pytest -q                                                    # 215 passed

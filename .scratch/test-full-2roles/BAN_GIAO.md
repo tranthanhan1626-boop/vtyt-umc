@@ -159,10 +159,10 @@ tự thì vào Dashboard → Authentication → hạ `Minimum password length`.)
 ## 5. Lệnh vào việc
 
 ```bash
-cd /Users/tranhien/Downloads/9.vtyt/frontend && npm run dev     # :5173
+cd "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt/frontend" && npm run dev     # :5173
 
 # LUÔN cd trong cùng một lệnh — cwd hay bị reset
-cd /Users/tranhien/Downloads/9.vtyt/backend
+cd "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt/backend"
 set -a && . ./.env.local && . ../frontend/.env && set +a
 
 .venv/bin/python scripts/chay_patch.py sql/<ten_patch>.sql      # chạy patch

@@ -101,7 +101,7 @@ sửa `App.jsx` · `KhungGoiThau.jsx` · `TrangDungChung.jsx` · `QuanLyNguoiDun
 ### Lệnh vào lại
 ```bash
 npm run dev     # :5173, trỏ staging
-cd /Users/tranhien/Downloads/9.vtyt/backend
+cd "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt/backend"
 set -a && . ./.env.local && . ../frontend/.env && set +a
 .venv/bin/python scripts/smoke_workflow_v3_staging.py --xac-nhan-staging   # phải 12/12
 .venv/bin/python scripts/chay_patch.py sql/<file>.sql                      # chạy patch mới

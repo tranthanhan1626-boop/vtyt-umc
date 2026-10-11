@@ -26,7 +26,7 @@ in nhầm mật khẩu `Test123456`). Mật khẩu mọi tài khoản thử `111
 Hoặc gõ tay, cùng kết quả:
 
 ```bash
-cd "/Users/tranhien/Downloads/9.vtyt/frontend"
+cd "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt/frontend"
 npm run build && npm run preview
 ```
 
@@ -39,8 +39,8 @@ Sau khi đổi `.env`, phải khởi động lại Vite.
 ### Cài lại thư viện
 
 ```bash
-cd "/Users/tranhien/Downloads/9.vtyt/frontend" && npm install
-cd "/Users/tranhien/Downloads/9.vtyt/backend"
+cd "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt/frontend" && npm install
+cd "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt/backend"
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 ```
@@ -48,11 +48,11 @@ python3 -m venv .venv
 ## 3. Kiểm thử trước khi bàn giao
 
 ```bash
-cd "/Users/tranhien/Downloads/9.vtyt/frontend"
+cd "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt/frontend"
 npm run test:formula
 npm run build
 
-cd "/Users/tranhien/Downloads/9.vtyt"
+cd "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt"
 backend/.venv/bin/pytest -q backend/tests
 ```
 
@@ -79,7 +79,7 @@ Word/Excel thật — **mở file .xlsx tải về bằng openpyxl để đối 
 tin màn hình:
 
 ```bash
-cd "/Users/tranhien/Downloads/9.vtyt"
+cd "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt"
 backend/.venv/bin/python3 -c "
 import openpyxl; ws = openpyxl.load_workbook('<file>.xlsx').worksheets[0]
 print(ws.max_column, [ws.cell(row=4, column=c).value for c in range(1, ws.max_column+1)])"
@@ -115,7 +115,7 @@ Biến local:
 Chép production sang staging:
 
 ```bash
-cd "/Users/tranhien/Downloads/9.vtyt/backend"
+cd "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt/backend"
 set -a && . ./.env.local && set +a
 .venv/bin/python scripts/xuat_du_lieu_sang_staging.py --xuat
 .venv/bin/python scripts/xuat_du_lieu_sang_staging.py --nap
@@ -291,7 +291,7 @@ dự án ở từng bước, không tự suy ra từ việc staging đã ổn.
 Backup dữ liệu quý:
 
 ```bash
-cd "/Users/tranhien/Downloads/9.vtyt/backend"
+cd "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt/backend"
 set -a && . ./.env.local && set +a
 .venv/bin/python scripts/sao_luu.py
 ```
@@ -350,7 +350,7 @@ Vẫn cần diễn tập trên bảng LỚN (`proposals` và cả nhóm nặng) 
 ## 5b. Kiểm sức khoẻ TRƯỚC MỖI LẦN DEPLOY
 
 ```bash
-cd "/Users/tranhien/Downloads/9.vtyt/backend"
+cd "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt/backend"
 set -a && . ./.env.local && set +a
 .venv/bin/python scripts/kiem_truoc_deploy.py       # thêm --production nếu cần
 ```
