@@ -20,6 +20,11 @@ BAN_DIEU_HANH = FE / "BanDieuHanhPdd.jsx"
 TONG_HOP = FE / "TongHopPdd.jsx"
 GIO_ROT = FE / "GioRotCuaKhoa.jsx"
 
+# 11/10/2026 (L10/L14/L15, test 10/10): phần ĐỌC chuyển tiếp/đã gửi của màn ③
+# dời sang frontend/src/lib/gioRot.js để nhãn đỏ menu dùng cùng luật — test dò
+# chữ đọc cả hai file.
+GIO_ROT_LIB = FE.parent / "lib" / "gioRot.js"
+
 
 # ---------------------------------------------------------------------------
 # M2 — BanDieuHanhPdd.jsx: nút "dọn dữ liệu làm việc" phải dùng NĂM CỦA ĐỢT
@@ -168,14 +173,14 @@ def test_m9_nhan_nguoi_sua_doc_thang_khong_gan_cung():
 # ---------------------------------------------------------------------------
 
 def test_m10_khong_con_ghep_thang_moc_lap_vao_nhan():
-    text = GIO_ROT.read_text(encoding="utf-8")
+    text = GIO_ROT.read_text(encoding="utf-8") + GIO_ROT_LIB.read_text(encoding="utf-8")
     # Mẫu lỗi cũ: `${dd.ten} (T${dd.thang_moc}/${dd.nam})` — không còn nữa.
     assert "(T${dd.thang_moc}/${dd.nam})" not in text
     assert "dd?.thang_moc ? `${dd.ten}" not in text
 
 
 def test_m10_nhan_dung_thang_ten_dot_khong_doi():
-    text = GIO_ROT.read_text(encoding="utf-8")
+    text = GIO_ROT.read_text(encoding="utf-8") + GIO_ROT_LIB.read_text(encoding="utf-8")
     m = re.search(r"tenDotById\[dg\.id\]\s*=\s*\{[^}]*\};", text)
     assert m, "không tìm thấy chỗ gán tenDotById[dg.id]"
     assert 'nhan: dd?.ten || ""' in m.group(0)
@@ -249,7 +254,7 @@ def test_m4k_tai_lai_kiem_luot_sau_moi_await_truoc_khi_ghi_state():
     text = DANH_MUC_KHOA.read_text(encoding="utf-8")
     m = re.search(
         r"const taiLai = useCallback\(async \(\) => \{[\s\S]*?"
-        r"\}, \[goiId, khoaHienTai, dotId, sanSangGoi, taiODaLuu, taiSuaDeCuaPdd\]\);",
+        r"\}, \[goiId, khoaHienTai, dotId, sanSangGoi, namDot, taiODaLuu, taiSuaDeCuaPdd\]\);",
         text,
     )
     assert m, "không tìm thấy hàm taiLai"

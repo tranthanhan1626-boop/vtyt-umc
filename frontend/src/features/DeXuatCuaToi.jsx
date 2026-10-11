@@ -46,6 +46,10 @@ export default function DeXuatCuaToi({ profile, goi }) {
   const [xacNhanRut, setXacNhanRut] = useState(null);
   const [lyDoRut, setLyDoRut] = useState("");
   const [loiRut, setLoiRut] = useState("");
+  // L3 (test 10/10/2026) — khoá "dot_id:goi_id" của những gói con PĐD đã chốt
+  // số đi thầu (phiên Q hiệu lực). Trigger `fn_khoa_phan_bo_sau_chot_q` chặn
+  // xoá ở máy chủ; ở đây chỉ để KHÔNG mời khoa bấm một nút chắc chắn bị chặn.
+  const [goiDaChotQ, setGoiDaChotQ] = useState(new Set());
   const giamChuyenDong = useReducedMotion();
 
   useEffect(() => {
@@ -62,6 +66,21 @@ export default function DeXuatCuaToi({ profile, goi }) {
         .select("id, ten, thang_moc, loai_mua_sam").eq("loai_mua_sam", goi);
       setTenDot(Object.fromEntries((dots || []).map((d) => [d.id, d.ten])));
       setDotTheoId(Object.fromEntries((dots || []).map((d) => [d.id, d])));
+      // L3: gói con nào đã chốt số. Đọc lỗi thì để rỗng — nút vẫn hiện như
+      // cũ và máy chủ vẫn chặn, chỉ mất phần ẩn nút.
+      const dsDotId = [...new Set((data || []).map((r) => r.dot_id).filter(Boolean))];
+      if (dsDotId.length) {
+        const { data: dg } = await supabase.from("dot_goi")
+          .select("id, dot_id, goi_id").in("dot_id", dsDotId);
+        const ids = (dg || []).map((x) => x.id);
+        const { data: q } = ids.length
+          ? await supabase.from("chot_q_phien").select("dot_goi_id")
+            .in("dot_goi_id", ids).eq("hieu_luc", true)
+          : { data: [] };
+        const coQ = new Set((q || []).map((x) => x.dot_goi_id));
+        setGoiDaChotQ(new Set((dg || []).filter((x) => coQ.has(x.id))
+          .map((x) => `${x.dot_id}:${x.goi_id}`)));
+      }
       setLoading(false);
     })();
   }, [goi]);
@@ -189,7 +208,8 @@ export default function DeXuatCuaToi({ profile, goi }) {
           // RLS đã giới hạn danh sách vào đúng khoa. Quyền rút cũng dựa trên
           // khoa ở RPC, không còn khóa theo email của người bấm gửi ban đầu.
           const cungKhoa = g.don_vi === profile.khoa;
-          const coTheRut = cungKhoa && g.trangThai !== "hoan_thanh" && g.trangThai !== "hon_hop";
+          const daChotQ = !!g.goiId && goiDaChotQ.has(`${g.dot_id}:${g.goiId}`);
+          const coTheRut = cungKhoa && !daChotQ && g.trangThai !== "hoan_thanh" && g.trangThai !== "hon_hop";
           return (
             <motion.div
               layout={!giamChuyenDong}
@@ -334,7 +354,8 @@ export default function DeXuatCuaToi({ profile, goi }) {
                   <p className="text-right text-xs text-slate-500">
                     {g.trangThai === "hoan_thanh"
                       ? "Đề xuất đã hoàn thành duyệt — mở Word hoặc Excel ở phía trên."
-                      : !cungKhoa ? "Chỉ tài khoản thuộc khoa này mới được điều chỉnh." : ""}
+                      : !cungKhoa ? "Chỉ tài khoản thuộc khoa này mới được điều chỉnh."
+                        : daChotQ ? "Phòng Điều dưỡng đã chốt số đi thầu cho gói con này nên khoa không xoá được. Muốn rút, nhờ Phòng Điều dưỡng mở chốt." : ""}
                   </p>
                 )}
                 {hienNutKiemThu() && <div className="mt-2 flex justify-end">

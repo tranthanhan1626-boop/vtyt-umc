@@ -413,7 +413,8 @@ export default function App() {
 
       <div className="umc-workspace">
         <KhungGoiThau chon={chon} doiChon={setChon} dotTheoGoi={dotTheoGoi}
-          dsDotTheoGoi={dsDotTheoGoi} dangTaiDot={dangTaiDot} loiDot={loiDot} laPdd={xemDuocTongHop}>
+          dsDotTheoGoi={dsDotTheoGoi} dangTaiDot={dangTaiDot} loiDot={loiDot} laPdd={xemDuocTongHop}
+          khoa={profile?.khoa}>
           {chon.nhom === "goi" ? (
             chon.man === "de_xuat"  ? <Function1 profile={profile} goi={chon.goi} goiCon={chon.goiCon}
               dot={dotTheoGoi[chon.goi]}

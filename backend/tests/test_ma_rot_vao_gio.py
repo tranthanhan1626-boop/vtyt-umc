@@ -74,7 +74,8 @@ def test_view_nhac_chi_dem_phan_chua_gui(sql_gio: str) -> None:
 def test_ban_dieu_hanh_nhac_nhung_khong_gui_thay_khoa() -> None:
     man = (FE / "BanDieuHanhPdd.jsx").read_text(encoding="utf-8")
     assert "v_ma_rot_trong_gio_v3" in man, "Bàn điều hành phải đọc sổ nhắc"
-    assert "mã rớt nằm trong giỏ" in man
+    # L16 (test 10/10/2026): chữ nói rõ mã của gói con đang xem, giỏ đợt bổ sung.
+    assert "mã rớt của gói con này nằm trong giỏ" in man
     assert "không gửi thay khoa" in man, "phải nói rõ trên màn"
     assert "submit_proposal_group" not in man, \
         "Bàn điều hành TUYỆT ĐỐI không được có đường gửi giỏ hộ khoa"

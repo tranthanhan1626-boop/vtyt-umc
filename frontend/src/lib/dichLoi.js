@@ -75,6 +75,14 @@ export function dichLoi(loi) {
     : [loi.name === "ChunkLoadError" ? loi.name : "", String(loi.message || "")].filter(Boolean).join(": ");
   const code = typeof loi === "object" ? String(loi.code || "") : "";
 
+  // L3 (test 10/10/2026): câu của trigger khoá-sau-chốt-Q có từ kỹ thuật
+  // ("snapshot Q") — đổi sang chữ người dùng hiểu trước khi cho đi thẳng.
+  // Chỉ bắt đúng câu của trigger `fn_khoa_phan_bo_sau_chot_q`; các câu khác có
+  // chữ "snapshot Q" (dành cho PĐD) mang nghĩa khác nên để nguyên.
+  if (/Số tham gia thầu đã chốt; PĐD phải mở snapshot Q trước/i.test(msg)) {
+    return "Phòng Điều dưỡng đã chốt số đi thầu cho gói con này nên chưa sửa hay xoá được. "
+      + "Muốn thay đổi, nhờ Phòng Điều dưỡng mở chốt số trước.";
+  }
   if (msg && CO_DAU_TIENG_VIET.test(msg)) return thayTenCot(msg);
 
   for (const [dk, cau] of LUAT) {

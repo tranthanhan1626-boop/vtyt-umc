@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { dichLoi } from "../lib/dichLoi";
+import { demMucGioRot, SU_KIEN_GIO_ROT_DOI } from "../lib/gioRot";
 
 // QĐ-20 — Khung tổ chức theo GÓI THẦU. Gói là cấp trên cùng, không phải chức năng.
 //
@@ -85,7 +86,7 @@ export const MUC_CHUNG = [
   // Giai đoạn 1 bước 3 của workflow v3: "PĐD phân mã quản lý vào từng gói
   // con". Trước 18/08/2026 không có màn nào làm việc này, nên 1.115 mã hàng
   // nằm ở goi = NULL và 154 mã quản lý vắt ngang hai gói — vỡ invariant 2.
-  { ma: "phangoicon", ten: "Phân gói con cho mã quản lý", mo_ta: "Xếp mã quản lý vào đúng một gói con của đợt 18 tháng", icon: Layers, chiPdd: true },
+  { ma: "phangoicon", ten: "Phân gói con cho mã quản lý", mo_ta: "Xếp mã quản lý vào gói con của đợt 18 tháng", icon: Layers, chiPdd: true },
   // Mục VII — phần Q chưa được đáp ứng sau đấu thầu. Khoa tự quyết đề xuất
   // lại hay thôi; hệ thống không tự tạo đề xuất.
   { ma: "giorot", ten: "Giỏ rớt của khoa", mo_ta: "Phần chưa được đáp ứng sau đấu thầu — đề xuất lại hoặc xác nhận thôi", icon: PackageX },
@@ -158,7 +159,7 @@ export function useDotDangMo(authKey = "mounted") {
   return { dot, theoGoi, dsTheoGoi, dangTai, loi, taiLai: tai };
 }
 
-export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, dangTaiDot, loiDot, laPdd, children }) {
+export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, dangTaiDot, loiDot, laPdd, khoa, children }) {
   const [menuMo, setMenuMo] = useState(false);
   const [moKhac, setMoKhac] = useState(false);
   // 19/09/2026 — "sổ xuống rồi phải ẩn được": bấm lại gói ĐANG MỞ thì thu
@@ -192,28 +193,31 @@ export default function KhungGoiThau({ chon, doiChon, dotTheoGoi, dsDotTheoGoi, 
   // Badge đỏ ở mục gói bổ sung (QĐ D5, 23/08/2026): khoa phải THẤY NGAY là có
   // mã rớt đang nằm trong giỏ của mình. Từ 05/10/2026 đọc từ giỏ rớt thật
   // (v_gio_rot_v3, cùng nguồn màn ③), không còn đếm dòng hộp thư.
+  // L10/L14 (test 10/10/2026): đếm bằng CÙNG luật "Chưa xử lý" của màn ③
+  // (lib/gioRot.js) — mục khoa đã GỬI ở đợt bổ sung đích cũng là đã xử lý
+  // (Q04), bản cũ chỉ xét `trang_thai` nên nhãn không bao giờ bớt. Đếm lại
+  // ngay khi màn ③ / giỏ bổ sung báo đổi, không chờ lượt định kỳ.
   const [soMaRotMoi, setSoMaRotMoi] = useState(0);
   useEffect(() => {
-    if (laPdd) { setSoMaRotMoi(0); return; }
+    if (laPdd || !khoa) { setSoMaRotMoi(0); return undefined; }
     let huy = false;
     const dem = async () => {
-      // 05/10/2026: đếm đúng số MỤC (mã quản lý) rớt đang trong giỏ của khoa —
-      // CÙNG NGUỒN với màn ③ "Mã rớt" (GioRotCuaKhoa: v_gio_rot_v3, chỉ mục
-      // còn thiếu > 0; RLS tự giới hạn đúng khoa). Trước đây đếm số dòng
-      // `thong_bao`, mà một thông báo gộp nhiều mã nên "1 mã rớt" lệch "2 mục".
-      // Nhãn đỏ là lời NHẮC VIỆC: chỉ đếm mục còn chờ khoa xử lý — bỏ mục đã
-      // "Không còn nhu cầu" / đã gửi bổ sung (DA_XU_LY của màn ③), để khoa xử
-      // lý xong thì nhãn tắt.
-      const { count } = await supabase.from("v_gio_rot_v3")
-        .select("phien_q_id", { count: "exact", head: true })
-        .gt("so_luong_thieu", 0)
-        .or("trang_thai.is.null,trang_thai.not.in.(da_submit_bo_sung,khong_con_nhu_cau)");
-      if (!huy) setSoMaRotMoi(count || 0);
+      const kq = await demMucGioRot({ khoa });
+      if (!huy && kq) setSoMaRotMoi(kq.cho);
     };
     dem();
-    const t = setInterval(dem, 60000);
-    return () => { huy = true; clearInterval(t); };
-  }, [laPdd]);
+    // M5 (kiểm định 10/10/2026): mỗi lượt đếm tốn 4 truy vấn. Đổi thì đã có
+    // sự kiện báo ngay, nên lượt định kỳ chỉ là lưới an toàn: 5 phút, và bỏ
+    // qua khi tab đang ẩn.
+    const t = setInterval(() => {
+      if (typeof document === "undefined" || document.visibilityState !== "hidden") dem();
+    }, 300000);
+    window.addEventListener(SU_KIEN_GIO_ROT_DOI, dem);
+    return () => {
+      huy = true; clearInterval(t);
+      window.removeEventListener(SU_KIEN_GIO_ROT_DOI, dem);
+    };
+  }, [laPdd, khoa]);
 
   const nutGoi = (g) => {
     const dangChon = chon.nhom === "goi" && chon.goi === g.ma;

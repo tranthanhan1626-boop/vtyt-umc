@@ -3,6 +3,7 @@ import { Check, ClipboardCopy, RotateCcw, Users } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { DA_XU_LY, NHAN_TRANG_THAI, soNgayCho, templateNhac } from "./GioRotCuaKhoa";
 import { dichLoi } from "../lib/dichLoi";
+import { docChuyenTiepVaDaGui, khoaMucRot } from "../lib/gioRot";
 
 // Mục VII.3 — "PĐD có tab Giỏ rớt toàn viện: theo dõi khoa nào chưa xử lý, bao
 // nhiêu ngày. Nút Nhắc nhở sinh template tin nhắn để copy sang Teams."
@@ -31,6 +32,10 @@ export default function GioRotToanVien({ dotGoiIds = MOI_DOT }) {
   const [daCopy, setDaCopy] = useState("");
   const [dangLuu, setDangLuu] = useState("");
   const [nhacDangXem, setNhacDangXem] = useState(null);
+  // M1 (kiểm định 10/10/2026): mục khoa đã GỬI ở đợt bổ sung đích cũng là
+  // "đã xử lý" — cùng luật với màn ③ của khoa (lib/gioRot.js, Q04). Khoá
+  // `khoa|phien|ma`.
+  const [daGui, setDaGui] = useState({});
 
   const tai = useCallback(async () => {
     setDangTai(true);
@@ -38,12 +43,32 @@ export default function GioRotToanVien({ dotGoiIds = MOI_DOT }) {
     let q = supabase.from("v_gio_rot_v3").select("*").order("khoa").order("ma_quan_ly");
     if (dotGoiIds.length) q = q.in("dot_goi_id", dotGoiIds);
     const { data, error } = await q;
-    if (error) setLoi(dichLoi(error));
-    else setRows((data || []).filter((r) => Number(r.so_luong_thieu) > 0));
+    if (error) { setLoi(dichLoi(error)); setDangTai(false); return; }
+    const conThieu = (data || []).filter((r) => Number(r.so_luong_thieu) > 0);
+    // Chỉ tra "đã gửi" cho mục chưa có trạng thái xử lý, theo từng khoa.
+    const moTheoKhoa = new Map();
+    for (const r of conThieu) {
+      if (DA_XU_LY.has(r.trang_thai)) continue;
+      if (!moTheoKhoa.has(r.khoa)) moTheoKhoa.set(r.khoa, []);
+      moTheoKhoa.get(r.khoa).push(r);
+    }
+    const ketQua = await Promise.all([...moTheoKhoa.entries()].map(async ([khoa, muc]) => {
+      const { daGui: g } = await docChuyenTiepVaDaGui(khoa, muc);
+      return Object.keys(g).map((k) => `${khoa}|${k}`);
+    }));
+    const moi = {};
+    for (const ds of ketQua) for (const k of ds) moi[k] = true;
+    setDaGui(moi);
+    setRows(conThieu);
     setDangTai(false);
   }, [dotGoiIds]);
 
   useEffect(() => { tai(); }, [tai]);
+
+  const daXuLy = useCallback(
+    (r) => DA_XU_LY.has(r.trang_thai) || !!daGui[`${r.khoa}|${khoaMucRot(r)}`],
+    [daGui],
+  );
 
   // Gom theo khoa — PĐD điều hành theo ĐƠN VỊ, không theo từng mã.
   const theoKhoa = useMemo(() => {
@@ -54,7 +79,7 @@ export default function GioRotToanVien({ dotGoiIds = MOI_DOT }) {
     }
     return [...m.entries()]
       .map(([khoa, muc]) => {
-        const chuaXuLy = muc.filter((x) => !DA_XU_LY.has(x.trang_thai));
+        const chuaXuLy = muc.filter((x) => !daXuLy(x));
         const ngay = chuaXuLy
           .map((x) => soNgayCho(x.updated_at))
           .filter((n) => n !== null);
@@ -72,15 +97,15 @@ export default function GioRotToanVien({ dotGoiIds = MOI_DOT }) {
       })
       .filter((k) => (loc === "chua_xu_ly" ? k.chuaXuLy.length > 0 : true))
       .sort((a, b) => b.chuaXuLy.length - a.chuaXuLy.length || a.khoa.localeCompare(b.khoa));
-  }, [rows, loc]);
+  }, [rows, loc, daXuLy]);
 
   const tongQuan = useMemo(() => ({
-    khoaConNo: new Set(rows.filter((r) => !DA_XU_LY.has(r.trang_thai)).map((r) => r.khoa)).size,
-    mucChuaXuLy: rows.filter((r) => !DA_XU_LY.has(r.trang_thai)).length,
+    khoaConNo: new Set(rows.filter((r) => !daXuLy(r)).map((r) => r.khoa)).size,
+    mucChuaXuLy: rows.filter((r) => !daXuLy(r)).length,
     tongThieu: rows
       .filter((r) => r.trang_thai !== "khong_con_nhu_cau")
       .reduce((s, r) => s + Number(r.so_luong_thieu || 0), 0),
-  }), [rows]);
+  }), [rows, daXuLy]);
 
   // Luôn HIỆN nội dung nhắc ra màn, rồi mới thử copy. Nếu chỉ dựa vào
   // `navigator.clipboard.writeText`, khi trình duyệt chặn hoặc treo chờ quyền
@@ -209,8 +234,10 @@ export default function GioRotToanVien({ dotGoiIds = MOI_DOT }) {
             <tbody>
               {k.muc.map((r) => {
                 const key = `${r.phien_q_id}|${r.ma_quan_ly}|${r.khoa}`;
-                const tt = NHAN_TRANG_THAI[r.trang_thai] || NHAN_TRANG_THAI.cho_xu_ly;
-                const daXong = DA_XU_LY.has(r.trang_thai);
+                const daGuiMuc = !DA_XU_LY.has(r.trang_thai) && !!daGui[`${r.khoa}|${khoaMucRot(r)}`];
+                const tt = daGuiMuc ? NHAN_TRANG_THAI.da_submit_bo_sung
+                  : (NHAN_TRANG_THAI[r.trang_thai] || NHAN_TRANG_THAI.cho_xu_ly);
+                const daXong = daXuLy(r);
                 return (
                   <tr key={key} className="border-t border-slate-100">
                     <td className="px-2 py-1 font-mono">{r.ma_quan_ly}</td>

@@ -23,6 +23,7 @@ import { dichLoi } from "../lib/dichLoi";
 import { taiDeXuatKyTruoc, tooltipKyTruoc, fmtKyTruoc } from "../lib/deXuatKyTruoc";
 import ThanhTienTrinh, { diToiPhanTu } from "../components/ThanhTienTrinh";
 import { useTienTrinhKhoa } from "../lib/useTienTrinh";
+import { baoGioRotDoi } from "../lib/gioRot";
 import { GOI, GOI_CON, nhanDot } from "./KhungGoiThau";
 import NutGiaiThich from "./NutGiaiThich";
 
@@ -493,6 +494,11 @@ export default function Function1({
   const [loiLuu, setLoiLuu] = useState("");
   const [dangLuu, setDangLuu] = useState(false);
   const [daGui, setDaGui] = useState([]);            // bảng kết quả sau khi gửi
+  // L12 (test 10/10/2026): nhóm lẫn ĐVT trong giỏ bị chặn gửi; nhóm đó đang
+  // "tạm ẩn" khỏi danh sách trái (vì đã vào giỏ) nên chỉ dẫn "mở nhóm ở danh
+  // sách bên trái" không làm theo được. Giữ danh sách để ngăn giỏ hiện nút mở
+  // thẳng nhóm đó.
+  const [nhomCanChonDvt, setNhomCanChonDvt] = useState([]);
 
   // dvsd bị khoá cứng vào khoa của mình. dieu_duong/admin chọn được mọi khoa
   // VÀ chế độ "toàn viện" (chốt 21/07/2026: "đăng nhập bằng account khoa nào
@@ -553,6 +559,11 @@ export default function Function1({
   // với 109 mã của đúng đợt đang đứng, và ô số thành chỉ đọc.
   const goiIdDanhMuc = goi === "chi_dinh_thau" ? null
     : goiConCuaDot(dotDung, goiCon || "18t-dung-chung");
+
+  // L7 (test 10/10/2026): dòng "Đã gửi N nhóm vào đợt…" thuộc gói con VỪA
+  // gửi. Giỏ đi theo (khoa, đợt) nên đổi gói con cùng đợt không chạy effect
+  // nạp giỏ ở dưới — phải tự xoá kết quả gửi khi đổi gói con.
+  useEffect(() => { setDaGui([]); }, [goiIdDanhMuc]);
 
   useEffect(() => {
     if (toanVien || !khoaHienTai) {
@@ -738,6 +749,7 @@ export default function Function1({
     setNhapLieu(canChonDot ? {} : docGioDeXuat(khoaHienTai, dotId));
     setDaGui([]);
     setLoiLuu("");
+    setNhomCanChonDvt([]);
     if (!dotId) return;
     let huy = false;
     (async () => {
@@ -1488,8 +1500,9 @@ export default function Function1({
         boQuyDoi.set(mql, { dvtMaQuanLy: dvt, heSoQuyDoi: 1, bangQuyDoi: { [dvt]: 1 }, soLuongMaQuanLy: tong });
       });
       if (canTuChon.length) {
-        setLoiLuu(`Nhóm ${canTuChon.join(", ")} cần chọn đơn vị tính chuẩn: mở nhóm đó ở danh sách bên trái, `
+        setLoiLuu(`Nhóm ${canTuChon.join(", ")} cần chọn đơn vị tính chuẩn: bấm “Mở nhóm” ngay dưới, `
           + "làm bước ① rồi bấm “Thêm cả nhóm vào giỏ” trước khi gửi.");
+        setNhomCanChonDvt(canTuChon);
         return;
       }
       gioGui = gioHang.map((n) => (!(Number(n.soLuongMaQuanLy) > 0) && boQuyDoi.has(n.ma_quan_ly)
@@ -1596,6 +1609,12 @@ export default function Function1({
       ...gioHang.map((n) => n.ma_quan_ly).filter(Boolean),
     ]));
     xoaCaGio();
+    // L7 (test 10/10/2026): gửi xong thì đóng ngăn giỏ — để mở thì khoa thấy
+    // "0 nhóm" và nút Gửi mờ, tưởng chưa gửi được.
+    setMoGio(false);
+    setNhomCanChonDvt([]);
+    // L14: mã rớt vừa gửi ở đợt bổ sung → nhãn đỏ menu / trang chính đếm lại.
+    baoGioRotDoi();
     if (dotDung?.id && khoaHienTai) {
       // Giỏ là BẢN NHÁP nên xoá được (khác QĐ-11) — nội dung thật đã nằm ở
       // proposals, không mất dấu vết. Không xoá thì lần sau mở lại thấy giỏ cũ.
@@ -2484,6 +2503,22 @@ export default function Function1({
                     </NutGiaiThich>
                   </p>
                   {loiLuu && <p className="mb-2 text-sm text-red-600">{loiLuu}</p>}
+                  {loiLuu && nhomCanChonDvt.length > 0 && (
+                    <div className="mb-3 flex flex-wrap gap-2">
+                      {nhomCanChonDvt.map((mql) => (
+                        <button key={mql} type="button"
+                          onClick={() => {
+                            setMoGio(false);
+                            setLoiLuu("");
+                            setNhomCanChonDvt([]);
+                            setNhomChon(mql);
+                          }}
+                          className="inline-flex h-9 items-center rounded-md border border-umc-300 bg-white px-3 text-sm font-medium text-umc-800 hover:bg-umc-50">
+                          Mở nhóm <span className="ml-1 font-mono">{mql}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   {hoiXoaGio ? (
                     // G12: xoá cả giỏ luôn HỎI LẠI.
                     <div className="flex flex-wrap items-center gap-3 rounded-md border border-red-200 bg-red-50 px-3 py-2.5">

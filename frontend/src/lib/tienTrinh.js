@@ -68,6 +68,9 @@ function trangThaiGiaiDoan(giaiDoan, ma) {
  * @param {boolean|null} v.coPhienQ     có `chot_q_phien` hiệu lực
  * @param {Array|null}   v.giaiDoan     dòng `giai_doan_thau_v3`
  * @param {number|null}  v.soMaRot      số mã có kết quả `khong_trung` của khoa
+ * @param {number|null}  [v.soMucRot]    mục giỏ rớt còn thiếu (> 0) ở gói con này
+ * @param {number|null}  [v.soMucRotCho] trong đó, mục còn CHỜ khoa xử lý (cùng
+ *                                      luật ô "Chưa xử lý" của màn ③)
  * @returns {{ buoc: Array, buocHienTai: string|null, viecTiepTheo: string }}
  */
 export function tinhTienTrinhKhoa(v = {}) {
@@ -168,6 +171,18 @@ export function tinhTienTrinhKhoa(v = {}) {
       // trong khi ①②③ trống — trông như khoa đã đi hết vòng. Để trung tính
       // (không tick, không phải bước hiện tại): gói này không có việc của khoa.
       buoc.push({ trangThai: "chua", chuThich: "Khoa không có mã trong gói này", trungTinh: true });
+    } else if (tt.every((x) => x === "hoan_thanh") && coSo(v.soMucRot) && coSo(v.soMucRotCho)) {
+      // L15 (test 10/10/2026): đếm theo giỏ rớt (màn ③), chỉ báo đỏ phần còn
+      // chờ xử lý — bản cũ đếm mã `khong_trung` nên bỏ sót mã rớt một phần và
+      // không bao giờ bớt khi khoa đã xử lý.
+      buoc.push({
+        trangThai: "xong",
+        chuThich: v.soMucRotCho > 0 ? `${v.soMucRotCho} mã rớt chờ xử lý`
+          : v.soMucRot > 0 ? "Mã rớt đã xử lý"
+          : v.daGui === false ? "Khoa không có mã trong gói này"
+          : (coSo(v.soMaRot) && v.soMaRot > 0) ? "Không còn mã rớt cần xử lý" : "Không có mã rớt",
+        canhBao: v.soMucRotCho > 0,
+      });
     } else if (tt.every((x) => x === "hoan_thanh")) {
       buoc.push({
         trangThai: "xong",
@@ -242,10 +257,21 @@ const NHAN_NGAN_PDD = ["Đề xuất", "Xác nhận", "Chốt số", "Chào giá
  * @param {boolean|null}  v.coPhienQ         có `chot_q_phien` hiệu lực
  * @param {Array|null}    v.giaiDoan         dòng `giai_doan_thau_v3`
  * @param {boolean|null}  v.coPhienTrinhKy   có `chot_trinh_ky_phien_v3` hiệu lực
+ * @param {string[]|null} [v.khoaKhongPhatSinh] khoa có dòng `danh_muc_khoa_chot`
+ *                                           hiệu lực + `khong_phat_sinh` — CHỈ để
+ *                                           hiện chữ, không đổi trạng thái bước
  */
 export function tinhTienTrinhPdd(v = {}) {
   const buoc = [];
   const X = Array.isArray(v.khoaDaGui) ? v.khoaDaGui.length : null;
+  // L1 (test 10/10/2026): khoa bấm "Không phát sinh nhu cầu" phải phân biệt
+  // được với khoa quên gửi (QĐ g 18/09). Chỉ thêm chữ — không đổi trạng thái
+  // bước nào, không đổi cổng.
+  const K = Array.isArray(v.khoaKhongPhatSinh) ? v.khoaKhongPhatSinh.length : 0;
+  const chuKhongPhatSinh = K ? `${K} khoa báo không phát sinh` : "";
+  const tooltipKhongPhatSinh = K
+    ? `Báo "Không phát sinh nhu cầu": ${v.khoaKhongPhatSinh.join(", ")}.`
+    : undefined;
   const Y = coSo(v.soKhoaThamGia) ? v.soKhoaThamGia : null;
   const dsChua = Array.isArray(v.khoaChuaXacNhan) ? v.khoaChuaXacNhan : null;
   const N = dsChua ? dsChua.length : null;
@@ -258,15 +284,21 @@ export function tinhTienTrinhPdd(v = {}) {
   } else {
     const chu = Y ? `${X}/${Y} khoa đã gửi` : `${X} khoa đã gửi`;
     if (v.coPhienQ === true || X > 0) {
+      const tipChua = Y != null && X < Y
+        ? `${Y - X} khoa tham gia chưa gửi đề xuất — không chặn việc chốt số (QĐ 19/08/2026).`
+        : undefined;
       buoc.push({
-        trangThai: "xong", chuThich: chu,
+        trangThai: "xong", chuThich: K ? `${chu} · ${chuKhongPhatSinh}` : chu,
         canhBao: v.coPhienQ !== true && Y != null && X < Y,
-        tooltip: Y != null && X < Y
-          ? `${Y - X} khoa tham gia chưa gửi đề xuất — không chặn việc chốt số (QĐ 19/08/2026).`
-          : undefined,
+        // M3 (kiểm định 10/10/2026): giữ chữ "báo không phát sinh" cả khi đã có khoa gửi.
+        tooltip: [tipChua, tooltipKhongPhatSinh].filter(Boolean).join(" ") || undefined,
       });
     } else {
-      buoc.push({ trangThai: "chua", chuThich: chu });
+      buoc.push({
+        trangThai: "chua",
+        chuThich: K ? `${chu} · ${chuKhongPhatSinh}` : chu,
+        tooltip: tooltipKhongPhatSinh,
+      });
     }
   }
 
@@ -284,7 +316,11 @@ export function tinhTienTrinhPdd(v = {}) {
   } else if (N == null || X == null) {
     buoc.push({ trangThai: "chuaRo", chuThich: "chưa rõ" });
   } else if (X === 0) {
-    buoc.push({ trangThai: "chua", chuThich: "Chưa có khoa gửi" });
+    buoc.push({
+      trangThai: "chua",
+      chuThich: K ? chuKhongPhatSinh : "Chưa có khoa gửi",
+      tooltip: tooltipKhongPhatSinh,
+    });
   } else if (N > 0) {
     buoc.push({
       trangThai: "chua", chuThich: `còn ${N} khoa chưa xác nhận`, canhBao: true,
@@ -335,7 +371,11 @@ export function tinhTienTrinhPdd(v = {}) {
 
   let viec;
   if (chuaRo) viec = "Chưa đọc được đủ trạng thái — bấm Tải lại hoặc thử lại sau.";
-  else if (ma === "khoa_de_xuat") viec = "Chưa khoa nào gửi đề xuất — nhắc khoa qua Teams.";
+  else if (ma === "khoa_de_xuat") {
+    viec = K
+      ? `Chưa khoa nào gửi đề xuất (${chuKhongPhatSinh} nhu cầu) — nhắc các khoa còn lại qua Teams.`
+      : "Chưa khoa nào gửi đề xuất — nhắc khoa qua Teams.";
+  }
   else if (ma === "khoa_xac_nhan") {
     const ten = dsChua.slice(0, 3).join(", ") + (dsChua.length > 3 ? ` và ${dsChua.length - 3} khoa khác` : "");
     viec = `Nhắc ${ten} xác nhận bản hiện tại.`;

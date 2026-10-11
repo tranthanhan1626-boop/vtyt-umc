@@ -3,6 +3,7 @@ import { AlertTriangle, CalendarClock, Check, Copy, PackageX, RotateCcw } from "
 import { supabase } from "../supabaseClient";
 import { dichLoi } from "../lib/dichLoi";
 import NutGiaiThich from "./NutGiaiThich";
+import { DA_XU_LY, baoGioRotDoi, docChuyenTiepVaDaGui } from "../lib/gioRot";
 
 // Mục VII của workflow v3 — "Xử lý phần rớt".
 //
@@ -34,7 +35,9 @@ export const NHAN_TRANG_THAI = {
 };
 
 // "Đã xử lý" theo đúng định nghĩa của mục VII.3 — giỏ nháp KHÔNG tính.
-export const DA_XU_LY = new Set(["da_submit_bo_sung", "khong_con_nhu_cau"]);
+// Định nghĩa nay ở lib/gioRot.js (dùng chung với nhãn đỏ menu); xuất lại ở
+// đây vì GioRotToanVien.jsx đang import từ file này.
+export { DA_XU_LY };
 
 export function soNgayCho(updatedAt) {
   if (!updatedAt) return null;
@@ -95,7 +98,6 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
       }
 
       const dsMa = [...new Set(muc.map((r) => r.ma_quan_ly))];
-      const dsPhien = [...new Set(muc.map((r) => r.phien_q_id))];
 
       const { data: dsTenNhom } = await supabase
         .from("v_nhom_co_ma_hang")
@@ -103,110 +105,12 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
         .in("ma_quan_ly", dsMa);
       setTenNhomByMa(Object.fromEntries((dsTenNhom || []).map((n) => [n.ma_quan_ly, n.ten_quan_ly])));
 
-      // L08b (KIEM_DINH_DOC_LAP.md #3) — ĐỢT THẬT của từng mục, không đoán
-      // "đợt sớm nhất đang mở". `xac_nhan_rot_v3` ghi đúng đợt đích vào
-      // `chuyen_tiep_rot_v3.dot_goi_bo_sung_id` cho mỗi (phien_q_id, ma_hang,
-      // khoa) — backend/sql/patch_zzzzzy_gio_rot_du_truong.sql:140-147. Nối
-      // về mục của màn (theo ma_quan_ly, không phải ma_hang) qua vat_tu.
-      // N3 (KIEM_DINH_DOC_LAP_LUOT2.md) — cần thêm `created_at` để biết mục
-      // được chuyển tiếp vào giỏ LÚC NÀO (xem so sánh với `proposals.created_at`
-      // ở dưới).
-      const { data: dsChuyen } = await supabase
-        .from("chuyen_tiep_rot_v3")
-        .select("phien_q_id, dot_goi_bo_sung_id, so_luong, created_at, vat_tu!inner(ma_quan_ly)")
-        .eq("khoa", khoaXem)
-        .in("phien_q_id", dsPhien)
-        .in("vat_tu.ma_quan_ly", dsMa);
-
-      // N4 — cần tên/đợt của CẢ đợt bổ sung ĐÍCH (dot_goi_bo_sung_id, đã có
-      // từ trước) LẪN đợt GỐC của mỗi mục (`r.dot_goi_id`, cột có sẵn trong
-      // `v_gio_rot_v3`), để: (1) ghi "Rớt từ: …" trên mỗi mục, và (2) loại
-      // đúng đợt gốc đó khỏi cảnh báo "đã có ở đợt bổ sung …" (N4).
-      const dotGoiIds = [...new Set([
-        ...(dsChuyen || []).map((c) => c.dot_goi_bo_sung_id),
-        ...muc.map((r) => r.dot_goi_id),
-      ].filter((v) => v != null))];
-
-      // Tên đợt thật: dot_goi.id -> dot_goi.dot_id -> dot_de_xuat.
-      let tenDotById = {};
-      if (dotGoiIds.length) {
-        const { data: dsDotGoi } = await supabase
-          .from("dot_goi")
-          .select("id, dot_id, dot_de_xuat!inner(ten, nam, thang_moc)")
-          .in("id", dotGoiIds);
-        for (const dg of dsDotGoi || []) {
-          const dd = dg.dot_de_xuat;
-          // M10 (kiểm định độc lập lượt 3) — trước đây khi có `thang_moc` thì
-          // ghép thêm " (T{thang_moc}/{nam})" vào sau `ten`, ra "Mua sắm bổ
-          // sung đợt tháng 1/2027 (T1/2027)": lặp tháng hai lần. Đợt bổ sung
-          // là đợt DUY NHẤT có `thang_moc` (xem insert ở
-          // patch_zzzzz_vong_khep_kin.sql dòng ~386, đặt tên bằng chính
-          // format('Mua sắm bổ sung đợt tháng %s/%s', v_moc, v_nam) — cùng
-          // `v_moc`/`v_nam` với `thang_moc`/`nam`), nên `ten` LUÔN đã có sẵn
-          // tháng khi `thang_moc` khác null — không cần và không được ghép
-          // thêm. Đợt 18 tháng không có `thang_moc` nên `ten` của nó (vd
-          // "Gói 18 tháng 1/2028 - 6/2029") giữ nguyên, không đổi.
-          tenDotById[dg.id] = { dotId: dg.dot_id, nhan: dd?.ten || "" };
-        }
-      }
+      // L08b / N3 / N4 / Q04 — đợt đích thật của từng mục và mục nào khoa đã
+      // GỬI ở đợt đó. Từ 11/10/2026 (L10/L14/L15) phần đọc này nằm ở
+      // lib/gioRot.js để nhãn đỏ menu và trang chính dùng CÙNG một luật.
+      const { tenDotById, chuyenTiep, daGui } = await docChuyenTiepVaDaGui(khoaXem, muc);
       setDotGoiInfoById(tenDotById);
-
-      const chuyenTiep = {};
-      for (const c of dsChuyen || []) {
-        const ma = c.vat_tu?.ma_quan_ly;
-        if (!ma || c.dot_goi_bo_sung_id == null) continue;
-        const thongTin = tenDotById[c.dot_goi_bo_sung_id];
-        if (!thongTin) continue;
-        const key = `${c.phien_q_id}|${ma}`;
-        // Một mã quản lý gom nhiều mã hàng; nếu chúng lỡ rơi vào hai đợt bổ
-        // sung khác nhau (chưa gặp trong dữ liệu đã kiểm — (c)) thì giữ đợt
-        // (và thời điểm chuyển tiếp) gặp trước, không cố gộp.
-        if (!chuyenTiep[key]) chuyenTiep[key] = { ...thongTin, createdAt: c.created_at };
-      }
       setChuyenTiepByKey(chuyenTiep);
-
-      // Q04 + N3 (QĐ chủ dự án — KIEM_DINH_DOC_LAP.md #2, kẽ hở N3 của
-      // KIEM_DINH_DOC_LAP_LUOT2.md): mục coi là ĐÃ XỬ LÝ khi khoa đã GỬI mã
-      // đó ở đúng đợt bổ sung đích VÀ đề xuất đó được tạo SAU khi mã rớt
-      // được chuyển tiếp vào giỏ (`chuyen_tiep_rot_v3.created_at`) — nếu
-      // không thì "Đã gửi" có thể là một đề xuất CŨ hơn (gửi trước khi mã
-      // này rớt vào giỏ, hoặc một mã hàng KHÁC cùng nhóm), và phần rớt thật
-      // vẫn còn nằm im trong giỏ nháp (chỉ đọc, không thêm nút).
-      const dotIdCanKiem = [...new Set(
-        Object.values(chuyenTiep).map((c) => c.dotId).filter((v) => v != null),
-      )];
-      const daGui = {};
-      if (dotIdCanKiem.length) {
-        const { data: dsPropGui } = await supabase
-          .from("proposals")
-          .select("dot_id, created_at, vat_tu!inner(ma_quan_ly)")
-          .eq("don_vi", khoaXem).eq("is_current", true).eq("da_rut", false)
-          .in("dot_id", dotIdCanKiem)
-          .in("vat_tu.ma_quan_ly", dsMa);
-        // Một (dot_id, ma_quan_ly) có thể có nhiều mã hàng/nhiều đề xuất —
-        // giữ mốc GẦN NHẤT (mới nhất), vì chỉ cần MỘT đề xuất đủ mới là đã
-        // gửi phần rớt.
-        const guiMoiNhatByKey = {};
-        for (const p of dsPropGui || []) {
-          const ma = p.vat_tu?.ma_quan_ly;
-          if (!ma || !p.created_at) continue;
-          const k = `${p.dot_id}|${ma}`;
-          const t = new Date(p.created_at).getTime();
-          if (!(k in guiMoiNhatByKey) || t > guiMoiNhatByKey[k]) guiMoiNhatByKey[k] = t;
-        }
-        for (const r of muc) {
-          const key = `${r.phien_q_id}|${r.ma_quan_ly}`;
-          const tt = chuyenTiep[key];
-          if (!tt) continue;
-          const tGui = guiMoiNhatByKey[`${tt.dotId}|${r.ma_quan_ly}`];
-          const tChuyen = tt.createdAt ? new Date(tt.createdAt).getTime() : null;
-          // Không rõ thời điểm chuyển tiếp thì KHÔNG tính là đã gửi — an
-          // toàn hơn là báo sai "Đã gửi" (N3).
-          if (tGui !== undefined && tChuyen !== null && tGui > tChuyen) {
-            daGui[key] = { nhan: tt.nhan };
-          }
-        }
-      }
       setDaGuiByKey(daGui);
 
       // Các đợt bổ sung KHÁC mà khoa đã có cùng mã quản lý — để khoa không đề
@@ -262,6 +166,8 @@ export default function GioRotCuaKhoa({ profile, khoa, moDotBoSung }) {
     setDangLuu("");
     if (error) { setLoi(dichLoi(error)); return; }
     await tai();
+    // L14 (test 10/10/2026): nhãn đỏ menu + trang chính đếm lại NGAY.
+    baoGioRotDoi();
   };
 
   if (dangTai) return <p className="text-sm text-slate-500">Đang tải giỏ rớt…</p>;

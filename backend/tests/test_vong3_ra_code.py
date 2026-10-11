@@ -129,8 +129,10 @@ def test_l08b_khong_con_doan_dot_som_nhat_dang_mo():
 def test_l08b_doc_dung_dot_tu_chuyen_tiep_rot_v3():
     """Đợt của từng mục phải đọc từ `chuyen_tiep_rot_v3.dot_goi_bo_sung_id`,
     nối về mục của màn qua `vat_tu.ma_quan_ly` (không phải theo ma_hang trần,
-    vì `v_gio_rot_v3` gộp theo ma_quan_ly)."""
-    text = GIO_ROT_CUA_KHOA_V3.read_text(encoding="utf-8")
+    vì `v_gio_rot_v3` gộp theo ma_quan_ly).
+    11/10/2026: phần đọc này dời sang lib/gioRot.js (L10/L14/L15) — đọc cả hai."""
+    text = GIO_ROT_CUA_KHOA_V3.read_text(encoding="utf-8") \
+        + (FE.parent / "lib" / "gioRot.js").read_text(encoding="utf-8")
     assert 'from("chuyen_tiep_rot_v3")' in text
     assert "dot_goi_bo_sung_id" in text
     assert "vat_tu!inner(ma_quan_ly)" in text

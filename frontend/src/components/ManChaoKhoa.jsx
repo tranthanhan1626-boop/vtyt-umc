@@ -136,7 +136,9 @@ export default function ManChaoKhoa({ profile, doiChon, dsDotTheoGoi = {}, dangT
     ket_qua: { nhan: "Xem Danh mục đề xuất", onClick: moDanhMuc },
   };
 
-  const soMaRot = typeof duLieu?.soMaRot === "number" ? duLieu.soMaRot : null;
+  // L15 (test 10/10/2026): thẻ "Mã rớt cần xử lý" đếm mục giỏ rớt còn CHỜ
+  // xử lý ở gói con đang chọn — cùng luật ô "Chưa xử lý" của màn ③.
+  const soMaRotCho = typeof duLieu?.soMucRotCho === "number" ? duLieu.soMucRotCho : null;
   // QA3 18/09: bỏ thẻ "Giỏ rớt của khoa" — trùng đích với nút lớn "Mã rớt
   // cần xử lý" ngay trên; đường vào vẫn còn ở nút lớn và mục ③ trên menu.
   const theKhac = MUC_CHUNG.filter((m) => !m.chiPdd && m.ma !== "giorot");
@@ -272,11 +274,10 @@ export default function ManChaoKhoa({ profile, doiChon, dsDotTheoGoi = {}, dangT
             <span className="block text-base font-semibold">Mã rớt cần xử lý</span>
             <span className="block text-xs text-slate-500">
               {/* QA3 18/09 quan sát: màn chào báo "4 mã có rớt" trong khi Giỏ
-                  rớt có 2 mã. Số ở đây là `soMaRot` của tiến trình (mã có kết
-                  quả rớt), không phải số dòng của Giỏ rớt; chưa có nguồn sẵn
-                  cho số "cần xử lý" → chữ nói đúng thứ đang đếm. */}
-              {soMaRot != null && soMaRot > 0
-                ? `${soMaRot} mã có kết quả rớt ở gói con đang chọn — mở để xem mã còn cần xử lý`
+                  rớt có 2 mã. Từ 11/10/2026 (L15) số ở đây là mục giỏ rớt CÒN
+                  CHỜ xử lý của gói con (lib/gioRot.js, cùng luật màn ③). */}
+              {soMaRotCho != null && soMaRotCho > 0
+                ? `${soMaRotCho} mã rớt chờ xử lý ở gói con đang chọn — mở để xử lý`
                 : "Giỏ rớt của khoa — đề xuất lại hoặc xác nhận thôi"}
             </span>
           </span>

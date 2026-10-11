@@ -110,6 +110,9 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
   const [rows, setRows] = useState([]);
   const [dsKhoa, setDsKhoa] = useState([]);
   const [khoaDaChot, setKhoaDaChot] = useState(new Set());
+  // L1 (test 10/10/2026) — khoa đã xác nhận "Không phát sinh nhu cầu" (cờ
+  // `khong_phat_sinh` trên dòng xác nhận còn hiệu lực). Chỉ để hiện chữ.
+  const [khoaKhongPhatSinh, setKhoaKhongPhatSinh] = useState(new Set());
   const [dsDotGoi, setDsDotGoi] = useState([]);
   const [khoaThamGiaV3, setKhoaThamGiaV3] = useState([]);
   // QĐ 26/08/2026 — mã rớt đẩy VÀO GIỎ khoa, khoa tự gửi. Đây là sổ những dòng
@@ -294,6 +297,7 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
     setRotTrongGio([]);
     setDsDotGoi([]);
     setKhoaDaChot(new Set());
+    setKhoaKhongPhatSinh(new Set());
     setCanhBaoChot("");
   }, []);
 
@@ -401,7 +405,11 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
         .select("khoa, ma_hang, so_rot, so_trong_gio, dot_goi_id_goc, dot_goi_bo_sung_id")
         .in("dot_goi_id_goc", dotGoiDangXem.map((dg) => dg.id));
       if (luot !== luotTai.current) return; // L13: có lượt mới hơn, bỏ kết quả cũ
-      setRotTrongGio(eRot ? [] : (dRot || []));
+      // L16 (test 10/10/2026): view trả MỌI dòng chuyển tiếp chưa thành đề
+      // xuất, kể cả mã khoa đã "Bỏ khỏi giỏ" (so_trong_gio = null — vd mã báo
+      // "Không còn nhu cầu"). Dải nhắc nói "nằm trong giỏ" nên chỉ đếm dòng
+      // còn số trong giỏ; bản cũ làm gói con nào cũng hiện "Còn 1 mã…".
+      setRotTrongGio(eRot ? [] : (dRot || []).filter((r) => Number(r.so_trong_gio) > 0));
     } else {
       setRotTrongGio([]);
     }
@@ -428,11 +436,12 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
     // ở khối Promise.all phía trên.
     if (dotGoiIds.length) {
       const { data: chotData, error: loiChot } = await supabase.from("danh_muc_khoa_chot")
-        .select("khoa, dot_goi_id, lan, hieu_luc").eq("hieu_luc", true)
+        .select("khoa, dot_goi_id, lan, hieu_luc, khong_phat_sinh").eq("hieu_luc", true)
         .in("dot_goi_id", dotGoiIds);
       if (luot !== luotTai.current) return; // L13: có lượt mới hơn, bỏ kết quả cũ
       if (loiChot) {
         setKhoaDaChot(new Set());
+        setKhoaKhongPhatSinh(new Set());
         setCanhBaoChot(
           loiChot.code === "42P01" || /danh_muc_khoa_chot/i.test(loiChot.message || "")
             ? "Hệ thống chưa được cập nhật đủ để làm việc này — cột \"Đã xác nhận\" tạm để trống. Vui lòng báo Phòng Điều dưỡng."
@@ -440,9 +449,11 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
         );
       } else {
         setKhoaDaChot(new Set((chotData || []).map((x) => x.khoa)));
+        setKhoaKhongPhatSinh(new Set((chotData || []).filter((x) => x.khong_phat_sinh).map((x) => x.khoa)));
       }
     } else {
       setKhoaDaChot(new Set());
+      setKhoaKhongPhatSinh(new Set());
     }
     setDangTai(false);
   }, [dot, goiConId, xoaDuLieuDangXem]);
@@ -477,19 +488,29 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
     () => tinhTinhHinhKhoa(dsKhoaTheoGoi, rowsLoc, khoaDaChot),
     [dsKhoaTheoGoi, rowsLoc, khoaDaChot]
   );
-  const tongQuan = useMemo(() => tinhTongQuan(tinhHinhKhoa, cay), [tinhHinhKhoa, cay]);
+  // M3 (kiểm định 10/10/2026): ở một gói con, khoa đã báo "Không phát sinh nhu
+  // cầu" không còn là khoa "chưa đề xuất" phải nhắc. Chỉ đổi con số hiển thị.
+  const laKhongPhatSinh = useCallback(
+    (k) => !!goiConId && !k.daDeXuat && khoaKhongPhatSinh.has(k.don_vi),
+    [goiConId, khoaKhongPhatSinh],
+  );
+  const tongQuan = useMemo(() => {
+    const tq = tinhTongQuan(tinhHinhKhoa, cay);
+    const bot = tinhHinhKhoa.filter(laKhongPhatSinh).length;
+    return bot ? { ...tq, soKhoaChuaDeXuat: tq.soKhoaChuaDeXuat - bot } : tq;
+  }, [tinhHinhKhoa, cay, laKhongPhatSinh]);
 
   // ---- Tab 1: bảng khoa ---------------------------------------------------
   const khoaHienThi = useMemo(() => {
     const q = tuKhoa.trim().toLowerCase();
     return tinhHinhKhoa.filter((k) => {
       if (q && !k.don_vi.toLowerCase().includes(q)) return false;
-      if (locKhoa === "chua") return !k.daDeXuat;
+      if (locKhoa === "chua") return !k.daDeXuat && !laKhongPhatSinh(k);
       if (locKhoa === "thieu_ho_so") return k.daDeXuat && !k.duHoSo;
       if (locKhoa === "du") return k.duHoSo;
       return true;
     });
-  }, [tinhHinhKhoa, tuKhoa, locKhoa]);
+  }, [tinhHinhKhoa, tuKhoa, locKhoa, laKhongPhatSinh]);
 
   // ---- Dọn dữ liệu làm việc cuối đợt (patch_zm) ---------------------------
   // Chốt 07/08/2026: xuất Excel KHÔNG xoá gì. Chỉ khi đợt xong hẳn mới dọn,
@@ -770,7 +791,7 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <AlertTriangle size={15} className="shrink-0 text-amber-600" />
               <span className="font-semibold text-amber-900">
-                Còn {fmt(tomTatRotTrongGio.soMa)} mã rớt nằm trong giỏ,{" "}
+                Còn {fmt(tomTatRotTrongGio.soMa)} mã rớt của gói con này nằm trong giỏ đợt bổ sung,{" "}
                 {fmt(tomTatRotTrongGio.soKhoa)} khoa chưa gửi
               </span>
               <button type="button" onClick={() => setXemRotTrongGio((v) => !v)} aria-expanded={xemRotTrongGio}
@@ -897,7 +918,7 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
           khoaHienThi={khoaHienThi} locKhoa={locKhoa} setLocKhoa={setLocKhoa}
           tuKhoa={tuKhoa} setTuKhoa={setTuKhoa} tongQuan={tongQuan}
           moDanhMucKhoa={moDanhMucKhoa} copyNhac={copyNhac} khoaDaCopy={khoaDaCopy}
-          goiCuaKhoa={goiCuaKhoa}
+          goiCuaKhoa={goiCuaKhoa} khoaKhongPhatSinh={khoaKhongPhatSinh}
         />
       )}
 
@@ -965,7 +986,7 @@ function ONhanh({ nhan, so, mau = "text-slate-800", vach = "bg-slate-200" }) {
 // ---------------------------------------------------------------- TAB 1
 function TabKhoa({
   khoaHienThi, locKhoa, setLocKhoa, tuKhoa, setTuKhoa, tongQuan,
-  moDanhMucKhoa, copyNhac, khoaDaCopy, goiCuaKhoa,
+  moDanhMucKhoa, copyNhac, khoaDaCopy, goiCuaKhoa, khoaKhongPhatSinh = new Set(),
 }) {
   // Khoa nào đang mở phần "đề xuất ở những gói nào". Một khoa mỗi lần cho gọn.
   const [khoaMoGoi, setKhoaMoGoi] = useState("");
@@ -1026,7 +1047,10 @@ function TabKhoa({
                 <td className="px-3 py-2 text-center">
                   {k.daDeXuat
                     ? <CheckCircle2 size={15} className="mx-auto text-emerald-600" />
-                    : <span className="text-xs font-medium text-slate-600">Chưa</span>}
+                    : khoaKhongPhatSinh.has(k.don_vi)
+                      ? <span className="whitespace-nowrap text-xs font-medium text-slate-600"
+                          title="Khoa đã bấm “Không phát sinh nhu cầu” ở gói con này">Không phát sinh</span>
+                      : <span className="text-xs font-medium text-slate-600">Chưa</span>}
                 </td>
                 <td className="px-3 py-2 text-right text-[13px] tabular-nums">{k.daDeXuat ? fmt(k.soMaQuanLy) : "—"}</td>
                 <td className="px-3 py-2 text-right text-[13px] tabular-nums">{k.daDeXuat ? fmt(k.soMaHang) : "—"}</td>
@@ -1053,7 +1077,16 @@ function TabKhoa({
                   })()}
                 </td>
                 <td className="px-3 py-2 text-center">
-                  {k.daChot ? <CheckCircle2 size={15} className="mx-auto text-emerald-600" />
+                  {k.daChot
+                    ? (khoaKhongPhatSinh.has(k.don_vi) && !k.daDeXuat
+                      ? (
+                        <span className="inline-flex items-center gap-1 whitespace-nowrap text-xs text-slate-600"
+                          title="Khoa đã xác nhận: không phát sinh nhu cầu ở gói con này">
+                          <CheckCircle2 size={15} className="text-emerald-600" />
+                          Không phát sinh nhu cầu
+                        </span>
+                      )
+                      : <CheckCircle2 size={15} className="mx-auto text-emerald-600" />)
                     : <span className="text-xs text-slate-500">—</span>}
                 </td>
                 <td className="px-3 py-2">
@@ -1066,7 +1099,7 @@ function TabKhoa({
                         </button>
                       </>
                     )}
-                    {!k.duHoSo && (
+                    {!k.duHoSo && !khoaKhongPhatSinh.has(k.don_vi) && (
                       <button type="button" onClick={() => copyNhac(k)}
                         className="inline-flex min-h-8 items-center gap-1 rounded border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
                         {khoaDaCopy === k.don_vi ? <Copy size={11} /> : <Bell size={11} />}

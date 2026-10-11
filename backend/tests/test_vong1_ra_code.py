@@ -131,8 +131,10 @@ def test_l08b_dot_that_tu_chuyen_tiep_khong_con_doan_ascending():
     "đợt sớm nhất đang mở" nhưng không khớp `fn_dot_bo_sung_gan_nhat` sau khi
     mốc đích đổi (mốc đã qua/đã chốt Q bị bỏ qua theo NGÀY, không theo thứ tự
     liệt kê). L08b bỏ hẳn cách đoán này: mỗi mục đọc ĐÚNG đợt thật đã ghi ở
-    `chuyen_tiep_rot_v3.dot_goi_bo_sung_id` khi `xac_nhan_rot_v3` chạy."""
-    text = GIO_ROT_CUA_KHOA.read_text(encoding="utf-8")
+    `chuyen_tiep_rot_v3.dot_goi_bo_sung_id` khi `xac_nhan_rot_v3` chạy.
+    11/10/2026: phần đọc này dời sang lib/gioRot.js (L10/L14/L15) — đọc cả hai."""
+    text = GIO_ROT_CUA_KHOA.read_text(encoding="utf-8") \
+        + (FE.parent / "lib" / "gioRot.js").read_text(encoding="utf-8")
     assert 'from("dot_de_xuat")' not in text
     assert '.order("nam", { ascending: true })' not in text
     assert 'from("chuyen_tiep_rot_v3")' in text

@@ -715,7 +715,12 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
   // đóng tab là mất trắng. Giờ lưu server, 1 dòng cho mỗi (khoa, mã hàng) với
   // cột JSONB gom mọi ô đã sửa (xem lý do chọn JSONB thay vì mỗi-ô-một-dòng
   // trong patch_zm: rẻ hơn ~15 lần, cần thiết để ở lại gói Supabase free).
-  const taiODaLuu = useCallback(async () => {
+  // L6 (test 10/10/2026): nhận DOT_GOI qua THAM SỐ thay vì đọc state
+  // `dotGoiId`. Bản cũ đọc state — mà state đó chỉ được đặt BÊN TRONG
+  // `taiLai`, nên lượt tải đầu luôn đọc null (ô đã lưu rỗng), đặt state xong
+  // thì hàm này đổi danh tính → `taiLai` đổi → effect chạy LẠI CẢ LƯỢT (đo
+  // 11/10: mỗi lần mở màn chạy hai lượt ~20 truy vấn nối đuôi, ~3 giây).
+  const taiODaLuu = useCallback(async (dotGoiId) => {
     if (!goiId || !khoaHienTai) return new Map();
     // patch_zzzzw — PHẢI lọc theo `dot_goi_id`. Trước đây khoá đọc chỉ có
     // (goi_id, nam, khoa) nên đợt MỚI đọc trúng giải trình của đợt CŨ; với gói
@@ -734,7 +739,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
     }
     setLoiLuuO("");
     return new Map((data || []).map((r) => [r.ma_hang, r.gia_tri || {}]));
-  }, [goiId, khoaHienTai, dotGoiId]);
+  }, [goiId, khoaHienTai]);
 
   // ---- Minh bạch: PĐD sửa gì trên bản tổng hợp, khoa thấy hết (patch_zs) ---
   // QĐ 08/08/2026 của chủ dự án. Trước patch_zs, dvsd không có policy nào trên
@@ -800,6 +805,10 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
     // bản rỗng rồi tải lại lần hai, người dùng thấy bảng nhấp nháy từ "không
     // có mã nào" sang bản thật.
     if (!sanSangGoi) return;
+    // L6 (kiểm định 10/10/2026): có `dotId` thì chờ tra xong năm đợt rồi mới
+    // tải. Tải sớm thì `namDot` đổi null → năm thật làm `taiSuaDeCuaPdd` đổi,
+    // `taiLai` chạy lần hai (đo F5: mọi truy vấn gấp đôi, ~3,2 giây).
+    if (namDot == null) return;
     // M4k (vòng 5) — mẫu L13: đổi đợt liên tiếp trong cùng tab có thể khiến
     // lượt tải CŨ (goi/khoa/đợt trước) trả về SAU lượt MỚI và ghi đè bảng
     // bằng đúng dữ liệu sai đợt. Đếm lượt bằng ref; sau MỖI await bên dưới,
@@ -826,11 +835,14 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
       // chiếu tự động) cộng thông báo trong hộp thư.
       // Giữ `taiKetQuaThau` lại, chưa xoá: nhánh sau (tiến độ gói thầu theo số
       // quyết định / số hợp đồng, QĐ D6) sẽ viết lại trên nền v3.
-      const ketQuaTheoMa = dsMaHang?.length
-        ? await taiKetQuaThau(bo.loai_mua_sam, khoaHienTai, dsMaHang, dotId)
-        : new Map();
-      if (luot !== luotTaiChinh.current) return; // M4k/L13: bỏ lượt tải cũ
-      const [oDaLuu, suaDePdd] = await Promise.all([taiODaLuu(), taiSuaDeCuaPdd()]);
+      // L6: ba nguồn này không phụ thuộc nhau — chạy song song thay vì nối đuôi.
+      const [ketQuaTheoMa, oDaLuu, suaDePdd] = await Promise.all([
+        dsMaHang?.length
+          ? taiKetQuaThau(bo.loai_mua_sam, khoaHienTai, dsMaHang, dotId)
+          : Promise.resolve(new Map()),
+        taiODaLuu(dgId || null),
+        taiSuaDeCuaPdd(),
+      ]);
       if (luot !== luotTaiChinh.current) return; // M4k/L13: bỏ lượt tải cũ
       // V2: giá trị chung là giá trị DUY NHẤT, nên áp thẳng lên dòng thay vì
       // giữ song song rồi chọn lúc vẽ. Nhờ vậy ô gõ được như mọi ô khác —
@@ -874,11 +886,12 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
         r.stt_co_dinh = i + 1;
       });
       setRows(rowsDangHien);
-      if (dotGoiId) {
+      // L6: dùng `dgId` vừa đọc, không dùng state `dotGoiId` (lượt đầu còn null).
+      if (dgId) {
         const { data: dsAudit } = await supabase
           .from("phan_bo_khoa_audit")
           .select("ma_hang, truoc, sau, tong_truoc, tong_sau, ly_do, nguoi_sua, vai_tro, thoi_gian")
-          .eq("dot_goi_id", dotGoiId)
+          .eq("dot_goi_id", dgId)
           .order("thoi_gian", { ascending: false });
         if (luot !== luotTaiChinh.current) return; // M4k/L13: bỏ lượt tải cũ
         // Audit ghi theo MÃ HÀNG cho cả đợt; lọc lại còn đúng lần sửa có động
@@ -907,7 +920,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
     } finally {
       if (luot === luotTaiChinh.current) setDangTai(false); // M4k/L13
     }
-  }, [goiId, khoaHienTai, dotId, sanSangGoi, taiODaLuu, taiSuaDeCuaPdd]);
+  }, [goiId, khoaHienTai, dotId, sanSangGoi, namDot, taiODaLuu, taiSuaDeCuaPdd]);
 
   useEffect(() => { taiLai(); }, [taiLai]);
 

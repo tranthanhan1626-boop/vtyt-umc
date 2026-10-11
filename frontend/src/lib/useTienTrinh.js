@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { tinhTienTrinhKhoa, tinhTienTrinhPdd } from "./tienTrinh";
+import { demMucGioRot, SU_KIEN_GIO_ROT_DOI } from "./gioRot";
 
 // ─────────────────────────────────────────────────────────────────────────
 // KHOA
@@ -36,7 +37,7 @@ export async function taiTrangThaiKhoa({ dotId, goiId, khoa, docGio = false }) {
   if (!dg) return { coDotGoi: false };
   const dotGoiId = dg.id;
 
-  const [rGui, rXn, rQ, rGd, rRot, rGio] = await Promise.all([
+  const [rGui, rXn, rQ, rGd, rRot, rGio, rMucRot] = await Promise.all([
     // "Đã gửi đề xuất thật" — đúng điều kiện `exists phan_bo_khoa … so_luong_
     // hien_hanh > 0` của hàm SQL khoa_chua_xac_nhan (patch_zzzzu), cùng bộ lọc
     // CumThauTongHop.jsx:794. Chỉ đếm, không kéo dòng.
@@ -62,6 +63,9 @@ export async function taiTrangThaiKhoa({ dotId, goiId, khoa, docGio = false }) {
       ? supabase.from("gio_nhap").select("noi_dung")
         .eq("don_vi", khoa).eq("dot_id", Number(dotId)).maybeSingle()
       : Promise.resolve(null),
+    // L15 (test 10/10/2026) — mục giỏ rớt của khoa ở gói con này, đếm CÙNG
+    // luật "Chưa xử lý" của màn ③ (lib/gioRot.js). null = không đọc được.
+    demMucGioRot({ khoa, dotGoiId }).catch(() => null),
   ]);
 
   let soMaTrongGio;
@@ -78,6 +82,8 @@ export async function taiTrangThaiKhoa({ dotId, goiId, khoa, docGio = false }) {
     coPhienQ: rQ.error ? null : !!rQ.data,
     giaiDoan: rGd.error ? null : (rGd.data || []),
     soMaRot: rRot.error ? null : new Set((rRot.data || []).map((r) => r.ma_hang)).size,
+    soMucRot: rMucRot ? rMucRot.tong : null,
+    soMucRotCho: rMucRot ? rMucRot.cho : null,
     ...(soMaTrongGio !== undefined ? { soMaTrongGio } : {}),
   };
 }
@@ -108,7 +114,12 @@ export function useTienTrinhKhoa({ dotId, goiId, khoa, soMaTrongGio = null, lamM
   // bước ③ đổi theo. Chỉ nghe focus, không poll.
   useEffect(() => {
     window.addEventListener("focus", tai);
-    return () => window.removeEventListener("focus", tai);
+    // L14/L15: màn ③ / giỏ bổ sung vừa xử lý mã rớt → đếm lại ngay.
+    window.addEventListener(SU_KIEN_GIO_ROT_DOI, tai);
+    return () => {
+      window.removeEventListener("focus", tai);
+      window.removeEventListener(SU_KIEN_GIO_ROT_DOI, tai);
+    };
   }, [tai]);
 
   const tienTrinh = useMemo(
@@ -157,11 +168,14 @@ function khoaThamGiaDaGui(thamGia, daGui) {
 }
 
 /** Đầu vào `tinhTienTrinhPdd` từ phần dữ liệu màn đã có sẵn + hai tập khoa. */
-export function dauVaoPdd({ thamGia, daGui, khoaChuaXacNhan, coPhienQ, giaiDoan, coPhienTrinhKy }) {
+export function dauVaoPdd({
+  thamGia, daGui, khoaChuaXacNhan, coPhienQ, giaiDoan, coPhienTrinhKy, khoaKhongPhatSinh,
+}) {
   return {
     soKhoaThamGia: thamGia ? thamGia.size : null,
     khoaDaGui: khoaThamGiaDaGui(thamGia, daGui),
     khoaChuaXacNhan, coPhienQ, giaiDoan, coPhienTrinhKy,
+    khoaKhongPhatSinh: khoaKhongPhatSinh || null,
   };
 }
 
@@ -186,7 +200,7 @@ export async function taiTrangThaiPddTheoDot(dotId) {
   const ids = (dsDg || []).map((d) => d.id);
   if (!ids.length) return ketQua;
 
-  const [khoa, rQ, rGd, rTk, ...rChua] = await Promise.all([
+  const [khoa, rQ, rGd, rTk, rKps, ...rChua] = await Promise.all([
     taiKhoaThamGiaVaDaGui(ids),
     // Một phiên hiệu lực mỗi DOT_GOI (unique index chot_q_mot_phien_hieu_luc).
     supabase.from("chot_q_phien").select("dot_goi_id")
@@ -197,6 +211,11 @@ export async function taiTrangThaiPddTheoDot(dotId) {
     // BanDieuHanhPdd.jsx:299 — phiên trình ký hiệu lực (unique index).
     supabase.from("chot_trinh_ky_phien_v3").select("dot_goi_id")
       .in("dot_goi_id", ids).eq("hieu_luc", true),
+    // L1 (test 10/10/2026) — khoa báo "Không phát sinh nhu cầu": dòng xác
+    // nhận còn hiệu lực có cờ `khong_phat_sinh` (cùng cách đọc ở
+    // taiTrangThaiKhoa phía trên). Chỉ để hiện chữ.
+    supabase.from("danh_muc_khoa_chot").select("dot_goi_id, khoa")
+      .in("dot_goi_id", ids).eq("hieu_luc", true).eq("khong_phat_sinh", true),
     // TongHopPdd.jsx:456 — cùng RPC màn Tổng hợp dùng để khoá nút chốt.
     ...ids.map((id) => supabase.rpc("khoa_chua_xac_nhan", { p_dot_goi_id: id })),
   ]);
@@ -216,6 +235,8 @@ export async function taiTrangThaiPddTheoDot(dotId) {
         coPhienQ: coQ ? coQ.has(dg.id) : null,
         giaiDoan: rGd.error ? null : (rGd.data || []).filter((g) => g.dot_goi_id === dg.id),
         coPhienTrinhKy: coTk ? coTk.has(dg.id) : null,
+        khoaKhongPhatSinh: rKps.error ? null
+          : (rKps.data || []).filter((r) => r.dot_goi_id === dg.id).map((r) => r.khoa),
       }),
     });
   });

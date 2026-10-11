@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, Check, X } from "lucide-react";
 import { supabase } from "../supabaseClient";
-import { dinhDangSoThongBao } from "../lib/dinhDangThongBao";
+import { boChuLapTieuDe, dinhDangSoThongBao } from "../lib/dinhDangThongBao";
 
 /*
  * HopThuThongBao — hộp thư hai chiều PĐD ↔ khoa (QĐ D5, 23/08/2026).
@@ -112,7 +112,7 @@ export default function HopThuThongBao({ profile }) {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-[13px] font-semibold text-slate-800">
-                      {r.tieu_de}
+                      {boChuLapTieuDe(r.tieu_de)}
                       {r.so_lan > 1 && (
                         <span className="ml-1.5 rounded bg-slate-200 px-1.5 py-0.5 text-xs font-medium text-slate-600">
                           ×{r.so_lan}

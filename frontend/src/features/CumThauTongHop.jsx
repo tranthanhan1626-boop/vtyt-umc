@@ -234,9 +234,13 @@ export function cauDaDuaVaoGio(d, truoc = {}, dvtCuaMa = null) {
   const dot = d.thang && d.nam ? `đợt T${d.thang}/${d.nam}` : "đợt bổ sung gần nhất";
   const motMa = Number(d.so_ma) === 1 && truoc.dsMa?.length === 1 && Number(truoc.tong) > 0;
   const dvt = motMa ? (dvtCuaMa?.(truoc.dsMa[0]) || "") : "";
+  // L17 (test 10/10/2026): "5 mã × 2 khoa" đọc như 10 dòng trong khi thật ra
+  // là 6 dòng (mã có thể chỉ thuộc 1 khoa). Ghi số dòng server trả + số mã,
+  // số khoa riêng — cùng cách hộp thư PĐD đang ghi.
+  const soDong = Number(d.so_dong) || 0;
   const phan = motMa
-    ? `Đã đưa ${fmt(truoc.tong)}${dvt ? ` ${dvt}` : ""} (1 mã × ${d.so_khoa} khoa)`
-    : `Đã đưa phần rớt của ${d.so_ma} mã × ${d.so_khoa} khoa`;
+    ? `Đã đưa ${fmt(truoc.tong)}${dvt ? ` ${dvt}` : ""} (1 mã, ${d.so_khoa} khoa)`
+    : `Đã đưa phần rớt (${soDong ? `${fmt(soDong)} dòng: ` : ""}${d.so_ma} mã, ${d.so_khoa} khoa)`;
   return `${phan} vào giỏ ${dot} — khoa gửi đề xuất rồi sửa số ở Danh mục khoa.`;
 }
 
@@ -997,6 +1001,13 @@ export function BangSoTrungTheoKhoa({ dotGoiId, maHang, phaiChia, onLuuXong, cha
  */
 export function ChotTrinhKyTongHop({ dotGoiId, onXong, trongThanhCongCu = false, phanBo = null, anMoLaiKhoa = false }) {
   const [mo, setMo] = useState(false);
+  // L19 (test 10/10/2026): ô xổ ra phải đóng được bằng Esc như các hộp khác.
+  useEffect(() => {
+    if (!mo) return undefined;
+    const dong = (e) => { if (e.key === "Escape") setMo(false); };
+    window.addEventListener("keydown", dong);
+    return () => window.removeEventListener("keydown", dong);
+  }, [mo]);
   const [tai, setTai] = useState(false);
   const [khoaThieu, setKhoaThieu] = useState(null);   // null = chưa đọc được
   const [dsKhoa, setDsKhoa] = useState([]);
@@ -1168,7 +1179,10 @@ export function ChotTrinhKyTongHop({ dotGoiId, onXong, trongThanhCongCu = false,
               <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
                 <span className="text-slate-700">
                   {dsKhoa.length} khoa đã gửi đề xuất · <b>{daChot.length}</b> đã chốt bảng
-                  {soThieu > 0 && <span className="text-amber-700"> · còn <b>{soThieu}</b> khoa chưa đủ</span>}
+                  {/* L19 (test 10/10/2026): chữ cam "còn N khoa chưa đủ" đọc
+                      như đang bị chặn, trong khi nút vẫn bấm được và hệ tự
+                      chốt bảng khoa còn thiếu (QĐ 28/09, 01 mục 8.2). */}
+                  {soThieu > 0 && <span> · {soThieu} bảng khoa chưa chốt — hệ sẽ tự chốt khi bấm</span>}
                 </span>
                 <span className="cursor-help rounded-full border border-slate-300 px-1.5 text-xs text-slate-500"
                   title={`Bấm chốt thì hệ tự chốt ${soThieu || 0} bảng khoa còn thiếu trước, rồi đóng băng cả gói con thành bản chính thức. Cổng: đủ 3 giai đoạn thầu + mọi mã đã chia đủ số trúng.`}>?</span>

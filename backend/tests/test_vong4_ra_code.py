@@ -30,21 +30,26 @@ GOC = Path(__file__).resolve().parents[1]
 FE = GOC.parent / "frontend" / "src" / "features"
 GIO_ROT = FE / "GioRotCuaKhoa.jsx"
 
+# 11/10/2026 (L10/L14/L15, test 10/10): phần ĐỌC chuyển tiếp/đã gửi của màn ③
+# dời sang frontend/src/lib/gioRot.js để nhãn đỏ menu dùng cùng luật — test dò
+# chữ đọc cả hai file.
+GIO_ROT_LIB = FE.parent / "lib" / "gioRot.js"
+
 
 def test_n3_chuyen_tiep_rot_v3_co_doc_created_at():
-    text = GIO_ROT.read_text(encoding="utf-8")
+    text = GIO_ROT.read_text(encoding="utf-8") + GIO_ROT_LIB.read_text(encoding="utf-8")
     assert '"phien_q_id, dot_goi_bo_sung_id, so_luong, created_at, vat_tu!inner(ma_quan_ly)"' in text
 
 
 def test_n3_proposals_co_doc_created_at_de_so_sanh():
-    text = GIO_ROT.read_text(encoding="utf-8")
+    text = GIO_ROT.read_text(encoding="utf-8") + GIO_ROT_LIB.read_text(encoding="utf-8")
     assert '"dot_id, created_at, vat_tu!inner(ma_quan_ly)"' in text
 
 
 def test_n3_chi_tinh_da_gui_khi_de_xuat_sau_thoi_diem_chuyen_tiep():
     """Cốt lõi kẽ hở N3: phải có phép so sánh thời gian, không chỉ so theo
     (dot_id, ma_quan_ly) như bản cũ."""
-    text = GIO_ROT.read_text(encoding="utf-8")
+    text = GIO_ROT.read_text(encoding="utf-8") + GIO_ROT_LIB.read_text(encoding="utf-8")
     assert "tGui > tChuyen" in text
     # Không rõ thời điểm chuyển tiếp thì không được mặc định coi là đã gửi.
     assert "tChuyen !== null" in text

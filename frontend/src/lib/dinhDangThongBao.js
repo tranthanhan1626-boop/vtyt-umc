@@ -26,3 +26,14 @@ export function dinhDangSoThongBao(noiDung, duLieu) {
   }
   return ra;
 }
+
+/*
+ * L4 (test 10/10/2026): trigger `fn_thong_bao_phan_bo_khoa` ghép "Khoa %s"
+ * với tên khoa vốn đã bắt đầu bằng "Khoa" → "Khoa Khoa Ngoại thần kinh…".
+ * Không sửa SQL ở đây (patch đề xuất nằm ở .scratch/test-10-10/patch_de_xuat/)
+ * — chỉ bỏ chữ lặp lúc vẽ. Chỉ gộp đúng cụm "Khoa Khoa" thành "Khoa".
+ */
+export function boChuLapTieuDe(tieuDe) {
+  if (typeof tieuDe !== "string") return tieuDe;
+  return tieuDe.replace(/\bKhoa\s+(?=Khoa\s)/g, "");
+}

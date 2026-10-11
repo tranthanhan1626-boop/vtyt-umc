@@ -101,6 +101,11 @@ export default function TienDoSuDung({ profile, onNapDuLieu }) {
         goi.set(r.goi_id, {
           goi_id: r.goi_id, ten_goi: r.ten_goi, nam: r.nam,
           loai_mua_sam: r.loai_mua_sam, ngay_bat_dau: r.ngay_bat_dau,
+          // L13 (test 10/10/2026): ngày hiện ở dòng gói lấy từ dòng đầu, nên
+          // nhãn cũng phải theo `nguon_moc` của CHÍNH dòng đó. View
+          // v_tien_do_su_dung: lần giao đầu (giao_hang), chưa có thì ngày chốt
+          // trình ký.
+          nguon_moc: r.nguon_moc,
           thang_da_qua: r.thang_da_qua, nhom: new Map(),
         });
       }
@@ -166,7 +171,7 @@ export default function TienDoSuDung({ profile, onNapDuLieu }) {
                 Cam kết dùng <b>{camKet}%</b> số trúng thầu:{" "}
                 {vach.map((v, i) => (
                   <span key={v.thang}>{i > 0 ? " · " : ""}{v.thang} tháng ≥{v.ty}%</span>
-                ))}. Đếm từ mốc <b>hàng về đợt đầu</b>.
+                ))}. Đếm từ mốc <b>hàng về đợt đầu</b>; mã chưa có lần giao hàng nào thì tạm đếm từ <b>ngày chốt trình ký</b>.
               </>}
         </p>
       </div>
@@ -210,8 +215,7 @@ export default function TienDoSuDung({ profile, onNapDuLieu }) {
           <Clock size={28} className="mx-auto mb-2 text-slate-300" />
           <p className="text-sm font-medium text-slate-600">Chưa có mã nào vào diện theo dõi</p>
           <p className="mt-1 text-xs text-slate-500">
-            Mã chỉ được đếm sau khi gói thầu đánh dấu mốc <b>“Hàng về đợt đầu”</b> hoàn thành
-            và đã có số lượng trúng thầu.
+            Mã vào diện theo dõi khi gói con đã <b>chốt trình ký</b> và mã có số lượng trúng thầu.
           </p>
         </div>
       )}
@@ -228,7 +232,8 @@ export default function TienDoSuDung({ profile, onNapDuLieu }) {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-slate-900">{g.ten_goi}</p>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  Hàng về {g.ngay_bat_dau ? new Date(g.ngay_bat_dau).toLocaleDateString("vi-VN") : "—"}
+                  {g.nguon_moc === "giao_hang" ? "Hàng về" : "Mốc tạm (chưa có giao hàng): ngày chốt trình ký"}{" "}
+                  {g.ngay_bat_dau ? new Date(g.ngay_bat_dau).toLocaleDateString("vi-VN") : "—"}
                   {" · "}đã qua {g.thang_da_qua} tháng
                   {soThangKy ? ` / ${soThangKy} tháng` : ""}
                   {" · "}{g.soMa} mã hàng

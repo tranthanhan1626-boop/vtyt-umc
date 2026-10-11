@@ -233,7 +233,7 @@ async function taiDuLieuGoc(goiId, dotId = null) {
       // `gốc − đã đổ đi + nhận về`; không ghi đè vì `phan_bo_khoa` bị khoá
       // cứng 1 chặn sau chốt Q, và số đã mang đi thầu là bằng chứng.
     qProposals = () => supabase.from("v_phan_bo_sau_dieu_chuyen_v3")
-      .select("ma_hang, khoa, so_luong_hien_hanh, so_luong_goc, sua_boi_khoa, da_do_di, do_sang_ma")
+      .select("ma_hang, khoa, so_luong_hien_hanh, so_luong_goc, so_luong_truoc_dieu_chuyen, sua_boi_khoa, da_do_di, do_sang_ma")
       .eq("dot_goi_id", dotGoiId);
   } else {
     qProposals = () => {
@@ -271,7 +271,14 @@ async function taiDuLieuGoc(goiId, dotId = null) {
       // V2: khoa sửa được số của mình, nên tổng ở đây có thể đã đổi sau lần
       // PĐD chia gần nhất. Cờ do trigger `trg_phan_bo_danh_dau_ai_sua` đặt
       // ngay tại nguồn — không đoán từ email người sửa.
-      suaBoiKhoa: laPhanBoV3 ? !!r.sua_boi_khoa : false,
+      // L2 (test 10/10/2026): trigger đặt cờ cho MỌI lần khoa ghi, kể cả lần
+      // gửi đầu, nên cờ một mình làm mọi dòng đều mang nhãn "N khoa tự sửa".
+      // Chỉ tính là "tự sửa" khi số khoa đang để (trước đổ mã) KHÁC số khoa gửi
+      // ban đầu (`so_luong_goc`). So trước điều chuyển để đổ mã không bị tính.
+      suaBoiKhoa: laPhanBoV3
+        ? !!r.sua_boi_khoa
+          && Number(r.so_luong_truoc_dieu_chuyen) !== Number(r.so_luong_goc)
+        : false,
     });
   });
   const dsMaHang = [...theoMa.keys()];
