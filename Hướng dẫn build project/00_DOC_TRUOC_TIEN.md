@@ -5,7 +5,7 @@
 > - **Đợt test trọn vòng hai vai + slide hướng dẫn (đêm 10/10) XONG.** Báo cáo + 13 câu hỏi chờ chủ dự án:
 >   `Test và hướng dẫn 10-10-2026/BAO_CAO_TONG_KET.md`. Slide 30 trang: `Test và hướng dẫn 10-10-2026/HuongDan_VTYT_10-2026.pptx`
 >   (dựng lại: `.scratch/test-10-10/slide/dung_slide.py`). Hồ sơ: `.scratch/test-10-10/SO_CHUNG.md`.
-> - **Code đã sửa 18 lỗi giao diện, CHƯA COMMIT/push GitHub.** 11/10 sáng chủ dự án cho đẩy Netlify bằng đường
+> - **Code đã sửa 18 lỗi giao diện — commit `af486c8` `[skip netlify]` đã push 11/10 → GitHub = Netlify.** 11/10 sáng chủ dự án cho đẩy Netlify bằng đường
 >   tải lên (không tốn điểm): **Netlify = `index-DGTpMIHI.js`** (deploy `6acadf62d2e01bcf63cc3c28`) — bản này lấy từ
 >   working tree CHƯA commit, nên GitHub (`dfe5be6`) đang CŨ hơn Netlify. Commit + push sau sẽ làm Netlify tự build.
 > - **3 patch SQL đã chạy 11/10** (chủ dự án duyệt): `backend/sql/patch_zzzzzzzm` (thư đổ một phần ghi số còn lại),
