@@ -128,7 +128,10 @@ export default function DieuChinhTieuChi({ profile }) {
   };
 
   // Khối 2 cột: trái nội dung hiện tại, phải ô sửa.
-  const HaiCot = ({ cap, cu, ma_quan_ly, nhan }) => {
+  // Gọi như HÀM thường (haiCot({...})), KHÔNG dùng <HaiCot />: hàm sinh lại
+  // mỗi lần render, nếu dùng làm component thì React coi là component mới,
+  // dựng lại cả khối sau mỗi phím gõ → ô sửa mất con trỏ sau 1 chữ (lỗi 13/10/2026).
+  const haiCot = ({ cap, cu, ma_quan_ly, nhan }) => {
     const truong = cap === "ma_hang" ? TRUONG_MA_HANG : TRUONG_NHOM;
     const cho = choDuyetCua(ma_quan_ly, cap === "ma_hang" ? cu.ma_hang : null);
     const dangSua = sua && sua.cap === cap
@@ -182,8 +185,12 @@ export default function DieuChinhTieuChi({ profile }) {
                 {truong.map((t) => (
                   <div key={t.k}>
                     <label className="text-xs text-slate-500">{t.n}</label>
-                    {t.dai
-                      ? <textarea rows={3} value={form[t.k] ?? ""}
+                    {/* Ô <input> nuốt dấu xuống dòng → "73011\n73012" hiện thành
+                        "7301173012". Trường nào bản hiện tại có nhiều dòng thì dùng
+                        textarea. Xét theo `cu` chứ không theo `form` để ô không đổi
+                        loại giữa lúc gõ. */}
+                    {t.dai || String(cu[t.k] ?? "").includes("\n")
+                      ? <textarea rows={t.dai ? 3 : String(cu[t.k]).split("\n").length} value={form[t.k] ?? ""}
                           onChange={(e) => setForm((p) => ({ ...p, [t.k]: e.target.value }))}
                           className="w-full rounded-md border border-umc-300 px-2 py-1 text-sm" />
                       : <input value={form[t.k] ?? ""}
@@ -290,11 +297,13 @@ export default function DieuChinhTieuChi({ profile }) {
 
             {mo && (
               <div className="space-y-2 border-t border-slate-100 bg-slate-50/60 p-2">
-                <HaiCot cap="ma_quan_ly" cu={n} ma_quan_ly={n.ma_quan_ly}
-                  nhan={`Mã quản lý ${n.ma_quan_ly}`} />
+                {haiCot({ cap: "ma_quan_ly", cu: n, ma_quan_ly: n.ma_quan_ly,
+                  nhan: `Mã quản lý ${n.ma_quan_ly}` })}
                 {maHang.map((m) => (
-                  <HaiCot key={m.ma_hang} cap="ma_hang" cu={m} ma_quan_ly={n.ma_quan_ly}
-                    nhan={`Mã hàng ${m.ma_hang}`} />
+                  <div key={m.ma_hang}>
+                    {haiCot({ cap: "ma_hang", cu: m, ma_quan_ly: n.ma_quan_ly,
+                      nhan: `Mã hàng ${m.ma_hang}` })}
+                  </div>
                 ))}
               </div>
             )}
