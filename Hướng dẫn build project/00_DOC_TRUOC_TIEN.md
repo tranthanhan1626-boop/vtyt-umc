@@ -2,8 +2,12 @@
 
 > ## 📍 HIỆN TRẠNG 11/10/2026 — đọc khối này trước
 >
-> - **Web: https://vtyt-umc.netlify.app.** GitHub = Netlify = commit `af486c8` (+ `fac33f1` chỉ tài liệu), bundle
->   `index-DGTpMIHI.js`. Nhánh `phase-a-luong-de-xuat`. Mở trên máy: bấm đúp `MO_WEB.command` → `localhost:4173`.
+> - **Web: https://vtyt-umc.netlify.app.** 🆕 13/10: GitHub = Netlify = commit `e1a8072`, bundle `index-OEQgXgeW.js`
+>   (sửa màn Điều chỉnh tiêu chí: ô sửa mất con trỏ sau 1 chữ + ô nhiều dòng dính chữ; đẩy bằng đường tải lên). Nhánh `phase-a-luong-de-xuat`. Mở trên máy: bấm đúp `MO_WEB.command` → `localhost:4173`.
+> - 🆕 **13/10 — dữ liệu thử giữ lại cho demo 14/10:** 2 đề nghị [THỬ] của `dvsd1@` (Phòng mổ) đang chờ duyệt — một
+>   đề xuất mã mới "[THỬ] Băng dán cố định kim luồn", một đề nghị sửa tiêu chí mã hàng 66464. ĐỪNG bấm Duyệt (ghi vào
+>   danh mục thật). Ảnh chụp: `Test và hướng dẫn 10-10-2026/Anh chup 13-10 de nghi va duyet/`. Câu hỏi chờ chủ dự án:
+>   nút "Chờ duyệt" của PĐD chỉ đếm đề nghị mã mới, không đếm đề nghị sửa tiêu chí — có nên đếm cả hai?
 > - **Database staging:** chỉ còn đợt **211 "Gói 18 tháng 2027-2028" đang mở, 5 gói con (857–861) đang mở, 0 đề xuất**
 >   (dọn đợt test theo yêu cầu 11/10). Dữ liệu nền giữ nguyên; HIS tới T6/2026.
 >   Sao lưu gần nhất: `backend/sao_luu/staging/2026-10-11_sau_test_truoc_khi_don` (và `2026-10-10_truoc_test_toi`).

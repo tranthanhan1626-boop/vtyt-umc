@@ -12,7 +12,7 @@ mở web · việc còn lại). Lộ trình để chủ dự án tự bấm th�
 Mọi chữ "go-live giữa T9" hay "01/01/2027" bên dưới là lịch sử, đừng sắp việc theo nó.
 
 ```
-11/10/2026: GitHub = Netlify = af486c8 (+fac33f1 tài liệu) · bundle index-DGTpMIHI.js · https://vtyt-umc.netlify.app
+13/10/2026: GitHub = Netlify = e1a8072 · bundle index-OEQgXgeW.js · https://vtyt-umc.netlify.app (2 đề nghị [THỬ] giữ cho demo)
   push lên nhánh phase-a-luong-de-xuat → Netlify TỰ build, tốn 15/300 điểm/tháng (hết điểm = site bị khoá)
   → commit ghi [skip netlify], đẩy web bằng đường tải lên (04 mục "ĐẨY LÊN NETLIFY KHI ĐÃ HẾT CREDITS")
 pytest 404 · test:formula 10 ✓
