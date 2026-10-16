@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dữ liệu nền VTYT</title>
+<style>
+  :root{--nen:#f7f6f2;--giay:#fff;--chu:#1f2328;--nhat:#5b636e;--vien:#dcd9d0;--xanh:#1d5f8a;--xanhnhat:#e6f0f7;--cam:#a5521b;--camnhat:#fbeee4;--do:#a1262b;--donhat:#fbe9ea;--la:#2d6a3e;--lanhat:#e7f3ea}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--nen);color:var(--chu);font:17px/1.6 -apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  main{max-width:960px;margin:0 auto;padding:28px 16px 80px}
+  h1{font-size:30px;margin:0 0 4px}
+  h2{font-size:23px;margin:44px 0 10px;padding-top:10px;border-top:2px solid var(--vien)}
+  h3{font-size:19px;margin:0 0 6px}
+  .phu{color:var(--nhat);margin:0 0 18px}
+  .the{background:var(--giay);border:1px solid var(--vien);border-radius:12px;padding:16px 18px;margin:14px 0}
+  .y{background:var(--xanhnhat);border-color:#bcd5e6}
+  .canh{background:var(--camnhat);border-color:#ecc9ad}
+  .nang{background:var(--donhat);border-color:#e9b9bc}
+  .tot{background:var(--lanhat);border-color:#bddcc5}
+  .nhan{display:inline-block;font-size:13px;padding:1px 8px;border-radius:99px;background:#ecebe6;color:var(--nhat);margin-right:6px;vertical-align:2px}
+  .ky{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--nhat)}
+  table{border-collapse:collapse;width:100%;font-size:15.5px;margin:8px 0}
+  th,td{border:1px solid var(--vien);padding:6px 9px;text-align:left;vertical-align:top}
+  th{background:#efede6;font-weight:600}
+  td.so{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .bang{overflow-x:auto}
+  /* sơ đồ 3 cột */
+  .sodo{display:grid;grid-template-columns:1fr 34px 1fr 34px 1fr;gap:6px;align-items:stretch;margin:14px 0}
+  .cot{display:flex;flex-direction:column;gap:8px}
+  .cot h4{margin:0 0 2px;font-size:14px;text-transform:uppercase;letter-spacing:.04em;color:var(--nhat)}
+  .o{background:var(--giay);border:1px solid var(--vien);border-radius:9px;padding:8px 10px;font-size:15px;line-height:1.35}
+  .o b{display:block}
+  .o small{color:var(--nhat)}
+  .o.tep{border-left:5px solid var(--cam)}
+  .o.kho{border-left:5px solid var(--xanh)}
+  .o.man{border-left:5px solid var(--la)}
+  .o.chet{border-left:5px solid var(--do);background:var(--donhat)}
+  .mui{display:flex;align-items:center;justify-content:center;color:var(--nhat);font-size:22px}
+  @media (max-width:720px){.sodo{grid-template-columns:1fr}.mui{transform:rotate(90deg);height:26px}}
+  ol li,ul li{margin:4px 0}
+  .cauhoi li{margin:10px 0}
+  .tra{display:block;margin-top:4px;padding:6px 10px;border:1px dashed var(--vien);border-radius:6px;color:var(--nhat);background:#fcfbf8;min-height:30px}
+</style>
+</head>
+<body>
+<main>
+
+<h1>Dữ liệu nền của web VTYT</h1>
+<p class="phu">Ngày 16/10/2026. Thầy chỉ <b>đọc</b> database thật (bản staging, cũng là hệ duy nhất) cùng các tệp Excel trong thư mục <span class="ky">database/</span>. Không sửa gì.</p>
+
+<div class="the y">
+  <h3>Đọc trang này để nắm một ý</h3>
+  <p style="margin:0">Web có <b>82 bảng</b>, nhưng <b>dữ liệu nền chỉ nằm trong khoảng 10 bảng</b>. Dữ liệu nền là thứ có sẵn trước khi ai bấm gì, nạp từ tệp Excel của bệnh viện.
+  Các bảng còn lại chứa <b>dữ liệu làm việc</b>, sinh ra khi khoa gõ đề xuất hoặc PĐD chốt số. Hôm nay gần như mọi bảng loại đó đều <b>trống</b>, vì chưa có khoa nào dùng thật.</p>
+</div>
+
+<p>Ký hiệu nguồn của mỗi câu:
+<span class="nhan">đọc</span> lấy thẳng từ database hoặc tệp ·
+<span class="nhan">tính</span> thầy tính ra từ số đã đọc ·
+<span class="nhan">đoán</span> thầy đoán, em cần xác nhận.</p>
+
+<h2>1. Bức tranh chung: tệp gốc → kho dữ liệu → màn hình</h2>
+
+<div class="sodo">
+  <div class="cot">
+    <h4>Tệp Excel bệnh viện</h4>
+    <div class="o tep"><b>① Thông tin vật tư</b><small>thong tin vat tu y te tieu hao.xlsx</small></div>
+    <div class="o tep"><b>② Số lượng sử dụng</b><small>so luong su dung full.xlsx</small></div>
+    <div class="o tep"><b>③ Thời gian sử dụng / hợp đồng</b><small>THỜI GIAN SỬ DỤNG … 30%.xlsx</small></div>
+    <div class="o tep"><b>④ Đề xuất kỳ trước</b><small>de_xuat.xlsx</small></div>
+  </div>
+  <div class="mui">→</div>
+  <div class="cot">
+    <h4>Kho dữ liệu trên web</h4>
+    <div class="o kho"><b>A. Danh mục mã hàng</b><small>3.327 mã · từ ① + ②</small></div>
+    <div class="o kho"><b>B. Nhóm kỹ thuật (mã quản lý)</b><small>1.369 nhóm · từ ① + ②</small></div>
+    <div class="o kho"><b>C. Lịch sử xuất kho</b><small>141.623 dòng · từ ②</small></div>
+    <div class="o kho"><b>D. Danh sách khoa</b><small>62 khoa · <i>không có bảng riêng</i>, ghép từ C</small></div>
+    <div class="o chet"><b>F. Khả dụng hợp đồng</b><small>2.661 dòng · từ ③ · <b>không màn nào dùng</b></small></div>
+    <div class="o kho"><b>E. Đề xuất kỳ trước</b><small>5.082 dòng · từ ④</small></div>
+  </div>
+  <div class="mui">→</div>
+  <div class="cot">
+    <h4>Nơi web dùng</h4>
+    <div class="o man"><b>Màn khoa gõ đề xuất</b><small>dùng A, B, C, E</small></div>
+    <div class="o man"><b>Bảng Tổng hợp của PĐD</b><small>dùng A, B, C</small></div>
+    <div class="o man"><b>Màn đăng nhập, quản lý đợt, người dùng</b><small>dùng D</small></div>
+    <div class="o man"><b>Điều chỉnh tiêu chí, duyệt mã mới</b><small>dùng A, B</small></div>
+  </div>
+</div>
+<p class="phu">Cột phải: <span class="nhan">đọc</span> thầy dò trong mã nguồn xem màn nào đọc bảng nào. Tên màn là tên tệp mã nguồn, thầy đổi sang tên dễ hiểu.</p>
+
+<h2>2. Đi theo một món hàng thật: găng tay mã 63444</h2>
+<p>Mỗi kho dữ liệu chứa một mặt của <b>cùng một món hàng</b>. Ghép lại thì thấy được cả món. <span class="nhan">đọc</span></p>
+
+<div class="bang"><table>
+<tr><th style="width:24%">Kho</th><th>Kho đó nói gì về mã 63444</th></tr>
+<tr><td><b>A. Danh mục</b></td><td>Găng tay không bột, các cỡ · ĐVT <b>Đôi</b> · gói <b>Dùng chung</b> · tên thương mại "Găng tay khám bệnh cao cấp latex không bột" · Công ty CP Găng tay Bình Phước · Việt Nam · có tiêu chí kỹ thuật (chất liệu cao su thiên nhiên…)</td></tr>
+<tr><td><b>B. Nhóm kỹ thuật</b></td><td>Thuộc nhóm <b>N03.06.020.01 "Găng tay chăm sóc, điều trị người bệnh"</b>, ĐVT chuẩn Đôi. Cùng nhóm còn 2 mã: 63445 "Găng tay, các cỡ" và 72364 "Găng tay nitrile không bột".</td></tr>
+<tr><td><b>C. Xuất kho</b></td><td>Tháng 6/2026 toàn viện lấy <b>531.472 đôi</b>, chia cho 41 khoa. Riêng Phòng mổ (GMHS) lấy từ <b>4 kho khác nhau</b> trong cùng tháng: Phòng mổ 2A 31.490 · Hồi tỉnh 2A 15.654 · Phòng mổ 6A 4.387 · Tiền phẫu 2A 3.283.</td></tr>
+<tr><td><b>E. Kỳ trước</b></td><td>Theo QĐ 1599: Khoa Khám bệnh đề xuất 2.150.647,2 · RHM 765.900 · Ngoại gan mật tụy 663.780… <span class="nhan">tính</span> Có số lẻ thập phân trong số đôi găng.</td></tr>
+<tr><td><b>F. Hợp đồng</b></td><td>SL hợp đồng 7.350.000 · chưa thực hiện 396.700 · mua thêm 30%: 2.205.000 · tồn 161.085 · dùng trung bình khoảng 404.093/tháng · đáp ứng được khoảng <b>6,7 tháng</b> · nhà thầu Khải Vinh. <b>Web có số này nhưng không hiện ở đâu.</b></td></tr>
+</table></div>
+
+<h2>3. Từng kho dữ liệu nền</h2>
+
+<div class="the">
+  <h3>A. Danh mục mã hàng <span class="ky">vat_tu</span></h3>
+  <p><b>Là gì:</b> mỗi dòng là một mã hàng của bệnh viện, kèm tên, ĐVT, gói, tiêu chí kỹ thuật, tên thương mại, ký mã hiệu, hãng, nước sản xuất.</p>
+  <p><b>Bao nhiêu:</b> <b>3.327 mã</b>, nạp làm ba đợt: 20/07 (2.218), 22/07 (867), 03/08 (242). <span class="nhan">đọc</span></p>
+  <p><b>Ghép từ đâu:</b> tệp ① chỉ có 2.216 dòng. Phần còn lại là những mã <b>chỉ xuất hiện trong tệp ② xuất kho</b> hoặc tệp ③ hợp đồng, nên chỉ có tên, không có tiêu chí. <span class="nhan">tính</span></p>
+  <div class="bang"><table>
+    <tr><th>Mã hàng chia theo việc có mặt ở đâu</th><th class="so">Số mã</th></tr>
+    <tr><td>Có tiêu chí · có xuất kho · có hợp đồng (đầy đủ nhất)</td><td class="so">2.011</td></tr>
+    <tr><td>Không tiêu chí · có xuất kho · có hợp đồng</td><td class="so">359</td></tr>
+    <tr><td>Không tiêu chí · có xuất kho · không hợp đồng</td><td class="so">275</td></tr>
+    <tr><td>Có tiêu chí · không xuất kho · có hợp đồng</td><td class="so">190</td></tr>
+    <tr><td>Không tiêu chí · không xuất kho · có hợp đồng</td><td class="so">83</td></tr>
+    <tr><td><b>Không tiêu chí · không xuất kho · không hợp đồng</b> (chỉ có cái tên)</td><td class="so"><b>398</b></td></tr>
+    <tr><td>Còn lại</td><td class="so">11</td></tr>
+  </table></div>
+  <p><b>Chỗ thiếu:</b> 1.115 mã không có tiêu chí kỹ thuật và không có gói. 722 mã không có mã quản lý; 298 trong số đó có xuất kho thật. <span class="nhan">đọc</span></p>
+</div>
+
+<div class="the">
+  <h3>B. Nhóm kỹ thuật, còn gọi là mã quản lý <span class="ky">nhom_ky_thuat</span></h3>
+  <p><b>Là gì:</b> một nhóm gom <b>các mã hàng dùng thay nhau được</b>, ví dụ ba loại găng ở mục 2. Theo tài liệu <span class="ky">03_DU_LIEU_VA_BIEU_MAU.md</span> mục 4, khoa chọn <b>một ĐVT chuẩn cho cả nhóm</b> khi đề xuất.</p>
+  <p><b>Bao nhiêu:</b> 1.369 nhóm. 885 nhóm chỉ có <b>1 mã</b>, 238 nhóm có 2 mã. Nhóm đông nhất có 31 mã, và 11 nhóm có hơn 12 mã. 1.285 nhóm đã có ĐVT chuẩn. <span class="nhan">đọc</span></p>
+  <p><b>Ai đặt mã nhóm:</b> mã như <span class="ky">N03.06.020.01</span> có sẵn trong tệp ② xuất kho (cột "Mã quản lý"). <span class="nhan">đoán</span> Mã này do HIS cấp, không phải web tự đặt.</p>
+</div>
+
+<div class="the">
+  <h3>C. Lịch sử xuất kho <span class="ky">usage_history_current</span></h3>
+  <p><b>Là gì:</b> mỗi dòng ghi <b>một khoa · một kho · một mã hàng · một tháng → số lượng</b>. Đây là "số đã dùng" mà web cho khoa xem khi đề xuất.</p>
+  <p><b>Bao nhiêu:</b> 141.623 dòng, từ <b>tháng 1/2024 đến tháng 6/2026</b> (30 tháng), gồm 62 khoa, 109 kho, 2.864 mã. Nạp ngày 06/08 từ tệp ②. Trước đó (20/07) đã nạp một tệp khác tên "SO LUONG SU DUNG THEO THANG.xlsx" rồi bị thay. <span class="nhan">đọc</span></p>
+  <div class="bang"><table>
+    <tr><th>Năm</th><th class="so">Số dòng</th><th class="so">Tổng số lượng</th></tr>
+    <tr><td>2024</td><td class="so">54.736</td><td class="so">31.939.885</td></tr>
+    <tr><td>2025</td><td class="so">56.651</td><td class="so">32.775.008</td></tr>
+    <tr><td>2026 (6 tháng)</td><td class="so">30.236</td><td class="so">16.965.324</td></tr>
+  </table></div>
+  <p><b>Chỗ cần biết:</b> có 216 mã có xuất kho mà <b>không có trong danh mục A</b>. <span class="nhan">đọc</span> Tháng HIS mới nhất là 6/2026; tháng 7 và 8 chưa nạp.</p>
+</div>
+
+<div class="the canh">
+  <h3>D. Danh sách khoa — không có bảng riêng</h3>
+  <p>Web <b>không có danh sách khoa chính thức</b>. Danh sách 62 khoa được ghép từ bốn chỗ: tên "Đơn vị" trong lịch sử xuất kho, khoa của tài khoản, khoa trong đề xuất, khoa trong đề nghị mã mới. <span class="nhan">đọc</span> (định nghĩa của view <span class="ky">v_danh_sach_khoa</span>)</p>
+  <p><b>Hệ quả:</b> nếu HIS đổi tên một khoa, web sẽ coi đó là một khoa mới. Một khoa chưa từng lĩnh hàng thì không có trong danh sách. <span class="nhan">tính</span></p>
+  <p><b>Lưu ý:</b> "khoa" và "kho" là hai thứ khác nhau. Một khoa lấy hàng từ nhiều kho, như Phòng mổ ở mục 2.</p>
+</div>
+
+<div class="the">
+  <h3>E. Đề xuất kỳ trước <span class="ky">de_xuat_ky_truoc</span></h3>
+  <p><b>Là gì:</b> số mỗi khoa đề xuất ban đầu ở kỳ thầu trước, cho 18 tháng. Em đã xác nhận nghĩa này ngày 18/09.</p>
+  <p><b>Bao nhiêu:</b> 5.082 dòng, gồm 44 khoa và 9 quyết định. QĐ 1599 lớn nhất (3.089 dòng, 43 khoa). <span class="nhan">đọc</span> Tệp ④ có 5.820 dòng, tức <b>chênh 738 dòng</b>. Tài liệu 03 có ghi lúc nạp đã bỏ một số khoa không khớp tên và gộp dòng trùng; <span class="nhan">tính</span> thầy chưa đếm phần chênh nào do nguyên nhân nào.</p>
+  <p><b>Web dùng ở đâu:</b> chỉ để xem, hiện chữ nhỏ "Kỳ trước: N" trên màn khoa đề xuất. Có 18 khoa có xuất kho nhưng không có số kỳ trước. <span class="nhan">đọc</span></p>
+</div>
+
+<div class="the nang">
+  <h3>F. Khả dụng hợp đồng <span class="ky">kha_dung_hop_dong_ma_hang</span> — đã nạp, không ai dùng</h3>
+  <p><b>Là gì:</b> mỗi dòng là một mã hàng trong hợp đồng đang chạy. Mỗi dòng có: SL hợp đồng, SL chưa giao, SL mua thêm 30%, tồn kho cơ sở 1, dùng trung bình mỗi tháng, <b>đáp ứng được bao nhiêu tháng</b>, nhà cung cấp, cột dùng 2023–2026.</p>
+  <p><b>Bao nhiêu:</b> 2.661 dòng, 2.643 mã, nạp ngày 03/08 từ tệp ③. <span class="nhan">đọc</span></p>
+  <p><b>Vấn đề:</b> trong mã nguồn web <b>không màn nào đọc bảng này</b>. Chỉ có một view đọc nó, và view đó cũng không màn nào dùng. <span class="nhan">đọc</span> Tức là thông tin tồn kho và hàng chưa giao <b>có trong máy nhưng khoa và PĐD không nhìn thấy</b>.</p>
+</div>
+
+<div class="the">
+  <h3>G. Các bảng cấu hình nhỏ</h3>
+  <div class="bang"><table>
+    <tr><th>Bảng</th><th>Nội dung</th><th>Dùng ở đâu</th></tr>
+    <tr><td>Gói con</td><td>10 gói: 5 gói 18 tháng (Dùng chung · CTCH-NTK · GMHS · RHM · Tim mạch), 4 loại mua sắm bổ sung, Chỉ định thầu</td><td>Quản lý đợt, phân gói</td></tr>
+    <tr><td>Mốc cam kết</td><td>6 tháng ≥ 20% · 12 tháng ≥ 50% · 18 tháng ≥ 80%</td><td>Tiến độ sử dụng, cảnh báo chậm</td></tr>
+    <tr><td>Mã lý do</td><td>20 lý do (A: thiếu hàng · B: lĩnh dư · C: thay đổi nhu cầu · D: sai dữ liệu)</td><td><b>Không màn nào dùng</b> <span class="nhan">đọc</span></td></tr>
+    <tr><td>Tài khoản</td><td>8 tài khoản: 3 PĐD/quản trị, 5 khoa (Phòng mổ ×2, RHM ×2, Ngoại thần kinh)</td><td>Đăng nhập, phân quyền</td></tr>
+    <tr><td>Đợt đang mở</td><td>Đợt 211 "Gói 18 tháng 2027-2028", 5 gói con, mỗi gói 62 khoa tham gia</td><td>Mọi màn đề xuất</td></tr>
+  </table></div>
+</div>
+
+<h2>4. Dữ liệu tài liệu nói cần mà database chưa có</h2>
+<p>Theo <span class="ky">03_DU_LIEU_VA_BIEU_MAU.md</span> mục 2, đối chiếu với số dòng thật: <span class="nhan">đọc</span></p>
+<ul>
+  <li><b>Hợp đồng và giao hàng sau thầu:</b> bảng đã dựng, <b>0 dòng</b>. Mẫu gom dữ liệu đã có nhưng chưa ai điền.</li>
+  <li><b>Thiếu hàng</b> (số yêu cầu so với số được cấp, ca phải hoãn): 0 dòng.</li>
+  <li><b>Quy đổi ĐVT, mã thay thế, mã cũ–mới, VEN, Thông tư 04, TT14:</b> chưa có. Riêng hai tệp mẫu biểu chuẩn có các cột này.</li>
+  <li><b>Lịch sử trước 2024:</b> tài liệu 03 ghi lịch sử "từ 01/2022", nhưng database chỉ có từ 01/2024. Tệp ③ lại có cột "dùng 2023".</li>
+</ul>
+
+<h2>5. Câu hỏi cho em (em trả lời trước, thầy soát sau)</h2>
+<p class="phu">Không cần trả lời hết một lượt. Em chọn câu nào em chắc trước.</p>
+<ol class="cauhoi">
+  <li><b>Danh sách khoa:</b> bệnh viện có danh sách khoa chính thức không, và ai giữ? 62 tên lấy từ HIS có đúng là 62 khoa sẽ đề xuất không?<span class="tra"></span></li>
+  <li><b>Nhóm kỹ thuật:</b> ngoài đời, ai quyết định ba loại găng ở mục 2 là "cùng một nhóm"? Khi khoa đề xuất, khoa nghĩ theo <b>nhóm</b> hay theo <b>từng mã hàng</b>?<span class="tra"></span></li>
+  <li><b>Tệp ③ hợp đồng:</b> lúc dự trù, khoa hoặc PĐD có cần nhìn tồn kho, hàng chưa giao, "đáp ứng được bao nhiêu tháng" không? Nếu cần thì ai cần, ở bước nào?<span class="tra"></span></li>
+  <li><b>398 mã chỉ có cái tên</b> (không tiêu chí, không xuất kho, không hợp đồng): có nên cho khoa thấy trên web không?<span class="tra"></span></li>
+  <li><b>Xuất kho có bằng nhu cầu không?</b> Có lúc khoa cần mà kho không cấp đủ không? Nếu có, "số đã dùng" trên web đang thấp hơn nhu cầu thật.<span class="tra"></span></li>
+</ol>
+
+</main>
+</body>
+</html>

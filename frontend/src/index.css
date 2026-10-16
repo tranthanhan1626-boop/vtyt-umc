@@ -268,6 +268,68 @@
     box-shadow: 0 12px 35px rgba(28, 75, 126, 0.06);
   }
 
+  /* 16/10/2026: cột trái thu thành dải biểu tượng (mặc định ở màn rộng). */
+  .umc-layout.is-thu-gon {
+    grid-template-columns: 4rem minmax(0, 1fr);
+  }
+
+  .umc-sidebar-rail {
+    position: sticky;
+    top: 93px;
+    max-height: calc(100vh - 108px);
+    padding: 0.6rem 0.5rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    overflow-y: auto;
+    border: 1px solid var(--umc-border);
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 12px 35px rgba(28, 75, 126, 0.06);
+  }
+
+  .umc-rail-button {
+    position: relative;
+    display: inline-flex;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    color: var(--umc-blue-dark);
+    transition: background-color 0.15s, color 0.15s;
+  }
+
+  .umc-rail-button:hover {
+    background: var(--umc-sky);
+  }
+
+  .umc-rail-button.is-active {
+    background: var(--umc-blue);
+    color: white;
+  }
+
+  .umc-rail-button.umc-rail-mo {
+    border: 1px solid var(--umc-border);
+    color: #475569;
+  }
+
+  .umc-rail-dem {
+    position: absolute;
+    top: 0.1rem;
+    right: 0.1rem;
+    min-width: 1.1rem;
+    padding: 0 0.25rem;
+    border-radius: 999px;
+    background: #dc2626;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1.1rem;
+    text-align: center;
+  }
+
   .umc-sidebar-heading {
     display: flex;
     margin: -0.1rem 0 1rem;
@@ -1229,6 +1291,11 @@
   .umc-thanh-gio {
     left: calc(max(0px, (100vw - 1600px) / 2) + 18.5rem);
     padding-left: 0.75rem;
+  }
+
+  /* Cột trái thu gọn (4rem thay 16.75rem) → thanh giỏ lùi sang trái theo. */
+  body.menu-thu-gon .umc-thanh-gio {
+    left: calc(max(0px, (100vw - 1600px) / 2) + 5.75rem);
   }
 }
 

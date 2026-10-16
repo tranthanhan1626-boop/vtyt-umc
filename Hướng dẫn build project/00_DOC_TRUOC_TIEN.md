@@ -1,9 +1,19 @@
 # Đọc trước tiên — hệ thống dự trù & đấu thầu VTYT (UMC)
 
-> ## 📍 HIỆN TRẠNG 11/10/2026 — đọc khối này trước
+> ## 📍 HIỆN TRẠNG 16/10/2026 — đọc khối này trước
 >
 > - **Web: https://vtyt-umc.netlify.app.** 🆕 13/10: GitHub = Netlify = commit `e1a8072`, bundle `index-OEQgXgeW.js`
 >   (sửa màn Điều chỉnh tiêu chí: ô sửa mất con trỏ sau 1 chữ + ô nhiều dòng dính chữ; đẩy bằng đường tải lên). Nhánh `phase-a-luong-de-xuat`. Mở trên máy: bấm đúp `MO_WEB.command` → `localhost:4173`.
+> - 🆕 **16/10 — sửa màn vai khoa, CHỈ commit trong máy (chưa push, Netlify vẫn bản 13/10):** đi từ dữ liệu nền
+>   ở `Làm lại 16-10-2026/`, rồi làm chung với chủ dự án qua Chrome trên `localhost:4173` (tài khoản khoa GMHS):
+>   màn chính ghi Bước 1 chọn gói → Bước 2 gói con → Bước 3 đề xuất (đang làm = cam, xong = xanh lá nhạt);
+>   logo góc trái và nút "← Trang chính" để về màn chính; cột trái mặc định thu thành dải biểu tượng (cả hai vai);
+>   **gói con chỉ chứa nhóm thuộc gói đó** (`vat_tu.goi`) ∩ nhóm khoa đã dùng; nhóm chưa ghi gói (168 nhóm /
+>   1.115 mã, vd 69538) dồn về trang **"Gói chưa phân"** chỉ xem + tải Excel; **1 giỏ = 1 gói con** (QĐ 07/08, sửa
+>   lỗi giỏ dùng chung cả đợt và lỗi lúc Gửi gán mọi món vào gói con đang xem); biểu tượng giỏ trên thanh đầu
+>   (số đỏ = số gói con còn giỏ chưa gửi); màn Đề xuất hiện mã hàng dưới tên nhóm, ba bước luôn hiện đủ, có
+>   nút "Tiếp theo"; qua bước ③ Xác nhận thì hiện nút to "Mở Danh mục đề xuất của khoa". **Tạm ẩn** (công tắc
+>   trong mã): Sổ thiếu hàng của khoa, thanh tiến trình ở màn chính khoa.
 > - 🆕 **13/10 — dữ liệu thử giữ lại cho demo 14/10:** 2 đề nghị [THỬ] của `dvsd1@` (Phòng mổ) đang chờ duyệt — một
 >   đề xuất mã mới "[THỬ] Băng dán cố định kim luồn", một đề nghị sửa tiêu chí mã hàng 66464. ĐỪNG bấm Duyệt (ghi vào
 >   danh mục thật). Ảnh chụp: `Test và hướng dẫn 10-10-2026/Anh chup 13-10 de nghi va duyet/`. Câu hỏi chờ chủ dự án:
@@ -273,6 +283,7 @@ mục 4b.
 | `.scratch/ra-thi-giac-05-10/` (KE_HOACH = QĐ Q-A…Q-F, DANH_SACH 40 lỗi, KIEM_DINH_DOC_LAP, KIEM_LAI_VONG2, 118 ảnh) | hồ sơ rà + sửa thị giác 05/10 | không sửa; ảnh không commit |
 | `Cải tiến 03-10-2026/` (đọc `00_DOC_TRUOC.md` trong đó; `huong-dan-test/HUONG_DAN_BAM_THU.html`) | hồ sơ đợt cải tiến giao diện 03/10 (16 quy tắc, bản vẽ, hướng dẫn bấm thử có ảnh) | không sửa; chỉ trên máy, không đưa git (chủ dự án chọn) |
 | `.scratch/don-dep-05-10/BAO_CAO_TONG_KET.md` | báo cáo đợt dọn chuẩn bị demo 14/10 | không sửa |
+| `Làm lại 16-10-2026/` (`01_BAN_DO_DU_LIEU_NGUON.md`, `02_DU_LIEU_NEN.html`, `03_BAI_TOAN_KHOA_LINH_KHAC_KHOA_DE_XUAT.md`) | hồ sơ đợt "làm lại tử tế" từ 16/10: bản đồ tệp nguồn, toàn bộ dữ liệu nền đọc từ DB thật, bài toán GMHS lĩnh hộ khoa mổ | nhịp: chủ dự án điền trước, Claude soát; chỉ chủ dự án ký "xong" |
 
 ## Tài liệu gốc (giữ, không dọn)
 
@@ -299,9 +310,22 @@ mục 4b.
 10. Chín câu hỏi gom 05/10 (Tim mạch/P06–P07 ảnh cũ, trang "Giỏ rớt của các khoa", câu trống màn Theo dõi chuyển tiếp vs Q09, màn khoa gõ đề xuất còn cuộn ở 1440, cột "SL 5 tháng" cạnh Khoảng thường dùng, dòng số 0 khoa tự sửa, tô đỏ theo mã/nhóm): `.scratch/don-dep-05-10/BAO_CAO_TONG_KET.md` phần 2.
 12. **Mười câu hỏi nghiệp vụ sau đợt test 10/10** (`Test và hướng dẫn 10-10-2026/BAO_CAO_TONG_KET.md` mục 5, câu 4–13): chỗ nhập giao hàng cho màn Tiến độ sử dụng · mô tả kỹ thuật sai của mã 53452 và 66999 · bắt lý do khi mức thường dùng = 0 · chốt trình ký có cần "Xác nhận rớt" trước · mã "không còn nhu cầu" vẫn trong giỏ · trạng thái ở màn Theo dõi chuyển tiếp · nhắc mã khoa bỏ khỏi giỏ · hộp hỏi lại khi chốt số · cột Giải trình · khoảng thường dùng lệch nhẹ giữa hai màn. Kèm câu 3: Excel chính thức giữ dòng "↪ đã đổ" hay chuyển cột riêng.
 13. Lỗi nhẹ chưa vá từ kiểm định 10/10: ô Tim mạch ở Bàn điều hành xuống 3 dòng (1440×900); ca hiếm khoa dồn cả nhóm lẫn ĐVT vào một mã trong giỏ bổ sung (`.scratch/test-10-10/KIEM_DINH_DOC_LAP.md` M4, M6).
+14. **Sau buổi 16/10 (vai khoa):** commit chỉ trong máy — muốn lên web thì push kèm `[skip netlify]` rồi đẩy
+    bằng đường tải lên. Chưa bấm thử phía PĐD (thẻ "Gói chưa phân" cả viện, dải biểu tượng PĐD). Chưa thử
+    **Gửi thật** với giỏ theo gói con (gửi sẽ ghi đề xuất thật). Giỏ nháp khoa GMHS đợt 211 còn 3 nhóm Dùng
+    chung do chủ dự án thêm lúc thử. Thanh 5 bước ở màn Đề xuất chưa đổi sang quy ước cam/xanh lá nhạt.
+15. **168 nhóm chưa phân gói** (mã không có trong `database/thong tin vat tu y te tieu hao.xlsx`): chủ dự án tải
+    Excel ở trang "Gói chưa phân", nhờ tổ VTYT điền cột Gói; có kết quả thì Claude ghi vào `vat_tu.goi` (ghi DB —
+    hỏi trước). Hết nhóm thì mục "Chưa phân gói" tự ẩn.
+16. Hai công tắc đang TẮT, bật lại khi cần: Sổ thiếu hàng của khoa (`ManChaoKhoa.jsx` lọc `thieuhang` +
+    `App.jsx` chặn route) · thanh tiến trình màn chính khoa (`HIEN_THANH_TIEN_TRINH` đầu `ManChaoKhoa.jsx`).
 11. `backend/scripts/sao_luu.py` đặt thư mục theo ngày → sao lưu hai lần cùng ngày ghi đè; nên thêm giờ vào tên thư mục.
 
 ## Ghi chú sửa
+
+- 16/10/2026 — hỏi chủ dự án "nhóm chưa phân gói hiện ở đâu" chỉ kèm con số, không kèm ví dụ → chủ dự án chọn "hiện ở mọi gói con", trụ chân răng 69538 lọt vào Dùng chung → hỏi quyết định nghiệp vụ phải kèm một ví dụ thật (tên món, mã hàng) hoặc hình minh hoạ cái màn sẽ trông ra sao.
+- 16/10/2026 — bấm thử nút Tải Excel nhưng chặn tệp trong trình duyệt, lại báo "đã tải thử và mở ra" → chủ dự án tìm trong Tải về không thấy → nói rõ "bấm thử, bắt tệp trong trình duyệt, không lưu vào máy"; muốn có tệp thật thì hỏi rồi tải thật.
+- 16/10/2026 — đề xuất "một giỏ chung cho mọi gói con" trái QĐ 07/08 "1 giỏ = 1 gói con" ghi sẵn trong chú thích `Function1.jsx` → trước khi đề xuất cách sửa một luồng, đọc chú thích QĐ cũ quanh đoạn mã đó và `06_DUNG_LAM_LAI.md`.
 
 - 11/10/2026 — chụp ảnh slide trong lúc web còn lỗi, sửa xong phải chụp lại 24 ảnh (thêm ~0,4 triệu token) → sửa lỗi xong rồi mới chụp ảnh cho slide; nếu buộc chụp song song thì chừa một gói con trống để chụp lại.
 - 11/10/2026 — đặt tên patch SQL theo trí nhớ, suýt trùng `zzzzzzzi/j/k` đã có → `ls backend/sql | grep -E "^(patch|rollback)_"` xem tên cuối trước khi đặt tên mới.
@@ -314,6 +338,8 @@ mục 4b.
 - 05/10/2026 — viết hướng dẫn sửa Supabase bằng tên mục kỹ thuật ("Site URL", "Redirect URLs"), chủ dự án không hiểu phải hỏi lại → việc chủ dự án phải tự làm trên trang quản trị thì giải thích bằng lời thường (để làm gì, không làm thì sao) và đề nghị làm giúp qua Chrome trước, không đưa thẳng tên mục kỹ thuật.
 
 ## Nhật ký chốt
+
+- 16/10/2026 — Buổi sửa màn vai khoa làm chung qua Chrome (xem khối Hiện trạng 16/10): 8 tệp mã nguồn (3 tệp mới `GioTrenDau.jsx`, `NhomChuaPhanGoi.jsx`, `lib/nhomChuaPhanGoi.js`), build + bấm thử phía khoa GMHS; commit trong máy `[skip netlify]`, KHÔNG push, Netlify không đổi. Xếp `Làm lại 16-10-2026/` vào Tệp kết quả. Vào Thùng rác: 31 ảnh chụp kiểm thử + 3 tệp lệnh tạm của phiên (ngoài thư mục dự án) — ~2,5 MB.
 
 - 11/10/2026 — Chốt đợt test trọn vòng hai vai + slide 33 trang: 18 lỗi giao diện sửa, 3 patch SQL chạy, Netlify đẩy bằng đường tải lên, commit `af486c8`/`fac33f1` `[skip netlify]`; DB dọn đợt test, chỉ còn đợt 211 mở. Bản 48 trang 05/10 mất khỏi máy → thôi dùng, slide 33 trang thay. Vào Thùng rác (`.scratch/test-10-10/`): thư viện dựng slide `.venv`, bản xuất thử `render/` `xem/` `build/`, ảnh xem nhanh, 24 ảnh cũ `anh/_cu`, Excel tạm `tmp/`, biên lai Higgsfield, `backend/.pytest_cache` — ~332 MB.
 

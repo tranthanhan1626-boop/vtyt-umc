@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Search, ChevronDown, ChevronLeft, Check, ChevronRight, AlertTriangle, ShoppingCart, X, MoreHorizontal, ArrowUp } from "lucide-react";
+import { Search, ChevronDown, ChevronLeft, Check, ChevronRight, AlertTriangle, ShoppingCart, X, MoreHorizontal, ArrowUp, ClipboardCheck } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import CanhBaoMaTrungDot from "./CanhBaoMaTrungDot";
 import ChartDongBo, { BarChartNam, LegendItem, fmt, kyHieuNam, mauNam } from "../components/ChartDongBo";
@@ -9,6 +9,7 @@ import { danhGiaSoLuong } from "../lib/congThucSoLuong";
 import { tinhTuyChonMuaThem30 } from "../lib/tuyChonMuaThem";
 import { docGioDeXuat, ghiGioDeXuat } from "../lib/gioDeXuat";
 import { GOI_ID_MAP, goiConCuaDot } from "../lib/cotChuan";
+import { SU_KIEN_GIO_DOI } from "../components/GioTrenDau";
 import {
   gopLichSuTheoMaQuanLy,
   gopThieuTheoMaQuanLy,
@@ -404,10 +405,11 @@ export function FormNhomKyThuat({ giaTri, doiGiaTri, onLuu, onHuy, dangLuu, loi,
 
 /** Số thứ tự bước ①②③ ở đầu mỗi khối của màn đề xuất. */
 function SoBuoc({ so, trangThai = "dang" }) {
-  // dang = xanh UMC (đang làm) · xong = xanh lá ✓ · chua = xám mờ (G15).
-  const lop = trangThai === "xong" ? "bg-emerald-600 text-white"
+  // dang = cam (đang làm) · xong = xanh lá ✓ · chua = xám mờ. Màu em chốt
+  // 16/10/2026, cùng quy ước Bước 1-2-3 ở màn chính.
+  const lop = trangThai === "xong" ? "bg-green-600 text-white"
     : trangThai === "chua" ? "border border-slate-300 bg-white text-slate-400"
-    : "bg-umc-600 text-white";
+    : "bg-orange-600 text-white";
   return (
     <span aria-hidden className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold ${lop}`}>
       {trangThai === "xong" ? <Check size={15} strokeWidth={3} /> : so}
@@ -448,6 +450,7 @@ export default function Function1({
   dsDot = [],
   dangTaiDot = false,
   dotIdKhoiTao = null,
+  moGioKhoiTao = null,
 }) {
   const [dsNhom, setDsNhom] = useState([]);          // [{ma_quan_ly, ten_quan_ly, so_ma_hang}]
   const [dsVatTu, setDsVatTu] = useState([]);        // kết quả tìm mã hàng ở server
@@ -462,7 +465,10 @@ export default function Function1({
   const [nhapLieu, setNhapLieu] = useState({});
   const [banNhapNhom, setBanNhapNhom] = useState({});
   const [loiNhapNhom, setLoiNhapNhom] = useState("");
-  const [moGio, setMoGio] = useState(false);
+  const [moGio, setMoGio] = useState(!!moGioKhoiTao);
+  // Bấm "Mở giỏ để gửi" ở biểu tượng giỏ thanh đầu → mở sẵn ngăn giỏ (mỗi lần
+  // bấm là một mốc thời gian mới nên mở lại được cả khi đang đứng ở màn này).
+  useEffect(() => { if (moGioKhoiTao) setMoGio(true); }, [moGioKhoiTao]);
   // Bộ quy đổi là lựa chọn của ĐVSD cho RIÊNG lần đề xuất đang soạn. Không ghi
   // ngược vào danh mục toàn viện; snapshot sẽ đi cùng từng dòng khi gửi giỏ.
   const [formQuyDoi, setFormQuyDoi] = useState({ dvtChuan: "", heSoTheoDvt: {} });
@@ -656,6 +662,66 @@ export default function Function1({
     (async () => { setLoading(true); await taiDsNhom(); setLoading(false); })();
   }, [taiDsNhom]);
 
+  // --- Gói con của từng nhóm (em chốt 16/10/2026) ---------------------------
+  // Gói con chỉ chứa nhóm THUỘC gói con đó (vat_tu.goi), giao với nhóm khoa đã
+  // dùng. Map<ma_quan_ly, Set<goi>> — chỉ đếm mã đã ghi gói. Ba luật em chốt:
+  //   - nhóm chưa phân gói nào (Set rỗng) → KHÔNG hiện ở gói con thật nào, dồn
+  //     về trang "Gói chưa phân" chỉ xem (sửa lại 16/10 sau khi em thấy mã
+  //     69538 trụ chân răng lọt vào Dùng chung; xem lib/nhomChuaPhanGoi.js);
+  //   - nhóm lẫn vài mã chưa ghi gói → vẫn theo gói của các mã đã ghi, mở ra
+  //     hiện CẢ nhóm (danh sách mã hàng không lọc);
+  //   - tick "Hiện cả nhóm khoa chưa dùng" → toàn bộ danh mục, không lọc gói.
+  // Lỗi tải → null = không lọc gói, thà hiện thừa còn hơn hiện rỗng.
+  const [goiCuaNhom, setGoiCuaNhom] = useState(null);
+  // 16/10/2026: danh sách trái hiện MÃ HÀNG dưới tên nhóm (khoa quen mã hàng
+  // hơn mã quản lý — em chốt hiện HẾT mã). Map<ma_quan_ly, ma_hang[]>.
+  const [maHangCuaNhom, setMaHangCuaNhom] = useState(null);
+  useEffect(() => {
+    let huy = false;
+    (async () => {
+      const { data, error } = await fetchAllRows(
+        (f, t) => supabase.from("vat_tu").select("ma_hang, ma_quan_ly, goi").range(f, t),
+        { order: "ma_hang" },
+      );
+      if (huy) return;
+      if (error || !data) { setGoiCuaNhom(null); return; }
+      const m = new Map();
+      const mh = new Map();
+      data.forEach((r) => {
+        if (!r.ma_quan_ly) return;
+        if (!m.has(r.ma_quan_ly)) { m.set(r.ma_quan_ly, new Set()); mh.set(r.ma_quan_ly, []); }
+        if (r.goi) m.get(r.ma_quan_ly).add(r.goi);
+        mh.get(r.ma_quan_ly).push(r.ma_hang);
+      });
+      setGoiCuaNhom(m);
+      setMaHangCuaNhom(mh);
+    })();
+    return () => { huy = true; };
+  }, []);
+  // Tên gói con khớp chuỗi trong vat_tu.goi ("Dùng chung", "GMHS"…). Chỉ gói
+  // 18 tháng chia gói con theo loại hàng; bổ sung/chỉ định không lọc.
+  const tenGoiLoc = goi === "dau_thau_rong_rai" ? (GOI_ID_MAP[goiIdDanhMuc]?.goi || null) : null;
+
+  // Gói con THẬT của một món trong giỏ (16/10/2026). QĐ 07/08/2026 "1 giỏ = 1
+  // gói con" (em nhắc lại 16/10): mỗi gói con một giỏ riêng, Gửi ở gói con nào
+  // chỉ gửi giỏ gói con đó. Giỏ nháp vẫn lưu MỘT dòng gio_nhap / khoa × đợt
+  // nên màn LỌC theo gói con; món mang `goiGio` = gói con lúc bỏ vào giỏ.
+  //   - nhóm thuộc đúng 1 gói → gói đó (kể cả mã trong nhóm chưa ghi gói);
+  //   - nhóm vắt nhiều gói → gói của chính mã, mã trống theo gói lúc bỏ vào;
+  //   - nhóm chưa phân gói (vào giỏ được khi tick "hiện cả nhóm chưa dùng")
+  //     → gói con lúc bỏ vào giỏ.
+  const tenGoiCuaMon = useCallback((maQuanLy, goiCuaMa, goiGio = null) => {
+    if (goi !== "dau_thau_rong_rai") return goiCuaMa || null;
+    const ds = goiCuaNhom?.get(maQuanLy);
+    if (ds && ds.size === 1) return [...ds][0];
+    if (ds && ds.size > 1) return goiCuaMa || (goiGio && ds.has(goiGio) ? goiGio : [...ds][0]);
+    return goiCuaMa || goiGio || tenGoiLoc;
+  }, [goi, goiCuaNhom, tenGoiLoc]);
+  const laMonGoiDangXem = useCallback(
+    (n) => goi !== "dau_thau_rong_rai" || tenGoiCuaMon(n.ma_quan_ly, n.goi, n.goiGio) === tenGoiLoc,
+    [goi, tenGoiCuaMon, tenGoiLoc],
+  );
+
   // Mã hàng khớp từ khoá — tìm Ở SERVER, KHÔNG tải sẵn cả 2218 mã lúc mở trang.
   // Trước đây tải hết để lọc client: 3 lượt gọi TUẦN TỰ (offset 0/1000/2000,
   // lượt sau phải chờ lượt trước) ≈ 1,5s mỗi lần mở trang, dù đa số lần người
@@ -840,20 +906,9 @@ export default function Function1({
     return () => { huy = true; };
   }, [maHangTrongNhom, khoaHienTai, toanVien]);
 
-  const soMaDangTamAn = useMemo(() => {
-    const tap = new Set(maDangChoDiThau);
-    Object.entries(nhapLieu).forEach(([maHang, nd]) => {
-      if (Number(nd?.soLuong) > 0) tap.add(maHang);
-    });
-    return tap.size;
-  }, [maDangChoDiThau, nhapLieu]);
   const nhomTrongGio = useMemo(
     () => new Set(Object.values(nhapLieu).map((n) => n.ma_quan_ly).filter(Boolean)),
     [nhapLieu],
-  );
-  const soNhomDangTamAn = useMemo(
-    () => new Set([...nhomDangChoDiThau, ...nhomTrongGio]).size,
-    [nhomDangChoDiThau, nhomTrongGio],
   );
 
   // Tìm theo mã/tên nhóm kỹ thuật LẪN mã/tên vật tư (mã hàng) — gõ mã hàng
@@ -861,15 +916,32 @@ export default function Function1({
   // Danh mục nhóm SAU KHI lọc theo khoa. Toàn viện hoặc tick "hiện cả mã chưa
   // từng dùng" => không lọc. nhomCuaKhoa=null (chưa tải xong / thiếu view) cũng
   // không lọc, thà hiện thừa còn hơn hiện rỗng làm người dùng tưởng mất dữ liệu.
-  const dsNhomHienThi = useMemo(() => {
-    const chuaKhoa = dsNhom.filter(
-      (n) => !nhomTrongGio.has(n.ma_quan_ly) && !nhomDangChoDiThau.has(n.ma_quan_ly)
-    );
-    if (toanVien || hienCaChuaDung || !nhomCuaKhoa) return chuaKhoa;
-    return chuaKhoa.filter((n) => nhomCuaKhoa.has(n.ma_quan_ly));
-  }, [
-    dsNhom, nhomCuaKhoa, toanVien, hienCaChuaDung, nhomTrongGio, nhomDangChoDiThau,
-  ]);
+  // 16/10/2026: tách "thuộc danh sách gói con đang xem" khỏi "đang tạm ẩn" để
+  // dòng "N nhóm đã vào giỏ hoặc đã gửi — tạm ẩn" chỉ đếm nhóm của gói con này
+  // (em thấy Tim mạch báo 4 nhóm tạm ẩn mà cả 4 là của Dùng chung).
+  const thuocDanhSach = useCallback((n) => {
+    if (toanVien || hienCaChuaDung || !nhomCuaKhoa) return true;
+    if (!nhomCuaKhoa.has(n.ma_quan_ly)) return false;
+    if (!tenGoiLoc || !goiCuaNhom) return true;
+    const ds = goiCuaNhom.get(n.ma_quan_ly);
+    return !!ds && ds.has(tenGoiLoc);
+  }, [toanVien, hienCaChuaDung, nhomCuaKhoa, tenGoiLoc, goiCuaNhom]);
+  const dangTamAn = useCallback(
+    (n) => nhomTrongGio.has(n.ma_quan_ly) || nhomDangChoDiThau.has(n.ma_quan_ly),
+    [nhomTrongGio, nhomDangChoDiThau],
+  );
+  const dsNhomHienThi = useMemo(
+    () => dsNhom.filter((n) => thuocDanhSach(n) && !dangTamAn(n)),
+    [dsNhom, thuocDanhSach, dangTamAn],
+  );
+  const dsNhomTamAn = useMemo(
+    () => dsNhom.filter((n) => thuocDanhSach(n) && dangTamAn(n)),
+    [dsNhom, thuocDanhSach, dangTamAn],
+  );
+  const soNhomDangTamAn = dsNhomTamAn.length;
+  const soMaDangTamAn = dsNhomTamAn.reduce(
+    (t, n) => t + (maHangCuaNhom?.get(n.ma_quan_ly)?.length || Number(n.so_ma_hang) || 0), 0,
+  );
 
   const nhomLoc = useMemo(() => {
     const dsNhom = dsNhomHienThi;   // che biến ngoài: mọi tìm kiếm bên dưới đều
@@ -1123,6 +1195,7 @@ export default function Function1({
             don_vi: khoaHienTai, dot_id: dotDung.id, loai_mua_sam: goi, noi_dung: next,
           }, { onConflict: "don_vi,dot_id" }).then(({ error }) => {
             if (error) console.warn("Không lưu được giỏ lên server:", error.message);
+            else window.dispatchEvent(new Event(SU_KIEN_GIO_DOI));
           });
         }, 800);
       }
@@ -1259,6 +1332,7 @@ export default function Function1({
         ma_quan_ly: nhomChon,
         ten_quan_ly: nhomDangChon?.ten_quan_ly || "",
         goi: m.goi || null,
+        goiGio: tenGoiLoc,
         soLuongMaQuanLy: tongNhomDeXuat,
         dvtMaQuanLy: dvtChuan,
         heSoQuyDoi: heSo,
@@ -1294,7 +1368,10 @@ export default function Function1({
     datGio((prev) => Object.fromEntries(
       Object.entries(prev).filter(([, n]) => n.ma_quan_ly !== maQuanLy)
     ));
-  const xoaCaGio = () => datGio(() => ({}));
+  // Xoá cả giỏ = chỉ giỏ của gói con đang xem; giỏ gói con khác giữ nguyên.
+  const xoaCaGio = () => datGio((prev) => Object.fromEntries(
+    Object.entries(prev).filter(([, n]) => !laMonGoiDangXem(n))
+  ));
   // Xóa cả giỏ phải HỎI LẠI (G12, lỗi 03/10): trước đây bấm là xoá ngay.
   const [hoiXoaGio, setHoiXoaGio] = useState(false);
   const [moMenuGio, setMoMenuGio] = useState(false);
@@ -1306,7 +1383,8 @@ export default function Function1({
   // dữ liệu cache thì một số ngoài khoảng cũ có thể lọt qua mà không chọn lý do.
   const gioHang = useMemo(
     () => Object.values(nhapLieu)
-      .filter((n) => Number(n.soLuong) > 0)
+      // Chỉ món của GÓI CON ĐANG XEM (1 giỏ = 1 gói con, QĐ 07/08/2026).
+      .filter((n) => Number(n.soLuong) > 0 && laMonGoiDangXem(n))
       .map((n) => {
         if (Number(n.soLuongMaQuanLy) > 0) return n;
         if (!CO_GOI_Y_SO_LUONG(goi)) {
@@ -1334,7 +1412,7 @@ export default function Function1({
           ghiChu: ngoaiKhoang ? n.ghiChu : "",
         };
       }),
-    [nhapLieu, goi, lichSuThang, thieuTheoThang]
+    [nhapLieu, goi, lichSuThang, thieuTheoThang, laMonGoiDangXem]
   );
 
   // Dòng đã nhập số lượng nhưng thiếu gói thầu / kỳ sai / thiếu tên kỹ thuật mới
@@ -1367,7 +1445,8 @@ export default function Function1({
   const gioTheoGoi = useMemo(() => {
     const map = new Map();
     gioHang.forEach((n) => {
-      const tenGoi = tenGoiHienTai;
+      // Ngăn giỏ chia theo gói con THẬT của từng nhóm (cách A, 16/10/2026).
+      const tenGoi = (goi === "dau_thau_rong_rai" && tenGoiCuaMon(n.ma_quan_ly, n.goi, n.goiGio)) || tenGoiHienTai;
       if (!map.has(tenGoi)) map.set(tenGoi, new Map());
       const nhomMap = map.get(tenGoi);
       const maNhom = n.ma_quan_ly || "—";
@@ -1382,7 +1461,7 @@ export default function Function1({
       nhomMap.get(maNhom).dong.push(n);
     });
     return [...map.entries()].map(([ten, nhom]) => [ten, [...nhom.values()]]);
-  }, [gioHang, tenGoiHienTai]);
+  }, [gioHang, tenGoiHienTai, goi, tenGoiCuaMon]);
 
   // ---- THANH TIẾN TRÌNH của khoa (đợt 2, 18/09/2026) ----------------------
   // Chỉ đọc: DOT_GOI của (đợt đang gửi × gói con đang đứng). Số mã trong giỏ
@@ -1397,6 +1476,13 @@ export default function Function1({
     lamMoi: daGui.length,
   });
   const moDanhMucCuaKhoa = () => moDanhMucDeXuat(goiIdDanhMuc, khoaHienTai, dotDung?.id);
+  // 16/10/2026 (em chốt): đã qua bước ③ Xác nhận (gửi xong, giỏ gói con này
+  // trống) thì màn KHÔNG hiện danh sách nhóm nữa mà hiện một nút thật to mở
+  // Danh mục đề xuất của khoa. Muốn gửi thêm thì bấm "Đề xuất thêm nhóm".
+  const [deXuatThem, setDeXuatThem] = useState(false);
+  useEffect(() => { setDeXuatThem(false); }, [goiIdDanhMuc, dotDung?.id]);
+  const buocSauGui = coThanhTienTrinh && !deXuatThem && gioHang.length === 0
+    && ["xac_nhan", "cho_q", "ket_qua"].includes(tienTrinhKhoa?.buocHienTai);
 
   // ---- L1 (bấm thử 03/10/2026): đợt đang chọn server KHÔNG nhận thêm ---------
   // Trigger `fn_gac_pham_vi_dot_goi_v3` trên `proposals` (đọc thẳng định nghĩa
@@ -1516,7 +1602,6 @@ export default function Function1({
     // — ghi đè lên nhãn `goi` tĩnh trên vat_tu (phân loại theo dữ liệu thầu
     // cũ, có thể khác/lẫn gói giữa các mã cùng giỏ). Chỉ áp cho rộng rãi 18T
     // (5 gói con); bổ sung không có khái niệm gói con nên giữ nguyên.
-    const goiGhiDe = goi === "dau_thau_rong_rai" ? (GOI_ID_MAP[goiIdDanhMuc]?.goi || null) : null;
 
     // Một RPC = một transaction PostgreSQL: hoặc lưu đủ mọi mã + lý do +
     // version, hoặc rollback toàn bộ. Không còn tình trạng gửi được nửa giỏ.
@@ -1524,7 +1609,7 @@ export default function Function1({
       ma_hang: nhap.ma_hang,
       so_luong: Math.round(Number(nhap.soLuong)),
       loai_mua_sam: goi,
-      goi: goiGhiDe || nhap.goi || null,
+      goi: tenGoiCuaMon(nhap.ma_quan_ly, nhap.goi, nhap.goiGio) || null,
       tu_thang: Number(nhap.tuThang),
       tu_nam: Number(nhap.tuNam),
       den_thang: Number(nhap.denThang),
@@ -1608,18 +1693,26 @@ export default function Function1({
       ...cu,
       ...gioHang.map((n) => n.ma_quan_ly).filter(Boolean),
     ]));
-    xoaCaGio();
+    // Gửi xong chỉ bỏ các món VỪA GỬI; giỏ của gói con khác còn nguyên.
+    const maVuaGui = new Set(gioHang.map((n) => n.ma_hang));
+    const conLaiSauGui = Object.fromEntries(
+      Object.entries(nhapLieu).filter(([maHang]) => !maVuaGui.has(maHang))
+    );
+    const conGioKhac = Object.values(conLaiSauGui).some((n) => Number(n?.soLuong) > 0);
+    datGio(() => conLaiSauGui);
     // L7 (test 10/10/2026): gửi xong thì đóng ngăn giỏ — để mở thì khoa thấy
     // "0 nhóm" và nút Gửi mờ, tưởng chưa gửi được.
     setMoGio(false);
     setNhomCanChonDvt([]);
     // L14: mã rớt vừa gửi ở đợt bổ sung → nhãn đỏ menu / trang chính đếm lại.
     baoGioRotDoi();
-    if (dotDung?.id && khoaHienTai) {
+    if (dotDung?.id && khoaHienTai && !conGioKhac) {
       // Giỏ là BẢN NHÁP nên xoá được (khác QĐ-11) — nội dung thật đã nằm ở
-      // proposals, không mất dấu vết. Không xoá thì lần sau mở lại thấy giỏ cũ.
+      // proposals, không mất dấu vết. Còn giỏ gói con khác thì KHÔNG xoá dòng
+      // (datGio ở trên đã ghi phần còn lại).
       await supabase.from("gio_nhap").delete()
         .eq("don_vi", khoaHienTai).eq("dot_id", dotDung.id);
+      window.dispatchEvent(new Event(SU_KIEN_GIO_DOI));
     }        // gửi xong dọn giỏ (cả storage), tránh gửi trùng lần 2
     setDangLuu(false);
   };
@@ -1837,8 +1930,27 @@ export default function Function1({
         )}
       </div>
 
+      {buocSauGui && (
+        <div className="pb-28">
+          <section className="flex min-h-[24rem] flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center">
+            <p className="text-2xl font-bold text-umc-900">Khoa đã gửi đề xuất {tenGoiCon || tenGoi}</p>
+            <p className="mt-2 max-w-xl text-base text-slate-600">{tienTrinhKhoa?.viecTiepTheo}</p>
+            <button type="button" onClick={moDanhMucCuaKhoa}
+              className="mt-8 inline-flex min-h-[4.5rem] items-center gap-3 rounded-2xl bg-orange-600 px-10 text-2xl font-bold text-white shadow-[0_12px_30px_rgba(234,88,12,0.35)] transition-colors hover:bg-orange-700">
+              <ClipboardCheck size={30} aria-hidden />
+              Mở Danh mục đề xuất của khoa
+              <ChevronRight size={28} aria-hidden />
+            </button>
+            <button type="button" onClick={() => setDeXuatThem(true)}
+              className="mt-6 text-sm font-medium text-umc-700 underline-offset-4 hover:underline">
+              Còn thiếu món? Đề xuất thêm nhóm
+            </button>
+          </section>
+        </div>
+      )}
+
       {/* pb-28: chừa chỗ cho thanh giỏ dính đáy màn. */}
-      <div className={`grid grid-cols-12 gap-5 ${toanVien ? "" : "pb-28"}`}>
+      <div className={`grid grid-cols-12 gap-5 ${toanVien ? "" : "pb-28"} ${buocSauGui ? "hidden" : ""}`}>
       {/* Cột trái: tìm nhóm. DÍNH khi cuộn, tự co theo khung nhìn (lỗi N1, VỪA-5). */}
       <div className={`col-span-12 lg:col-span-4 space-y-3 lg:sticky lg:top-24 lg:self-start lg:flex lg:flex-col ${toanVien ? "lg:max-h-[calc(100vh-7rem)]" : "lg:max-h-[calc(100vh-11.5rem)]"}`}>
         {chonDuocDonVi && (
@@ -1885,11 +1997,13 @@ export default function Function1({
             {tuKhoa.trim()
               ? `${nhomLoc.length} nhóm khớp`
               : !toanVien && nhomCuaKhoa && !hienCaChuaDung
-                ? `${dsNhomHienThi.length} nhóm khoa đã dùng`
+                ? `${dsNhomHienThi.length} nhóm khoa đã dùng${tenGoiLoc && goiCuaNhom ? ` thuộc gói ${tenGoiLoc}` : ""}`
                 : `${dsNhomHienThi.length} nhóm`}
             {!toanVien && nhomCuaKhoa && !hienCaChuaDung && (
               <NutGiaiThich nhan="Danh sách đang lọc theo khoa">
-                Danh sách chỉ hiện nhóm khoa đã từng dùng (cả viện có {fmt(dsNhom.length)} nhóm). {SO_NHOM_MOI_TRANG} nhóm mỗi trang.
+                Danh sách chỉ hiện nhóm khoa đã từng dùng
+                {tenGoiLoc && goiCuaNhom ? <> và thuộc gói <b>{tenGoiLoc}</b> (nhóm chưa phân gói nằm riêng ở mục &quot;Gói chưa phân&quot;, chỉ xem)</> : null}
+                {" "}(cả viện có {fmt(dsNhom.length)} nhóm). {SO_NHOM_MOI_TRANG} nhóm mỗi trang.
               </NutGiaiThich>
             )}
           </p>
@@ -1911,8 +2025,10 @@ export default function Function1({
                 }`}>
                 {/* G8: tên trước (to, đậm), mã sau (nhỏ, xám). */}
                 <div className="line-clamp-2 text-[15px] font-semibold leading-snug text-slate-900" title={n.ten_quan_ly}>{n.ten_quan_ly}</div>
-                <div className="mt-0.5 text-[13px] text-slate-500">
-                  <span className="font-mono" title="Mã quản lý">{n.ma_quan_ly}</span> · {n.so_ma_hang} mã hàng
+                <div className="mt-0.5 text-[13px] text-slate-600">
+                  {maHangCuaNhom?.get(n.ma_quan_ly)?.length
+                    ? <>Mã hàng: <span className="font-mono" title={`Mã quản lý ${n.ma_quan_ly}`}>{maHangCuaNhom.get(n.ma_quan_ly).join(" · ")}</span></>
+                    : <><span className="font-mono" title="Mã quản lý">{n.ma_quan_ly}</span> · {n.so_ma_hang} mã hàng</>}
                 </div>
                 {n.maHangKhop && (
                   <div className="mt-1 border-t border-umc-100 pt-1 text-[13px] text-umc-700">
@@ -1967,27 +2083,13 @@ export default function Function1({
               )}
             </div>
 
-            {buoc === 3 ? (
-              // ①② đã xong → gấp chung MỘT dòng ✓ có số; "Sửa" mở lại ô Tổng.
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm">
-                <span className="inline-flex items-center gap-2"><SoBuoc so={1} trangThai="xong" />Đơn vị tính: <b>{dvtHien}</b></span>
-                <span className="inline-flex items-center gap-2">
-                  <SoBuoc so={2} trangThai={tongSo > 0 ? "xong" : "chua"} />
-                  Tổng số: <b>{tongSo > 0 ? `${fmt(tongSo)} ${dvtHien}` : "—"}</b>
-                  <span className="text-[13px] text-slate-500">
-                    · dùng T{nhapNhom.tuThang}/{nhapNhom.tuNam} → T{nhapNhom.denThang}/{nhapNhom.denNam} ({doDaiKyNhom} tháng)
-                  </span>
-                </span>
-                <button type="button" onClick={moBuoc2}
-                  className="ml-auto inline-flex h-9 items-center rounded-md px-3 text-sm font-medium text-umc-700 hover:bg-umc-50">
-                  Sửa
-                </button>
-              </div>
-            ) : (
-              <>
+            {/* 16/10/2026 (em chốt): LUÔN hiện đủ ba thanh ①②③ — bước đang làm
+                viền cam và mở ra, bước xong xanh lá nhạt, chưa tới xám. Bấm vào
+                CẢ thanh để quay lại bước đó; mỗi bước có nút "Tiếp theo". */}
+            <>
                 {/* ① ĐƠN VỊ TÍNH */}
                 {buoc === 1 ? (
-                  <section className="rounded-lg border-2 border-umc-500 bg-white p-4">
+                  <section className="rounded-lg border-2 border-orange-500 bg-white p-4 shadow-[0_0_0_4px_rgba(249,115,22,0.12)]">
                     <div className="flex items-start gap-3">
                       <SoBuoc so={1} />
                       <div className="min-w-0 flex-1">
@@ -2037,9 +2139,17 @@ export default function Function1({
                         Nhập hệ số lớn hơn 0 cho mọi đơn vị còn lại.
                       </p>
                     )}
+                    <div className="mt-3 flex justify-end">
+                      <button type="button" onClick={moBuoc2} disabled={!tinhTrangQuyDoi.hopLe}
+                        className="inline-flex h-10 items-center gap-1.5 rounded-md bg-orange-600 px-4 text-sm font-semibold text-white hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-40">
+                        Tiếp theo: Tổng số <ChevronRight size={16} />
+                      </button>
+                    </div>
                   </section>
                 ) : (
-                  <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2.5">
+                  <button type="button" onClick={() => { setBuoc(1); setCanFocus("heso"); }}
+                    title="Bấm để quay lại bước 1"
+                    className="flex w-full items-center gap-3 rounded-lg border border-green-300 bg-green-50 px-4 py-2.5 text-left transition-colors hover:bg-green-100">
                     <SoBuoc so={1} trangThai="xong" />
                     <span className="min-w-0 flex-1 text-sm">
                       <b className="font-semibold text-slate-900">Đơn vị tính: {dvtHien}</b>
@@ -2050,16 +2160,13 @@ export default function Function1({
                             .map((d) => `1 ${d} = ${fmt(Number(formQuyDoi.heSoTheoDvt?.[d]) || 0)} ${dvtChuan}`).join(" · ")}`}
                       </span>
                     </span>
-                    <button type="button" onClick={() => { setBuoc(1); setCanFocus("heso"); }}
-                      className="inline-flex h-9 items-center rounded-md px-3 text-sm font-medium text-umc-700 hover:bg-umc-50">
-                      Mở
-                    </button>
-                  </div>
+                    <span className="shrink-0 text-sm font-medium text-green-800">Sửa</span>
+                  </button>
                 )}
 
                 {/* ② TỔNG SỐ */}
                 {buoc === 2 ? (
-                  <section className="rounded-lg border-2 border-umc-500 bg-white p-4">
+                  <section className="rounded-lg border-2 border-orange-500 bg-white p-4 shadow-[0_0_0_4px_rgba(249,115,22,0.12)]">
                     <div className="flex items-start gap-3">
                       <SoBuoc so={2} />
                       <div className="min-w-0 flex-1">
@@ -2172,24 +2279,43 @@ export default function Function1({
                         )}
                       </div>
                     )}
+                    <div className="mt-3 flex justify-end">
+                      <button type="button"
+                        onClick={() => { if (tongSo > 0) moBuoc3(); else setLoiNhapNhom("Nhập tổng số cho cả nhóm."); }}
+                        disabled={!tinhTrangQuyDoi.hopLe}
+                        className="inline-flex h-10 items-center gap-1.5 rounded-md bg-orange-600 px-4 text-sm font-semibold text-white hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-40">
+                        Tiếp theo: Chia cho mã hàng <ChevronRight size={16} />
+                      </button>
+                    </div>
                   </section>
+                ) : tongSo > 0 && tinhTrangQuyDoi.hopLe ? (
+                  <button type="button" onClick={moBuoc2} title="Bấm để quay lại bước 2"
+                    className="flex w-full items-center gap-3 rounded-lg border border-green-300 bg-green-50 px-4 py-2.5 text-left transition-colors hover:bg-green-100">
+                    <SoBuoc so={2} trangThai="xong" />
+                    <span className="min-w-0 flex-1 text-sm">
+                      <b className="font-semibold text-slate-900">Tổng số: {fmt(tongSo)} {dvtHien}</b>
+                      <span className="ml-2 text-slate-600">
+                        dùng T{nhapNhom.tuThang}/{nhapNhom.tuNam} → T{nhapNhom.denThang}/{nhapNhom.denNam} ({doDaiKyNhom} tháng)
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-sm font-medium text-green-800">Sửa</span>
+                  </button>
                 ) : (
                   <button type="button" onClick={tinhTrangQuyDoi.hopLe ? moBuoc2 : undefined}
                     disabled={!tinhTrangQuyDoi.hopLe}
-                    className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white/70 px-4 py-2.5 text-left disabled:cursor-default">
+                    className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white/70 px-4 py-2.5 text-left hover:bg-white disabled:cursor-default disabled:hover:bg-white/70">
                     <SoBuoc so={2} trangThai="chua" />
                     <span className="text-sm">
                       <b className="block font-semibold text-slate-500">Tổng số cho cả nhóm</b>
-                      <span className="text-slate-500">Nhập đủ hệ số ở bước 1 trước.</span>
+                      <span className="text-slate-500">{tinhTrangQuyDoi.hopLe ? "Bấm để nhập tổng số." : "Nhập đủ hệ số ở bước 1 trước."}</span>
                     </span>
                   </button>
                 )}
-              </>
-            )}
+            </>
 
             {/* ③ CHIA CHO MÃ HÀNG */}
             {buoc === 3 ? (
-              <section className="rounded-lg border-2 border-umc-500 bg-white p-4">
+              <section className="rounded-lg border-2 border-orange-500 bg-white p-4 shadow-[0_0_0_4px_rgba(249,115,22,0.12)]">
                 <div className="flex items-start gap-3">
                   <SoBuoc so={3} />
                   <div className="min-w-0 flex-1">
@@ -2309,12 +2435,26 @@ export default function Function1({
                       className="w-full rounded-md border border-amber-300 px-3 py-2 text-sm" />
                   </label>
                 )}
+                {!toanVien && !chanGo && (
+                  <div className="mt-3 flex flex-wrap items-center justify-end gap-3">
+                    {loiNhapNhom && <span className="min-w-0 flex-1 text-sm text-red-600">{loiNhapNhom}</span>}
+                    <button type="button" onClick={themMaQuanLyVaoGio}
+                      disabled={!coSchemaMaQuanLy || !tinhTrangQuyDoi.hopLe}
+                      className="inline-flex h-10 items-center gap-1.5 rounded-md bg-orange-600 px-4 text-sm font-semibold text-white hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-40">
+                      <ShoppingCart size={15} /> Thêm cả nhóm vào giỏ <ChevronRight size={16} />
+                    </button>
+                  </div>
+                )}
               </section>
             ) : (
               <button type="button"
                 onClick={tongSo > 0 && tinhTrangQuyDoi.hopLe ? moBuoc3 : undefined}
                 disabled={!(tongSo > 0 && tinhTrangQuyDoi.hopLe)}
-                className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white/70 px-4 py-2.5 text-left hover:bg-white disabled:cursor-default disabled:hover:bg-white/70">
+                title={tongSo > 0 && tinhTrangQuyDoi.hopLe ? "Bấm để sang bước 3" : undefined}
+                className={`flex w-full items-center gap-3 rounded-lg border px-4 py-2.5 text-left disabled:cursor-default ${
+                  motMaHang && daChiaKhop
+                    ? "border-green-300 bg-green-50 hover:bg-green-100"
+                    : "border-slate-200 bg-white/70 hover:bg-white disabled:hover:bg-white/70"}`}>
                 <SoBuoc so={3} trangThai={motMaHang && daChiaKhop ? "xong" : "chua"} />
                 <span className="min-w-0 flex-1 text-sm">
                   <b className={`block font-semibold ${motMaHang && daChiaKhop ? "text-slate-900" : "text-slate-500"}`}>Chia cho mã hàng</b>
@@ -2413,12 +2553,14 @@ export default function Function1({
                   <div className="min-w-0">
                     <h3 className="text-lg font-semibold text-slate-900">Giỏ đề xuất</h3>
                     {/* G5: giỏ KHÔNG có ô chọn đợt — chỉ ghi gửi vào đâu. */}
-                    <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-sm text-slate-600">
-                      <span>{gioTheoNhom.length} nhóm · {gioHang.length} mã hàng</span>
+                    <p className="mt-0.5 text-sm text-slate-600">{gioTheoNhom.length} nhóm · {gioHang.length} mã hàng</p>
+                    {/* 16/10/2026 (em chốt): gói / gói con / đợt chữ to, đỏ nhạt
+                        cho nổi. Giỏ = 1 gói con (QĐ 07/08). */}
+                    <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-sm text-slate-600">
                       {dotDung ? (
                         <>
-                          <span>· gửi vào</span>
-                          <b className="font-semibold text-slate-900">
+                          <span>Gửi vào</span>
+                          <b className="text-lg font-bold text-red-500">
                             {[tenGoi, tenGoiCon, `đợt ${nhanDot(dotDung)}`].filter(Boolean).join(" · ")}
                           </b>
                           <NutGiaiThich nhan="Đổi đợt gửi">Đổi đợt ở dòng đầu màn (chỉ có một chỗ chọn đợt).</NutGiaiThich>
@@ -2440,10 +2582,16 @@ export default function Function1({
                       Giỏ đang trống. Chọn một nhóm, nhập số rồi bấm “Thêm cả nhóm vào giỏ”.
                     </p>
                   ) : (
-                    <div className="space-y-3">
-                      {/* Giỏ = 1 gói con (QĐ 07/08) nên không cần lớp "gói"; vẫn
-                          đi qua `gioTheoGoi` để giữ đúng cách gom như trước. */}
-                      {gioTheoGoi.flatMap(([, dsNhomGoi]) => dsNhomGoi).map((g) => (
+                    <div className="space-y-5">
+                      {/* 16/10/2026: giỏ chung mọi gói con (cách A) → chia phần
+                          theo gói con thật, tiêu đề chữ to đỏ nhạt (em chốt). */}
+                      {gioTheoGoi.map(([tenGoiPhan, dsNhomGoi]) => (
+                      <section key={tenGoiPhan} className="space-y-3">
+                        <h4 className="border-b-2 border-red-200 pb-1 text-lg font-bold text-red-500">
+                          {goi === "dau_thau_rong_rai" ? `Gói con: ${tenGoiPhan}` : tenGoiPhan}
+                          <span className="ml-2 text-sm font-medium text-slate-500">{dsNhomGoi.length} nhóm</span>
+                        </h4>
+                      {dsNhomGoi.map((g) => (
                         <div key={g.ma} className="rounded-lg border border-slate-200 p-3.5">
                           <div className="flex items-start gap-2">
                             <div className="min-w-0 flex-1">
@@ -2471,7 +2619,7 @@ export default function Function1({
                                     <span className="font-mono text-[13px] text-slate-500">{n.ma_hang}</span>
                                   </span>
                                   <span className="shrink-0 text-right">
-                                    <b className="font-mono font-semibold text-slate-900">{fmt(n.soLuong)} {n.dvt}</b>
+                                    <b className="font-mono text-lg font-bold text-green-700">{fmt(n.soLuong)} {n.dvt}</b>
                                     {Number.isFinite(Number(n.soLuongQuyDoi)) && n.soLuongQuyDoi !== null && n.soLuongQuyDoi !== ""
                                       && n.dvt !== n.dvtMaQuanLy && (
                                       <span className="block font-mono text-[13px] text-slate-500">= {fmt(n.soLuongQuyDoi)} {n.dvtMaQuanLy}</span>
@@ -2489,6 +2637,8 @@ export default function Function1({
                               : "Số tính theo đơn vị của từng mã hàng."}
                           </p>
                         </div>
+                      ))}
+                      </section>
                       ))}
                     </div>
                   )}

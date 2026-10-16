@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { ArrowUpRight, ClipboardList, PackageX, Sheet } from "lucide-react";
+import { ArrowUpRight, PackageX, Sheet } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { GOI, GOI_CON, MUC_CHUNG, nhanDot } from "../features/KhungGoiThau";
 import { goiConCuaDot } from "../lib/cotChuan";
 import { moDanhMucDeXuat } from "../lib/moManExcel";
 import { useTienTrinhKhoa } from "../lib/useTienTrinh";
 import ThanhTienTrinh from "./ThanhTienTrinh";
+import { useNhomChuaPhanGoi } from "../lib/nhomChuaPhanGoi";
 
 /*
  * MÀN CHÀO CỦA KHOA (đợt 3, 18/09/2026) — thay "Nghiệp vụ dùng chung" khi khoa
@@ -24,6 +25,10 @@ import ThanhTienTrinh from "./ThanhTienTrinh";
  */
 
 const KHOA_NHO = (khoa) => `vtyt_man_chao_${khoa || ""}`;
+
+// 16/10/2026: em cho TẠM ẨN thanh tiến trình ①–⑤ ở màn chính của khoa. Cần
+// hiện lại thì đổi thành true (màn Đề xuất vẫn giữ thanh của nó).
+const HIEN_THANH_TIEN_TRINH = false;
 
 function docLuaChon(khoa) {
   try {
@@ -48,6 +53,10 @@ export default function ManChaoKhoa({ profile, doiChon, dsDotTheoGoi = {}, dangT
   const [dotId, setDotId] = useState(daNho.dotId || null);
 
   const dsGoiMo = GOI.filter((g) => (dsDotTheoGoi[g.ma] || []).length > 0);
+  // 16/10/2026: nhóm khoa đã dùng nhưng chưa xếp gói con → mục "Chưa phân
+  // gói" chỉ xem cạnh 5 gói con. Hết nhóm thì mục tự ẩn.
+  const { ds: dsChuaPhan } = useNhomChuaPhanGoi(khoa || null, !!khoa);
+  const soNhomChuaPhan = dsChuaPhan?.length || 0;
 
   // Chỉ có MỘT gói đang mở → chọn sẵn. Nhiều gói → khoa tự chọn.
   useEffect(() => {
@@ -107,7 +116,7 @@ export default function ManChaoKhoa({ profile, doiChon, dsDotTheoGoi = {}, dangT
     return () => { huy = true; };
   }, [dot?.id, khoa]);
 
-  const coThanh = !!(khoa && goiId && dot?.id);
+  const coThanh = HIEN_THANH_TIEN_TRINH && !!(khoa && goiId && dot?.id);
   const { tienTrinh, duLieu, dangTai: dangTaiTienTrinh } = useTienTrinhKhoa({
     dotId: coThanh ? dot.id : null,
     goiId,
@@ -141,8 +150,36 @@ export default function ManChaoKhoa({ profile, doiChon, dsDotTheoGoi = {}, dangT
   const soMaRotCho = typeof duLieu?.soMucRotCho === "number" ? duLieu.soMucRotCho : null;
   // QA3 18/09: bỏ thẻ "Giỏ rớt của khoa" — trùng đích với nút lớn "Mã rớt
   // cần xử lý" ngay trên; đường vào vẫn còn ở nút lớn và mục ③ trên menu.
-  const theKhac = MUC_CHUNG.filter((m) => !m.chiPdd && m.ma !== "giorot");
+  // 16/10/2026: em cho TẠM ẨN Sổ thiếu hàng với khoa (mọi lối vào; route trong
+  // App.jsx cũng chặn). Mã màn SoThieuHang giữ nguyên — bật lại thì bỏ điều kiện.
+  const theKhac = MUC_CHUNG.filter((m) => !m.chiPdd && m.ma !== "giorot" && m.ma !== "thieuhang");
   const tenGoiCon = dsGoiCon.find((gc) => gc.ma === goiCon)?.ten;
+
+  // 16/10/2026: ghi rõ thứ tự Bước 1 chọn gói → Bước 2 chọn gói con → Bước 3
+  // đề xuất số lượng. Gói không có gói con thì đề xuất là Bước 2.
+  // Chữ to + màu theo trạng thái (em chốt 16/10): bước ĐANG LÀM màu cam kèm
+  // nhãn "Làm bước này"; bước ĐÃ XONG xanh lá nhạt kèm "Đã xong"; bước chưa
+  // tới để trắng. Cam và xanh lá nhạt chưa mang nghĩa nào khác trên web
+  // (vàng = cảnh báo, đỏ = cần xử lý).
+  const soBuocDeXuat = canGoiCon ? 3 : 2;
+  const buocDang = !goi ? 1 : canGoiCon && !goiCon ? 2 : soBuocDeXuat;
+  const khungBuoc = (so) => `rounded-xl p-3 transition-colors ${
+    so === buocDang ? "border-2 border-orange-500 bg-orange-50 shadow-[0_0_0_4px_rgba(249,115,22,0.18)]"
+    : so < buocDang ? "border border-green-300 bg-green-50"
+    : "border border-slate-200 bg-white"}`;
+  const nhanBuoc = (so, chu) => (
+    <p className="mb-2.5 flex flex-wrap items-center gap-2.5 text-lg font-bold text-umc-900">
+      <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base font-bold text-white ${
+        so === buocDang ? "bg-orange-600" : so < buocDang ? "bg-green-600" : "bg-slate-400"}`}>{so}</span>
+      Bước {so}: {chu}
+      {so === buocDang && (
+        <span className="rounded-full bg-orange-600 px-2.5 py-0.5 text-xs font-semibold text-white">Làm bước này</span>
+      )}
+      {so < buocDang && (
+        <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">✓ Đã xong</span>
+      )}
+    </p>
+  );
 
   const nutChip = (dangChon) => `inline-flex min-h-9 items-center rounded-lg border px-3 text-sm font-medium transition-colors ${
     dangChon
@@ -176,8 +213,8 @@ export default function ManChaoKhoa({ profile, doiChon, dsDotTheoGoi = {}, dangT
 
       <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
         <div className="grid gap-4 lg:grid-cols-[auto_1fr]">
-          <div>
-            <p className="mb-1.5 text-xs font-medium text-slate-600">Gói</p>
+          <div className={khungBuoc(1)}>
+            {nhanBuoc(1, "Chọn gói")}
             <div className="flex flex-wrap gap-2">
               {GOI.map((g) => {
                 const soDot = (dsDotTheoGoi[g.ma] || []).length;
@@ -194,8 +231,8 @@ export default function ManChaoKhoa({ profile, doiChon, dsDotTheoGoi = {}, dangT
             </div>
           </div>
           {canGoiCon && (
-            <div>
-              <p className="mb-1.5 text-xs font-medium text-slate-600">Gói con</p>
+            <div className={khungBuoc(2)}>
+              {nhanBuoc(2, "Chọn gói con")}
               <div className="flex flex-wrap gap-2">
                 {dsGoiCon.map((gc) => (
                   <button key={gc.ma} type="button" onClick={() => { setGoiCon(gc.ma); setDotId(null); }}
@@ -203,6 +240,14 @@ export default function ManChaoKhoa({ profile, doiChon, dsDotTheoGoi = {}, dangT
                     {gc.ten}
                   </button>
                 ))}
+                {goi === "dau_thau_rong_rai" && soNhomChuaPhan > 0 && (
+                  <button type="button" onClick={() => doiChon({ nhom: "chung", man: "chuaphangoi" })}
+                    title="Nhóm khoa đã dùng nhưng chưa xếp gói con — chỉ xem, chưa đề xuất được"
+                    className="inline-flex min-h-9 items-center rounded-lg border border-dashed border-slate-400 bg-slate-50 px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100">
+                    Chưa phân gói
+                    <span className="ml-1.5 text-xs font-normal text-slate-500">· {soNhomChuaPhan} nhóm · chỉ xem</span>
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -219,11 +264,11 @@ export default function ManChaoKhoa({ profile, doiChon, dsDotTheoGoi = {}, dangT
           </label>
         )}
 
-        <div className="mt-4 border-t border-slate-100 pt-4">
+        {HIEN_THANH_TIEN_TRINH && <div className="mt-4 border-t border-slate-100 pt-4">
           {!goi ? (
-            <p className="text-sm text-slate-500">Chọn gói để xem khoa đang ở bước nào.</p>
+            <p className="text-sm text-slate-500">Làm Bước 1: chọn gói ở trên để xem khoa đang ở bước nào.</p>
           ) : !daChonDu ? (
-            <p className="text-sm text-slate-500">Chọn gói con để xem khoa đang ở bước nào.</p>
+            <p className="text-sm text-slate-500">Làm Bước 2: chọn gói con ở trên để xem khoa đang ở bước nào.</p>
           ) : !dot ? (
             <p className="text-sm text-slate-500">
               {dsDotHopLe.length > 1 ? "Chọn đợt để xem tiến trình." : "Gói này chưa mở đợt — chưa có tiến trình để xem."}
@@ -238,7 +283,7 @@ export default function ManChaoKhoa({ profile, doiChon, dsDotTheoGoi = {}, dangT
               nutDi={tienTrinh?.buocHienTai ? DI_TOI[tienTrinh.buocHienTai] : null}
             />
           )}
-        </div>
+        </div>}
       </section>
 
       <div className="grid gap-3 md:grid-cols-3">
@@ -246,12 +291,24 @@ export default function ManChaoKhoa({ profile, doiChon, dsDotTheoGoi = {}, dangT
           // V32 (05/10/2026): đây là việc chính — chưa chọn gói thì chỉ đổi con
           // trỏ, KHÔNG làm mờ cả thẻ (trước đây `disabled:opacity-50` khiến thẻ
           // chính nhạt hơn hai thẻ phụ). Dòng chữ nhỏ trong thẻ đã nói cần chọn gì.
-          className="flex min-h-[5.5rem] items-center gap-3 rounded-xl bg-umc-600 px-5 py-4 text-left text-white shadow-sm transition-colors hover:bg-umc-700 disabled:cursor-not-allowed disabled:hover:bg-umc-600">
-          <ClipboardList size={26} className="shrink-0" />
+          // Bước đề xuất đang làm → cả thẻ màu cam; chưa tới lượt → giữ xanh UMC.
+          className={`flex min-h-[5.5rem] items-center gap-3 rounded-xl px-5 py-4 text-left text-white shadow-sm transition-colors disabled:cursor-not-allowed ${
+            buocDang === soBuocDeXuat
+              ? "bg-orange-600 ring-4 ring-orange-200 hover:bg-orange-700"
+              : "bg-umc-600 hover:bg-umc-700 disabled:hover:bg-umc-600"}`}>
+          <span className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-lg font-bold ${
+            buocDang === soBuocDeXuat ? "text-orange-700" : "text-umc-700"}`}>{soBuocDeXuat}</span>
           <span className="min-w-0">
-            <span className="block text-base font-semibold">Đề xuất số lượng</span>
+            <span className={`flex flex-wrap items-center gap-2 text-sm font-bold uppercase tracking-wider ${
+              buocDang === soBuocDeXuat ? "text-white" : "text-[#9fe6fb]"}`}>
+              Bước {soBuocDeXuat}
+              {buocDang === soBuocDeXuat && (
+                <span className="rounded-full bg-white px-2.5 py-0.5 text-xs font-semibold normal-case tracking-normal text-orange-700">Làm bước này</span>
+              )}
+            </span>
+            <span className="block text-lg font-bold">Đề xuất số lượng</span>
             <span className="block text-[13px] text-white">
-              {daChonDu ? `${GOI.find((g) => g.ma === goi)?.ten}${tenGoiCon ? ` · ${tenGoiCon}` : ""}` : "Chọn gói / gói con ở trên trước"}
+              {daChonDu ? `${GOI.find((g) => g.ma === goi)?.ten}${tenGoiCon ? ` · ${tenGoiCon}` : ""}` : `Làm xong Bước 1${canGoiCon ? " và Bước 2" : ""} ở trên trước`}
             </span>
           </span>
         </button>

@@ -25,6 +25,8 @@ import TienDoSuDung from "./features/TienDoSuDung";
 import ThongBaoChamTienDo from "./features/ThongBaoChamTienDo";
 import SoThieuHang from "./features/SoThieuHang";
 import TrangDungChung, { QuayLaiDungChung } from "./features/TrangDungChung";
+import NhomChuaPhanGoi from "./features/NhomChuaPhanGoi";
+import GioTrenDau from "./components/GioTrenDau";
 import NhomKyThuatCuaKhoa from "./features/NhomKyThuatCuaKhoa";
 import DuyetNhomKyThuat from "./features/DuyetNhomKyThuat";
 import GoiTuyChonMuaThem from "./features/GoiTuyChonMuaThem";
@@ -262,6 +264,7 @@ export default function App() {
     tiendosudung: "Tiến độ sử dụng theo cam kết",
     napdulieu: "Nạp dữ liệu sử dụng",
     duyetmakythuat: "Duyệt mã kỹ thuật khoa đề nghị",
+    chuaphangoi: "Gói chưa phân",
   };
 
   const noiDungChung = chon.man === "ban_dieu_hanh" && xemDuocTongHop
@@ -274,8 +277,10 @@ export default function App() {
     : chon.man === "tongquan"
     ? <TrangDungChung doiChon={setChon} laPdd={xemDuocTongHop} soChoDuyet={soChoDuyet} dotTheoGoi={dotTheoGoi}
         profile={profile} dsDotTheoGoi={dsDotTheoGoi} dangTaiDot={dangTaiDot} loiDot={loiDot} />
-    : chon.man === "thieuhang" ? <SoThieuHang profile={profile} />
+    // 16/10/2026: Sổ thiếu hàng TẠM ẨN với khoa (em chốt) — khoa vào thì về trang chính.
+    : chon.man === "thieuhang" && xemDuocTongHop ? <SoThieuHang profile={profile} />
     : chon.man === "makythuat" ? <NhomKyThuatCuaKhoa profile={profile} />
+    : chon.man === "chuaphangoi" ? <NhomChuaPhanGoi profile={profile} laPdd={xemDuocTongHop} />
     : chon.man === "duyetmakythuat" && xemDuocTongHop ? <DuyetNhomKyThuat />
     : chon.man === "ketquathau" && xemDuocTongHop ? <TongHopKetQuaThau profile={profile} />
     : chon.man === "chuyentiep" && xemDuocTongHop ? <TheoDoiChuyenTiep profile={profile} />
@@ -334,8 +339,16 @@ export default function App() {
               Biểu tượng chữ lồng đứng riêng ở 44px bị bết nét, nên dùng bản
               ngang đã kèm chữ. Vạch dọc ngăn logo tổ chức với tên ứng dụng —
               quy ước chuẩn để không ai hiểu nhầm "VTYT" là một thương hiệu con.
-              Màn hẹp giấu logo, chỉ còn biểu tượng vuông. */}
-          <div className="flex min-w-0 items-center gap-3">
+              Màn hẹp giấu logo, chỉ còn biểu tượng vuông.
+              16/10/2026: cả cụm logo + tên ứng dụng là nút về màn chính (khoa →
+              Trang chính của khoa, PĐD → Bàn điều hành, màn PĐD vào đầu tiên). */}
+          <button
+            type="button"
+            onClick={() => setChon({ nhom: "chung", man: xemDuocTongHop ? "ban_dieu_hanh" : "tongquan" })}
+            className="flex min-w-0 items-center gap-3 rounded-lg text-left"
+            title={xemDuocTongHop ? "Về Bàn điều hành" : "Về Trang chính của khoa"}
+            aria-label={xemDuocTongHop ? "Về Bàn điều hành" : "Về Trang chính của khoa"}
+          >
             <img
               src="/brand/umc-mark.png"
               alt=""
@@ -357,7 +370,7 @@ export default function App() {
                 </span>
               )}
             </div>
-          </div>
+          </button>
 
           <div className="flex items-center gap-2 sm:gap-3">
             {xemDuocTongHop && (
@@ -383,6 +396,12 @@ export default function App() {
               </div>
             </div>
 
+            {/* 16/10/2026: giỏ kiểu Shopee cạnh tên tài khoản — chỉ khoa. */}
+            {!xemDuocTongHop && (
+              <GioTrenDau khoa={profile.khoa}
+                dsDotMo={Object.values(dsDotTheoGoi || {}).flat().map((d) => d.id)}
+                onMoGio={(g) => setChon({ nhom: "goi", man: "de_xuat", ...g, moGio: Date.now() })} />
+            )}
             <HopThuThongBao profile={profile} />
             <ChinhCoHienThi />
             {/* V7 (đợt 3): "Dọn dữ liệu kiểm thử" không đứng cạnh Đăng xuất nữa
@@ -416,9 +435,21 @@ export default function App() {
           dsDotTheoGoi={dsDotTheoGoi} dangTaiDot={dangTaiDot} loiDot={loiDot} laPdd={xemDuocTongHop}
           khoa={profile?.khoa}>
           {chon.nhom === "goi" ? (
-            chon.man === "de_xuat"  ? <Function1 profile={profile} goi={chon.goi} goiCon={chon.goiCon}
-              dot={dotTheoGoi[chon.goi]}
-              dsDot={dsDotTheoGoi[chon.goi] || []} dangTaiDot={dangTaiDot} dotIdKhoiTao={chon.dotId} />
+            // 16/10/2026: màn đề xuất có nút về trang chính ngay trên đầu — menu
+            // trái có mục này nhưng ở màn hẹp menu bị gập, khoa không thấy lối về.
+            chon.man === "de_xuat"  ? (
+              <div className="umc-linked-page">
+                <QuayLaiDungChung
+                  onBack={() => setChon({ nhom: "chung", man: "tongquan" })}
+                  tenGoc={xemDuocTongHop ? "Nghiệp vụ dùng chung" : "Trang chính của khoa"}
+                  tenTrang="Đề xuất số lượng"
+                />
+                <Function1 profile={profile} goi={chon.goi} goiCon={chon.goiCon}
+                  dot={dotTheoGoi[chon.goi]}
+                  dsDot={dsDotTheoGoi[chon.goi] || []} dangTaiDot={dangTaiDot} dotIdKhoiTao={chon.dotId}
+                  moGioKhoiTao={chon.moGio} />
+              </div>
+            )
           : chon.man === "cua_toi" ? (xemDuocTongHop
               ? <DeXuatTongHop
                   profile={profile}

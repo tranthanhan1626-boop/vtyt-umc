@@ -13,6 +13,7 @@ Mọi chữ "go-live giữa T9" hay "01/01/2027" bên dưới là lịch sử, �
 
 ```
 13/10/2026: GitHub = Netlify = e1a8072 · bundle index-OEQgXgeW.js · https://vtyt-umc.netlify.app (2 đề nghị [THỬ] giữ cho demo)
+16/10/2026: sửa màn vai khoa — commit CHỈ TRONG MÁY [skip netlify], chưa push; Netlify vẫn e1a8072 (xem khối 16/10 trong 00_DOC_TRUOC_TIEN.md)
   push lên nhánh phase-a-luong-de-xuat → Netlify TỰ build, tốn 15/300 điểm/tháng (hết điểm = site bị khoá)
   → commit ghi [skip netlify], đẩy web bằng đường tải lên (04 mục "ĐẨY LÊN NETLIFY KHI ĐÃ HẾT CREDITS")
 pytest 404 · test:formula 10 ✓
