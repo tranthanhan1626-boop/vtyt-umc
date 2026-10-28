@@ -341,7 +341,7 @@ mục 4b.
     không đẩy Netlify — em sắp hết điểm). Đã làm: mở ra là Xem nhanh; 15 cột theo thứ tự em đưa; Sản phẩm tham khảo
     = cột lớn 4 cột nhỏ (Công ty · Nước SX · Tên thương mại · TSKT) **để trống**; ô **Điều chỉnh** (sổ xuống chọn
     mục → gõ → Lưu → thành một dòng; mục: Tên mời thầu, Tiêu chí kỹ thuật, SP tham khảo – Tên TM / Hãng SX / Nước SX).
-    Ảnh: `.scratch/xem-nhanh-27-10/`. Em chốt 27/10: không có giá (giữ QĐ 17/08); dòng Điều chỉnh ghi như ô khoa sửa
+    (Ảnh chụp buổi này đã bỏ khi chốt 28/10.) Em chốt 27/10: không có giá (giữ QĐ 17/08); dòng Điều chỉnh ghi như ô khoa sửa
     hiện nay (không bước duyệt); cột ở Xem nhanh giữ chữ gốc. **Còn mở:**
     - 18a. Khung tháng kỳ trước / kỳ này (vd 10/2024 – 4/2026): DB chưa có chỗ lưu — em bổ sung database sau.
     - 18b. Dữ liệu Sản phẩm tham khảo kỳ 2025-2026 trống ở cả 3.327 mã — em bổ sung sau. (File "thông tin vật tư y
@@ -386,7 +386,7 @@ mục 4b.
     tham gia/Chưa đề xuất/Đã xác nhận, cột Xác nhận, nút Nhắc, bộ lọc); Quản lý đợt bỏ bảng chọn khoa; màn Đề xuất bỏ chặn
     "khoa đã xác nhận"; thẻ màn chính khoa đổi "Xem danh mục đề xuất"; chatbot bỏ 5 nút về xác nhận/nhắc khoa, sửa 9 câu.
     Test: test:formula 10/10 OK (sửa tienTrinh + chatbot test), pytest 404 OK (sửa 3 test dò chữ — 1 test đã trượt từ
-    16/10, không do đợt này). Bấm thử phía PĐD: đạt; Danh mục khoa không còn nút xác nhận; bằng tài khoản dvsd1@: màn chính thẻ "Xem danh mục đề xuất", màn Đề xuất thanh 4 bước, "Đề xuất thêm nhóm" mở danh sách không bị chặn (ảnh `.scratch/xem-nhanh-27-10/08–12`). Không gửi đề xuất thật.
+    16/10, không do đợt này). Bấm thử phía PĐD: đạt; Danh mục khoa không còn nút xác nhận; bằng tài khoản dvsd1@: màn chính thẻ "Xem danh mục đề xuất", màn Đề xuất thanh 4 bước, "Đề xuất thêm nhóm" mở danh sách không bị chặn. Không gửi đề xuất thật.
     **Còn mở:** 20a. Bảng `dot_goi_khoa`, `danh_muc_khoa_chot` và các hàm `chot_danh_muc_khoa_v3`/`mo_chot_danh_muc_khoa_v3`/
     `khoa_chua_xac_nhan`/`huy_xac_nhan_theo_ma` còn trong DB nhưng không còn ai gọi để chặn — dọn sau nếu muốn.
     20b. View `v_theo_doi_chuyen_tiep_v3.khoa_da_xac_nhan` từ nay luôn false. 20c. Lời lỗi của `chot_trinh_ky_toan_bo_v3`
@@ -418,12 +418,17 @@ mục 4b.
     cuộn** — lăn xuống thì phần đầu trôi lên, bảng chiếm trọn màn (`lib/useCuonDauTruoc.js`).
     Đã bấm thử: PĐD (tải tệp, 15 nhãn khớp số đếm trước, hai thẻ, không nhảy) + khoa `dvsd2@` (thấy đúng 10 mã RHM,
     RLS trả 35 dòng, không có nút Xoá). **Còn mở:** 21a. Mở thẳng thẻ chào giá thay vì để trống khi mới sổ? (hiện để
-    trống, chọn mới mở — đúng ý em 28/10). 21b. Tệp thử cũ `Test chao gia 28-10-2026/Chao_gia_THU_GMHS.xlsx` không còn
-    dùng (cột cũ). 21c. Bộ dữ liệu thử ở gói con RHM (20 đề xuất, đã chốt số, 46 chào giá) đang nằm trên staging —
+    trống, chọn mới mở — đúng ý em 28/10). 21b. Tệp chào giá thật (nguồn dữ liệu thử) nằm ở Tải về: `~/Downloads/tong_hop_rhm_sau_hdms_23.9(gui pvttb) -
+    Copy.xlsx`, trang TRÌNH KÝ (em chọn để nguyên ở đó, không chép vào dự án). 21c. Bộ dữ liệu thử ở gói con RHM (20 đề xuất, đã chốt số, 46 chào giá) đang nằm trên staging —
     dọn khi em bảo. 21d. Tiêu chí kỹ thuật của công ty chưa có trong tệp chào giá thật — khi có, web so thêm từng ý.
 11. `backend/scripts/sao_luu.py` đặt thư mục theo ngày → sao lưu hai lần cùng ngày ghi đè; nên thêm giờ vào tên thư mục.
 
 ## Ghi chú sửa
+
+- 28/10/2026 — đưa lệnh `! bash backend/scripts/chay_chao_gia_28-10.sh` bằng đường dẫn tương đối; cửa sổ lệnh của em đang
+  đứng ở thư mục khác nên báo "không tìm thấy tệp", em phải gõ lại → luôn đưa đường dẫn ĐẦY ĐỦ bọc ngoặc kép:
+  `! bash "/Users/tranhien/Downloads/0. Collapse with Claude/9.vtyt/backend/scripts/<tệp>.sh"`.
+  (Lỗi "hỏi không kèm ví dụ thật" lặp lần hai 28/10 — đã sửa vào skill `/tiep` bước 2, bỏ dòng ghi chú 16/10.)
 
 - 28/10/2026 — báo em "lưu Điều chỉnh riêng khoa không cần đổi DB" khi chưa đọc trigger của `danh_muc_khoa_o`; bấm thử
   mới lộ `fn_khoa_o_chi_nhan_giai_trinh` chặn (từ 19/08 bảng chỉ nhận giải trình) → trước khi nói "không cần đổi DB" phải
@@ -433,7 +438,6 @@ mục 4b.
   (`jttucjnkqxckphmmilaa`), không phải staging; chốt `assert "ihgfafubwyxnbubmppbj" in url` chặn kịp, chưa ghi gì →
   ghi staging phải dùng `SUPABASE_STAGING_URL` + `SUPABASE_STAGING_SERVICE_ROLE_KEY`, và luôn assert mã project trước khi ghi.
 
-- 16/10/2026 — hỏi chủ dự án "nhóm chưa phân gói hiện ở đâu" chỉ kèm con số, không kèm ví dụ → chủ dự án chọn "hiện ở mọi gói con", trụ chân răng 69538 lọt vào Dùng chung → hỏi quyết định nghiệp vụ phải kèm một ví dụ thật (tên món, mã hàng) hoặc hình minh hoạ cái màn sẽ trông ra sao.
 - 16/10/2026 — bấm thử nút Tải Excel nhưng chặn tệp trong trình duyệt, lại báo "đã tải thử và mở ra" → chủ dự án tìm trong Tải về không thấy → nói rõ "bấm thử, bắt tệp trong trình duyệt, không lưu vào máy"; muốn có tệp thật thì hỏi rồi tải thật.
 - 16/10/2026 — đề xuất "một giỏ chung cho mọi gói con" trái QĐ 07/08 "1 giỏ = 1 gói con" ghi sẵn trong chú thích `Function1.jsx` → trước khi đề xuất cách sửa một luồng, đọc chú thích QĐ cũ quanh đoạn mã đó và `06_DUNG_LAM_LAI.md`.
 
@@ -448,6 +452,8 @@ mục 4b.
 - 05/10/2026 — viết hướng dẫn sửa Supabase bằng tên mục kỹ thuật ("Site URL", "Redirect URLs"), chủ dự án không hiểu phải hỏi lại → việc chủ dự án phải tự làm trên trang quản trị thì giải thích bằng lời thường (để làm gì, không làm thì sao) và đề nghị làm giúp qua Chrome trước, không đưa thẳng tên mục kỹ thuật.
 
 ## Nhật ký chốt
+
+- 28/10/2026 (tối) — Tính năng Chào giá (PĐD tải Excel chào giá, đọc thẳng tệp làm việc bệnh viện; sổ xuống 2 thẻ Chia số trúng · Thông tin chào giá; công ty đúng SP tham khảo sáng xanh; khoa xem cùng bảng) + bảng Tổng hợp/Danh mục khoa cuộn full màn. Patch `zzzzzzzr` + `zzzzzzzs` chạy staging; dữ liệu thử gói con RHM (RHM 10 + GMHS 10 mã, chốt số, 46 chào giá thật). Bấm thử hai vai đạt. Commit `3134aae` `[skip netlify]`, không push. Sửa skill `/tiep` (hỏi phải kèm ví dụ thật). Vào Thùng rác: tệp chào giá thử cũ, ảnh xuất thử slide 33 trang (`build`/`render`/`xem`), cả thư mục `.scratch/huong-dan-de-nghi/` (đồ nghề dựng slide đề nghị 13/10 — pptx/pdf vẫn còn) và `.scratch/xem-nhanh-27-10/` (12 ảnh 27–28/10) theo ý em — ~68 MB.
 
 - 16/10/2026 — Buổi sửa màn vai khoa làm chung qua Chrome (xem khối Hiện trạng 16/10): 8 tệp mã nguồn (3 tệp mới `GioTrenDau.jsx`, `NhomChuaPhanGoi.jsx`, `lib/nhomChuaPhanGoi.js`), build + bấm thử phía khoa GMHS; commit trong máy `[skip netlify]`, KHÔNG push, Netlify không đổi. Xếp `Làm lại 16-10-2026/` vào Tệp kết quả. Vào Thùng rác: 31 ảnh chụp kiểm thử + 3 tệp lệnh tạm của phiên (ngoài thư mục dự án) — ~2,5 MB.
 
