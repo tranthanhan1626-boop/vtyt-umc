@@ -20,6 +20,14 @@ import { taiDeXuatKyTruoc, tooltipKyTruoc, fmtKyTruoc } from "../lib/deXuatKyTru
 import { giaTriKhongDoi } from "../lib/oKhongDoi";
 import { TIEN_TO_DIEU_CHINH, MUC_DIEU_CHINH, COT_SP_THAM_KHAO, docDieuChinh } from "../lib/dieuChinhKhoa";
 import ThanhDauUmc, { useDongKhiRaNgoai, doRongNhanNhom } from "../components/ThanhDauUmc";
+import { taiChaoGia } from "../lib/chaoGia";
+import { useCuonDauTruoc } from "../lib/useCuonDauTruoc";
+import BangChaoGia, { NhanChaoGia } from "../components/BangChaoGia";
+
+// Sản phẩm tham khảo của dòng (cột chính, đã áp PĐD sửa đè) — chuẩn để so chào giá.
+const sptkCuaDong = (r) => ({
+  ten_thuong_mai: r.ten_tm_2627, ky_ma_hieu: r.ma_sp_2627, hang_san_xuat: r.hang_sx_2627, nuoc_san_xuat: r.nuoc_sx_2627,
+});
 
 /*
  * DanhMucDeXuatKhoa — Bản chính thức 34 cột của MỘT khoa (mục 3.2 tài liệu
@@ -468,6 +476,22 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
   const [loiLuuO, setLoiLuuO] = useState("");
   const [oDaSua, setODaSua] = useState(new Map()); // "maHang|cot" -> true
   const [dotGoiId, setDotGoiId] = useState(null);
+  // Chào giá 28/10/2026 — khoa xem (không sửa) các công ty chào giá cho mã
+  // mình đề xuất; RLS chỉ trả mã khoa có trong gói con.
+  const [chaoGia, setChaoGia] = useState(() => new Map());
+  const [moChaoGia, setMoChaoGia] = useState(() => new Set());
+  useEffect(() => {
+    let huy = false;
+    taiChaoGia(supabase, dotGoiId)
+      .then((m) => { if (!huy) setChaoGia(m); })
+      .catch((e) => { if (!huy) setLoiLuuO(dichLoi(e)); });
+    return () => { huy = true; };
+  }, [dotGoiId]);
+  const batChaoGia = (maHang) => setMoChaoGia((cu) => {
+    const moi = new Set(cu);
+    if (moi.has(maHang)) moi.delete(maHang); else moi.add(maHang);
+    return moi;
+  });
   // N12 (kiểm định độc lập lượt 2) — "chốt số đi thầu" (chot_q_phien.hieu_luc)
   // là trạng thái CHỐT có sẵn ở màn Tổng hợp PĐD (TongHopPdd.jsx, state
   // `chot`); màn này trước giờ không đọc nó nên nhãn "Số lượng: sửa được tại
@@ -479,6 +503,11 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
   const [openMenuCot, setOpenMenuCot] = useState(false);
   const [moHienThi, setMoHienThi] = useState(false);
   // QA3 (d): Esc và bấm ra ngoài đóng menu "Hiển thị".
+  // Phần đầu + bảng chung một khung cuộn; lăn xuống thì phần đầu trôi lên trước
+  // (lib/useCuonDauTruoc.js, 28/10/2026 — cùng cách bảng Tổng hợp PĐD).
+  const khungNgoaiRef = useRef(null);
+  const khungBangRef = useRef(null);
+  useCuonDauTruoc(khungNgoaiRef, khungBangRef);
   const refHienThi = useRef(null);
   const dongHienThi = useCallback(() => setMoHienThi(false), []);
   useDongKhiRaNgoai(moHienThi, dongHienThi, refHienThi);
@@ -1364,6 +1393,10 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
         tenMan="Danh mục đề xuất của khoa"
         profile={profile} />
 
+      {/* 28/10/2026 (chủ dự án): phần đầu + bảng chung MỘT khung cuộn dọc, bảng
+          cao đúng bằng khung — cuộn xuống thì phần đầu trôi lên, bảng chiếm trọn
+          màn (lib/useCuonDauTruoc.js). Thanh đầu UMC và chân bảng đứng yên. */}
+      <div ref={khungNgoaiRef} className="flex-1 min-h-0 overflow-y-auto">
       {/* Header + toolbar — gọn lại 18/09/2026 (đợt 3 bố cục): một dòng tiêu
           đề + công cụ, một dòng băng trạng thái. Chỉ còn MỘT nút chính (xác
           nhận). Mọi nút cũ vẫn còn: Tải lại · Ẩn/khóa cột · Nội dung ô nằm
@@ -1564,7 +1597,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
           nằm trong .umc-workspace nên không có lề phải 20px — thẻ trợ giúp
           (ChatbotTroGiup, rộng 20px, dán mép phải) đè chữ ô cuối khi bảng tràn
           hết bề ngang. Chừa đúng 20px (mr-5) ở khung cuộn của bảng. */}
-      <div className="mr-5 flex-1 overflow-auto bg-white">
+      <div ref={khungBangRef} className="mr-5 h-full overflow-auto bg-white">
         <table className={`qtdx-table border-collapse w-max ${dongGon ? "dong-gon" : ""}`}>
           <colgroup>
             {cotTrenManHinh.map((c) => <col key={c.key} style={{ width: c.width }} />)}
@@ -1647,10 +1680,12 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
                 dangChonMaDay={dangChonMaDay} moFormDay={moFormDay} setDangChonMaDay={setDangChonMaDay}
                 ungVienDay={ungVienDay} formDay={formDay} setFormDay={setFormDay}
                 luuDaySL={luuDaySL} dangLuuDay={dangLuuDay} thongBaoDay={thongBaoDay}
-                kyTruoc={kyTruoc} dongDieuChinh={dongDieuChinh} luuDieuChinh={luuDieuChinh} laPdd={laPdd} />
+                kyTruoc={kyTruoc} dongDieuChinh={dongDieuChinh} luuDieuChinh={luuDieuChinh} laPdd={laPdd}
+                dsChaoGia={chaoGia.get(r.ma_hang)} moChaoGia={moChaoGia.has(r.ma_hang)} batChaoGia={batChaoGia} />
             ))}
           </tbody>
         </table>
+      </div>
       </div>
 
       <div className="bg-slate-800 text-slate-300 text-xs px-4 py-1.5 flex items-center justify-between shrink-0">
@@ -1812,6 +1847,7 @@ function RowKhoa({
   ketThucSuaO, oDaSua, xemAudit, oPddSuaDe, phimSuaO,
   dangChonMaDay, moFormDay, setDangChonMaDay, ungVienDay, formDay, setFormDay,
   luuDaySL, dangLuuDay, thongBaoDay, kyTruoc, dongDieuChinh, luuDieuChinh, laPdd,
+  dsChaoGia, moChaoGia, batChaoGia,
 }) {
   const dangRot = !!r.rot;
   const dangMoForm = dangChonMaDay === r.ma_hang;
@@ -1959,6 +1995,10 @@ function RowKhoa({
                       ↩ nhận {fmt(r.nhan_ve)} từ {r.nhan_tu_ma}
                     </span>
                   )}
+                  {c.key === "ten_vt_2627" && dsChaoGia?.length > 0 && (
+                    <NhanChaoGia ds={dsChaoGia} sptk={sptkCuaDong(r)}
+                      onClick={(e) => { e.stopPropagation(); batChaoGia(r.ma_hang); }} />
+                  )}
                   {c.key === "ten_vt_2627" && dangRot && (
                     // CHỈ ĐỂ XEM. Việc đổ số rớt sang mã tương đương là của
                     // Phòng Điều dưỡng, làm trên Danh mục tổng hợp (QĐ D1/D3).
@@ -2012,6 +2052,15 @@ function RowKhoa({
           );
         })}
       </tr>
+      {moChaoGia && dsChaoGia?.length > 0 && (
+        <tr className="row-expand">
+          <td colSpan={cotHienThi.length} className="qtdx-cell" style={{ background: "#f8fafc" }}>
+            <div className="pl-4 pb-2">
+              <BangChaoGia dsCongTy={dsChaoGia} sptk={sptkCuaDong(r)} tsktChuan={r.tskt_2627} />
+            </div>
+          </td>
+        </tr>
+      )}
       {dangMoForm && (
         <tr className="row-expand">
           <td colSpan={cotHienThi.length} className="qtdx-cell" style={{ background: "#fff7ed" }}>

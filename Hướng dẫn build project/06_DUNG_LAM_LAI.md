@@ -29,6 +29,7 @@
 | **Gói bổ sung chia gói con** | Mỗi đợt bổ sung là một gói phẳng | 17/08/2026 |
 | Vai trò `admin` tách khỏi `dieu_duong` | PĐD = admin, cùng quyền | 17/08/2026 |
 | Mọi cột giá | Bỏ hẳn | 17/08/2026 |
+| **Mọi cột giá — ngoại lệ Chào giá** | Cột **Đơn giá chào (VNĐ)** trong bảng `chao_gia_v3`, PĐD và khoa đều thấy (sổ xuống từng mã); các bảng khác vẫn không có giá | 28/10/2026 |
 | **Cổng mềm — PĐD tự quyết thời điểm chốt số tham gia đấu thầu** | Cổng cứng — đủ xác nhận của mọi khoa đã gửi đề xuất mới chốt được | 19/08/2026 |
 | **PĐD duyệt ô là khoá ô đó bên khoa** | Bỏ hẳn — ai sửa sau đè; đóng băng bằng chốt Q (cột số) và chốt trình ký (cột chữ) | 19/08/2026 |
 | **Mỗi khoa giữ một bản cột chữ riêng, Tổng hợp báo cờ lệch** | Cột chữ là MỘT giá trị chung toàn viện; không còn gì để lệch | 19/08/2026 |

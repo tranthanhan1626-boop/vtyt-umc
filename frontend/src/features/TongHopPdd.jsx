@@ -38,6 +38,27 @@ import { dauVaoPdd, useKhoaThamGiaVaDaGui } from "../lib/useTienTrinh";
 import { giaTriKhongDoi } from "../lib/oKhongDoi";
 import { TIEN_TO_DIEU_CHINH, MUC_DIEU_CHINH, COT_SP_THAM_KHAO, docDieuChinh } from "../lib/dieuChinhKhoa";
 import { taiDeXuatKyTruocToanVien } from "../lib/deXuatKyTruoc";
+import { taiChaoGia } from "../lib/chaoGia";
+import { useCuonDauTruoc } from "../lib/useCuonDauTruoc";
+import BangChaoGia, { NhanChaoGia } from "../components/BangChaoGia";
+
+/** Một trong hai nút đầu sổ xuống (Chia số trúng · Thông tin chào giá). */
+function NutTheSoXuong({ dangMo, onClick, children }) {
+  return (
+    <button type="button" onClick={onClick} aria-pressed={dangMo}
+      className={`inline-flex min-h-9 items-center gap-1.5 rounded-md border px-3 text-[13px] font-semibold ${dangMo
+        ? "border-umc-700 bg-umc-700 text-white"
+        : "border-umc-300 bg-white text-umc-700 hover:bg-umc-50"}`}>
+      {children} {dangMo ? "▴" : "▾"}
+    </button>
+  );
+}
+
+// Sản phẩm tham khảo của dòng (cột chính, đã áp PĐD sửa đè) — chuẩn để so chào giá.
+const sptkCuaDong = (r) => ({
+  ten_thuong_mai: r.ten_tm_2627, ky_ma_hieu: r.ma_sp, hang_san_xuat: r.hang_sx, nuoc_san_xuat: r.nuoc_sx,
+});
+import NhapChaoGia from "../components/NhapChaoGia";
 
 /*
  * TongHopPdd — Excel Tổng hợp Danh mục đề xuất cấp PĐD.
@@ -604,6 +625,19 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   // VÒNG KHÉP KÍN (23/08/2026) — cụm thầu nằm ngay trên bảng này, PĐD không
   // còn phải sang Bàn điều hành để tích rớt và gõ số trúng nữa.
   const thau = useDuLieuThau(dotGoiId);
+  // Chào giá 28/10/2026 — Map(ma_hang → [công ty]) của gói con; hiện trong sổ
+  // xuống từng mã, PĐD nhập bằng Excel (NhapChaoGia).
+  const [chaoGia, setChaoGia] = useState(() => new Map());
+  const taiLaiChaoGia = useCallback(async () => {
+    try { setChaoGia(await taiChaoGia(supabase, dotGoiId)); }
+    catch (e) { setLoiO(dichLoi(e)); }
+  }, [dotGoiId]);
+  useEffect(() => { taiLaiChaoGia(); }, [taiLaiChaoGia]);
+  const xoaChaoGia = async (c) => {
+    const { error } = await supabase.rpc("xoa_chao_gia_v3", { p_id: c.id });
+    if (error) { setLoiO(dichLoi(error)); return; }
+    await taiLaiChaoGia();
+  };
   const [formRot, setFormRot] = useState(null);
   const [formDoMa, setFormDoMa] = useState(null);
   const [thongBaoThau, setThongBaoThau] = useState("");
@@ -633,6 +667,15 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   // Sau chốt số, sổ dòng mở khung chia số trúng; bảng SL từng khoa cất sau link
   // "Xem số đề xuất từng khoa ▸" (bản vẽ M2_chia-so-trung).
   const [xemSoKhoa, setXemSoKhoa] = useState(() => new Set());
+  // Sổ xuống sau chốt số (28/10/2026): mỗi mã đang mở thẻ nào — "chia" (chia số
+  // trúng) | "chao_gia" (số từng khoa + chào giá) | chưa chọn. Bấm lại thẻ đang
+  // mở thì đóng thẻ đó.
+  const [theSoXuong, setTheSoXuong] = useState(() => new Map());
+  const chonTheSoXuong = (maHang, the) => setTheSoXuong((cu) => {
+    const moi = new Map(cu);
+    if (moi.get(maHang) === the) moi.delete(maHang); else moi.set(maHang, the);
+    return moi;
+  });
   // Thanh tiến trình (18/09/2026): nguồn nào đọc LỖI thì bước dùng nó phải hiện
   // "chưa rõ". Chỉ ghi nhận lỗi ở đây — KHÔNG đổi giá trị mà các nút đang dùng.
   const [loiNguonTienTrinh, setLoiNguonTienTrinh] = useState({});
@@ -740,6 +783,11 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   const [rowMoRong, setRowMoRong] = useState(new Set());
   const [cotAn, setCotAn] = useState(new Set());
   // QA3 (d): Esc và bấm ra ngoài đóng menu "Thêm cột ▾" và menu ⋯.
+  // Khung cuộn ngoài (phần đầu + bảng) và khung cuộn của bảng — lăn xuống thì
+  // phần đầu trôi lên trước (lib/useCuonDauTruoc.js, 28/10/2026).
+  const khungNgoaiRef = useRef(null);
+  const khungBangRef = useRef(null);
+  useCuonDauTruoc(khungNgoaiRef, khungBangRef);
   const refThemCot = useRef(null);
   const dongThemCot = useCallback(() => setMoThemCot(false), []);
   useDongKhiRaNgoai(moThemCot, dongThemCot, refThemCot);
@@ -961,6 +1009,19 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   // Ẩn cột giờ lưu SERVER (patch_zk) vì nó dùng chung cho mọi người PĐD và
   // quyết định luôn cột nào có trong file Excel trình ký.
   const anCot = (colKey) => toggleKhoa("an_cot", colKey, false);
+
+  // Nhãn "Chào giá N cty" dưới tên hàng: mở sổ xuống ở thẻ chào giá; bấm lại
+  // khi đang mở thẻ đó thì gập dòng.
+  const moChaoGiaCuaMa = (maHang) => {
+    if (!hienChiTietKhoa) return;
+    const dangMo = rowMoRong.has(maHang) && theSoXuong.get(maHang) === "chao_gia";
+    setRowMoRong((prev) => {
+      const next = new Set(prev);
+      if (dangMo) next.delete(maHang); else next.add(maHang);
+      return next;
+    });
+    setTheSoXuong((cu) => new Map(cu).set(maHang, "chao_gia"));
+  };
 
   const toggleExpand = (maHang) => {
     if (!hienChiTietKhoa) return; // công tắc chi tiết theo khoa đang TẮT
@@ -1429,6 +1490,11 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
         tenMan="Danh mục tổng hợp PĐD"
         profile={profile} />
 
+      {/* 28/10/2026 (chủ dự án): phần đầu (tiến trình, tiêu đề, giai đoạn thầu,
+          chào giá) đứng yên chiếm gần nửa màn, bảng chỉ còn ~60%. Gom phần đầu +
+          bảng vào MỘT khung cuộn dọc: bảng cao đúng bằng khung, cuộn xuống thì
+          phần đầu trôi lên trước rồi bảng chiếm trọn màn (lib/useCuonDauTruoc.js). Thanh đầu UMC và chân bảng vẫn đứng yên. */}
+      <div ref={khungNgoaiRef} className="flex-1 min-h-0 overflow-y-auto">
       {/* Thanh tiến trình của gói con — một dòng, đứng đầu bảng (18/09/2026).
           Không thay dải giai đoạn thầu bên dưới: các nút Bắt đầu / Hoàn thành /
           mở lại / Xác nhận rớt vẫn nằm nguyên ở đó. Thanh chỉ cho biết đang ở
@@ -1704,6 +1770,15 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                 )}
               />
             </div>
+            {/* Chào giá 28/10/2026 — có số đi thầu (chốt Q) là nhập được; server
+                chặn mã không thuộc danh sách đi thầu. */}
+            {thau.coPhienQ && dotGoiId && (
+              <div id="th-chao-gia" className="basis-full">
+                <NhapChaoGia dotGoiId={dotGoiId} tenGoi={boThau.nhan}
+                  dsMa={rows.map((r) => ({ ma_hang: r.ma_hang, ten: r.ten_vt_2627 }))}
+                  onXong={taiLaiChaoGia} />
+              </div>
+            )}
             {/* 18/09/2026 → 03/10/2026: nút Chốt trình ký chỉ hiện từ bước Trình
                 ký, đúng chỗ "Tới chỗ làm" trỏ tới (server chặn trước đó). */}
             {hienChotTrinhKy && (
@@ -1748,7 +1823,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
           nằm trong .umc-workspace nên không có lề phải 20px — thẻ trợ giúp
           (ChatbotTroGiup, rộng 20px, dán mép phải) đè chữ ô cuối khi bảng tràn
           hết bề ngang. Chừa đúng 20px (mr-5) ở khung cuộn của bảng. */}
-      <div className={`mr-5 flex-1 overflow-auto bg-white ${rows.length === 0 ? "flex flex-col" : ""}`}>
+      <div ref={khungBangRef} className={`mr-5 h-full overflow-auto bg-white ${rows.length === 0 ? "flex flex-col" : ""}`}>
         {/* L3 (bấm thử 03/10/2026): ở lăng kính mọi ô canh GIỮA theo chiều dọc
             — cột trái canh trên, cụm thầu canh giữa làm số lệch hàng. "Đủ cột"
             giữ canh trên (ô TSKT dài). Chỉ là cách vẽ, không đổi cột/Excel. */}
@@ -2177,6 +2252,10 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                             {c.key === "ten_vt_2627" && r.ma_hang && value !== r.ma_hang && (
                               <span className="block text-[12px] font-normal text-slate-500">{r.ma_hang}</span>
                             )}
+                            {c.key === "ten_vt_2627" && chaoGia.get(r.ma_hang)?.length > 0 && (
+                              <NhanChaoGia ds={chaoGia.get(r.ma_hang)} sptk={sptkCuaDong(r)}
+                                onClick={(e) => { e.stopPropagation(); moChaoGiaCuaMa(r.ma_hang); }} />
+                            )}
                             {/* Q-A 05/10/2026 (5.3b): mã đổ sang mã tương đương ở lại
                                 bảng với số 0 — phải nói RA MẶT số đi đâu. Cùng chữ,
                                 cùng màu với màn Danh mục khoa. */}
@@ -2257,11 +2336,30 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                     >
                       <td style={{ width: 30, background: "#f8fafc" }}></td>
                       <td colSpan={cotHienThi.length + (anCumThau ? 1 : 8)} className="qtdx-cell" style={{ background: "#f8fafc" }}>
-                        <div className="pl-4 py-1">
-                          {/* Bản vẽ M2_chia-so-trung: sau chốt số, sổ dòng mở THẲNG
-                              khung chia số trúng; bảng số đề xuất từng khoa cất sau
-                              link "Xem số đề xuất từng khoa ▸". */}
-                          {thau.coPhienQ && thau.phanBo.get(r.ma_hang) && (
+                        {/* 28/10/2026 (chủ dự án): cả vùng sổ xuống dính mép trái, rộng
+                            vừa màn — ô nhập số trúng có autoFocus nằm ở mép phải một
+                            khung rộng hơn màn làm trình duyệt kéo cả bảng sang phải. */}
+                        <div className="pl-4 py-1" style={{ position: "sticky", left: 0, maxWidth: "calc(100vw - 6rem)" }}>
+                          {/* 28/10/2026 (chủ dự án): sau chốt số, sổ xuống chỉ hiện
+                              HAI nút — "Chia số trúng" · "Thông tin chào giá"; chọn
+                              cái nào mới mở cái đó. Thay bản vẽ M2 (mở THẲNG khung
+                              chia số trúng). Chào giá = bảng số từng khoa (SL, %) +
+                              các công ty chào giá. */}
+                          {thau.coPhienQ && (
+                            <div className="mb-1.5 mt-1 flex flex-wrap items-center gap-2">
+                              {thau.phanBo.get(r.ma_hang) && (
+                                <NutTheSoXuong dangMo={theSoXuong.get(r.ma_hang) === "chia"}
+                                  onClick={() => chonTheSoXuong(r.ma_hang, "chia")}>
+                                  Chia số trúng
+                                </NutTheSoXuong>
+                              )}
+                              <NutTheSoXuong dangMo={theSoXuong.get(r.ma_hang) === "chao_gia"}
+                                onClick={() => chonTheSoXuong(r.ma_hang, "chao_gia")}>
+                                Thông tin chào giá{chaoGia.get(r.ma_hang)?.length ? ` · ${chaoGia.get(r.ma_hang).length} công ty` : ""}
+                              </NutTheSoXuong>
+                            </div>
+                          )}
+                          {thau.coPhienQ && thau.phanBo.get(r.ma_hang) && theSoXuong.get(r.ma_hang) === "chia" && (
                             <BangSoTrungTheoKhoa
                               dotGoiId={dotGoiId} maHang={r.ma_hang}
                               phaiChia={thau.phanBo.get(r.ma_hang).phai_chia}
@@ -2279,7 +2377,9 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                               )}
                             />
                           )}
-                          {(!(thau.coPhienQ && thau.phanBo.get(r.ma_hang)) || xemSoKhoa.has(r.ma_hang)) && (<>
+                          {(!thau.coPhienQ
+                            || theSoXuong.get(r.ma_hang) === "chao_gia"
+                            || (theSoXuong.get(r.ma_hang) === "chia" && xemSoKhoa.has(r.ma_hang))) && (<>
                           <div className="text-xs text-slate-500 mb-1.5 mt-1">
                             Số lượng đề xuất chi tiết từ {r.khoaDeXuat.length} khoa cho mã <b>{r.ma_hang}</b> · <em>{r.ten_vt_2627?.slice(0, 60)}...</em>
                             {dotGoiId && !chot && (
@@ -2335,6 +2435,11 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                           </table>
 
                           </>)}
+                          {/* Chào giá 28/10/2026 — ngay dưới bảng số từng khoa. */}
+                          {thau.coPhienQ && theSoXuong.get(r.ma_hang) === "chao_gia" && (
+                            <BangChaoGia dsCongTy={chaoGia.get(r.ma_hang) || []} sptk={sptkCuaDong(r)}
+                              tsktChuan={r.tskt_2627} laPdd onXoa={xoaChaoGia} />
+                          )}
                           {/* QĐ D15 (24/08/2026): PĐD chia số trúng về khoa NGAY
                               TẠI ĐÂY (khung BangSoTrungTheoKhoa ở đầu dòng sổ). */}
 
@@ -2376,6 +2481,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
             </div>
           </div>
         )}
+      </div>
       </div>
 
       <div className="bg-slate-800 text-slate-300 text-xs px-4 py-1.5 flex items-center justify-between shrink-0">

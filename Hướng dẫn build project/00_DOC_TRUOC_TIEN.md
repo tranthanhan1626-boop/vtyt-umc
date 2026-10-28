@@ -33,6 +33,9 @@
 >   sau. Push lên nhánh = Netlify tự build → commit ghi `[skip netlify]` nếu không muốn build; đẩy web bằng đường
 >   tải lên (không tốn điểm, xem `04_VAN_HANH_KY_THUAT.md` "ĐẨY LÊN NETLIFY KHI ĐÃ HẾT CREDITS").
 > - Mốc gần nhất: **demo 14/10/2026**. Không còn mốc go-live (QĐ 18/09/2026).
+> - 🆕 **28/10 tối — CHÀO GIÁ** (PĐD tải Excel chào giá, sổ xuống 2 thẻ, công ty đúng SP tham khảo sáng xanh; bảng
+>   cuộn full màn): commit trong máy [skip netlify], chưa push. DB đã chạy patch_zzzzzzzr + zzzzzzzs; dữ liệu thử ở gói
+>   con RHM. Chi tiết Việc còn mở mục 21.
 > - 🆕 **27–28/10 — Danh mục đề xuất (Xem nhanh + ô Điều chỉnh) + bỏ khoa tham gia và vòng xác nhận của khoa:** commit
 >   "Danh mục đề xuất 27–28/10…" [skip netlify] CHỈ TRONG MÁY (chưa push, Netlify vẫn bản 13/10). DB staging đã chạy patch_zzzzzzzp + zzzzzzzq.
 >   Chi tiết: Việc còn mở mục 17–20.
@@ -391,6 +394,33 @@ mục 4b.
     `dot_goi_khoa` cho số liệu nền (không còn hiện) — dọn sau.
     20e. `01_NGHIEP_VU_HIEN_HANH.md` (Giai đoạn 6, mục xác nhận, 13 "không phát sinh") và slide hướng dẫn 33 trang vẫn
     tả vòng xác nhận cũ — CHƯA sửa; đã ghi đảo luật ở `06`.
+21. **28/10/2026 (khuya) — CHÀO GIÁ** (chỉ trên máy, CHƯA commit, không Netlify). Em chốt: PĐD **tải Excel** chào giá lên
+    Tổng hợp (nút "Tải chào giá lên", hiện sau chốt số). Web đọc HAI dạng: tệp mẫu của web (mỗi dòng = mã × công ty) và
+    **tệp làm việc của bệnh viện** (trang có "Tên công ty N · Đơn giá chào N (VND) · Thông tin sản phẩm chào giá (N)",
+    vd `tong_hop_rhm_sau_hdms_23.9(gui pvttb) - Copy.xlsx` trang TRÌNH KÝ) — khối lặp hai lần (PVTTB phản hồi lần 1/2) thì
+    lấy **lần 2**; ô "Thông tin sản phẩm" tách ra Tên TM · Ký mã hiệu · Hãng/Nước; mã ngoài gói con bỏ qua. Tải lại =
+    **cộng thêm / cập nhật** theo mã + tên công ty; nút Xoá từng công ty. Sổ xuống từng mã (Tổng hợp PĐD, dưới bảng
+    khoa/SL/%) và Danh mục đề xuất khoa (nhãn "Chào giá N cty" dưới tên hàng): mỗi công ty một khối = Tên công ty ·
+    Đơn giá · Thông tin SP (Tên TM · Ký mã hiệu · Hãng SX · Nước SX · TSKT). **Sáng xanh = chào đúng sản phẩm tham khảo**
+    (khớp ký mã hiệu, hoặc khớp hãng + nước) — đổi từ "so TSKT từng ý" vì tệp chào giá thật KHÔNG có TSKT công ty; khi
+    có TSKT công ty thì web so thêm từng ý với cột TSKT chính (chỉ tham khảo). Đơn giá: đảo một phần QĐ 17/08 (ở `06`).
+    Mã: `lib/chaoGia.js` (+ `tests/chaoGia.test.mjs`), `components/BangChaoGia.jsx`, `components/NhapChaoGia.jsx`.
+    DB: `patch_zzzzzzzr_chao_gia.sql` (ĐÃ CHẠY) + `patch_zzzzzzzs_chao_gia_ky_ma_hieu_hang.sql` (+ rollback mỗi cái).
+    Dữ liệu thử lần 1 (GMHS + Ngoại thần kinh ở gói con GMHS) ĐÃ CHẠY rồi em đổi ý → `test_du_lieu_chao_gia_rhm_28-10.sql`
+    dọn bộ đó (gói GMHS về lại 1 đề xuất 67178) và nạp gói con **RHM (859)**: RHM 10 mã (SL thật của tệp) + GMHS 10 mã,
+    trùng 5, chốt số + mở Chào giá. Chạy: `bash "<repo>/backend/scripts/chay_chao_gia_rhm_28-10.sh"` (đường dẫn đầy đủ).
+    **ĐÃ CHẠY 28/10** (patch_zzzzzzzs + dữ liệu RHM; chạy lại lần 2 bị chốt chặn dừng, không ghi gì). Thầy đã tải tệp
+    thật của em lên bằng nút web: 46 dòng chào giá / 15 mã / 4 công ty ở gói con RHM (859).
+    Cùng ngày em chốt thêm: (1) **sổ xuống sau chốt số chỉ có 2 nút** "Chia số trúng" · "Thông tin chào giá" — chọn cái
+    nào mở cái đó (thay bản vẽ M2 mở thẳng khung chia số trúng); "Thông tin chào giá" = bảng khoa/SL/% + các công ty;
+    nhãn "Chào giá N cty" dưới tên hàng mở thẳng thẻ chào giá. Vùng sổ xuống dính mép trái, rộng vừa màn (sửa lỗi
+    màn nhảy sang phải do ô số trúng autoFocus). (2) **Tổng hợp PĐD và Danh mục khoa: phần đầu + bảng chung một khung
+    cuộn** — lăn xuống thì phần đầu trôi lên, bảng chiếm trọn màn (`lib/useCuonDauTruoc.js`).
+    Đã bấm thử: PĐD (tải tệp, 15 nhãn khớp số đếm trước, hai thẻ, không nhảy) + khoa `dvsd2@` (thấy đúng 10 mã RHM,
+    RLS trả 35 dòng, không có nút Xoá). **Còn mở:** 21a. Mở thẳng thẻ chào giá thay vì để trống khi mới sổ? (hiện để
+    trống, chọn mới mở — đúng ý em 28/10). 21b. Tệp thử cũ `Test chao gia 28-10-2026/Chao_gia_THU_GMHS.xlsx` không còn
+    dùng (cột cũ). 21c. Bộ dữ liệu thử ở gói con RHM (20 đề xuất, đã chốt số, 46 chào giá) đang nằm trên staging —
+    dọn khi em bảo. 21d. Tiêu chí kỹ thuật của công ty chưa có trong tệp chào giá thật — khi có, web so thêm từng ý.
 11. `backend/scripts/sao_luu.py` đặt thư mục theo ngày → sao lưu hai lần cùng ngày ghi đè; nên thêm giờ vào tên thư mục.
 
 ## Ghi chú sửa
