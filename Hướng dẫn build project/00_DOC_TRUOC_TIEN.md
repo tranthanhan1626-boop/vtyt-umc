@@ -445,8 +445,10 @@ mục 4b.
     trình ký chừa riêng 2 dòng này. Web: thanh 8 ô (`lib/tienTrinh.js`), dải giai đoạn có nút "Xong lần N" + chấm L1–L3
     (`CumThauTongHop.jsx`), cột rớt "Kiểm tra"/"Hội đồng", chatbot + màn Kết quả thầu (đủ 5 giai đoạn). Bấm thử PĐD
     gói RHM 28/10: Xong lần 1 → Hoàn thành Chào giá → Kiểm tra → Hội đồng → nút Chốt trình ký hiện, Mở thầu báo "Chốt
-    trình ký xong mới bắt đầu". **Gói RHM (859) đang dừng ở bước Trình ký, CHƯA chốt** (chốt sẽ khoá dữ liệu thử).
-    **Chưa thử:** Mở thầu sau trình ký (trigger chừa 2 dòng). **Miếng 2 — XONG 28/10:** `patch_zzzzzzzu_chao_gia_theo_lan.sql`
+    trình ký xong mới bắt đầu". **Gói RHM (859): em cho chốt trình ký THẬT 28/10 khuya** (bản số 1 — cột chữ dữ liệu thử đã vào
+    `danh_muc_chot_ky`), đang ở **Mở thầu**; mã 67330 đã bấm "Không có nhà thầu" trên web (trúng 0, nhãn "Rớt cả
+    mã · Mở thầu"), **CHƯA bấm Xác nhận rớt** (bấm sẽ tạo/ghi giỏ đợt bổ sung + thư báo 2 khoa). Muốn dọn: bấm "Bỏ"
+    trên dòng 67330, rồi mở chốt trình ký từng khoa (⋯ → Mở lại bảng của một khoa, ghi lý do). **Miếng 2 — XONG 28/10:** `patch_zzzzzzzu_chao_gia_theo_lan.sql`
     (ĐÃ CHẠY qua `backend/scripts/chay_chao_gia_theo_lan_28-10.sh`; lùi = `rollback_zzzzzzzu…`): cột `lan` 1..3 ở
     `chao_gia_v3` (46 dòng cũ gán lần 2), khoá duy nhất thêm lần. Tệp bệnh viện: đọc HẾT các khối, lần lấy từ nhãn
     "PHÒNG VẬT TƯ THIẾT BỊ PHẢN HỒI lần K" (tệp thật: lần 1 = 270 dòng, lần 2 = 306 dòng toàn tệp); tệp mẫu có cột
