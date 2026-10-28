@@ -152,7 +152,7 @@ export function useDuLieuThau(dotGoiId) {
         .eq("dot_goi_id", dotGoiId).order("thu_tu"),
       phienId
         ? fetchAllRows((f, t) => supabase.from("v_ket_qua_thau_v3")
-          .select("ma_hang, q, r1, r2, r3, so_luong_trung, co_rot, rot_toan_bo")
+          .select("ma_hang, q, r1, r2, r3, so_luong_trung, co_rot, rot_toan_bo, r_mo_thau, r_danh_gia")
           .eq("phien_q_id", phienId).range(f, t), { order: "ma_hang" })
         : Promise.resolve({ data: [] }),
       phienId
@@ -432,6 +432,12 @@ export function ThanhGiaiDoanThau({
         </button>
       )}
 
+      {gdDangChay && !gdDangChay.cot && (
+        <span className="ml-1 text-[13px] text-slate-600">
+          Mã không có nhà thầu: bấm <b>“Không có nhà thầu”</b> ở cột Xử lý rớt.
+        </span>
+      )}
+
       {chenSauNutChinh}
 
       {/* Ngoại lệ G12: "Xác nhận rớt" là việc chính khúc sau thầu → nút đỏ ở
@@ -481,6 +487,7 @@ export function ThanhGiaiDoanThau({
 export function OThauCuaDong({
   row, ketQua, chuaXuLy, daChuyen, daChuyenTiep, phanBo, daNhan, giaiDoanDangChay,
   onSuaRot, onDoMa, onChiaTiLe, dangChia,
+  daTrinhKy = false, onRotCaMa, onBoRotCaMa,
 }) {
   const kq = ketQua.get(row.ma_hang);
   // Đợt 4: cùng dáng ô Excel với phần bảng bên trái — chữ 13px, số căn phải
@@ -502,6 +509,12 @@ export function OThauCuaDong({
   const nhan = daNhan?.get(row.ma_hang) || null;
   const chuyen = daChuyen.get(row.ma_hang);
   const cuon = daChuyenTiep.get(row.ma_hang) || 0;
+  // Miếng 3 (28/10/2026): Mở thầu / Kết quả đánh giá chạy sau trình ký — mã
+  // không có nhà thầu thì rớt CẢ MÃ (rot_ca_ma_sau_trinh_ky_v3).
+  const gdSau = giaiDoanDangChay && !GIAI_DOAN.find((g) => g.ma === giaiDoanDangChay.giai_doan)?.cot
+    ? giaiDoanDangChay.giai_doan : null;
+  const rotSau = Number(kq.r_mo_thau) > 0 ? "mo_thau" : Number(kq.r_danh_gia) > 0 ? "danh_gia" : null;
+  const nhanGd = (ma) => GIAI_DOAN.find((g) => g.ma === ma)?.nhan || ma;
 
   const oRot = (cot, maGiaiDoan) => {
     const v = Number(kq[cot]) || 0;
@@ -574,7 +587,31 @@ export function OThauCuaDong({
             Chia số trúng trước
           </span>
         )}
-        {conLai > 0 && !(pb && !pb.da_khop) && (
+        {rotSau && (
+          <span className="mr-1 inline-flex items-center gap-1 rounded bg-red-600 px-2 py-0.5 font-semibold text-white"
+            title={`Không có nhà thầu — rớt cả mã ở ${nhanGd(rotSau)}`}>
+            Rớt cả mã · {nhanGd(rotSau)}
+            {gdSau === rotSau && conLai > 0 && onBoRotCaMa && (
+              <button type="button" onClick={() => onBoRotCaMa(row, rotSau)}
+                title="Bấm nhầm — bỏ rớt, trả số về đúng bản trình ký (chỉ khi chưa Xác nhận rớt)"
+                className="ml-1 rounded bg-white/20 px-1 font-medium hover:bg-white/30">Bỏ</button>
+            )}
+          </span>
+        )}
+        {!rotSau && gdSau && Number(kq.so_luong_trung) > 0 && onRotCaMa && (
+          <button type="button" onClick={() => onRotCaMa(row, gdSau)}
+            title={`Mã này không có nhà thầu tham dự — rớt cả mã ở ${nhanGd(gdSau)}, rồi bấm “Xác nhận rớt” để số về giỏ bổ sung của khoa`}
+            className="mr-1 inline-flex items-center gap-1 rounded border border-red-300 bg-white px-2 py-0.5 font-medium text-red-700 hover:bg-red-50">
+            Không có nhà thầu
+          </button>
+        )}
+        {conLai > 0 && daTrinhKy && (
+          // Sau trình ký không đổ sang mã tương đương được nữa — chỉ còn Xác nhận rớt.
+          <span className="text-[12px] text-amber-800" title="Bấm “Xác nhận rớt” trên dải giai đoạn để số này về giỏ bổ sung của khoa">
+            Chờ xác nhận rớt {fmt(conLai)}
+          </span>
+        )}
+        {conLai > 0 && !daTrinhKy && !(pb && !pb.da_khop) && (
           <button type="button" onClick={() => onDoMa(row, conLai)}
             title="Đổ phần rớt này sang mã tương đương cùng mã quản lý"
             className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-50 px-2 py-0.5 font-medium text-amber-800 hover:bg-amber-100">

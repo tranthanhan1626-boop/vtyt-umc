@@ -1442,6 +1442,23 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
     await taiLai();
   };
 
+  // Miếng 3 (28/10/2026): rớt cả mã / bỏ rớt ở Mở thầu, Kết quả đánh giá.
+  const doiRotCaMa = async (h, lyDo) => {
+    setDangHoi(true);
+    const { error } = await supabase.rpc(
+      h.loai === "rot_ca_ma" ? "rot_ca_ma_sau_trinh_ky_v3" : "bo_rot_ca_ma_sau_trinh_ky_v3",
+      { p_dot_goi_id: dotGoiId, p_ma_hang: h.row.ma_hang, p_giai_doan: h.giaiDoan, p_ly_do: lyDo });
+    setDangHoi(false);
+    if (error) { setHoi((x) => (x ? { ...x, loi: dichLoi(error) } : x)); return; }
+    setHoi(null);
+    const nhan = GIAI_DOAN.find((g) => g.ma === h.giaiDoan)?.nhan || "";
+    setThongBaoThau(h.loai === "rot_ca_ma"
+      ? `Mã ${h.row.ma_hang} rớt cả mã ở ${nhan}. Bấm “Xác nhận rớt” để số đã trình ký về giỏ bổ sung của khoa.`
+      : `Đã bỏ rớt mã ${h.row.ma_hang} — số trúng về lại đúng bản trình ký.`);
+    await thau.taiLaiThau();
+    await taiLai();
+  };
+
   // "Ẩn cột khỏi bảng và Excel…" (chỉ ở Đủ cột): lưu server, áp mọi PĐD — áp
   // phần chênh giữa bản nháp trong hộp và cấu hình hiện tại, từng cột một như
   // cách `anCot` vẫn làm (toggleKhoa loai "an_cot").
@@ -2334,6 +2351,9 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                     onSuaRot={(row, giaiDoan, giaTri) =>
                       setFormRot({ row, giaiDoan, giaTri, dotGoiId })}
                     onDoMa={(row, conLai) => setFormDoMa({ row, conLai, dotGoiId })}
+                    daTrinhKy={revTrinhKy != null}
+                    onRotCaMa={(row, giaiDoan) => setHoi({ loai: "rot_ca_ma", row, giaiDoan })}
+                    onBoRotCaMa={(row, giaiDoan) => setHoi({ loai: "bo_rot_ca_ma", row, giaiDoan })}
                   />}
                 </tr>
                 <AnimatePresence initial={false}>
@@ -2672,6 +2692,22 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
           nhanDongY="Mở chốt" dangChay={dangChot}
           onHuy={() => setHoi(null)}
           onDongY={(lyDo) => { setHoi(null); doiChot(lyDo); }} />
+      )}
+      {(hoi?.loai === "rot_ca_ma" || hoi?.loai === "bo_rot_ca_ma") && (
+        <HopHoiLai
+          tieuDe={hoi.loai === "rot_ca_ma"
+            ? `Mã ${hoi.row.ma_hang} không có nhà thầu?`
+            : `Bỏ rớt mã ${hoi.row.ma_hang}?`}
+          nguyHiem={hoi.loai === "rot_ca_ma"}
+          noiDung={hoi.loai === "rot_ca_ma"
+            ? `${hoi.row.ten_vt_2627 || ""} — rớt CẢ MÃ ở ${GIAI_DOAN.find((g) => g.ma === hoi.giaiDoan)?.nhan}. Bản trình ký đã in giữ nguyên. Sau đó bấm “Xác nhận rớt” để số của từng khoa về giỏ đợt bổ sung.`
+            : "Số trúng của từng khoa về lại đúng bản trình ký. Chỉ bỏ được khi chưa Xác nhận rớt."}
+          lyDo={hoi.loai === "rot_ca_ma" ? "Không có nhà thầu tham dự" : ""}
+          nhanLyDo="Lý do (bắt buộc)"
+          nhanDongY={hoi.loai === "rot_ca_ma" ? "Rớt cả mã" : "Bỏ rớt"}
+          dangChay={dangHoi} loi={hoi.loi || ""}
+          onHuy={() => setHoi(null)}
+          onDongY={(lyDo) => doiRotCaMa(hoi, lyDo)} />
       )}
       {hoi?.loai === "mo_lai_gd" && (
         <HopHoiLai

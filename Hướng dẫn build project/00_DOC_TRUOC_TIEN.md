@@ -33,7 +33,7 @@
 >   sau. Push lên nhánh = Netlify tự build → commit ghi `[skip netlify]` nếu không muốn build; đẩy web bằng đường
 >   tải lên (không tốn điểm, xem `04_VAN_HANH_KY_THUAT.md` "ĐẨY LÊN NETLIFY KHI ĐÃ HẾT CREDITS").
 > - Mốc gần nhất: **demo 14/10/2026**. Không còn mốc go-live (QĐ 18/09/2026).
-> - 🆕 **28/10 khuya — QUY TRÌNH THẦU 8 BƯỚC (miếng 1 + 2/3; miếng 2 = chào giá lưu từng lần, patch_zzzzzzzu)**: thanh PĐD = Đề xuất · Chốt số · Chào giá (lần 1/2/3) ·
+> - 🆕 **28/10 khuya — QUY TRÌNH THẦU 8 BƯỚC (XONG 3 miếng: zzzzzzzt tám bước · zzzzzzzu chào giá từng lần · zzzzzzzv rớt cả mã sau trình ký)**: thanh PĐD = Đề xuất · Chốt số · Chào giá (lần 1/2/3) ·
 >   Kiểm tra ĐV đấu thầu · Hội đồng mua sắm · Trình ký (in 1 lần) · Mở thầu · Kết quả đánh giá. DB đã chạy
 >   patch_zzzzzzzt; commit trong máy [skip netlify], chưa push. Chi tiết Việc còn mở mục 22.
 > - 🆕 **28/10 tối — CHÀO GIÁ** (PĐD tải Excel chào giá, sổ xuống 2 thẻ, công ty đúng SP tham khảo sáng xanh; bảng
@@ -453,9 +453,19 @@ mục 4b.
     "Lần chào giá", ô trống thì khung xem trước cho chọn lần (mặc định = lần đang làm). Sổ xuống: mỗi công ty một
     hàng, Đơn giá Lần 1 | Lần 2 | Lần 3, thông tin SP + sáng xanh theo lần mới nhất; Xoá = xoá công ty ở mọi lần
     (`gopTheoCongTy` trong `lib/chaoGia.js`). Đã tải lại tệp thật lên gói RHM: thêm 46 dòng lần 1, cập nhật 46 dòng
-    lần 2 (2 mã đổi giá giữa hai lần: 67319, 73089). **Miếng 3:** đánh rớt cả mã ở Mở thầu / Kết quả đánh
-    giá → số đã trình ký của từng khoa về giỏ bổ sung + thông báo khoa (phải mở khe cho `ket_qua_rot_v3` /
-    `phan_bo_trung_v3` sau trình ký). `01_NGHIEP_VU_HIEN_HANH.md` mục 5.1 và 8 đã ghi đè chú thích 28/10.
+    lần 2 (2 mã đổi giá giữa hai lần: 67319, 73089). **Miếng 3 — XONG 28/10:** `patch_zzzzzzzv_rot_ca_ma_sau_trinh_ky.sql` (ĐÃ
+    CHẠY qua `backend/scripts/chay_rot_ca_ma_28-10.sh`; lùi = `rollback_zzzzzzzv…`). Đang Mở thầu / Kết quả đánh giá,
+    cột Xử lý rớt có nút **"Không có nhà thầu"** → hộp hỏi lại (lý do điền sẵn "Không có nhà thầu tham dự") →
+    `rot_ca_ma_sau_trinh_ky_v3` (rớt cả mã, số trúng từng khoa về 0, nhãn đỏ "Rớt cả mã · Mở thầu" + nút "Bỏ") →
+    PĐD bấm **"Xác nhận rớt"** có sẵn: số đã trình ký của từng khoa vào giỏ đợt bổ sung gần nhất + thư báo khoa.
+    "Bỏ" (`bo_rot_ca_ma_sau_trinh_ky_v3`) trả số trúng về đúng bản trình ký, chỉ khi chưa Xác nhận rớt. Trigger
+    khoá sau trình ký chừa riêng hai hàm này (cờ giao dịch `vtyt.rot_ca_ma_sau_trinh_ky`); bản trình ký đã in không
+    đổi. `v_ket_qua_thau_v3` thêm 2 cột cuối `r_mo_thau`, `r_danh_gia`. Sau trình ký ô đổ mã tương đương đổi thành
+    "Chờ xác nhận rớt N". **Đã thử trọn vòng bằng `backend/scripts/thu_rot_ca_ma_khong_luu.py` (chạy trong một giao
+    dịch rồi HUỶ, DB không đổi — đã kiểm lại):** trình ký → Mở thầu → 67330 rớt cả mã (150 → trúng 0) → Bỏ (về
+    RHM 130 + GMHS 20) → rớt lại → Xác nhận rớt (giỏ bổ sung: RHM 130, GMHS 20) → Bỏ bị chặn → Hoàn thành Mở thầu,
+    Kết quả đánh giá; 18/18 bước đạt. **Chưa bấm thật trên web** vì gói thử RHM nằm trong đợt thật 211: chốt trình
+    ký thật sẽ ghi cột chữ dữ liệu thử vào `danh_muc_chot_ky`, Xác nhận rớt sẽ tạo đợt bổ sung + thư báo khoa. `01_NGHIEP_VU_HIEN_HANH.md` mục 5.1 và 8 đã ghi đè chú thích 28/10.
 11. `backend/scripts/sao_luu.py` đặt thư mục theo ngày → sao lưu hai lần cùng ngày ghi đè; nên thêm giờ vào tên thư mục.
 
 ## Ghi chú sửa

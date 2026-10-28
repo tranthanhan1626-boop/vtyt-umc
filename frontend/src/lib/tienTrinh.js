@@ -319,7 +319,7 @@ export function tinhTienTrinhPdd(v = {}) {
     viec = trangThaiGiaiDoan(v.giaiDoan, ma) === "dang_thuc_hien"
       ? (g.truocTrinhKy
         ? `Gõ số rớt (nếu có) ở cột “Rớt ở ${g.nhan}”, xong bấm “✓ Hoàn thành ${g.nhan}”.`
-        : `Có kết quả thì bấm “✓ Hoàn thành ${g.nhan}”.`)
+        : `Mã không có nhà thầu thì bấm “Không có nhà thầu” trên dòng rồi “Xác nhận rớt”; xong bấm “✓ Hoàn thành ${g.nhan}”.`)
       : `Bấm “▶ Bắt đầu ${g.nhan}” trên bảng Tổng hợp.`;
   } else if (ma === "trinh_ky") viec = "Chia đủ số về khoa rồi bấm “Chốt trình ký” trên bảng Tổng hợp, sau đó in.";
   else viec = "Gói con đã có kết quả đánh giá.";
