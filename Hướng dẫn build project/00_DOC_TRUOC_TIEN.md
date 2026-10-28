@@ -2,8 +2,10 @@
 
 > ## 📍 HIỆN TRẠNG 16/10/2026 — đọc khối này trước
 >
-> - **Web: https://vtyt-umc.netlify.app.** 🆕 13/10: GitHub = Netlify = commit `e1a8072`, bundle `index-OEQgXgeW.js`
->   (sửa màn Điều chỉnh tiêu chí: ô sửa mất con trỏ sau 1 chữ + ô nhiều dòng dính chữ; đẩy bằng đường tải lên). Nhánh `phase-a-luong-de-xuat`. Mở trên máy: bấm đúp `MO_WEB.command` → `localhost:4173`.
+> - **Web: https://vtyt-umc.netlify.app.** 🆕 **28/10 khuya: GitHub = Netlify = commit `b5fae2c`, bundle
+>   `index-Ce9PNc0Z.js`** — push 12 commit [skip netlify] (16/10 → giỏ Sửa 28/10) + đẩy web bằng đường tải lên
+>   (`netlify deploy --dir=frontend/dist` → `restoreSiteDeploy` deploy `6ae1af5a695d78d504a4fb86`), KHÔNG tốn điểm.
+>   Các khối "chỉ commit trong máy / Netlify vẫn bản 13/10" bên dưới nay đã lên hết. (Bản trước: 13/10 `e1a8072`.) Nhánh `phase-a-luong-de-xuat`. Mở trên máy: bấm đúp `MO_WEB.command` → `localhost:4173`.
 > - 🆕 **16/10 — sửa màn vai khoa, CHỈ commit trong máy (chưa push, Netlify vẫn bản 13/10):** đi từ dữ liệu nền
 >   ở `Làm lại 16-10-2026/`, rồi làm chung với chủ dự án qua Chrome trên `localhost:4173` (tài khoản khoa GMHS):
 >   màn chính ghi Bước 1 chọn gói → Bước 2 gói con → Bước 3 đề xuất (đang làm = cam, xong = xanh lá nhạt);
