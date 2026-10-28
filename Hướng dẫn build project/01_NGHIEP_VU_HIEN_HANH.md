@@ -668,6 +668,9 @@ PĐD bấm, với **từng khoa** đã đề xuất mã đó:
 5. Khoa nhận **thông báo đỏ**, mở giỏ, sửa số cho đúng nhu cầu rồi **tự bấm
    "Gửi giỏ"** → lúc đó mới thành `proposals` và đi tiếp **full pipeline y như
    một gói con của gói 18 tháng**.
+   🆕 **28/10/2026 — ĐẢO QĐ k, l (đoạn ngay dưới hết hiệu lực):** mỗi nhóm trong giỏ (mọi gói) có nút
+   **"Sửa"** → mở lại khung nhập của nhóm với số điền sẵn từ giỏ; thêm lại vào giỏ = ghi đè nhóm đó. Mã rớt
+   vẫn giữ nhãn "⟳ Mã rớt thầu · số gợi ý N"; nhóm có mã rớt **viền đỏ**, tiêu đề gói ghi "N món rớt thầu".
    🆕 **18/09/2026 — QĐ k, l:** ngăn giỏ hiện chỉ hiển thị số, không có ô sửa.
    Khoa **gửi nguyên số gợi ý**, rồi sửa số trên **Danh mục đề xuất của khoa** và
    xác nhận lại. Mã rớt nhận ra trong ngăn giỏ nhờ nhãn **"⟳ rớt thầu · gợi ý N"**.

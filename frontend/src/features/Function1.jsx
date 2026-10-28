@@ -1351,7 +1351,18 @@ export default function Function1({
         ghiChu: ngoaiKhoangNhom ? nhapNhom.ghiChu : "",
       };
     });
-    datGio((prev) => ({ ...prev, ...dong }));
+    // 28/10/2026 (nút "Sửa" trong giỏ): thêm lại một nhóm = GHI ĐÈ cả nhóm đó
+    // trong giỏ gói con đang xem — mã đã chia về 0 thì rời giỏ. Mã rớt thầu
+    // (hệ đưa vào) giữ nhãn "⟳ Mã rớt thầu · số gợi ý" sau khi sửa số.
+    datGio((prev) => {
+      const giu = Object.fromEntries(Object.entries(prev)
+        .filter(([, n]) => !(n.ma_quan_ly === nhomChon && laMonGoiDangXem(n))));
+      Object.keys(dong).forEach((ma) => {
+        const cu = prev[ma];
+        if (cu?.tuMaRot) dong[ma] = { ...dong[ma], tuMaRot: true, soRotGoc: cu.soRotGoc ?? cu.soLuong };
+      });
+      return { ...giu, ...dong };
+    });
     setBanNhapNhom((prev) => {
       const next = { ...prev };
       delete next[nhomChon];
@@ -1362,6 +1373,32 @@ export default function Function1({
     setLoiNhapNhom("");
     // G13: thêm xong, con trỏ về ô tìm để gõ nhóm kế.
     setCanFocus("tim");
+  };
+
+  // 28/10/2026 — em chốt, ĐẢO QĐ k/l 18/09 ("giỏ chỉ hiện số"): mỗi nhóm trong
+  // giỏ có nút "Sửa" → mở lại khung nhập của nhóm với số điền sẵn từ giỏ (tổng
+  // nhóm + số từng mã, kỳ, lý do), có lịch sử dùng và gợi ý như lúc nhập mới.
+  // Thêm lại vào giỏ = ghi đè nhóm (themMaQuanLyVaoGio). Áp cho mọi gói.
+  const suaNhomTrongGio = (g) => {
+    const md = macDinhNhom();
+    const dau = g.dong[0] || {};
+    const tong = Number(g.tong) > 0 ? Number(g.tong)
+      : g.dong.reduce((t, n) => t + (Number(n.soLuong) || 0) * (Number(n.heSoQuyDoi) || 1), 0);
+    const chung = Object.fromEntries(Object.keys(md)
+      .filter((k) => k !== "soLuong" && k !== "phanBo" && dau[k] != null && dau[k] !== "")
+      .map((k) => [k, dau[k]]));
+    setBanNhapNhom((prev) => ({
+      ...prev,
+      [g.ma]: {
+        ...md, ...chung,
+        soLuong: String(tong),
+        phanBo: Object.fromEntries(g.dong.map((n) => [n.ma_hang, String(Number(n.soLuong) || "")])),
+        // Nhiều mã: giữ nguyên số đã chia, không tự chia lại khi đổi tổng.
+        ...(g.dong.length > 1 ? { phanBoTuDong: false } : null),
+      },
+    }));
+    setMoGio(false);
+    setNhomChon(g.ma);
   };
 
   const boNhomKhoiGio = (maQuanLy) =>
@@ -1462,6 +1499,7 @@ export default function Function1({
     });
     return [...map.entries()].map(([ten, nhom]) => [ten, [...nhom.values()]]);
   }, [gioHang, tenGoiHienTai, goi, tenGoiCuaMon]);
+  const soMonRotTrongGio = gioHang.filter((n) => n.tuMaRot).length;
 
   // ---- THANH TIẾN TRÌNH của khoa (đợt 2, 18/09/2026) ----------------------
   // Chỉ đọc: DOT_GOI của (đợt đang gửi × gói con đang đứng). Số mã trong giỏ
@@ -2547,7 +2585,12 @@ export default function Function1({
                   <div className="min-w-0">
                     <h3 className="text-lg font-semibold text-slate-900">Giỏ đề xuất</h3>
                     {/* G5: giỏ KHÔNG có ô chọn đợt — chỉ ghi gửi vào đâu. */}
-                    <p className="mt-0.5 text-sm text-slate-600">{gioTheoNhom.length} nhóm · {gioHang.length} mã hàng</p>
+                    <p className="mt-0.5 text-sm text-slate-600">
+                      {gioTheoNhom.length} nhóm · {gioHang.length} mã hàng
+                      {soMonRotTrongGio > 0 && (
+                        <b className="ml-1 font-semibold text-red-600">· {soMonRotTrongGio} món rớt thầu chuyển sang</b>
+                      )}
+                    </p>
                     {/* 16/10/2026 (em chốt): gói / gói con / đợt chữ to, đỏ nhạt
                         cho nổi. Giỏ = 1 gói con (QĐ 07/08). */}
                     <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-sm text-slate-600">
@@ -2584,14 +2627,25 @@ export default function Function1({
                         <h4 className="border-b-2 border-red-200 pb-1 text-lg font-bold text-red-500">
                           {goi === "dau_thau_rong_rai" ? `Gói con: ${tenGoiPhan}` : tenGoiPhan}
                           <span className="ml-2 text-sm font-medium text-slate-500">{dsNhomGoi.length} nhóm</span>
+                          {(() => {
+                            const k = dsNhomGoi.reduce((t, g) => t + g.dong.filter((n) => n.tuMaRot).length, 0);
+                            return k > 0 ? <span className="ml-2 text-sm font-semibold text-red-600">· {k} món rớt thầu</span> : null;
+                          })()}
                         </h4>
                       {dsNhomGoi.map((g) => (
-                        <div key={g.ma} className="rounded-lg border border-slate-200 p-3.5">
+                        // 28/10/2026 (em chốt): nhóm có mã rớt thầu chuyển sang → viền + nền đỏ.
+                        <div key={g.ma} className={`rounded-lg p-3.5 ${g.dong.some((n) => n.tuMaRot)
+                          ? "border-2 border-red-400 bg-red-50/40" : "border border-slate-200"}`}>
                           <div className="flex items-start gap-2">
                             <div className="min-w-0 flex-1">
                               <p className="text-[15px] font-semibold leading-snug text-slate-900">{g.ten || g.ma}</p>
                               <p className="text-[13px] text-slate-500"><span className="font-mono" title="Mã quản lý">{g.ma}</span></p>
                             </div>
+                            <button type="button" onClick={() => suaNhomTrongGio(g)}
+                              title="Mở lại khung nhập của nhóm này với số đang có trong giỏ"
+                              className="inline-flex h-9 shrink-0 items-center rounded-md border border-umc-300 bg-white px-3 text-sm font-medium text-umc-800 hover:bg-umc-50">
+                              Sửa
+                            </button>
                             <button type="button" onClick={() => boNhomKhoiGio(g.ma)} title="Bỏ cả nhóm khỏi giỏ"
                               className="inline-flex h-9 shrink-0 items-center rounded-md px-2 text-sm text-slate-600 hover:bg-red-50 hover:text-red-700">
                               Bỏ khỏi giỏ
@@ -2640,10 +2694,10 @@ export default function Function1({
 
                 <div className="border-t border-slate-200 p-4">
                   <p className="mb-3 flex items-center gap-1.5 text-[13px] text-slate-600">
-                    Số trong giỏ không sửa ở đây — gửi xong sửa ở Danh mục đề xuất của khoa.
+                    Muốn đổi số: bấm “Sửa” trên nhóm — khung nhập mở lại với số đang có.
                     <NutGiaiThich nhan="Sửa số ở đâu">
-                      Giỏ gửi đi là đề xuất chính thức của khoa, không qua bước duyệt. Muốn đổi
-                      số thì gửi rồi sửa trên Danh mục đề xuất của khoa — sửa xong phải xác nhận lại.
+                      Trước khi gửi: bấm “Sửa” trên nhóm, sửa rồi bấm thêm vào giỏ lại (ghi đè nhóm đó).
+                      Đã gửi rồi thì sửa trên Danh mục đề xuất của khoa.
                     </NutGiaiThich>
                   </p>
                   {loiLuu && <p className="mb-2 text-sm text-red-600">{loiLuu}</p>}

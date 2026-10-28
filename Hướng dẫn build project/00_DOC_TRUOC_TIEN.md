@@ -470,6 +470,14 @@ mục 4b.
     RHM 130 + GMHS 20) → rớt lại → Xác nhận rớt (giỏ bổ sung: RHM 130, GMHS 20) → Bỏ bị chặn → Hoàn thành Mở thầu,
     Kết quả đánh giá; 18/18 bước đạt. **Chưa bấm thật trên web** vì gói thử RHM nằm trong đợt thật 211: chốt trình
     ký thật sẽ ghi cột chữ dữ liệu thử vào `danh_muc_chot_ky`, Xác nhận rớt sẽ tạo đợt bổ sung + thư báo khoa. `01_NGHIEP_VU_HIEN_HANH.md` mục 5.1 và 8 đã ghi đè chú thích 28/10.
+23. **28/10/2026 (khuya) — GIỎ: SỬA SỐ + TÔ ĐỎ MÃ RỚT** (đảo QĐ k, l 18/09; ghi ở `06`). Em chốt: tô đỏ **trong ngăn
+    giỏ** (không đổi biểu tượng giỏ trên đầu) — nhóm có mã rớt viền + nền đỏ, tiêu đề gói "· N món rớt thầu", đầu giỏ
+    "· N món rớt thầu chuyển sang"; sửa số bằng **nút "Sửa" trên nhóm** (mọi gói) → khung nhập mở lại, số điền sẵn
+    (`suaNhomTrongGio` ở `features/Function1.jsx`); "Thêm cả nhóm vào giỏ" nay GHI ĐÈ cả nhóm trong gói con đang xem,
+    giữ dấu mã rớt. Chatbot `k_th_so_goi_y` đổi câu. Bấm thử `dvsd2@` ở giỏ Gói bổ sung T1/2027: 67330 130 → 100 Bộ,
+    nhãn "số gợi ý 130" giữ (giỏ thử của RHM nay là 100, CHƯA gửi). **Chưa thử** giỏ gói 18 tháng (cùng đường code).
+    Nhóm nhiều đơn vị tính: khung nhập mở lại với đơn vị chuẩn mặc định của nhóm — nếu giỏ đã chọn đơn vị khác thì
+    tổng có thể phải gõ lại.
 11. `backend/scripts/sao_luu.py` đặt thư mục theo ngày → sao lưu hai lần cùng ngày ghi đè; nên thêm giờ vào tên thư mục.
 
 ## Ghi chú sửa

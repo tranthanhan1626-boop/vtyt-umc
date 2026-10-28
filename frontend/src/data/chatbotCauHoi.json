@@ -720,7 +720,7 @@
       ],
       "chu_de": "k_thau",
       "cau_hoi": "Số trong giỏ bổ sung có phải gửi y nguyên không?",
-      "tra_loi": "Không. Số trong giỏ chỉ là gợi ý bằng đúng số đã rớt. Cách làm: gửi nguyên số gợi ý, rồi mở Danh mục đề xuất của khoa sửa thành số khoa cần (nhiều hơn, ít hơn hay về 0). Đợt bổ sung không áp mức gợi ý và không bắt lý do vượt ngưỡng.",
+      "tra_loi": "Không phải. Từ 28/10/2026 sửa được ngay trong giỏ: mở giỏ, bấm \"Sửa\" trên nhóm, sửa số rồi thêm vào giỏ lại. Đã gửi rồi thì sửa trên Danh mục đề xuất của khoa. Đợt bổ sung không áp mức gợi ý, không bắt lý do vượt ngưỡng.",
       "bien_the_theo_trang_thai": [],
       "di_toi": {
         "nhan": "Đi tới Gói bổ sung",
