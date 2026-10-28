@@ -64,16 +64,18 @@ assert.equal(vaiTroChatbot(undefined), null);
       .forEach((c) => assert.ok(c.split(/\s+/).length <= 60, `${id} quá 60 từ`));
   });
   // Nhãn nút trong câu trả lời khớp chữ trên màn (grep ở src).
-  assert.match(nut("k_tiep_khong_nhu_cau").tra_loi, /"Không phát sinh nhu cầu"/);
+  // 28/10/2026: nút "Không phát sinh nhu cầu" đã bỏ — khoa không cần thì không gửi, báo qua Teams.
+  assert.match(nut("k_tiep_khong_nhu_cau").tra_loi, /Teams/);
+  assert.doesNotMatch(nut("k_tiep_khong_nhu_cau").tra_loi, /Không phát sinh nhu cầu/);
   // 03/10/2026: nhãn trong giỏ đổi theo bản vẽ M1_4 (G4) — "⟳ Mã rớt thầu · số gợi ý N".
   assert.match(nut("k_th_ma_rot_di_dau").tra_loi, /⟳ Mã rớt thầu · số gợi ý N/);
   assert.match(nut("k_th_khong_can_nua").tra_loi, /"Không còn nhu cầu"/);
   // 03/10/2026 (G12): "Mở chốt để sửa…" nay nằm trong menu ⋯ của bảng Tổng hợp.
   assert.match(nut("p_q_sua_sau_chot").tra_loi, /⋯.*"Mở chốt để sửa…"/);
   assert.match(nut("k_tiep_goi_con").tra_loi, /Teams/);
-  // k_xn_nut_mo hỏi tiếp k_tiep_khong_nhu_cau nay đã hiện → giữ nguyên.
-  assert.deepEqual(k.nut.get("k_xn_nut_mo").hoi_tiep, nut("k_xn_nut_mo").hoi_tiep);
-  assert.ok(k.nut.get("k_xn_nut_mo").hoi_tiep.includes("k_tiep_khong_nhu_cau"));
+  // 28/10/2026: các nút về xác nhận của khoa đã bỏ khỏi bộ câu hỏi.
+  ["k_xn_la_gi", "k_xn_nut_mo", "k_xn_lan_2", "p_so_xac_nhan", "p_tiep_nhac_khoa"]
+    .forEach((id) => assert.ok(!ND.nut.some((n) => n.id === id), `còn nút ${id}`));
   // Cơ chế ẩn vẫn chạy khi có nút chưa duyệt (dữ liệu giả).
   {
     const gia = JSON.parse(JSON.stringify(ND));
@@ -146,22 +148,13 @@ const khoaTu = (v) => dungTrangThaiKhoa({ coDotGoi: true, giaiDoan: [], soMaRot:
   assert.match(r.traLoi, /đang có 3 mã hàng chưa gửi/);
 }
 {
-  // Xác nhận hết hiệu lực lần 2 → nút kế là lần 3, đích Danh mục đề xuất.
+  // 28/10/2026: không còn biến thể "xác nhận hết hiệu lực" — đã gửi thì ra
+  // câu "vẫn sửa và gửi thêm được".
   const r = chonCauTraLoi(nut("k_tiep_goc"), {
     ctx: ctxKhoa(), khoa: khoaTu({ soMaTrongGio: 0, daGui: true, xacNhan: { hieu_luc: false, lan: 2 }, coPhienQ: false }),
   });
-  assert.equal(r.bienThe, 3);
-  assert.match(r.traLoi, /Xác nhận lần 2 đã hết hiệu lực/);
-  assert.match(r.traLoi, /lần 3"/);
-  assert.equal(r.diToi.man, "khoa.danh_muc_de_xuat");
-}
-{
-  // Đã gửi, chưa xác nhận, chưa chốt Q → lần 1.
-  const r = chonCauTraLoi(nut("k_tiep_goc"), {
-    ctx: ctxKhoa(), khoa: khoaTu({ soMaTrongGio: 0, daGui: true, xacNhan: null, coPhienQ: false }),
-  });
   assert.equal(r.bienThe, 4);
-  assert.match(r.traLoi, /lần 1"/);
+  assert.doesNotMatch(r.traLoi, /xác nhận/i);
 }
 {
   // 18/09 (kiểm cuối): đã chốt Q → biến thể 5 phải bật (chỉ còn điều kiện
@@ -170,35 +163,20 @@ const khoaTu = (v) => dungTrangThaiKhoa({ coDotGoi: true, giaiDoan: [], soMaRot:
   const r = chonCauTraLoi(nut("k_tiep_goc"), {
     ctx: ctxKhoa(), khoa: khoaTu({ soMaTrongGio: 0, daGui: true, xacNhan: { hieu_luc: true, lan: 1 }, coPhienQ: true }),
   });
-  assert.equal(r.bienThe, 5);
+  assert.equal(r.bienThe, 3);
   assert.doesNotMatch(r.traLoi, /Xác nhận/);
-}
-{
-  // Xác nhận không đọc được (undefined) → daXacNhan null → k_xn_la_gi ra câu gốc.
-  const tt = { ctx: ctxKhoa(), khoa: khoaTu({ daGui: true, xacNhan: undefined, coPhienQ: false }) };
-  assert.equal(tt.khoa.daXacNhan, null);
-  assert.equal(chonCauTraLoi(nut("k_xn_la_gi"), tt).bienThe, null);
-  const tt2 = { ctx: ctxKhoa(), khoa: khoaTu({ daGui: true, xacNhan: { hieu_luc: true, lan: 4 }, coPhienQ: false }) };
-  assert.match(chonCauTraLoi(nut("k_xn_la_gi"), tt2).traLoi, /lần 4/);
-}
-{
-  // Biến thể có chỗ trống chưa rõ (lyDoHuyXacNhan) → bỏ, dùng câu gốc.
-  const r = chonCauTraLoi(nut("k_xn_lan_2"), {
-    ctx: ctxKhoa(), khoa: khoaTu({ daGui: true, xacNhan: { hieu_luc: false, lan: 1 }, coPhienQ: false }),
+  // Đã gửi, chưa chốt Q → biến thể "vẫn sửa và gửi thêm được", không nhắc xác nhận.
+  const r2 = chonCauTraLoi(nut("k_tiep_goc"), {
+    ctx: ctxKhoa(), khoa: khoaTu({ soMaTrongGio: 0, daGui: true, coPhienQ: false }),
   });
-  const bt = nut("k_xn_lan_2").bien_the_theo_trang_thai[0];
-  if (/\{khoa\.lyDoHuyXacNhan\}/.test(bt.tra_loi)) assert.equal(r.bienThe, null);
+  assert.equal(r2.bienThe, 4);
+  assert.doesNotMatch(r2.traLoi, /xác nhận/i);
 }
-
-// ---- QĐ g/h: khoa đã gửi → biến thể "sửa số về 0 rồi xác nhận lại" ---------
+// ---- 28/10/2026: "khoa không cần gì" → không còn biến thể, chỉ câu gốc -------
 {
   const r = chonCauTraLoi(nut("k_tiep_khong_nhu_cau"), { ctx: ctxKhoa(), khoa: khoaTu({ daGui: true }) });
-  assert.equal(r.bienThe, 0);
-  assert.match(r.traLoi, /về 0/);
-  assert.equal(r.diToi.man, "khoa.danh_muc_de_xuat");
-  const g = chonCauTraLoi(nut("k_tiep_khong_nhu_cau"), { ctx: ctxKhoa(), khoa: khoaTu({ daGui: false }) });
-  assert.equal(g.bienThe, null);
-  assert.match(g.traLoi, /không bắt buộc/);
+  assert.equal(r.bienThe, null);
+  assert.match(r.traLoi, /Teams/);
 }
 
 // ---- PĐD ---------------------------------------------------------------------

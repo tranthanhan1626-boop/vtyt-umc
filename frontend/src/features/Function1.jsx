@@ -1476,13 +1476,13 @@ export default function Function1({
     lamMoi: daGui.length,
   });
   const moDanhMucCuaKhoa = () => moDanhMucDeXuat(goiIdDanhMuc, khoaHienTai, dotDung?.id);
-  // 16/10/2026 (em chốt): đã qua bước ③ Xác nhận (gửi xong, giỏ gói con này
+  // 16/10/2026 (em chốt): đã gửi xong (bước Chờ chốt số trở đi, giỏ gói con này
   // trống) thì màn KHÔNG hiện danh sách nhóm nữa mà hiện một nút thật to mở
   // Danh mục đề xuất của khoa. Muốn gửi thêm thì bấm "Đề xuất thêm nhóm".
   const [deXuatThem, setDeXuatThem] = useState(false);
   useEffect(() => { setDeXuatThem(false); }, [goiIdDanhMuc, dotDung?.id]);
   const buocSauGui = coThanhTienTrinh && !deXuatThem && gioHang.length === 0
-    && ["xac_nhan", "cho_q", "ket_qua"].includes(tienTrinhKhoa?.buocHienTai);
+    && ["cho_q", "ket_qua"].includes(tienTrinhKhoa?.buocHienTai);
 
   // ---- L1 (bấm thử 03/10/2026): đợt đang chọn server KHÔNG nhận thêm ---------
   // Trigger `fn_gac_pham_vi_dot_goi_v3` trên `proposals` (đọc thẳng định nghĩa
@@ -1492,7 +1492,9 @@ export default function Function1({
   // `hieu_luc`). Trước đây màn vẫn cho gõ, tới lúc Gửi mới báo lỗi. Ở đây chỉ
   // ĐỌC đúng hai điều kiện đó để nói sớm, không thêm luật mới; đọc lỗi → null
   // = chưa rõ, không chặn (server vẫn là cổng).
-  const [khoaGuiThem, setKhoaGuiThem] = useState(null); // null | "q" | "xac_nhan"
+  // 28/10/2026 — bỏ điều kiện (2) "khoa đã xác nhận danh mục" (tính năng xác
+  // nhận đã bỏ, patch_zzzzzzzq gỡ ở DB); chỉ còn chốt số.
+  const [khoaGuiThem, setKhoaGuiThem] = useState(null); // null | "q"
   useEffect(() => {
     setKhoaGuiThem(null);
     if (toanVien || !khoaHienTai || !goiIdDanhMuc || !dotDung?.id) return undefined;
@@ -1501,16 +1503,10 @@ export default function Function1({
       const { data: dg, error: e1 } = await supabase.from("dot_goi")
         .select("id").eq("dot_id", Number(dotDung.id)).eq("goi_id", goiIdDanhMuc).maybeSingle();
       if (huy || e1 || !dg) return;
-      const [rQ, rXn] = await Promise.all([
-        supabase.from("chot_q_phien").select("id")
-          .eq("dot_goi_id", dg.id).eq("hieu_luc", true).limit(1),
-        supabase.from("danh_muc_khoa_chot").select("chot_luc")
-          .eq("dot_goi_id", dg.id).eq("khoa", khoaHienTai).maybeSingle(),
-      ]);
+      const rQ = await supabase.from("chot_q_phien").select("id")
+        .eq("dot_goi_id", dg.id).eq("hieu_luc", true).limit(1);
       if (huy) return;
-      if (!rQ.error && (rQ.data || []).length > 0) setKhoaGuiThem("q");
-      else if (!rXn.error && rXn.data?.chot_luc) setKhoaGuiThem("xac_nhan");
-      else setKhoaGuiThem(null);
+      setKhoaGuiThem(!rQ.error && (rQ.data || []).length > 0 ? "q" : null);
     };
     doc();
     window.addEventListener("focus", doc);
@@ -1518,7 +1514,6 @@ export default function Function1({
   }, [toanVien, khoaHienTai, goiIdDanhMuc, dotDung?.id, daGui.length]);
   const CAU_KHOA_GUI = {
     q: "Gói con này đã chốt số đi thầu — không thêm mã mới được nữa.",
-    xac_nhan: "Khoa đã xác nhận danh mục đợt này — muốn thêm mã, nhắn Phòng Điều dưỡng mở lại.",
   };
   const chanGo = canChonDot || !!khoaGuiThem;
   chanGoRef.current = chanGo;
@@ -1527,7 +1522,6 @@ export default function Function1({
   const DI_TOI_KHOA = {
     de_xuat: { nhan: "Tìm mã để đề xuất", onClick: () => diToiPhanTu("f1-tim-nhom") },
     gui: { nhan: "Mở giỏ", onClick: () => setMoGio(true) },
-    xac_nhan: { nhan: "Mở Danh mục đề xuất", onClick: moDanhMucCuaKhoa },
     cho_q: { nhan: "Xem Danh mục đề xuất", onClick: moDanhMucCuaKhoa },
     ket_qua: { nhan: "Xem Danh mục đề xuất", onClick: moDanhMucCuaKhoa },
   };

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { EyeOff, ChevronDown as ChevronDownIcon, Download, XCircle, PackagePlus, RefreshCw, AlertTriangle, Lock, LockOpen, Pin, CheckCircle2, History, AlignLeft, SlidersHorizontal } from "lucide-react";
+import { EyeOff, ChevronDown as ChevronDownIcon, Download, XCircle, PackagePlus, RefreshCw, AlertTriangle, Lock, LockOpen, Pin, History, AlignLeft, SlidersHorizontal } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { fmt } from "../components/ChartDongBo";
 import { tinhTuyChonMuaThem30 } from "../lib/tuyChonMuaThem";
@@ -15,9 +15,10 @@ import { xuatExcelDong, tenFileAnToan } from "../lib/xuatExcelDong";
 import { docTenCotTuMau, ganTenMau } from "../lib/tenCotBieuMau";
 import { gomTheoThang } from "../lib/lichSuSuDung";
 import { taiDotIdCuaGoi, locTheoDot } from "../lib/dotBoSung";
-import { dichLoi, thayTenCot } from "../lib/dichLoi";
+import { dichLoi } from "../lib/dichLoi";
 import { taiDeXuatKyTruoc, tooltipKyTruoc, fmtKyTruoc } from "../lib/deXuatKyTruoc";
 import { giaTriKhongDoi } from "../lib/oKhongDoi";
+import { TIEN_TO_DIEU_CHINH, MUC_DIEU_CHINH, COT_SP_THAM_KHAO, docDieuChinh } from "../lib/dieuChinhKhoa";
 import ThanhDauUmc, { useDongKhiRaNgoai, doRongNhanNhom } from "../components/ThanhDauUmc";
 
 /*
@@ -91,11 +92,41 @@ const COT_SO_KHOA = "sl_de_xuat_18t";
 // năm cuối thường còn dở (vd "SL 6 tháng 2026"), đứng một mình khó đọc.
 // Nhãn kết quả thầu (rớt/đổ/nhận) không phải cột riêng: nó nằm trong ô Tên
 // vật tư nên vẫn hiện ở chế độ này.
-const COT_XEM_NHANH = ["stt", "ten_vt_2627", "dvt", "sl_de_xuat_18t", "dai_p50_p75", "giai_trinh_2627"];
-// CDA 03/10/2026 (sau bấm thử): MỞ RA LÀ "Đủ cột" — bảng khoa và bảng Tổng hợp
-// PĐD phải nhìn giống nhau khi mới mở (đổi QĐ f 18/09 "mặc định Xem nhanh").
-// Đổi tên khoá lưu (".v2") để máy đã lưu "Xem nhanh" từ trước cũng mở Đủ cột.
-const KHOA_LUU_XEM_NHANH = "vtyt.danhMucKhoa.xemNhanh.v2";
+// 27/10/2026 — chủ dự án sắp lại Xem nhanh theo đúng thứ tự dưới đây, nhãn
+// lời thường chỉ ở chế độ này (`nhanXem`). "LICH_SU" = 2 năm gần nhất có dữ
+// liệu. Khung tháng của kỳ trước / kỳ này chưa có chỗ lưu trong DB — chủ dự
+// án bổ sung sau, KHÔNG tự điền. Không có giá (QĐ 17/08/2026 bỏ mọi cột giá).
+// 28/10/2026: khoa chỉ ghi ô Điều chỉnh (+ số lượng); cột chữ là giá trị
+// chính thức do PĐD sửa — xem lib/dieuChinhKhoa.js.
+const COT_MA_HANG = {
+  key: "ma_hang", nhan: "Mã hàng (mã HIS)", width: 84,
+  readonly: true, group: "vat_tu", chiXem: true,
+};
+const COT_DIEU_CHINH = { key: "_dieu_chinh", nhan: "Điều chỉnh", width: 280, group: "dieu_chinh", chiXem: true };
+// Nhóm cột riêng của Xem nhanh, nối thêm vào NHOM_COT_KHOA khi dựng dải nhóm.
+const NHOM_COT_XEM_NHANH = [
+  { key: "sp_tham_khao", nhan: "Sản phẩm tham khảo", nhanNgan: "SP tham khảo", mau: "bg-sky-800" },
+  { key: "dieu_chinh", nhan: "Điều chỉnh của khoa", nhanNgan: "Điều chỉnh", mau: "bg-amber-800" },
+];
+const THU_TU_XEM_NHANH = [
+  { key: "stt", width: 46 },
+  { key: "ma_nhom", nhanXem: "Mã quản lý", width: 124 },
+  { key: "ma_hang" },
+  { key: "ten_vt_2627", nhanXem: "Tên mời thầu", width: 200 },
+  { key: "dvt", width: 60 },
+  { key: "tskt_2627", nhanXem: "Tiêu chí kỹ thuật", width: 300 },
+  { key: "LICH_SU" },
+  { key: "_ky_truoc", nhanXem: "SL đề xuất kỳ trước", width: 104 },
+  { key: COT_SO_KHOA, nhanXem: "SL đề xuất kỳ này", width: 110 },
+  { key: "SP_THAM_KHAO" },
+  { key: "_dieu_chinh" },
+];
+// Sáu cột đầu chung một dải "Vật tư & TSKT" ở Xem nhanh cho gọn đầu bảng.
+const NHOM_DAU_XEM_NHANH = new Set(["stt", "ma_nhom", "ma_hang", "ten_vt_2627", "dvt", "tskt_2627"]);
+// CDA 03/10/2026 (sau bấm thử): mở ra là "Đủ cột". 27/10/2026 chủ dự án đảo
+// lại: MỞ RA LÀ "Xem nhanh". Đổi khoá lưu (".v3") để máy đã lưu lựa chọn cũ
+// cũng mở Xem nhanh.
+const KHOA_LUU_XEM_NHANH = "vtyt.danhMucKhoa.xemNhanh.v3";
 
 // "Đề xuất kỳ trước (18T)" — CỘT XEM (QĐ 18/09/2026 mục p), đọc từ
 // `v_de_xuat_ky_truoc`. Chỉ chèn vào `cotTrenManHinh` (cột VẼ), KHÔNG vào
@@ -114,8 +145,8 @@ function chenCotKyTruoc(dsCot) {
 function docXemNhanh() {
   try {
     const v = window.localStorage.getItem(KHOA_LUU_XEM_NHANH);
-    return v === "1";
-  } catch { return false; }
+    return v !== "0";
+  } catch { return true; }
 }
 
 const NHAN_GIAI_DOAN = { chao_gia: "Chào giá", mo_thau: "Mở thầu", danh_gia: "Đánh giá" };
@@ -436,9 +467,6 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
   const [dsNamCoDuLieu, setDsNamCoDuLieu] = useState([]);
   const [loiLuuO, setLoiLuuO] = useState("");
   const [oDaSua, setODaSua] = useState(new Map()); // "maHang|cot" -> true
-  const [trangThaiChot, setTrangThaiChot] = useState(null); // {chot_boi, chot_luc} | null
-  const [dangChot, setDangChot] = useState(false);
-  const [loiChot, setLoiChot] = useState("");
   const [dotGoiId, setDotGoiId] = useState(null);
   // N12 (kiểm định độc lập lượt 2) — "chốt số đi thầu" (chot_q_phien.hieu_luc)
   // là trạng thái CHỐT có sẵn ở màn Tổng hợp PĐD (TongHopPdd.jsx, state
@@ -581,67 +609,12 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
       .forEach(([colKey]) => luuCauHinhCot(colKey, { an: false }));
   };
 
-  // ---- VÒNG XÁC NHẬN (V2, 19/08/2026) --------------------------------------
-  // Thay cho "khoa chốt danh mục". Khác ở chỗ căn bản: xác nhận KHÔNG khoá ô
-  // nào, nó chỉ trả lời "khoa đã ngó qua bản hiện tại chưa". Ai sửa dữ liệu
-  // của mã khoa đó đề xuất — kể cả chính khoa — thì xác nhận mất hiệu lực và
-  // lần sau bấm là lần N+1. PĐD không chốt số đi thầu được khi còn khoa chưa
-  // xác nhận (chặn cứng ở DB, patch_zzzzu).
-  // M4k (vòng 5) — cùng mẫu L13: `dotGoiId` đổi liên tiếp (đổi đợt nhanh) có
-  // thể khiến lượt tải CŨ trả về sau, ghi nhãn "Đã xác nhận..." của đợt cũ đè
-  // lên màn đang xem đợt mới.
-  const luotTaiTrangThaiChot = useRef(0);
-  const taiTrangThaiChot = useCallback(async () => {
-    if (!goiId || !khoaHienTai) return;
-    const luot = ++luotTaiTrangThaiChot.current;
-    let q = supabase.from("danh_muc_khoa_chot")
-      .select("chot_boi, chot_luc, khong_phat_sinh, lan, hieu_luc, huy_luc, huy_do")
-      .eq("khoa", khoaHienTai);
-    q = dotGoiId
-      ? q.eq("dot_goi_id", dotGoiId)
-      : q.eq("goi_id", goiId).eq("nam_de_xuat", NAM_DE_XUAT);
-    const { data, error } = await q.maybeSingle();
-    if (luot !== luotTaiTrangThaiChot.current) return; // M4k/L13: bỏ lượt tải cũ
-    if (error) {
-      const chuaCoBang = error.code === "42P01" || /danh_muc_khoa_chot/i.test(error.message || "");
-      setLoiChot(chuaCoBang
-        ? "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_zzzzb_v3_chot_q). Vui lòng báo Phòng Điều dưỡng."
-        : dichLoi(error));
-      return;
-    }
-    setLoiChot("");
-    setTrangThaiChot(data || null);
-  }, [goiId, khoaHienTai, dotGoiId]);
-
-  useEffect(() => { taiTrangThaiChot(); }, [taiTrangThaiChot]);
-
-  const xacNhanDeXuat = async (khongPhatSinh = false) => {
-    setDangChot(true);
-    setLoiChot("");
-    if (!dotGoiId) {
-      setLoiChot("Chưa xác định được DOT_GOI của danh mục này.");
-      setDangChot(false);
-      return;
-    }
-    const { error } = await supabase.rpc("chot_danh_muc_khoa_v3", {
-      p_dot_goi_id: dotGoiId, p_khong_phat_sinh: khongPhatSinh,
-      ...(laPdd ? { p_khoa: khoaHienTai } : {}),
-    });
-    if (error) {
-      const chuaCoBang = error.code === "42P01" || /danh_muc_khoa_chot/i.test(error.message || "");
-      setLoiChot(chuaCoBang
-        ? "Hệ thống chưa được cập nhật đủ để làm việc này (mã patch_zzzzu_v2_vong_xac_nhan). Vui lòng báo Phòng Điều dưỡng."
-        : dichLoi(error));
-    } else {
-      await taiTrangThaiChot();
-    }
-    setDangChot(false);
-  };
-
-  // Đã xác nhận và xác nhận đó CÒN hiệu lực. Có dòng mà `hieu_luc` false nghĩa
-  // là dữ liệu đã đổi sau lần bấm trước — phải bấm lại.
-  const daXacNhan = !!trangThaiChot?.hieu_luc;
-  const lanKe = trangThaiChot ? (trangThaiChot.hieu_luc ? trangThaiChot.lan : trangThaiChot.lan + 1) : 1;
+  // ---- VÒNG XÁC NHẬN — ĐÃ BỎ 28/10/2026 -------------------------------------
+  // Chủ dự án bỏ hẳn tính năng xác nhận của khoa (cả "Không phát sinh nhu
+  // cầu"); patch_zzzzzzzq gỡ các cổng dựa vào nó ở DB. Bản cũ (V2 19/08) đọc
+  // `danh_muc_khoa_chot` để vẽ nút/nhãn "Đã xác nhận lần N" — xem lịch sử git.
+  // Giữ tên hàm để các chỗ gọi sau khi lưu số/ô khỏi phải sửa.
+  const taiTrangThaiChot = useCallback(async () => {}, []);
 
   // Bộ cột thật của màn này = COT_KHOA nhưng khối "lịch sử sử dụng" được thay
   // bằng đúng những năm đang có dữ liệu.
@@ -661,35 +634,52 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
     ),
     [cauHinhCot, cotDayDu]
   );
+  // Bộ cột Xem nhanh theo THU_TU_XEM_NHANH. Cột kỳ trước luôn có mặt (ô trống
+  // nếu khoa không có số kỳ trước) để thứ tự cột không nhảy giữa các khoa.
+  // Bỏ ghim: ghim nhiều cột thì `left` tính theo độ rộng gốc sẽ lệch.
+  const cotXemNhanh = useMemo(() => {
+    const theoKey = new Map(cotDayDu.map((c) => [c.key, c]));
+    const ds = [];
+    THU_TU_XEM_NHANH.forEach(({ key, nhanXem, width }) => {
+      if (key === "LICH_SU") {
+        dsNamCoDuLieu.slice(-2).forEach(({ nam }) => {
+          const c = theoKey.get(`sl_${nam}`);
+          if (c && !(cauHinhCot[c.key]?.an ?? false)) ds.push({ ...c, freeze: false });
+        });
+        return;
+      }
+      if (key === "SP_THAM_KHAO") {
+        COT_SP_THAM_KHAO.forEach((sp) => {
+          const c = theoKey.get(sp.key);
+          if (c) ds.push({ ...c, ...sp, freeze: false, group: "sp_tham_khao" });
+        });
+        return;
+      }
+      const goc = key === "ma_hang" ? COT_MA_HANG
+        : key === "_dieu_chinh" ? COT_DIEU_CHINH
+        : key === "_ky_truoc" ? COT_KY_TRUOC
+        : theoKey.get(key);
+      if (!goc || (!goc.chiXem && (cauHinhCot[key]?.an ?? false))) return;
+      ds.push({
+        ...goc, freeze: false,
+        ...(nhanXem ? { nhanXem } : {}),
+        ...(width ? { width } : {}),
+        ...(NHOM_DAU_XEM_NHANH.has(key) ? { group: "vat_tu" } : {}),
+      });
+    });
+    return ds;
+  }, [cotDayDu, cauHinhCot, dsNamCoDuLieu]);
+  const soCotXemNhanh = cotXemNhanh.length;
   // Cột VẼ trên màn hình. `cotHienThi` vẫn là nguồn của file Excel (đủ cột
   // đang bật, độ rộng gốc) — đừng đổi chỗ xuất sang biến này.
-  // Xem nhanh: bỏ ghim, vì 8 cột vừa màn hình và bảng giãn theo bề ngang —
-  // ghim nhiều cột thì `left` tính theo độ rộng gốc sẽ lệch.
   const cotTrenManHinh = useMemo(() => {
     const coKyTruoc = kyTruoc.size > 0;
     if (!xemNhanh) {
       const ds = rongTrenManHinh(cotHienThi);
       return coKyTruoc ? chenCotKyTruoc(ds) : ds;
     }
-    const khoaXem = new Set([
-      ...COT_XEM_NHANH,
-      ...dsNamCoDuLieu.slice(-2).map(({ nam }) => `sl_${nam}`),
-    ]);
-    const ds = rongTrenManHinh(cotDayDu
-      .filter((c) => khoaXem.has(c.key) && !(cauHinhCot[c.key]?.an ?? false))
-      .map((c) => ({ ...c, freeze: false })));
-    return coKyTruoc ? chenCotKyTruoc(ds) : ds;
-  }, [xemNhanh, cotHienThi, cotDayDu, cauHinhCot, dsNamCoDuLieu, kyTruoc]);
-  // Số cột của chế độ Xem nhanh, để nhãn nút nói đúng (8, hoặc 9 khi có cột
-  // kỳ trước).
-  const soCotXemNhanh = useMemo(() => {
-    const khoaXem = new Set([
-      ...COT_XEM_NHANH,
-      ...dsNamCoDuLieu.slice(-2).map(({ nam }) => `sl_${nam}`),
-    ]);
-    const n = cotDayDu.filter((c) => khoaXem.has(c.key) && !(cauHinhCot[c.key]?.an ?? false)).length;
-    return n + (kyTruoc.size > 0 && khoaXem.has(COT_SO_KHOA) && !(cauHinhCot[COT_SO_KHOA]?.an ?? false) ? 1 : 0);
-  }, [cotDayDu, cauHinhCot, dsNamCoDuLieu, kyTruoc]);
+    return cotXemNhanh;
+  }, [xemNhanh, cotHienThi, kyTruoc, cotXemNhanh]);
 
   // Tải số kỳ trước MỘT lần cho cả bộ mã đang hiện (chia lô trong
   // taiDeXuatKyTruoc), không theo từng dòng. Khoá theo DANH SÁCH MÃ chứ không
@@ -706,7 +696,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
     return () => { huy = true; };
   }, [khoaHienTai, khoaDsMa]);
   const groupSegments = useMemo(
-    () => tinhSegmentsGroup(cotTrenManHinh, NHOM_COT_KHOA, doRongNhanNhom12),
+    () => tinhSegmentsGroup(cotTrenManHinh, [...NHOM_COT_KHOA, ...NHOM_COT_XEM_NHANH], doRongNhanNhom12),
     [cotTrenManHinh]
   );
 
@@ -868,9 +858,15 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
       const rowsDangHien = rowsGoc
         .map((r) => {
         const ov = oDaLuu.get(r.ma_hang);
-        const dong = { ...r, rot: ketQuaTheoMa.get(r.ma_hang) || null };
+        // `_dieuChinh` = điều chỉnh RIÊNG của khoa này (khoá "dc:*" trong cùng
+        // JSONB với giải trình) — không áp lên cột.
+        const dong = {
+          ...r, rot: ketQuaTheoMa.get(r.ma_hang) || null,
+          _dieuChinh: docDieuChinh(ov),
+        };
         if (ov) {
           Object.entries(ov).forEach(([cot, giaTri]) => {
+            if (cot.startsWith(TIEN_TO_DIEU_CHINH)) return;
             dong[cot] = giaTri;
             daSua.set(`${r.ma_hang}|${cot}`, true);
           });
@@ -1058,6 +1054,39 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
     setRows((prev) => prev.map((r) => (r.ma_hang === maHang ? { ...r, [colKey]: giaTri } : r)));
   };
 
+  // Ô Điều chỉnh (28/10/2026) — điều chỉnh RIÊNG của khoa, ghi vào
+  // `danh_muc_khoa_o` (cùng RPC và cùng luật năm-đợt với giải trình, xem
+  // `luuOLenServer`), KHÔNG đụng giá trị chung của cột. Chuỗi rỗng = xoá dòng.
+  // Trả true khi server nhận; dòng chỉ đổi trên màn khi đã lưu được.
+  const luuDieuChinh = async (maHang, colKey, giaTri) => {
+    if (!dotGoiId) { setLoiLuuO("Đợt này chưa có chỗ lưu điều chỉnh."); return false; }
+    if (dotId && namDot == null) { setLoiLuuO("Đang tra năm của đợt, thử lại sau vài giây."); return false; }
+    const gt = String(giaTri ?? "").trim();
+    const { error } = await supabase.rpc("luu_o_danh_muc_khoa", {
+      p_goi_id: goiId, p_nam_de_xuat: dotId ? namDot : NAM_DE_XUAT, p_khoa: khoaHienTai,
+      p_ma_hang: maHang, p_cot: `${TIEN_TO_DIEU_CHINH}${colKey}`, p_gia_tri: gt,
+      p_dot_goi_id: dotGoiId,
+    });
+    if (error) {
+      setLoiLuuO(`Không lưu được điều chỉnh: ${dichLoi(error)}`);
+      return false;
+    }
+    setLoiLuuO("");
+    setRows((prev) => prev.map((r) => {
+      if (r.ma_hang !== maHang) return r;
+      const dc = { ...(r._dieuChinh || {}) };
+      if (gt) dc[colKey] = gt; else delete dc[colKey];
+      return { ...r, _dieuChinh: dc };
+    }));
+    // Ghi `danh_muc_khoa_o` có thể làm server huỷ xác nhận của khoa — đọc lại
+    // để băng trên đầu bảng nói đúng.
+    await taiTrangThaiChot();
+    return true;
+  };
+  const dongDieuChinh = (r) => MUC_DIEU_CHINH
+    .filter((m) => r._dieuChinh?.[m.key])
+    .map((m) => ({ ...m, gia_tri: r._dieuChinh[m.key] }));
+
   // Lưu khi RỜI ô, không lưu theo từng phím: gõ một đoạn tiêu chí kỹ thuật dài
   // mà bắn mỗi ký tự một request thì vừa nặng vừa đầy audit vô ích.
   const ketThucSuaO = async (maHang, colKey) => {
@@ -1169,8 +1198,13 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
   // Thêm 08/08/2026: đã CHỐT danh sách thì khoá luôn mọi ô. Server cũng chặn
   // độc lập bằng trigger (patch_zs) — đây chỉ là lớp cho người dùng thấy sớm,
   // không phải lớp bảo vệ.
+  // 28/10/2026 — khoa chỉ gõ SỐ và giải trình của mình; cột chữ (tên, TSKT,
+  // sản phẩm tham khảo…) chỉ PĐD sửa, khoa ghi ý qua ô Điều chỉnh. Lớp này
+  // chỉ ở giao diện: RLS `danh_muc_tong_hop_o` vẫn cho khoa ghi (patch_zzzzr).
+  const COT_KHOA_TU_GO = new Set([COT_SO_KHOA, "giai_trinh_2627"]);
   const oCoTheSua = (col) =>
     !col.readonly && !daKhoaSua(col.key)
+    && (laPdd || COT_KHOA_TU_GO.has(col.key))
     && (col.key !== COT_SO_KHOA || !!dotGoiId);
 
   // ---- Đẩy SL rớt 1 phần (mục 4.3) — mở form, tải ứng viên mã tương đương
@@ -1434,24 +1468,9 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
               title={!rows.length ? "Chưa có mã nào trong danh mục — không có gì để xuất." : undefined}>
               <Download size={13} /> {dangXuatExcel ? "Đang xuất…" : "Xuất Excel in trình ký"}
             </button>
-            <button className={`qtdx-tb ${daXacNhan || !rows.length ? "" : "primary"}`}
-              onClick={() => xacNhanDeXuat(false)}
-              disabled={dangChot || daXacNhan || !rows.length}
-              title={daXacNhan
-                ? "Bản hiện tại đã được khoa xác nhận. Khoa tự sửa số hoặc ô thì cần xác nhận lại; Phòng Điều dưỡng sửa thì không cần."
-                : !rows.length
-                ? "Chưa có mã nào trong danh mục — chưa có gì để xác nhận."
-                : "Xác nhận rằng khoa đã xem và đồng ý với bản đang hiển thị. Không khoá ô nào."}>
-              <CheckCircle2 size={13} />
-              {dangChot ? "Đang lưu…" : daXacNhan
-                ? `Đã xác nhận lần ${trangThaiChot.lan}`
-                : `Xác nhận thông tin đề xuất lần ${lanKe}`}
-            </button>
-            {!daXacNhan && !rows.length && !laPdd && (
-              <button className="qtdx-tb primary" onClick={() => xacNhanDeXuat(true)} disabled={dangChot}>
-                <CheckCircle2 size={13} /> Không phát sinh nhu cầu
-              </button>
-            )}
+            {/* 28/10/2026 — BỎ nút "Xác nhận thông tin đề xuất lần N" và "Không
+                phát sinh nhu cầu" (chủ dự án bỏ hẳn tính năng xác nhận của khoa;
+                patch_zzzzzzzq gỡ các cổng dựa vào nó ở DB). */}
             {/* 18/09/2026: bỏ nút "Xử lý mã rớt ở Tiến độ gói thầu". Nút đó chỉ
                 đưa về màn chính, còn màn Tiến độ gói thầu đã ẩn khỏi menu — khoa
                 bấm vào là vào ngõ cụt. Mã rớt nay tự vào GIỎ đợt bổ sung của
@@ -1464,35 +1483,8 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
             trên đầu mỗi cột, bấm ở đó mà lỗi chỉ nằm trong menu thì không ai
             thấy. */}
         {loiCauHinhCot && <p className="mt-1.5 text-xs text-red-600">{loiCauHinhCot}</p>}
-        {loiChot && <p className="mt-1.5 text-xs text-red-600">{loiChot}</p>}
         {loiLuuO && <p className="mt-1.5 text-xs text-red-600">{loiLuuO}</p>}
         <div className="mt-1.5 flex items-center gap-1.5 text-[11px] flex-wrap">
-          {daXacNhan && (
-            // V11 (05/10/2026, G10): email người bấm và giờ-phút-giây vào rê
-            // chuột; trên nhãn chỉ còn ngày.
-            <span className="qtdx-badge green"
-              title={`Xác nhận bởi ${trangThaiChot.chot_boi || "không rõ"} lúc `
-                + `${new Date(trangThaiChot.chot_luc).toLocaleString("vi-VN")}.`}>
-              <CheckCircle2 size={11} className="mr-1" />
-              Đã xác nhận lần {trangThaiChot.lan}
-              {" · "}{new Date(trangThaiChot.chot_luc).toLocaleDateString("vi-VN")}
-              {trangThaiChot.khong_phat_sinh ? " · Không phát sinh nhu cầu" : ""}
-              {" · ô vẫn sửa được, sửa thì phải xác nhận lại"}
-            </span>
-          )}
-          {/* Xác nhận bị huỷ: nói rõ VÌ SAO, nếu không khoa mở ra thấy nút
-              nhảy từ "lần 1" sang "lần 2" mà không hiểu chuyện gì xảy ra. */}
-          {trangThaiChot && !trangThaiChot.hieu_luc && (
-            <span className="qtdx-badge amber"
-              title={trangThaiChot.huy_luc
-                ? `Hết hiệu lực lúc ${new Date(trangThaiChot.huy_luc).toLocaleString("vi-VN")}.` : undefined}>
-              <AlertTriangle size={11} className="mr-1" />
-              Xác nhận lần {trangThaiChot.lan} đã hết hiệu lực
-              {trangThaiChot.huy_do ? ` — ${thayTenCot(trangThaiChot.huy_do)}` : ""}
-              {trangThaiChot.huy_luc ? ` (${new Date(trangThaiChot.huy_luc).toLocaleDateString("vi-VN")})` : ""}
-              {" "}· kiểm lại rồi bấm “Xác nhận thông tin đề xuất lần {trangThaiChot.lan + 1}”
-            </span>
-          )}
           {soOPddSuaDe > 0 && (
             <span className="qtdx-badge violet"
               title="Ô viền tím sửa được, nhưng sửa là mọi khoa đổi theo.">
@@ -1607,10 +1599,10 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
                   className={c.freeze ? "freeze" : ""}
                   // V39 (05/10/2026, G4): nhãn lời thường chỉ ở lớp hiển thị,
                   // rê chuột thấy tên gốc (`c.nhan` — tên đi vào Excel).
-                  title={NHAN_HIEN_KHOA[c.key] ? `Tên gốc: ${c.nhan}` : undefined}
+                  title={(c.nhanXem || NHAN_HIEN_KHOA[c.key]) ? `Tên gốc: ${c.nhan}` : undefined}
                   style={c.freeze ? { left: tinhLeftFreeze(cotTrenManHinh, c.key) } : {}}>
                   <span className="inline-flex items-center gap-1">
-                    {NHAN_HIEN_KHOA[c.key] || c.nhan}
+                    {c.nhanXem || NHAN_HIEN_KHOA[c.key] || c.nhan}
                     {c.freeze && <span title="Cột này luôn hiện khi cuộn ngang">📌</span>}
                     {/* 18/09/2026: biểu tượng ẩn/khoá trên tiêu đề chỉ cho PĐD.
                         Khoa vẫn chỉnh được qua menu "Hiển thị ▾ → Ẩn/khóa cột";
@@ -1655,7 +1647,7 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
                 dangChonMaDay={dangChonMaDay} moFormDay={moFormDay} setDangChonMaDay={setDangChonMaDay}
                 ungVienDay={ungVienDay} formDay={formDay} setFormDay={setFormDay}
                 luuDaySL={luuDaySL} dangLuuDay={dangLuuDay} thongBaoDay={thongBaoDay}
-                kyTruoc={kyTruoc} />
+                kyTruoc={kyTruoc} dongDieuChinh={dongDieuChinh} luuDieuChinh={luuDieuChinh} laPdd={laPdd} />
             ))}
           </tbody>
         </table>
@@ -1743,11 +1735,83 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
   );
 }
 
+/** Ô "Điều chỉnh" ở Xem nhanh (27–28/10/2026): mỗi mục khoa muốn đổi là một
+ *  dòng trong ô, lưu RIÊNG của khoa. Chọn mục ở ô sổ xuống → gõ → Lưu. Bấm vào
+ *  một dòng để sửa lại hoặc xoá dòng đó. PĐD mở danh mục của khoa thì chỉ xem
+ *  (PĐD sửa thẳng cột chính trên bảng Tổng hợp). */
+function ODieuChinh({ r, dsDong, luu, chiXem }) {
+  const [mucSua, setMucSua] = useState(null);
+  const [nhap, setNhap] = useState("");
+  const [dangLuu, setDangLuu] = useState(false);
+  const muc = MUC_DIEU_CHINH.find((m) => m.key === mucSua);
+  const daCo = mucSua ? (r._dieuChinh?.[mucSua] ?? null) : null;
+  const mo = (key) => {
+    if (!key || chiXem) return;
+    setMucSua(key);
+    // Có điều chỉnh rồi thì mở lại chữ đó; chưa có thì bắt đầu từ giá trị
+    // hiện hành của cột để khoa sửa từ đó.
+    setNhap(String(r._dieuChinh?.[key] ?? r[key] ?? ""));
+  };
+  const huy = () => { setMucSua(null); setNhap(""); };
+  const chuaDoi = nhap.trim() === "" || nhap.trim() === String(daCo ?? r[mucSua] ?? "").trim();
+  const ghi = async (giaTri) => {
+    if (dangLuu) return;
+    setDangLuu(true);
+    const ok = await luu(r.ma_hang, mucSua, giaTri);
+    setDangLuu(false);
+    if (ok) huy();
+  };
+  return (
+    <div className="space-y-1 text-[13px] leading-snug">
+      {dsDong.map((d) => (
+        <button key={d.key} type="button" onClick={() => mo(d.key)} disabled={chiXem}
+          className="block w-full rounded px-1 py-0.5 text-left enabled:hover:bg-amber-50"
+          title={chiXem ? undefined : "Bấm để sửa lại hoặc xoá dòng này"}>
+          <span className="font-semibold text-umc-900">{d.nhan}:</span>{" "}
+          <span className="whitespace-pre-wrap">{d.gia_tri}</span>
+        </button>
+      ))}
+      {chiXem ? (dsDong.length === 0 && <span className="text-slate-400">—</span>) : muc ? (
+        <div className="rounded border border-amber-300 bg-amber-50 p-1.5">
+          <div className="mb-1 text-xs font-semibold text-amber-900">{muc.nhan}</div>
+          <textarea value={nhap} autoFocus rows={muc.dai ? 5 : 2}
+            onChange={(e) => setNhap(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") huy();
+              if (e.key === "Enter" && !muc.dai && !e.shiftKey) { e.preventDefault(); if (!chuaDoi) ghi(nhap); }
+            }}
+            className="w-full resize-y rounded border border-slate-300 bg-white px-1.5 py-1 text-[13px]" />
+          <div className="mt-1 flex items-center gap-1.5">
+            <button type="button" onClick={() => ghi(nhap)} disabled={chuaDoi || dangLuu}
+              className="rounded bg-umc-700 px-2.5 py-1 text-xs font-medium text-white disabled:opacity-40">
+              {dangLuu ? "Đang lưu…" : "Lưu"}
+            </button>
+            <button type="button" onClick={huy}
+              className="rounded px-2 py-1 text-xs text-slate-600 hover:bg-slate-100">Huỷ</button>
+            {daCo && (
+              <button type="button" onClick={() => ghi("")} disabled={dangLuu}
+                className="ml-auto rounded px-2 py-1 text-xs text-rose-700 hover:bg-rose-50">Xoá dòng</button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <select value="" onChange={(e) => mo(e.target.value)} aria-label="Chọn mục cần điều chỉnh"
+          className="w-full rounded border border-dashed border-slate-300 bg-white px-1 py-1 text-xs text-slate-600 hover:border-umc-500">
+          <option value="">＋ Chọn mục cần điều chỉnh</option>
+          {MUC_DIEU_CHINH.map((m) => (
+            <option key={m.key} value={m.key}>{m.nhan}{r._dieuChinh?.[m.key] ? " (đã ghi)" : ""}</option>
+          ))}
+        </select>
+      )}
+    </div>
+  );
+}
+
 function RowKhoa({
   r, cotHienThi, oDangChon, setODangChon, oCoTheSua, capNhatO, daKhoaSua,
   ketThucSuaO, oDaSua, xemAudit, oPddSuaDe, phimSuaO,
   dangChonMaDay, moFormDay, setDangChonMaDay, ungVienDay, formDay, setFormDay,
-  luuDaySL, dangLuuDay, thongBaoDay, kyTruoc,
+  luuDaySL, dangLuuDay, thongBaoDay, kyTruoc, dongDieuChinh, luuDieuChinh, laPdd,
 }) {
   const dangRot = !!r.rot;
   const dangMoForm = dangChonMaDay === r.ma_hang;
@@ -1755,16 +1819,26 @@ function RowKhoa({
     <>
       <tr className={dangRot ? "row-failed" : ""}>
         {cotHienThi.map((c) => {
-          // Cột XEM "Đề xuất kỳ trước": không sửa, không lịch sử ô, không vào Excel.
-          if (c.chiXem) {
-            const v = kyTruoc?.get(r.ma_hang);
+          if (c.key === "_dieu_chinh") {
             return (
-              <td key={c.key} className={`qtdx-cell readonly num${c.freeze ? " freeze" : ""}`}
+              <td key={c.key} className="qtdx-cell o-dieu-chinh"
+                style={{ minWidth: c.width, maxWidth: c.width * 1.3 }}>
+                <ODieuChinh r={r} dsDong={dongDieuChinh(r)} luu={luuDieuChinh} chiXem={laPdd} />
+              </td>
+            );
+          }
+          // Cột XEM (kỳ trước, mã hàng, sản phẩm tham khảo): không sửa, không
+          // lịch sử ô, không vào Excel.
+          if (c.chiXem) {
+            const v = c.key === "_ky_truoc" ? kyTruoc?.get(r.ma_hang) : null;
+            return (
+              <td key={c.key} className={`qtdx-cell readonly${c.key === "_ky_truoc" ? " num" : ""}${c.freeze ? " freeze" : ""}`}
                 style={{
                   minWidth: c.width, maxWidth: c.width * 1.3,
                   ...(c.freeze ? { left: tinhLeftFreeze(cotHienThi, c.key) } : {}),
                 }}>
                 {v && <span title={tooltipKyTruoc(v, r.dvt)}>{fmtKyTruoc(v.tong)}</span>}
+                {c.key === "ma_hang" && r.ma_hang}
               </td>
             );
           }

@@ -62,9 +62,6 @@ function trangThaiGiaiDoan(giaiDoan, ma) {
  * @param {boolean|null} v.daGui        khoa có dòng `phan_bo_khoa` số hiện hành > 0
  *                                      trong DOT_GOI — đúng định nghĩa "đã gửi đề
  *                                      xuất thật" của hàm SQL khoa_chua_xac_nhan
- * @param {object|null|undefined} v.xacNhan dòng `danh_muc_khoa_chot` của khoa
- *                                      ({hieu_luc, lan, khong_phat_sinh}); null =
- *                                      chưa từng xác nhận; undefined = chưa đọc được
  * @param {boolean|null} v.coPhienQ     có `chot_q_phien` hiệu lực
  * @param {Array|null}   v.giaiDoan     dòng `giai_doan_thau_v3`
  * @param {number|null}  v.soMaRot      số mã có kết quả `khong_trung` của khoa
@@ -73,9 +70,11 @@ function trangThaiGiaiDoan(giaiDoan, ma) {
  *                                      luật ô "Chưa xử lý" của màn ③)
  * @returns {{ buoc: Array, buocHienTai: string|null, viecTiepTheo: string }}
  */
+// 28/10/2026 — BỎ bước "Xác nhận danh mục" (chủ dự án bỏ hẳn tính năng xác
+// nhận + "Không phát sinh nhu cầu" của khoa; patch_zzzzzzzq). Còn 4 bước.
 export function tinhTienTrinhKhoa(v = {}) {
   if (v.coDotGoi === false) {
-    const buoc = ["de_xuat", "gui", "xac_nhan", "cho_q", "ket_qua"].map((ma, i) => ({
+    const buoc = MA_KHOA.map((ma, i) => ({
       ma, nhan: NHAN_KHOA[i], nhanNgan: NHAN_NGAN_KHOA[i],
       trangThai: "chuaRo", chuThich: "chưa rõ",
     }));
@@ -86,11 +85,6 @@ export function tinhTienTrinhKhoa(v = {}) {
   }
 
   const soGio = v.soMaTrongGio;
-  const xn = v.xacNhan;
-  const docDuocXn = xn !== undefined;
-  // Đường "không phát sinh nhu cầu" (01_NGHIEP_VU mục 13): khoa xác nhận mà
-  // không gửi mã nào. Đọc thẳng cờ `khong_phat_sinh` trên dòng xác nhận.
-  const khongPhatSinh = !!(xn && xn.hieu_luc && xn.khong_phat_sinh);
 
   const buoc = [];
 
@@ -101,8 +95,6 @@ export function tinhTienTrinhKhoa(v = {}) {
     buoc.push({ trangThai: "xong", chuThich: `${soGio} mã trong giỏ` });
   } else if (v.daGui) {
     buoc.push({ trangThai: "xong", chuThich: "Đã có đề xuất" });
-  } else if (khongPhatSinh) {
-    buoc.push({ trangThai: "xong", chuThich: "Không phát sinh nhu cầu" });
   } else if (v.daGui == null) {
     buoc.push({ trangThai: "chuaRo", chuThich: "chưa rõ" });
   } else {
@@ -121,40 +113,16 @@ export function tinhTienTrinhKhoa(v = {}) {
     });
   } else if (v.daGui) {
     buoc.push({ trangThai: "xong", chuThich: "Đã gửi đề xuất" });
-  } else if (khongPhatSinh) {
-    buoc.push({ trangThai: "xong", chuThich: "Không phát sinh nhu cầu" });
   } else {
     buoc.push({ trangThai: "chua", chuThich: "Chưa gửi" });
   }
 
-  // ③ Xác nhận danh mục — dòng `danh_muc_khoa_chot` còn `hieu_luc`.
-  if (!docDuocXn) {
-    buoc.push({ trangThai: "chuaRo", chuThich: "chưa rõ" });
-  } else if (xn && xn.hieu_luc) {
-    buoc.push({ trangThai: "xong", chuThich: xn.lan ? `Đã xác nhận lần ${xn.lan}` : "Đã xác nhận" });
-  } else if (xn && !xn.hieu_luc) {
-    // Dòng còn đó mà hết hiệu lực: dữ liệu đã đổi sau lần bấm trước
-    // (DanhMucDeXuatKhoa.jsx — `lanKe`). Trước chốt Q thì đó là cổng chặn nên
-    // nói "cần xác nhận lại". SAU chốt Q thì chưa có tài liệu nào nói khoa có
-    // phải xác nhận lại hay không (cổng trình ký chỉ đòi CÓ dòng xác nhận) —
-    // chỉ nêu sự việc, không bảo khoa phải làm gì.
-    buoc.push({
-      trangThai: "chua",
-      chuThich: v.coPhienQ
-        ? `Lần ${xn.lan || "trước"} hết hiệu lực sau chốt số`
-        : `Lần ${xn.lan || "trước"} hết hiệu lực — cần xác nhận lại`,
-      canhBao: true,
-    });
-  } else {
-    buoc.push({ trangThai: "chua", chuThich: "Chưa xác nhận" });
-  }
-
-  // ④ Chờ PĐD chốt số đi thầu — `chot_q_phien` hiệu lực.
+  // ③ Chờ PĐD chốt số đi thầu — `chot_q_phien` hiệu lực.
   if (v.coPhienQ == null) buoc.push({ trangThai: "chuaRo", chuThich: "chưa rõ" });
   else if (v.coPhienQ) buoc.push({ trangThai: "xong", chuThich: "PĐD đã chốt số" });
   else buoc.push({ trangThai: "chua", chuThich: "PĐD chưa chốt số" });
 
-  // ⑤ Kết quả thầu — cả ba giai đoạn `hoan_thanh`.
+  // ④ Kết quả thầu — cả ba giai đoạn `hoan_thanh`.
   let gdDangChay = null;
   if (v.coPhienQ == null) {
     buoc.push({ trangThai: "chuaRo", chuThich: "chưa rõ" });
@@ -166,7 +134,7 @@ export function tinhTienTrinhKhoa(v = {}) {
   } else {
     const tt = GIAI_DOAN_THAU.map((g) => trangThaiGiaiDoan(v.giaiDoan, g.ma));
     gdDangChay = GIAI_DOAN_THAU.find((g, i) => tt[i] === "dang_thuc_hien") || null;
-    if (tt.every((x) => x === "hoan_thanh") && v.daGui === false && !khongPhatSinh) {
+    if (tt.every((x) => x === "hoan_thanh") && v.daGui === false) {
       // QA3 18/09: khoa KHÔNG gửi mã nào trong gói này mà ⑤ lại tick xanh
       // trong khi ①②③ trống — trông như khoa đã đi hết vòng. Để trung tính
       // (không tick, không phải bước hiện tại): gói này không có việc của khoa.
@@ -205,15 +173,16 @@ export function tinhTienTrinhKhoa(v = {}) {
   }));
 
   // Bước hiện tại. Đã chốt Q thì mọi việc của khoa trước đó đã qua cổng —
-  // bước hiện tại là ⑤ (hoặc không còn bước nào nếu ⑤ xong).
+  // bước hiện tại là ④ Kết quả (hoặc không còn bước nào nếu ④ xong).
+  const KQ = MA_KHOA.indexOf("ket_qua");
   let chiSo;
   let chuaRo = false;
   if (v.coPhienQ === true) {
-    chiSo = coNhan[4].trangThai === "xong" || coNhan[4].trungTinh
-      ? -1 : (coNhan[4].trangThai === "chuaRo" ? -1 : 4);
-    chuaRo = coNhan[4].trangThai === "chuaRo";
+    chiSo = coNhan[KQ].trangThai === "xong" || coNhan[KQ].trungTinh
+      ? -1 : (coNhan[KQ].trangThai === "chuaRo" ? -1 : KQ);
+    chuaRo = coNhan[KQ].trangThai === "chuaRo";
   } else {
-    ({ chiSo, chuaRo } = chonBuocHienTai(coNhan.slice(0, 4)));
+    ({ chiSo, chuaRo } = chonBuocHienTai(coNhan.slice(0, KQ)));
   }
   const ketQua = danhDauHienTai(coNhan, chiSo);
   const ma = chiSo >= 0 ? ketQua[chiSo].ma : null;
@@ -222,8 +191,7 @@ export function tinhTienTrinhKhoa(v = {}) {
   if (chuaRo) viec = "Chưa đọc được đủ trạng thái — bấm Tải lại hoặc thử lại sau.";
   else if (ma === "de_xuat") viec = "Chọn nhóm, nhập số rồi bấm “Thêm cả nhóm vào giỏ”.";
   else if (ma === "gui") viec = "Mở giỏ, kiểm tra rồi bấm “Gửi đề xuất” — giỏ chưa gửi chưa phải đề xuất.";
-  else if (ma === "xac_nhan") viec = "Mở Danh mục đề xuất của khoa, kiểm tra rồi bấm “Xác nhận thông tin đề xuất”.";
-  else if (ma === "cho_q") viec = "Chờ Phòng Điều dưỡng chốt số đi thầu. Khoa tự sửa số lúc này thì phải xác nhận lại.";
+  else if (ma === "cho_q") viec = "Chờ Phòng Điều dưỡng chốt số đi thầu — tới lúc đó khoa vẫn sửa số và gửi thêm được.";
   else if (ma === "ket_qua") {
     viec = gdDangChay
       ? `Đang đấu thầu (giai đoạn ${gdDangChay.nhan}) — khoa chưa cần thao tác.`
@@ -235,107 +203,47 @@ export function tinhTienTrinhKhoa(v = {}) {
   return { buoc: ketQua, buocHienTai: ma, viecTiepTheo: viec };
 }
 
-const MA_KHOA = ["de_xuat", "gui", "xac_nhan", "cho_q", "ket_qua"];
-const NHAN_KHOA = ["Đề xuất", "Gửi", "Xác nhận danh mục", "Chờ PĐD chốt số", "Kết quả thầu"];
-const NHAN_NGAN_KHOA = ["Đề xuất", "Gửi", "Xác nhận", "Chờ chốt số", "Kết quả"];
+const MA_KHOA = ["de_xuat", "gui", "cho_q", "ket_qua"];
+const NHAN_KHOA = ["Đề xuất", "Gửi", "Chờ PĐD chốt số", "Kết quả thầu"];
+const NHAN_NGAN_KHOA = ["Đề xuất", "Gửi", "Chờ chốt số", "Kết quả"];
 
 // ─────────────────────────────────────────────────────────────────────────
 // PĐD — theo một DOT_GOI
 // ─────────────────────────────────────────────────────────────────────────
 
-const MA_PDD = ["khoa_de_xuat", "khoa_xac_nhan", "chot_q", "chao_gia", "mo_thau", "danh_gia", "trinh_ky"];
-const NHAN_PDD = ["Khoa đề xuất", "Khoa xác nhận", "Chốt số đi thầu", "Chào giá", "Mở thầu", "Đánh giá", "Chốt trình ký"];
-const NHAN_NGAN_PDD = ["Đề xuất", "Xác nhận", "Chốt số", "Chào giá", "Mở thầu", "Đánh giá", "Trình ký"];
+// 28/10/2026 — BỎ bước "Khoa xác nhận" (tính năng xác nhận của khoa đã bỏ). Còn 6 bước.
+const MA_PDD = ["khoa_de_xuat", "chot_q", "chao_gia", "mo_thau", "danh_gia", "trinh_ky"];
+const NHAN_PDD = ["Khoa đề xuất", "Chốt số đi thầu", "Chào giá", "Mở thầu", "Đánh giá", "Chốt trình ký"];
+const NHAN_NGAN_PDD = ["Đề xuất", "Chốt số", "Chào giá", "Mở thầu", "Đánh giá", "Trình ký"];
 
 /**
  * @param {object} v
- * @param {number|null}   v.soKhoaThamGia    số khoa `dot_goi_khoa.tham_gia`
- * @param {string[]|null} v.khoaDaGui        khoa THAM GIA đã có `phan_bo_khoa`
- *                                           số hiện hành > 0
- * @param {string[]|null} v.khoaChuaXacNhan  kết quả RPC `khoa_chua_xac_nhan`
- *                                           — đúng cổng server chặn chốt Q
+ * @param {string[]|null} v.khoaDaGui        khoa đã có `phan_bo_khoa` số hiện hành > 0
  * @param {boolean|null}  v.coPhienQ         có `chot_q_phien` hiệu lực
  * @param {Array|null}    v.giaiDoan         dòng `giai_doan_thau_v3`
  * @param {boolean|null}  v.coPhienTrinhKy   có `chot_trinh_ky_phien_v3` hiệu lực
- * @param {string[]|null} [v.khoaKhongPhatSinh] khoa có dòng `danh_muc_khoa_chot`
- *                                           hiệu lực + `khong_phat_sinh` — CHỈ để
- *                                           hiện chữ, không đổi trạng thái bước
  */
 export function tinhTienTrinhPdd(v = {}) {
   const buoc = [];
   const X = Array.isArray(v.khoaDaGui) ? v.khoaDaGui.length : null;
-  // L1 (test 10/10/2026): khoa bấm "Không phát sinh nhu cầu" phải phân biệt
-  // được với khoa quên gửi (QĐ g 18/09). Chỉ thêm chữ — không đổi trạng thái
-  // bước nào, không đổi cổng.
-  const K = Array.isArray(v.khoaKhongPhatSinh) ? v.khoaKhongPhatSinh.length : 0;
-  const chuKhongPhatSinh = K ? `${K} khoa báo không phát sinh` : "";
-  const tooltipKhongPhatSinh = K
-    ? `Báo "Không phát sinh nhu cầu": ${v.khoaKhongPhatSinh.join(", ")}.`
-    : undefined;
-  const Y = coSo(v.soKhoaThamGia) ? v.soKhoaThamGia : null;
-  const dsChua = Array.isArray(v.khoaChuaXacNhan) ? v.khoaChuaXacNhan : null;
-  const N = dsChua ? dsChua.length : null;
-
   // ① Khoa đề xuất. Khoa tham gia mà CHƯA gửi không chặn cổng chốt số
   // (QĐ 19/08/2026, 01_NGHIEP_VU Giai đoạn 6) — nên có ≥ 1 khoa gửi là bước
   // này đã cho PĐD dữ liệu để đi tiếp; phần còn thiếu chỉ tô vàng để nhắc.
   if (X == null) {
     buoc.push({ trangThai: "chuaRo", chuThich: "chưa rõ" });
   } else {
-    const chu = Y ? `${X}/${Y} khoa đã gửi` : `${X} khoa đã gửi`;
-    if (v.coPhienQ === true || X > 0) {
-      const tipChua = Y != null && X < Y
-        ? `${Y - X} khoa tham gia chưa gửi đề xuất — không chặn việc chốt số (QĐ 19/08/2026).`
-        : undefined;
-      buoc.push({
-        trangThai: "xong", chuThich: K ? `${chu} · ${chuKhongPhatSinh}` : chu,
-        canhBao: v.coPhienQ !== true && Y != null && X < Y,
-        // M3 (kiểm định 10/10/2026): giữ chữ "báo không phát sinh" cả khi đã có khoa gửi.
-        tooltip: [tipChua, tooltipKhongPhatSinh].filter(Boolean).join(" ") || undefined,
-      });
-    } else {
-      buoc.push({
-        trangThai: "chua",
-        chuThich: K ? `${chu} · ${chuKhongPhatSinh}` : chu,
-        tooltip: tooltipKhongPhatSinh,
-      });
-    }
+    // 28/10/2026 — chỉ ghi số khoa ĐÃ GỬI, bỏ mẫu số "/62" và nhắc khoa chưa
+    // gửi: chủ dự án theo dõi đủ chưa qua Teams, mọi khoa đều được đề xuất.
+    const chu = `${X} khoa đã gửi`;
+    buoc.push({ trangThai: v.coPhienQ === true || X > 0 ? "xong" : "chua", chuThich: chu });
   }
 
-  // ② Khoa xác nhận — danh sách từ RPC khoa_chua_xac_nhan.
-  if (v.coPhienQ === true) {
-    // Chốt Q chỉ thành công khi danh sách này rỗng (chot_so_tham_gia_thau_v3
-    // raise nếu còn khoa). Xác nhận có thể mất hiệu lực SAU đó — nói ra, không
-    // giấu, nhưng bước này đã qua cổng.
-    buoc.push({
-      trangThai: "xong",
-      chuThich: N ? `${N} khoa chưa xác nhận lại` : "Đủ lúc chốt số",
-      canhBao: !!N,
-      tooltip: N ? `Chưa xác nhận bản hiện tại: ${dsChua.join(", ")}` : undefined,
-    });
-  } else if (N == null || X == null) {
-    buoc.push({ trangThai: "chuaRo", chuThich: "chưa rõ" });
-  } else if (X === 0) {
-    buoc.push({
-      trangThai: "chua",
-      chuThich: K ? chuKhongPhatSinh : "Chưa có khoa gửi",
-      tooltip: tooltipKhongPhatSinh,
-    });
-  } else if (N > 0) {
-    buoc.push({
-      trangThai: "chua", chuThich: `còn ${N} khoa chưa xác nhận`, canhBao: true,
-      tooltip: `Chưa xác nhận bản hiện tại: ${dsChua.join(", ")}`,
-    });
-  } else {
-    buoc.push({ trangThai: "xong", chuThich: `Đủ ${X} khoa` });
-  }
-
-  // ③ Chốt số đi thầu.
+  // ② Chốt số đi thầu.
   if (v.coPhienQ == null) buoc.push({ trangThai: "chuaRo", chuThich: "chưa rõ" });
   else if (v.coPhienQ) buoc.push({ trangThai: "xong", chuThich: "Đã chốt" });
   else buoc.push({ trangThai: "chua", chuThich: "Chưa chốt" });
 
-  // ④ ⑤ ⑥ Ba giai đoạn.
+  // ③ ④ ⑤ Ba giai đoạn.
   GIAI_DOAN_THAU.forEach((g) => {
     const tt = Array.isArray(v.giaiDoan) ? trangThaiGiaiDoan(v.giaiDoan, g.ma) : undefined;
     if (v.coPhienQ == null || v.giaiDoan == null) {
@@ -357,7 +265,7 @@ export function tinhTienTrinhPdd(v = {}) {
     }
   });
 
-  // ⑦ Chốt trình ký.
+  // ⑥ Chốt trình ký.
   if (v.coPhienTrinhKy == null) buoc.push({ trangThai: "chuaRo", chuThich: "chưa rõ" });
   else if (v.coPhienTrinhKy) buoc.push({ trangThai: "xong", chuThich: "Đã có bản chính thức" });
   else buoc.push({ trangThai: "chua", chuThich: "Chưa chốt" });
@@ -371,15 +279,8 @@ export function tinhTienTrinhPdd(v = {}) {
 
   let viec;
   if (chuaRo) viec = "Chưa đọc được đủ trạng thái — bấm Tải lại hoặc thử lại sau.";
-  else if (ma === "khoa_de_xuat") {
-    viec = K
-      ? `Chưa khoa nào gửi đề xuất (${chuKhongPhatSinh} nhu cầu) — nhắc các khoa còn lại qua Teams.`
-      : "Chưa khoa nào gửi đề xuất — nhắc khoa qua Teams.";
-  }
-  else if (ma === "khoa_xac_nhan") {
-    const ten = dsChua.slice(0, 3).join(", ") + (dsChua.length > 3 ? ` và ${dsChua.length - 3} khoa khác` : "");
-    viec = `Nhắc ${ten} xác nhận bản hiện tại.`;
-  } else if (ma === "chot_q") viec = "Bấm “Chốt số đi thầu” trên bảng Tổng hợp.";
+  else if (ma === "khoa_de_xuat") viec = "Chưa khoa nào gửi đề xuất — nhắc khoa qua Teams.";
+  else if (ma === "chot_q") viec = "Bấm “Chốt số đi thầu” trên bảng Tổng hợp.";
   else if (["chao_gia", "mo_thau", "danh_gia"].includes(ma)) {
     const g = GIAI_DOAN_THAU.find((x) => x.ma === ma);
     viec = trangThaiGiaiDoan(v.giaiDoan, ma) === "dang_thuc_hien"

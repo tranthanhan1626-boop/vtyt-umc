@@ -246,7 +246,8 @@ def test_m4k_namdot_giu_nguyen_khai_bao_goc():
 
 def test_m4k_co_bo_dem_luot_tai_bang_useref_cho_ba_ham_tai_chinh():
     text = DANH_MUC_KHOA.read_text(encoding="utf-8")
-    for ten_ref in ("luotTaiChinh", "luotTaiCauHinhCot", "luotTaiTrangThaiChot"):
+    # 28/10/2026: bỏ `luotTaiTrangThaiChot` cùng tính năng xác nhận của khoa.
+    for ten_ref in ("luotTaiChinh", "luotTaiCauHinhCot"):
         assert re.search(rf"const {ten_ref} = useRef\(0\)", text), f"thiếu ref đếm lượt {ten_ref}"
 
 

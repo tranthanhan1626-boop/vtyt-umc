@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Plus, Lock, Unlock } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { GOI, useDotDangMo } from "./KhungGoiThau";
@@ -15,7 +15,6 @@ const THANG_MOC = [
 
 export default function QuanLyDot() {
   const { dot, dangTai, taiLai } = useDotDangMo();
-  const [dsKhoa, setDsKhoa] = useState([]);
   const [loi, setLoi] = useState("");
   const [moForm, setMoForm] = useState(false);
   const [f, setF] = useState({
@@ -23,13 +22,8 @@ export default function QuanLyDot() {
   });
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
 
-  // Danh sách đơn vị dùng cho bảng "khoa tham gia" của từng gói con. Đọc một
-  // lần ở đây thay vì trong mỗi đợt — 62 dòng, mọi đợt dùng chung.
-  useEffect(() => {
-    supabase.from("v_don_vi").select("don_vi").order("don_vi").then(({ data }) => {
-      setDsKhoa((data || []).map((x) => x.don_vi));
-    });
-  }, []);
+  // 28/10/2026: bỏ bảng "khoa tham gia" của gói con (DotGoiCuaDot) — không
+  // còn cần danh sách đơn vị ở đây.
   const laBoSung = f.loai_mua_sam === "mua_sam_bo_sung";
 
   const tao = async () => {
@@ -136,7 +130,7 @@ export default function QuanLyDot() {
                   moTa={`đợt ${d.ten}, toàn bộ giỏ, đề xuất, Word/Excel, phiên tổng hợp và gói thầu liên quan`}
                   onDaXoa={taiLai}
                 />
-                <DotGoiCuaDot dot={d} dsKhoa={dsKhoa} />
+                <DotGoiCuaDot dot={d} />
               </div>
             );
           })}

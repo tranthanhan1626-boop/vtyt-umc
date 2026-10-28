@@ -36,6 +36,8 @@ import ThanhDauUmc, { useDongKhiRaNgoai } from "../components/ThanhDauUmc";
 import { tinhTienTrinhPdd } from "../lib/tienTrinh";
 import { dauVaoPdd, useKhoaThamGiaVaDaGui } from "../lib/useTienTrinh";
 import { giaTriKhongDoi } from "../lib/oKhongDoi";
+import { TIEN_TO_DIEU_CHINH, MUC_DIEU_CHINH, COT_SP_THAM_KHAO, docDieuChinh } from "../lib/dieuChinhKhoa";
+import { taiDeXuatKyTruocToanVien } from "../lib/deXuatKyTruoc";
 
 /*
  * TongHopPdd — Excel Tổng hợp Danh mục đề xuất cấp PĐD.
@@ -79,9 +81,45 @@ const COT_TU_DANH_MUC_CHUAN = new Set([
 
 const NAM_DE_XUAT = new Date().getFullYear() + 1;
 
-// LĂNG KÍNH "Cách xem: Theo việc đang làm | Đủ cột" (G3 — CDA duyệt 03/10/2026).
-// Mặc định "Đủ cột" (CDA đổi lại 03/10/2026 sau bấm thử — xem chỗ khai báo cachXem).
-const KHOA_LUU_CACH_XEM = "vtyt.tongHopPdd.cachXem";
+// LĂNG KÍNH "Cách xem: Xem nhanh | Theo việc đang làm | Đủ cột" (G3 — CDA duyệt
+// 03/10/2026; "Xem nhanh" thêm 28/10/2026). Mặc định "Xem nhanh" (chủ dự án
+// 28/10: bảng PĐD hiện Xem nhanh giống màn khoa). Đổi khoá lưu (".v2") để máy
+// đã lưu lựa chọn cũ cũng mở Xem nhanh.
+const KHOA_LUU_CACH_XEM = "vtyt.tongHopPdd.cachXem.v2";
+const CACH_XEM_HOP_LE = new Set(["xem_nhanh", "theo_viec", "du_cot"]);
+
+// XEM NHANH (28/10/2026) — cùng bộ cột, cùng thứ tự với Xem nhanh của Danh mục
+// đề xuất khoa (DanhMucDeXuatKhoa.jsx), số là số TOÀN VIỆN. Cột chính (tên mời
+// thầu, TSKT, sản phẩm tham khảo) PĐD sửa thẳng như mọi ô; ô "Điều chỉnh của
+// khoa" gom ý của từng khoa, chỉ đọc. Cụm thầu cất đi — việc thầu ở "Theo việc".
+const COT_MA_HANG_XN = {
+  key: "_ma_hang", nhan: "Mã hàng (mã HIS)", width: 84, readonly: true, group: "vat_tu", chiXem: true,
+};
+const COT_KY_TRUOC_XN = {
+  key: "_ky_truoc", nhan: "SL đề xuất kỳ trước", width: 104, kieu: "num", readonly: true, group: "de_xuat", chiXem: true,
+};
+const COT_DIEU_CHINH_XN = {
+  key: "_dieu_chinh", nhan: "Điều chỉnh của khoa", width: 300, readonly: true, group: "dieu_chinh", chiXem: true,
+};
+const THU_TU_XEM_NHANH_PDD = [
+  { key: "stt", width: 46 },
+  { key: "ma_nhom", nhanXem: "Mã quản lý", width: 124 },
+  { key: "_ma_hang" },
+  { key: "ten_vt_2627", nhanXem: "Tên mời thầu", width: 200 },
+  { key: "dvt", nhanXem: "ĐVT", width: 60 },
+  { key: "tskt_2627", nhanXem: "Tiêu chí kỹ thuật", width: 300 },
+  { key: "LICH_SU" },
+  { key: "_ky_truoc" },
+  { key: "sl_de_xuat_2627", nhanXem: "SL đề xuất kỳ này", width: 110 },
+  { key: "SP_THAM_KHAO" },
+  { key: "_dieu_chinh" },
+];
+const NHOM_DAU_XN = new Set(["stt", "ma_nhom", "_ma_hang", "ten_vt_2627", "dvt", "tskt_2627"]);
+const NHOM_COT_XEM_NHANH_PDD = [
+  ...NHOM_COT_PDD,
+  { key: "sp_tham_khao", nhan: "Sản phẩm tham khảo", nhanNgan: "SP tham khảo", mau: "bg-sky-800" },
+  { key: "dieu_chinh", nhan: "Điều chỉnh của khoa", nhanNgan: "Điều chỉnh", mau: "bg-amber-800" },
+];
 //
 // Gốc là CHẾ ĐỘ GÕ RỚT (miếng 1d, 24/08/2026): cụm cột thầu nằm sau 30 cột
 // chuẩn bệnh viện, PĐD phải cuộn ngang rất xa mới tới. Nay mở rộng thành lăng
@@ -117,8 +155,6 @@ const NHOM_COT_THEO_VIEC = NHOM_COT_PDD.map((n) => (
   n.key === "vat_tu" ? { ...n, nhan: "Vật tư" }
     : n.key === "de_xuat" ? { ...n, nhan: "Đề xuất toàn viện" } : n));
 
-// Q3 (CDA 03/10/2026): khoa chưa xác nhận — hiện 3 tên đầu + "và N khoa khác ▸".
-const SO_TEN_KHOA_HIEN = 3;
 
 // L5 — ô nhập khi sửa ô: viền rõ, nền trắng (CHUAN_THI_GIAC). Đặt bằng style
 // vì luật `.qtdx-cell input, textarea { border: 0 }` của StyleTable thắng class.
@@ -479,9 +515,17 @@ async function taiOverrideVaKhoa(goiId, namDeXuat) {
   // bằng `cotKhoaSangPdd` — cùng bảng tra mà trigger `cot_pdd_sang_khoa` dùng
   // ở chiều ngược lại.
   const oKhoaTheoMa = new Map();
+  // Điều chỉnh của khoa (khoá "dc:*", 28/10/2026): mã hàng -> [{ khoa, muc }].
+  const dieuChinhTheoMa = new Map();
   (oKhoaRows || []).forEach((r) => {
     const giaTri = r.gia_tri || {};
+    const muc = docDieuChinh(giaTri);
+    if (Object.keys(muc).length) {
+      if (!dieuChinhTheoMa.has(r.ma_hang)) dieuChinhTheoMa.set(r.ma_hang, []);
+      dieuChinhTheoMa.get(r.ma_hang).push({ khoa: r.khoa, muc });
+    }
     Object.entries(giaTri).forEach(([cotKhoa, v]) => {
+      if (cotKhoa.startsWith(TIEN_TO_DIEU_CHINH)) return;
       if (v === null || v === undefined || String(v).trim() === "") return;
       const cotPdd = cotKhoaSangPdd(cotKhoa);
       if (!oKhoaTheoMa.has(r.ma_hang)) oKhoaTheoMa.set(r.ma_hang, new Map());
@@ -491,7 +535,7 @@ async function taiOverrideVaKhoa(goiId, namDeXuat) {
     });
   });
 
-  return { overrideTheoMa, veSuaCuoiTheoMa, cotLocked, dongLocked, cotAn, oKhoaTheoMa };
+  return { overrideTheoMa, veSuaCuoiTheoMa, cotLocked, dongLocked, cotAn, oKhoaTheoMa, dieuChinhTheoMa };
 }
 
 // `danhSachCot` phải là bộ cột ĐANG DÙNG (đã thay khối năm động), không phải
@@ -570,8 +614,10 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   // phải nhìn giống nhau khi mới mở; "Theo việc đang làm" là tuỳ chọn, nhớ
   // theo trình duyệt (localStorage, hỏng thì quay về "du_cot").
   const [cachXem, setCachXemTho] = useState(() => {
-    try { return window.localStorage.getItem(KHOA_LUU_CACH_XEM) === "theo_viec" ? "theo_viec" : "du_cot"; }
-    catch { return "du_cot"; }
+    try {
+      const v = window.localStorage.getItem(KHOA_LUU_CACH_XEM);
+      return CACH_XEM_HOP_LE.has(v) ? v : "xem_nhanh";
+    } catch { return "xem_nhanh"; }
   });
   const setCachXem = (ma) => {
     setCachXemTho(ma);
@@ -584,7 +630,6 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   const [dangHoi, setDangHoi] = useState(false);
   const [moMenuThem, setMoMenuThem] = useState(false);
   const [moThemCot, setMoThemCot] = useState(false);
-  const [moHetKhoa, setMoHetKhoa] = useState(false);
   // Sau chốt số, sổ dòng mở khung chia số trúng; bảng SL từng khoa cất sau link
   // "Xem số đề xuất từng khoa ▸" (bản vẽ M2_chia-so-trung).
   const [xemSoKhoa, setXemSoKhoa] = useState(() => new Set());
@@ -616,7 +661,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       ]);
       if (luot !== luotTaiRef.current) return; // M4: có lượt mới hơn, bỏ kết quả cũ
       const { overrideTheoMa: ov, veSuaCuoiTheoMa: vsc, cotLocked: cl,
-        dongLocked: dl, cotAn: ca, oKhoaTheoMa: okm } = khoaVaOverride;
+        dongLocked: dl, cotAn: ca, oKhoaTheoMa: okm, dieuChinhTheoMa: dctm } = khoaVaOverride;
       // Danh sách khoa chưa xác nhận — tải cùng lúc với trạng thái chốt.
       if (dgId) {
         const { data: chuaXn, error: loiChuaXn } = await supabase.rpc("khoa_chua_xac_nhan", { p_dot_goi_id: dgId });
@@ -655,6 +700,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
       setDongLocked(dl);
       setCotAn(ca);
       setOKhoaTheoMa(okm || new Map());
+      setDieuChinhTheoMa(dctm || new Map());
     } catch (e) {
       if (luot === luotTaiRef.current) setLoi(dichLoi(e) || "Không tải được dữ liệu.");
     } finally {
@@ -713,6 +759,22 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   const [revTrinhKy, setRevTrinhKy] = useState(null);
   // Ô do KHOA sửa, gom theo (mã hàng -> cột PĐD -> [{khoa, giaTri}]).
   const [oKhoaTheoMa, setOKhoaTheoMa] = useState(new Map());
+  // Điều chỉnh của khoa theo mã hàng (Xem nhanh, 28/10/2026).
+  const [dieuChinhTheoMa, setDieuChinhTheoMa] = useState(new Map());
+  // Số đề xuất kỳ trước cộng mọi khoa: Map<ma_hang, số>.
+  const [kyTruocToanVien, setKyTruocToanVien] = useState(() => new Map());
+  // Chỉ tải khi đang Xem nhanh; khoá theo DANH SÁCH MÃ (sửa ô không tải lại).
+  const khoaDsMaKyTruoc = useMemo(
+    () => (cachXem === "xem_nhanh" ? [...new Set(rowsGoc.map((r) => r.ma_hang))].sort().join("|") : ""),
+    [rowsGoc, cachXem]
+  );
+  useEffect(() => {
+    if (!khoaDsMaKyTruoc) return undefined;
+    let huy = false;
+    taiDeXuatKyTruocToanVien(khoaDsMaKyTruoc.split("|"))
+      .then((m) => { if (!huy) setKyTruocToanVien(m); });
+    return () => { huy = true; };
+  }, [khoaDsMaKyTruoc]);
   const [khoaGhiDangXem, setKhoaGhiDangXem] = useState(null);
 
   // COT_PDD nhưng khối cột năm được thay bằng đúng năm đang có dữ liệu, rồi
@@ -759,7 +821,6 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   // Mọi bước đều làm NGAY TRÊN màn này — bấm bước là đưa mắt tới đúng chỗ.
   const CHO_CUA_BUOC = {
     khoa_de_xuat: "th-dai-trang-thai",
-    khoa_xac_nhan: "th-dai-trang-thai",
     chot_q: "th-nut-chot-q",
     chao_gia: "th-giai-doan-thau",
     mo_thau: "th-giai-doan-thau",
@@ -784,8 +845,10 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   // lăng kính không nhấp nháy 6 cột trong lúc dữ liệu thầu còn đang tải.
   const coQ = thau.coPhienQ || !!chot;
   const laTheoViec = cachXem === "theo_viec";
-  // Trước chốt số, lăng kính cất hẳn cụm 7 cột thầu (toàn "—").
-  const anCumThau = laTheoViec && !coQ;
+  const laXemNhanh = cachXem === "xem_nhanh";
+  // Trước chốt số, lăng kính cất hẳn cụm 7 cột thầu (toàn "—"). Xem nhanh
+  // luôn cất — việc thầu làm ở "Theo việc đang làm".
+  const anCumThau = laXemNhanh || (laTheoViec && !coQ);
   const rongCumThau = laTheoViec ? RONG_CUM_THAU_GO_ROT : RONG_CUM_THAU;
   // Trình ký: ba giai đoạn đã xong (server chặn chốt trước đó), hoặc đã có bản
   // chốt. Nút "Chốt trình ký" chỉ hiện từ đây (bản vẽ M2_trinh-ky).
@@ -816,6 +879,40 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   const cotHienThi = useMemo(() => {
     // Độ rộng đổi ở đây là độ rộng VẼ (TSKT nới 560, lăng kính thu hẹp).
     // Excel không đọc biến này — xem `cotChoExcel` trong xuatExcel.
+    if (laXemNhanh) {
+      const theoKey = new Map(cotDayDu.map((c) => [c.key, c]));
+      const ds = [];
+      THU_TU_XEM_NHANH_PDD.forEach(({ key, nhanXem, width }) => {
+        if (key === "LICH_SU") {
+          dsNamCoDuLieu.slice(-2).forEach(({ nam }) => {
+            const c = theoKey.get(`sl_${nam}`);
+            if (c && !cotAn.has(c.key)) ds.push({ ...c, freeze: false });
+          });
+          return;
+        }
+        if (key === "SP_THAM_KHAO") {
+          COT_SP_THAM_KHAO.forEach((sp) => {
+            const c = theoKey.get(cotKhoaSangPdd(sp.key));
+            if (c && !cotAn.has(c.key)) {
+              ds.push({ ...c, nhanXem: sp.nhanXem, width: sp.width, freeze: false, group: "sp_tham_khao" });
+            }
+          });
+          return;
+        }
+        const goc = key === "_ma_hang" ? COT_MA_HANG_XN
+          : key === "_ky_truoc" ? COT_KY_TRUOC_XN
+          : key === "_dieu_chinh" ? COT_DIEU_CHINH_XN
+          : theoKey.get(key);
+        if (!goc || (!goc.chiXem && cotAn.has(key))) return;
+        ds.push({
+          ...goc, freeze: false,
+          ...(nhanXem ? { nhanXem } : {}),
+          ...(width ? { width } : {}),
+          ...(NHOM_DAU_XN.has(key) ? { group: "vat_tu" } : {}),
+        });
+      });
+      return ds;
+    }
     if (!laTheoViec) {
       return rongTrenManHinh(sapXepFreezeTruoc(cotDayDu.filter((c) => !cotAn.has(c.key))));
     }
@@ -840,10 +937,11 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
     return rongTrenManHinh(sapXepFreezeTruoc(ds),
       coQ ? (coThem ? RONG_GO_ROT : { ...RONG_GO_ROT, ten_vt_2627: rongTenGoRot, dai_p50_p75: rongDaiGoRot })
         : coThem ? {} : RONG_TRUOC_THAU);
-  }, [cotAn, cotDayDu, laTheoViec, nhomThem, coQ, rongTenGoRot, rongDaiGoRot]);
+  }, [cotAn, cotDayDu, laTheoViec, laXemNhanh, dsNamCoDuLieu, nhomThem, coQ, rongTenGoRot, rongDaiGoRot]);
   const groupSegments = useMemo(
-    () => tinhSegmentsGroup(cotHienThi, laTheoViec ? NHOM_COT_THEO_VIEC : NHOM_COT_PDD, doRongNhanNhom12),
-    [cotHienThi, laTheoViec]
+    () => tinhSegmentsGroup(cotHienThi,
+      laXemNhanh ? NHOM_COT_XEM_NHANH_PDD : laTheoViec ? NHOM_COT_THEO_VIEC : NHOM_COT_PDD, doRongNhanNhom12),
+    [cotHienThi, laTheoViec, laXemNhanh]
   );
   // Mã "anh em" của mã đang mở hộp đổ: cùng mã quản lý, khác chính nó, và
   // phải CÒN TRÚNG mới gánh thêm được — mã cũng rớt sạch thì đổ sang vô nghĩa.
@@ -1360,7 +1458,9 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[13px] text-slate-500">Cách xem:</span>
             <div role="group" aria-label="Cách xem" className="inline-flex overflow-hidden rounded border border-slate-300">
-              {[["theo_viec", "Theo việc đang làm",
+              {[["xem_nhanh", "Xem nhanh",
+                "Cùng bộ cột với Xem nhanh của khoa, kèm điều chỉnh của từng khoa. Chỉ đổi cách xem trên máy này — file Excel không đổi."],
+                ["theo_viec", "Theo việc đang làm",
                 "Chỉ hiện cột của việc đang làm theo giai đoạn. Chỉ đổi cách xem trên máy này — file Excel không đổi."],
                 ["du_cot", "Đủ cột",
                 "Hiện đủ các cột như file mẫu (cuộn ngang). Chỉ đổi cách xem trên máy này — file Excel không đổi."]]
@@ -1369,7 +1469,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                     onClick={() => setCachXem(ma)}
                     className={`min-h-9 px-3 text-sm ${cachXem === ma
                       ? "bg-umc-50 font-semibold text-umc-800 shadow-[inset_0_-2px_0_var(--umc-blue,#1d4ed8)]"
-                      : "bg-white text-slate-700 hover:bg-slate-50"} ${ma === "du_cot" ? "border-l border-slate-300" : ""}`}>
+                      : "bg-white text-slate-700 hover:bg-slate-50"} ${ma !== "xem_nhanh" ? "border-l border-slate-300" : ""}`}>
                     {nhan}
                   </button>
                 ))}
@@ -1511,7 +1611,6 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
               title={`Chốt bởi ${chot.chot_boi || "không rõ"} lúc ${new Date(chot.chot_luc).toLocaleString("vi-VN")}. `
                 + "Cột số lượng đang khoá; cột chữ vẫn sửa được tới khi chốt trình ký."}>
               <Lock size={11} /> Đã chốt số đi thầu · bản số {chot.revision}
-              {chot.so_khoa_chua_chot > 0 ? ` · lúc chốt còn ${chot.so_khoa_chua_chot} khoa chưa gửi` : ""}
             </span>
           )}
         </p>
@@ -1526,42 +1625,24 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
             {!khoaChuaXacNhan.length && tongKhoaThamGia === 0 && (
               <span className="qtdx-badge blue !text-[13px]">Chưa khoa nào gửi đề xuất cho gói này</span>
             )}
-            {khoaChuaXacNhan.length > 0 && (
-              <span className="inline-flex flex-wrap items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-[13px] text-amber-900">
-                {khoaChuaXacNhan.length} khoa chưa xác nhận:{" "}
-                <b>{(moHetKhoa ? khoaChuaXacNhan : khoaChuaXacNhan.slice(0, SO_TEN_KHOA_HIEN)).join(", ")}</b>
-                {khoaChuaXacNhan.length > SO_TEN_KHOA_HIEN && (
-                  <button type="button" onClick={() => setMoHetKhoa((v) => !v)}
-                    className="font-medium text-amber-800 underline-offset-2 hover:underline">
-                    {moHetKhoa ? "thu gọn ▴" : `và ${khoaChuaXacNhan.length - SO_TEN_KHOA_HIEN} khoa khác ▸`}
-                  </button>
-                )}
-                <span>— nhắc qua Teams</span>
-              </span>
-            )}
-            {!khoaChuaXacNhan.length && tongKhoaThamGia > 0 && (
-              <span className="qtdx-badge green !text-[13px]">Mọi khoa đã xác nhận bản hiện tại</span>
-            )}
+            {/* 28/10/2026 — BỎ dải "N khoa chưa xác nhận" và cổng "đủ xác nhận mới
+                chốt" (chủ dự án: PĐD tự quyết lúc chốt số, theo dõi qua Teams;
+                patch_zzzzzzzq gỡ cổng ở DB). */}
             {/* Không có DOT_GOI: dải thầu tự nói vì sao. */}
             {!dotGoiId && (
               <ThanhGiaiDoanThau dotGoiId={null} giaiDoan={[]} giaiDoanDangChay={null}
                 tongChuaXuLy={0} coPhienQ={false} dotIdTrenUrl={dotId} />
             )}
             <div className="ml-auto flex items-center gap-2">
-              {(!rows.length || khoaChuaXacNhan.length > 0) && (
-                <span className="text-[13px] text-slate-500">
-                  {!rows.length ? "Chưa có số để chốt." : "Chốt được khi mọi khoa đã gửi đều xác nhận."}
-                </span>
+              {!rows.length && (
+                <span className="text-[13px] text-slate-500">Chưa có số để chốt.</span>
               )}
               <button id="th-nut-chot-q" type="button" className="qtdx-tb primary !min-h-10 !text-sm !font-semibold"
                 onClick={() => doiChot()}
-                disabled={dangChot || !rows.length || khoaChuaXacNhan.length > 0}
+                disabled={dangChot || !rows.length}
                 title={!rows.length
                   ? "Chưa khoa nào gửi đề xuất cho gói này — chưa có số để chốt."
-                  : khoaChuaXacNhan.length > 0
-                    ? `Còn ${khoaChuaXacNhan.length} khoa chưa xác nhận bản hiện tại: `
-                      + `${khoaChuaXacNhan.join(", ")}. Nhắn Teams để khoa vào bấm xác nhận.`
-                    : "Chốt số để mang đi thầu — khoá cột số lượng; cột chữ vẫn sửa được tới khi chốt trình ký."}>
+                  : "Chốt số để mang đi thầu — khoá cột số lượng; cột chữ vẫn sửa được tới khi chốt trình ký."}>
                 <Lock size={14} />
                 {dangChot ? "Đang lưu…" : "Chốt số đi thầu"}
               </button>
@@ -1735,7 +1816,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                 // G4: nhãn lời thường chỉ ở lớp hiển thị; rê chuột thấy tên gốc
                 // (`c.nhan` = tên trong COT_PDD/Excel, không đổi). Q8: cột theo
                 // mẫu mà PĐD gõ tay giữ tên mẫu, rê chuột nói rõ nguồn.
-                const nhanHien = NHAN_HIEN_PDD[c.key] || c.nhan;
+                const nhanHien = c.nhanXem || NHAN_HIEN_PDD[c.key] || c.nhan;
                 const goiY = [
                   nhanHien !== c.nhan ? `Tên gốc: ${c.nhan}` : null,
                   COT_MAU_PDD_GO_TAY.has(c.key) ? "Cột theo mẫu bệnh viện — PĐD gõ tay" : null,
@@ -1760,8 +1841,8 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                       </span>
                       {/* G12 — lăng kính bỏ biểu tượng ghim/khoá/ẩn ở tiêu đề;
                           "Đủ cột" giữ như cũ, riêng ẩn cột phải hỏi lại (1e). */}
-                      {!laTheoViec && c.freeze && <span title="Cột này luôn hiện khi cuộn ngang">📌</span>}
-                      {!laTheoViec && (
+                      {!laTheoViec && !laXemNhanh && c.freeze && <span title="Cột này luôn hiện khi cuộn ngang">📌</span>}
+                      {!laTheoViec && !laXemNhanh && (
                         // V10 (05/10/2026): vùng bấm 24px thay icon 10px; lề âm
                         // để tiêu đề không cao thêm.
                         <button onClick={() => toggleKhoa("cot", c.key, cotLocked.has(c.key))}
@@ -1770,7 +1851,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                           {cotLocked.has(c.key) ? <Lock size={12} /> : <Unlock size={12} />}
                         </button>
                       )}
-                      {!laTheoViec && (
+                      {!laTheoViec && !laXemNhanh && (
                         <button onClick={() => setHoi({ loai: "an_mot_cot", cot: c })}
                           className="-my-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded opacity-50 hover:bg-white/60 hover:opacity-100 hover:text-rose-600"
                           title="Ẩn cột này khỏi bảng và file Excel (hỏi lại trước)">
@@ -1839,6 +1920,33 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                     </span>
                   </td>
                   {cotHienThi.map((c) => {
+                    // Cột chỉ xem của Xem nhanh (28/10/2026): mã hàng, số kỳ
+                    // trước toàn viện, điều chỉnh của từng khoa.
+                    if (c.chiXem) {
+                      const dsDc = c.key === "_dieu_chinh" ? (dieuChinhTheoMa.get(r.ma_hang) || []) : null;
+                      return (
+                        <td key={c.key} className={`qtdx-cell readonly${c.kieu === "num" ? " num" : ""}`}
+                          style={{ minWidth: c.width, maxWidth: c.width * 1.3 }}>
+                          {c.key === "_ma_hang" && r.ma_hang}
+                          {c.key === "_ky_truoc" && (kyTruocToanVien.has(r.ma_hang) ? fmt(kyTruocToanVien.get(r.ma_hang)) : "")}
+                          {dsDc && (dsDc.length === 0 ? <span className="text-slate-400">—</span> : (
+                            <div className="space-y-1.5 text-[13px] leading-snug">
+                              {dsDc.map(({ khoa, muc }) => (
+                                <div key={khoa}>
+                                  <div className="font-semibold text-amber-900">▸ {khoa}</div>
+                                  {MUC_DIEU_CHINH.filter((m) => muc[m.key]).map((m) => (
+                                    <div key={m.key} className="pl-3">
+                                      <span className="font-medium text-umc-900">{m.nhan}:</span>{" "}
+                                      <span className="whitespace-pre-wrap">{muc[m.key]}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+                        </td>
+                      );
+                    }
                     const isEditing = oDangChon?.maHang === r.ma_hang && oDangChon?.colKey === c.key;
                     const isLocked = cotLocked.has(c.key) || dongKhoa;
                     const canSua = oCoTheSua(c, r.ma_hang);

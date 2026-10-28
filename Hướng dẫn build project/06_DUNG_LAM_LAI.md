@@ -1,7 +1,7 @@
 # ĐỪNG LÀM LẠI — những quyết định đã bị đảo
 
 > Đọc file này **trước khi** dựng bất kỳ cơ chế nào bạn thấy "còn thiếu".
-> Dự án đã đảo luật **44 lần**. Phần lớn thứ trông như thiếu sót là thứ đã bị
+> Dự án đã đảo luật **48 lần**. Phần lớn thứ trông như thiếu sót là thứ đã bị
 > cố ý bỏ đi, có lý do.
 
 Đây **không** phải tài liệu nghiệp vụ. Luật đang chạy nằm ở
@@ -62,6 +62,10 @@
 | **Bàn điều hành có tab Danh mục tổng hợp và tab Kết quả thầu** | Gỡ khỏi menu — Bàn điều hành **chỉ để xem**, mọi thao tác sửa trên bảng Tổng hợp (thi công QĐ A2) | 24/08/2026 |
 | **Khoa không thấy kết quả thầu trên danh mục của mình** | Bật lại phần **XEM**: nhãn rớt/trúng + tooltip. Nút "Đẩy SL" của khoa vẫn tắt | 24/08/2026 |
 | **Nút "Chạy lại" ở Theo dõi chuyển tiếp hiện cho cả dòng "còn nợ xử lý" (PĐD chưa bấm "Xác nhận rớt")** | Chỉ còn hiện cho dòng **chuyển tiếp thật sự HỎNG**; dòng chưa xác nhận rớt đổi chữ "Chưa xác nhận rớt — làm trên bảng Tổng hợp", không có nút (bấm nút cũ ở dòng này vô tình xác nhận rớt thay PĐD, bỏ qua hộp hỏi lại) | 28/09/2026 (QĐ Q09) |
+| **Danh mục đề xuất của khoa mở ra là "Đủ cột"** (CDA 03/10/2026) | Mở ra là **Xem nhanh**, cột sắp lại theo chủ dự án: STT · Mã quản lý · Mã hàng · Tên mời thầu · ĐVT · Tiêu chí kỹ thuật · Lịch sử sử dụng · SL kỳ trước · SL kỳ này · Sản phẩm tham khảo (4 cột nhỏ) · **Điều chỉnh**. Ở Xem nhanh cột chữ giữ chữ gốc, khoa sửa qua ô Điều chỉnh (ghi đúng đường ô chữ V2, không thêm bước duyệt) | 27/10/2026 |
+| **Khoa sửa thẳng cột chữ trên danh mục (V2, ai sửa sau đè)**; ô Điều chỉnh 27/10 ghi vào giá trị chung | Khoa **chỉ** gõ số + ô Điều chỉnh (ý đề nghị, lưu RIÊNG từng khoa ở `danh_muc_khoa_o` khoá `dc:*`); cột chữ chính chỉ PĐD sửa trên Tổng hợp. Cột chữ VẪN một giá trị chung (V2 giữ nguyên) | 28/10/2026 |
+| **Mỗi gói con có danh sách "khoa tham gia"** (`dot_goi_khoa.tham_gia`, chặn gửi đề xuất, đếm "N/62 khoa") | Mọi khoa đề xuất được vào mọi gói con đang mở; không đếm khoa chưa gửi trên web — theo dõi qua Teams (patch_zzzzzzzq) | 28/10/2026 |
+| **Vòng XÁC NHẬN của khoa (V2 19/08)** — nút "Xác nhận thông tin đề xuất lần N", "Không phát sinh nhu cầu", cổng cứng "đủ khoa xác nhận mới chốt số", khoá gửi thêm sau xác nhận, chốt trình ký đòi khoa đã chốt danh mục | Bỏ hẳn. PĐD tự quyết lúc chốt số; khoa gửi thêm tới khi chốt số; chốt trình ký chỉ đòi khoa có đề xuất (patch_zzzzzzzq). Giữ "Giỏ rớt của khoa" | 28/10/2026 |
 
 ## Bốn cái bẫy hay khiến người ta code lại đồ đã bỏ
 

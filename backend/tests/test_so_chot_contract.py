@@ -77,8 +77,8 @@ def test_chot_la_khoa_sua_o_ca_hai_man():
     assert "fn_chan_xoa_o_da_chot" in PATCH_ZS
     assert "before delete on danh_muc_tong_hop_o" in PATCH_ZS
     assert "before insert or update or delete on danh_muc_khoa_o" in PATCH_ZS
-    # Lớp giao diện (chỉ để người dùng thấy sớm, không phải lớp bảo vệ)
-    assert "&& !trangThaiChot" in DANH_MUC_KHOA
+    # Lớp giao diện cũ `&& !trangThaiChot` ở màn khoa đã gỡ 28/10/2026 cùng tính
+    # năng xác nhận của khoa (patch_zzzzzzzq). Khoá sửa sau chốt vẫn do server lo.
     # 25/08/2026 — assert cũ ở đây là `"!chot && !cotLocked.has(col.key)"`,
     # tức giao diện khoá MỌI ô theo một cái chốt duy nhất. Câu đó viết từ thời
     # patch_zs, khi còn đúng một "chốt cả bản". Từ khi tách chốt Q (cột số) và

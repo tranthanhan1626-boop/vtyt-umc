@@ -48,11 +48,8 @@
       "vai_tro": [
         "khoa"
       ],
-      "ten": "Xác nhận danh mục",
+      "ten": "Sửa thông tin danh mục",
       "nut_goc": [
-        "k_xn_la_gi",
-        "k_xn_nut_mo",
-        "k_xn_lan_2",
         "k_xn_pdd_sua",
         "k_xn_o_chung",
         "k_xn_khoa_ghim"
@@ -71,8 +68,7 @@
         "k_so_p90_p95",
         "k_so_khong_goi_y",
         "k_so_tran_30",
-        "k_so_dai_p50_p75",
-        "p_so_xac_nhan"
+        "k_so_dai_p50_p75"
       ]
     },
     {
@@ -116,7 +112,6 @@
       "nut_goc": [
         "p_tiep_goc",
         "p_tiep_lam_o_dau",
-        "p_tiep_nhac_khoa",
         "k_th_hop_thu"
       ]
     },
@@ -173,7 +168,7 @@
       ],
       "chu_de": "k_tiep",
       "cau_hoi": "Tôi phải làm gì tiếp?",
-      "tra_loi": "Việc của khoa có ba bước. Một: ở màn Đề xuất số lượng, nhập số rồi bấm \"Thêm cả nhóm vào giỏ\". Hai: mở giỏ, bấm \"Gửi đề xuất (… nhóm)\". Ba: mở Danh mục đề xuất của khoa, kiểm lại rồi bấm \"Xác nhận thông tin đề xuất lần N\".",
+      "tra_loi": "Việc của khoa có hai bước. Một: ở màn Đề xuất số lượng, nhập số rồi bấm \"Thêm cả nhóm vào giỏ\". Hai: mở giỏ, bấm \"Gửi đề xuất (… nhóm)\". Muốn đổi tên mời thầu, tiêu chí kỹ thuật hay sản phẩm tham khảo thì ghi vào ô \"Điều chỉnh\" trên Danh mục đề xuất của khoa; Phòng Điều dưỡng sẽ sửa cột chính.",
       "bien_the_theo_trang_thai": [
         {
           "khi": "Gói đang xem chưa có đợt mở · !ctx.dotDangMo",
@@ -192,29 +187,12 @@
           "tra_loi": "Giỏ của bạn đang có {khoa.soMaTrongGio} mã hàng chưa gửi. Bấm \"Gửi đề xuất (… nhóm)\" trên thanh giỏ ở đáy màn, hoặc bấm \"Xem giỏ\" để kiểm lại trước."
         },
         {
-          "khi": "Đã từng xác nhận nhưng xác nhận bị huỷ, PĐD chưa chốt số đi thầu · khoa.xacNhanHetHieuLuc && !khoa.coPhienQ",
-          "tra_loi": "Xác nhận lần {khoa.lanXacNhan} đã hết hiệu lực vì dữ liệu vừa được sửa. Mở Danh mục đề xuất của khoa, kiểm lại rồi bấm \"Xác nhận thông tin đề xuất lần {khoa.lanXacNhanKe}\".",
-          "di_toi": {
-            "nhan": "Đi tới Danh mục đề xuất",
-            "man": "khoa.danh_muc_de_xuat"
-          },
-          "ghi_chu_manager": "18/09: thêm !coPhienQ cho khớp thanh tiến trình — chưa có luật bắt khoa xác nhận lại sau chốt số; chờ chủ dự án quyết."
-        },
-        {
-          "khi": "Đã gửi, chưa xác nhận, PĐD chưa chốt số đi thầu · khoa.daGui && !khoa.daXacNhan && !khoa.coPhienQ",
-          "tra_loi": "Bạn đã gửi đề xuất. Còn một việc: mở Danh mục đề xuất của khoa, kiểm lại số và nội dung, rồi bấm \"Xác nhận thông tin đề xuất lần {khoa.lanXacNhanKe}\". Khoa chưa xác nhận thì PĐD chưa chốt số đi thầu được.",
-          "di_toi": {
-            "nhan": "Đi tới Danh mục đề xuất",
-            "man": "khoa.danh_muc_de_xuat"
-          }
-        },
-        {
           "khi": "PĐD đã chốt số đi thầu · khoa.coPhienQ",
           "tra_loi": "PĐD đã chốt số đi thầu. Cột số lượng đã khoá, không thêm mã được nữa. Đợt đang đấu thầu; kết quả sẽ hiện thành nhãn trên Danh mục đề xuất của khoa."
         },
         {
-          "khi": "Đã xác nhận bản hiện tại, PĐD chưa chốt số đi thầu · khoa.daXacNhan && !khoa.coPhienQ",
-          "tra_loi": "Phần của khoa đã xong. Đang chờ PĐD chốt số đi thầu. Bạn vẫn sửa được, nhưng tự sửa thì phải bấm xác nhận lại."
+          "khi": "Đã gửi, PĐD chưa chốt số đi thầu · khoa.daGui && !khoa.coPhienQ",
+          "tra_loi": "Bạn đã gửi đề xuất. Tới khi PĐD chốt số đi thầu, khoa vẫn sửa số và gửi thêm được. Cần đổi thông tin mã hàng thì ghi ô \"Điều chỉnh\" trên Danh mục đề xuất của khoa."
         }
       ],
       "di_toi": {
@@ -223,8 +201,7 @@
       },
       "hoi_tiep": [
         "k_tiep_cac_buoc",
-        "k_dx_gio_o_dau",
-        "k_xn_la_gi"
+        "k_dx_gio_o_dau"
       ],
       "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:239-278, 291-297, 322-336, 594-612; features/Function1.jsx:2094-2099, 1589-1593; features/DanhMucDeXuatKhoa.jsx:1086-1096, 1125-1134",
       "can_xac_nhan": null
@@ -244,8 +221,7 @@
       },
       "hoi_tiep": [
         "k_dx_bat_dau",
-        "k_dx_dvt",
-        "k_xn_la_gi"
+        "k_dx_dvt"
       ],
       "nguon": "features/KhungGoiThau.jsx:35-54, 199-210, 256-273; HD/01_NGHIEP_VU_HIEN_HANH.md:239-252",
       "can_xac_nhan": null
@@ -295,24 +271,13 @@
       ],
       "chu_de": "k_tiep",
       "cau_hoi": "Khoa tôi không cần gì trong gói này thì làm sao?",
-      "tra_loi": "Nên bấm \"Không phát sinh nhu cầu\" (không bắt buộc) để Phòng Điều dưỡng biết khoa không cần, khỏi tưởng khoa quên. Mở Đề xuất số lượng của gói con, bấm ô \"Xác nhận\" trên thanh tiến trình ở đầu màn để mở Danh mục đề xuất của khoa. Bảng chưa có mã nào thì nút này hiện ra.",
-      "bien_the_theo_trang_thai": [
-        {
-          "khi": "Khoa đã có mã trong đợt · khoa.daGui",
-          "tra_loi": "Khoa đã gửi mã nên nút \"Không phát sinh nhu cầu\" không hiện. Nếu không cần nữa: mở Danh mục đề xuất của khoa, sửa số các mã về 0, rồi bấm \"Xác nhận thông tin đề xuất lần …\" để xác nhận lại.",
-          "di_toi": {
-            "nhan": "Đi tới Danh mục đề xuất",
-            "man": "khoa.danh_muc_de_xuat"
-          }
-        }
-      ],
+      "tra_loi": "Không cần làm gì trên web — không gửi mã nào là được. Nếu cần, báo Phòng Điều dưỡng qua Teams.",
+      "bien_the_theo_trang_thai": [],
       "di_toi": {
         "nhan": "Đi tới Đề xuất số lượng",
         "man": "khoa.de_xuat_so_luong"
       },
-      "hoi_tiep": [
-        "k_xn_la_gi"
-      ],
+      "hoi_tiep": [],
       "nguon": "features/Function1.jsx:1657-1664; features/DanhMucDeXuatKhoa.jsx:1097-1101; HD/01_NGHIEP_VU_HIEN_HANH.md:269-274, 324-329; QĐ g, h 18/09/2026 (HD/05)",
       "can_xac_nhan": null
     },
@@ -507,7 +472,7 @@
       ],
       "chu_de": "k_dx",
       "cau_hoi": "Gửi rồi có sửa số được nữa không?",
-      "tra_loi": "Được, tới khi PĐD chốt số đi thầu. Mở Danh mục đề xuất của khoa, bấm vào ô số lượng, gõ số mới rồi bấm ra ngoài để lưu. Tổng đi thầu đổi theo. Tự sửa xong thì phải bấm xác nhận lại.",
+      "tra_loi": "Được, tới khi PĐD chốt số đi thầu. Mở Danh mục đề xuất của khoa, bấm vào ô số lượng, gõ số mới rồi bấm ra ngoài để lưu. Tổng đi thầu đổi theo.",
       "bien_the_theo_trang_thai": [
         {
           "khi": "PĐD đã chốt số đi thầu · khoa.coPhienQ",
@@ -519,86 +484,9 @@
         "man": "khoa.danh_muc_de_xuat"
       },
       "hoi_tiep": [
-        "k_xn_lan_2",
         "k_loi_da_chot_q"
       ],
       "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:144-157, 1086-1089; features/DanhMucDeXuatKhoa.jsx:740-745, 806-812, 1144-1148",
-      "can_xac_nhan": null
-    },
-    {
-      "id": "k_xn_la_gi",
-      "vai_tro": [
-        "khoa"
-      ],
-      "chu_de": "k_xn",
-      "cau_hoi": "Xác nhận thông tin đề xuất là gì, bấm ở đâu?",
-      "tra_loi": "Là bấm để báo \"khoa đã xem và đồng ý với bản đang hiển thị\". Không khoá ô nào. Nút \"Xác nhận thông tin đề xuất lần N\" nằm trên thanh công cụ của Danh mục đề xuất của khoa. PĐD chỉ chốt số đi thầu được khi mọi khoa đã gửi đều xác nhận.",
-      "bien_the_theo_trang_thai": [
-        {
-          "khi": "Đã xác nhận bản hiện tại · khoa.daXacNhan",
-          "tra_loi": "Khoa đã xác nhận lần {khoa.lanXacNhan}. Không cần bấm thêm, trừ khi khoa tự sửa số hoặc nội dung."
-        }
-      ],
-      "di_toi": {
-        "nhan": "Đi tới Danh mục đề xuất",
-        "man": "khoa.danh_muc_de_xuat"
-      },
-      "hoi_tiep": [
-        "k_xn_nut_mo",
-        "k_xn_lan_2",
-        "k_xn_pdd_sua"
-      ],
-      "nguon": "features/DanhMucDeXuatKhoa.jsx:461-465, 1086-1096; HD/01_NGHIEP_VU_HIEN_HANH.md:324-329, 1074-1075",
-      "can_xac_nhan": null
-    },
-    {
-      "id": "k_xn_nut_mo",
-      "vai_tro": [
-        "khoa"
-      ],
-      "chu_de": "k_xn",
-      "cau_hoi": "Vì sao nút xác nhận bị mờ?",
-      "tra_loi": "Nút mờ khi: bản hiện tại đã được xác nhận (nút ghi \"Đã xác nhận lần N\"); bảng chưa có mã nào; hoặc đang lưu. Khoa tự sửa số hay nội dung thì nút sáng lại để xác nhận lần mới.",
-      "bien_the_theo_trang_thai": [
-        {
-          "khi": "Đã xác nhận · khoa.daXacNhan",
-          "tra_loi": "Khoa đã xác nhận lần {khoa.lanXacNhan} lúc {khoa.xacNhanLuc}, nên nút mờ là đúng. Không cần bấm thêm."
-        },
-        {
-          "khi": "Bảng chưa có mã · khoa.soMaTrenDanhMuc == 0",
-          "tra_loi": "Danh mục chưa có mã nào nên không có gì để xác nhận. Nếu khoa không có nhu cầu, bấm \"Không phát sinh nhu cầu\"."
-        }
-      ],
-      "di_toi": null,
-      "hoi_tiep": [
-        "k_xn_lan_2",
-        "k_tiep_khong_nhu_cau"
-      ],
-      "nguon": "features/DanhMucDeXuatKhoa.jsx:511-513, 1086-1101; HD/01_NGHIEP_VU_HIEN_HANH.md:291-297",
-      "can_xac_nhan": null
-    },
-    {
-      "id": "k_xn_lan_2",
-      "vai_tro": [
-        "khoa"
-      ],
-      "chu_de": "k_xn",
-      "cau_hoi": "Đã xác nhận rồi sao lại phải xác nhận lần nữa?",
-      "tra_loi": "Khoa tự sửa số hoặc sửa một ô thì xác nhận cũ hết hiệu lực. Băng vàng \"Xác nhận lần N đã hết hiệu lực\" ghi rõ lý do. Kiểm lại rồi bấm \"Xác nhận thông tin đề xuất lần N+1\". Số lần xác nhận không giới hạn.",
-      "bien_the_theo_trang_thai": [
-        {
-          "khi": "Xác nhận bị huỷ · khoa.xacNhanHetHieuLuc",
-          "tra_loi": "Xác nhận lần {khoa.lanXacNhan} đã hết hiệu lực: {khoa.lyDoHuyXacNhan}. Kiểm lại rồi bấm \"Xác nhận thông tin đề xuất lần {khoa.lanXacNhanKe}\"."
-        }
-      ],
-      "di_toi": {
-        "nhan": "Đi tới Danh mục đề xuất",
-        "man": "khoa.danh_muc_de_xuat"
-      },
-      "hoi_tiep": [
-        "k_xn_pdd_sua"
-      ],
-      "nguon": "features/DanhMucDeXuatKhoa.jsx:1125-1134; HD/01_NGHIEP_VU_HIEN_HANH.md:291-297, 1088-1089; HD/05_TRANG_THAI_VA_VIEC_TIEP_THEO.md:480",
       "can_xac_nhan": null
     },
     {
@@ -607,12 +495,12 @@
         "khoa"
       ],
       "chu_de": "k_xn",
-      "cau_hoi": "PĐD sửa số của khoa, tôi có phải xác nhận lại không?",
-      "tra_loi": "Không. PĐD sửa số hay nội dung thì khoa KHÔNG mất xác nhận. Bạn thấy khung tím \"Phòng Điều dưỡng đã điều chỉnh số lượng của khoa\" ghi số cũ, số mới, người sửa, lý do, và có thông báo ở chuông. Có ý kiến thì trao đổi qua Teams.",
+      "cau_hoi": "PĐD sửa số của khoa thì tôi biết ở đâu?",
+      "tra_loi": "Bạn thấy khung tím \"Phòng Điều dưỡng đã điều chỉnh số lượng của khoa\" ghi số cũ, số mới, người sửa, lý do, và có thông báo ở chuông. Có ý kiến thì trao đổi qua Teams.",
       "bien_the_theo_trang_thai": [
         {
           "khi": "PĐD đã điều chỉnh số của khoa · khoa.soLanPddDieuChinh > 0",
-          "tra_loi": "PĐD đã điều chỉnh số lượng của khoa {khoa.soLanPddDieuChinh} lần. Xem khung tím ngay trên bảng Danh mục đề xuất. Xác nhận của khoa vẫn còn hiệu lực."
+          "tra_loi": "PĐD đã điều chỉnh số lượng của khoa {khoa.soLanPddDieuChinh} lần. Xem khung tím ngay trên bảng Danh mục đề xuất."
         }
       ],
       "di_toi": {
@@ -633,12 +521,10 @@
       ],
       "chu_de": "k_xn",
       "cau_hoi": "Ô viền tím \"giá trị dùng chung toàn viện\" là gì?",
-      "tra_loi": "Cột chữ như tiêu chí kỹ thuật, tên thương mại là một giá trị chung toàn viện. Sửa ở đó thì mọi khoa và bảng Tổng hợp đổi theo; ai sửa sau thì đè. Riêng cột giải trình là của riêng khoa. Ô có ghi ai sửa cuối và lúc nào.",
+      "tra_loi": "Cột chữ như tên mời thầu, tiêu chí kỹ thuật, sản phẩm tham khảo là một giá trị chung toàn viện, do Phòng Điều dưỡng sửa. Khoa muốn đổi thì ghi vào ô \"Điều chỉnh\" ở cuối bảng; mỗi khoa giữ điều chỉnh riêng. Ô có ghi ai sửa cuối và lúc nào.",
       "bien_the_theo_trang_thai": [],
       "di_toi": null,
-      "hoi_tiep": [
-        "k_xn_lan_2"
-      ],
+      "hoi_tiep": [],
       "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:296-297, 1083-1085; features/DanhMucDeXuatKhoa.jsx:1139-1143, 1439-1452",
       "can_xac_nhan": null
     },
@@ -762,22 +648,6 @@
       "can_xac_nhan": null
     },
     {
-      "id": "p_so_xac_nhan",
-      "vai_tro": [
-        "pdd"
-      ],
-      "chu_de": "k_so",
-      "cau_hoi": "Khi nào khoa mất xác nhận?",
-      "tra_loi": "PĐD sửa số hay nội dung của khoa: khoa KHÔNG mất xác nhận, chỉ nhận thông báo. Khoa tự sửa số hoặc một ô: mất xác nhận của chính khoa đó, khoa khác giữ nguyên. Khoa được sửa đè cột chữ PĐD vừa chỉnh.",
-      "bien_the_theo_trang_thai": [],
-      "di_toi": null,
-      "hoi_tiep": [
-        "p_q_nut_mo"
-      ],
-      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:291-297; HD/05_TRANG_THAI_VA_VIEC_TIEP_THEO.md:480",
-      "can_xac_nhan": null
-    },
-    {
       "id": "k_th_nhan_rot",
       "vai_tro": [
         "khoa"
@@ -850,7 +720,7 @@
       ],
       "chu_de": "k_thau",
       "cau_hoi": "Số trong giỏ bổ sung có phải gửi y nguyên không?",
-      "tra_loi": "Không. Số trong giỏ chỉ là gợi ý bằng đúng số đã rớt. Cách làm: gửi nguyên số gợi ý, rồi mở Danh mục đề xuất của khoa sửa thành số khoa cần (nhiều hơn, ít hơn hay về 0) và bấm xác nhận lại. Đợt bổ sung không áp mức gợi ý và không bắt lý do vượt ngưỡng.",
+      "tra_loi": "Không. Số trong giỏ chỉ là gợi ý bằng đúng số đã rớt. Cách làm: gửi nguyên số gợi ý, rồi mở Danh mục đề xuất của khoa sửa thành số khoa cần (nhiều hơn, ít hơn hay về 0). Đợt bổ sung không áp mức gợi ý và không bắt lý do vượt ngưỡng.",
       "bien_the_theo_trang_thai": [],
       "di_toi": {
         "nhan": "Đi tới Gói bổ sung",
@@ -1030,15 +900,11 @@
       ],
       "chu_de": "p_tiep",
       "cau_hoi": "Tôi phải làm gì tiếp?",
-      "tra_loi": "Mọi thao tác sửa làm trên bảng Tổng hợp của từng gói con. Thứ tự: khoa gửi và xác nhận → \"Chốt số đi thầu\" → Chào giá, Mở thầu, Đánh giá (gõ số rớt ở từng giai đoạn) → chia số trúng về khoa → đổ sang mã tương đương → \"Xác nhận rớt\" → \"Chốt trình ký\".",
+      "tra_loi": "Mọi thao tác sửa làm trên bảng Tổng hợp của từng gói con. Thứ tự: khoa gửi → \"Chốt số đi thầu\" → Chào giá, Mở thầu, Đánh giá (gõ số rớt ở từng giai đoạn) → chia số trúng về khoa → đổ sang mã tương đương → \"Xác nhận rớt\" → \"Chốt trình ký\".",
       "bien_the_theo_trang_thai": [
         {
-          "khi": "Chưa chốt Q, còn khoa chưa xác nhận · !pdd.coPhienQ && pdd.khoaChuaXacNhan.length > 0",
-          "tra_loi": "Còn {pdd.khoaChuaXacNhan.length} khoa chưa xác nhận: {pdd.khoaChuaXacNhan}. Nhắn Teams để khoa vào bấm xác nhận. Hết khoa chưa xác nhận thì nút \"Chốt số đi thầu\" mới sáng."
-        },
-        {
-          "khi": "Chưa chốt Q, mọi khoa đã gửi đều xác nhận · !pdd.coPhienQ && pdd.khoaDaGui.length > 0 && pdd.khoaChuaXacNhan.length == 0",
-          "tra_loi": "Mọi khoa đã gửi đều đã xác nhận bản hiện tại. Có thể bấm \"Chốt số đi thầu\" trên bảng Tổng hợp."
+          "khi": "Chưa chốt Q, đã có khoa gửi · !pdd.coPhienQ && pdd.khoaDaGui.length > 0",
+          "tra_loi": "Đã có {pdd.khoaDaGui.length} khoa gửi đề xuất. Theo dõi đủ chưa qua Teams; khi đủ thì bấm \"Chốt số đi thầu\" trên bảng Tổng hợp."
         },
         {
           "khi": "Còn mã chưa chia đủ số trúng · pdd.soMaChuaChiaDu > 0",
@@ -1097,30 +963,6 @@
       "can_xac_nhan": null
     },
     {
-      "id": "p_tiep_nhac_khoa",
-      "vai_tro": [
-        "pdd"
-      ],
-      "chu_de": "p_tiep",
-      "cau_hoi": "Nhắc khoa chưa gửi / chưa xác nhận thế nào?",
-      "tra_loi": "Ở Bàn điều hành, tab \"Theo dõi khoa\", mỗi khoa có nút \"Nhắc\". Bấm là hệ copy sẵn tin nhắn nêu khoa còn thiếu gì (chưa gửi đề xuất / chưa xác nhận). Dán sang Teams. Web không tự gửi gì ra ngoài.",
-      "bien_the_theo_trang_thai": [
-        {
-          "khi": "Có khoa chưa xác nhận · pdd.khoaChuaXacNhan.length > 0",
-          "tra_loi": "Đang có {pdd.khoaChuaXacNhan.length} khoa chưa xác nhận: {pdd.khoaChuaXacNhan}. Bấm \"Nhắc\" cạnh từng khoa ở Bàn điều hành để copy tin nhắn, rồi dán sang Teams."
-        }
-      ],
-      "di_toi": {
-        "nhan": "Đi tới Bàn điều hành",
-        "man": "pdd.ban_dieu_hanh"
-      },
-      "hoi_tiep": [
-        "p_q_nut_mo"
-      ],
-      "nguon": "features/BanDieuHanhPdd.jsx:626-640, 1154-1157; HD/01_NGHIEP_VU_HIEN_HANH.md:687-688, 938-939",
-      "can_xac_nhan": null
-    },
-    {
       "id": "p_q_sua_tong",
       "vai_tro": [
         "pdd"
@@ -1139,7 +981,6 @@
         "man": "pdd.tong_hop"
       },
       "hoi_tiep": [
-        "p_so_xac_nhan",
         "p_q_sua_sau_chot"
       ],
       "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:208-223, 286-289; features/TongHopPdd.jsx:822-867, 1606-1617",
@@ -1152,23 +993,13 @@
       ],
       "chu_de": "p_q",
       "cau_hoi": "Vì sao nút \"Chốt số đi thầu\" bị mờ?",
-      "tra_loi": "Nút mờ khi còn khoa đã gửi mà chưa xác nhận bản hiện tại, hoặc bảng chưa có mã. Tên các khoa đó nằm ở băng vàng đầu bảng và trong chú thích khi rê chuột lên nút. Nhắn Teams để khoa vào bấm xác nhận.",
-      "bien_the_theo_trang_thai": [
-        {
-          "khi": "Còn khoa chưa xác nhận, chưa chốt số · pdd.khoaChuaXacNhan.length > 0 && !pdd.coPhienQ",
-          "tra_loi": "Còn {pdd.khoaChuaXacNhan.length} khoa chưa xác nhận bản hiện tại: {pdd.khoaChuaXacNhan}. Khoa xác nhận xong, bấm \"Tải lại\" là nút sáng."
-        },
-        {
-          "khi": "Đã chốt · pdd.coPhienQ",
-          "tra_loi": "Đợt đã chốt số đi thầu nên nút \"Chốt số đi thầu\" không còn. Muốn mở lại thì bấm ⋯ (góc phải đầu bảng) → \"Mở chốt để sửa…\"."
-        }
-      ],
+      "tra_loi": "Nút mờ khi bảng chưa có mã nào (chưa khoa nào gửi đề xuất) hoặc đang lưu. Chốt số không chờ khoa xác nhận.",
+      "bien_the_theo_trang_thai": [],
       "di_toi": {
         "nhan": "Mở bảng Tổng hợp",
         "man": "pdd.tong_hop"
       },
       "hoi_tiep": [
-        "p_tiep_nhac_khoa",
         "p_q_khoa_chua_gui"
       ],
       "nguon": "features/TongHopPdd.jsx:456-457, 1172-1182, 1200-1206; HD/01_NGHIEP_VU_HIEN_HANH.md:324-329",
@@ -1181,7 +1012,7 @@
       ],
       "chu_de": "p_q",
       "cau_hoi": "Khoa chưa gửi đề xuất có chặn chốt không?",
-      "tra_loi": "Không. Khoa tham gia mà chưa gửi đề xuất nào thì không tính vào cổng chốt. Hệ chỉ ghi số khoa đó vào nhật ký, và băng \"Đã chốt số đi thầu\" ghi thêm \"lúc chốt còn N khoa chưa gửi\".",
+      "tra_loi": "Không. Chốt số không chờ khoa nào — Phòng Điều dưỡng tự quyết lúc chốt, theo dõi đủ chưa qua Teams.",
       "bien_the_theo_trang_thai": [],
       "di_toi": null,
       "hoi_tiep": [
@@ -1378,9 +1209,7 @@
         "nhan": "Đi tới Bàn điều hành",
         "man": "pdd.ban_dieu_hanh"
       },
-      "hoi_tiep": [
-        "p_tiep_nhac_khoa"
-      ],
+      "hoi_tiep": [],
       "nguon": "features/BanDieuHanhPdd.jsx:820-850; HD/01_NGHIEP_VU_HIEN_HANH.md:610-620",
       "can_xac_nhan": null
     },
@@ -1467,5 +1296,5 @@
       "can_xac_nhan": null
     }
   ],
-  "ghi_chu_ban_web": "Chép từ .scratch/chatbot/cau_hoi.json ngày 18/09/2026 (agent B5). Chỉ sửa tên/vị trí nút cho khớp code (thanh giỏ đáy màn + nút 'Gửi đề xuất (N mã quản lý)' của đợt 3); nội dung nghiệp vụ giữ nguyên. | Bản 2 (18/09/2026, agent B6): mở 9 nút chờ xác nhận theo QĐ g–o; k_dx_ma_bi_an viết theo code (lệch QĐ i, đã báo)."
+  "ghi_chu_ban_web": "Chép từ .scratch/chatbot/cau_hoi.json ngày 18/09/2026 (agent B5). Chỉ sửa tên/vị trí nút cho khớp code (thanh giỏ đáy màn + nút 'Gửi đề xuất (N mã quản lý)' của đợt 3); nội dung nghiệp vụ giữ nguyên. | Bản 2 (18/09/2026, agent B6): mở 9 nút chờ xác nhận theo QĐ g–o; k_dx_ma_bi_an viết theo code (lệch QĐ i, đã báo). | 28/10/2026: bỏ tính năng xác nhận của khoa + 'Không phát sinh nhu cầu' + theo dõi khoa chưa gửi; bỏ 5 nút (k_xn_la_gi, k_xn_nut_mo, k_xn_lan_2, p_so_xac_nhan, p_tiep_nhac_khoa), sửa lời các nút liên quan."
 }

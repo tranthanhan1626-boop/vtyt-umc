@@ -75,3 +75,38 @@ export function tooltipKyTruoc(v, dvt = "") {
     `Tổng: ${fmtKyTruoc(v.tong)}${don}`,
   ].join("\n");
 }
+
+/**
+ * Số đề xuất kỳ trước CỘNG MỌI KHOA theo mã hàng — cho bảng Tổng hợp PĐD
+ * (Xem nhanh, 28/10/2026). Cùng view, cùng cách chia lô và cùng luật lỗi như
+ * `taiDeXuatKyTruoc`; chỉ bỏ lọc khoa rồi cộng `tong_so_luong`.
+ * @param {string[]} dsMaHang
+ * @returns {Promise<Map<string, number>>} Map rỗng khi không có dữ liệu hoặc lỗi.
+ */
+export async function taiDeXuatKyTruocToanVien(dsMaHang) {
+  const map = new Map();
+  const ma = [...new Set((dsMaHang || []).filter(Boolean).map(String))];
+  if (ma.length === 0) return map;
+  const lo = [];
+  for (let i = 0; i < ma.length; i += LO) lo.push(ma.slice(i, i + LO));
+  try {
+    const kq = await Promise.all(lo.map((phan) => fetchAllRows((f, t) => supabase
+      .from("v_de_xuat_ky_truoc")
+      .select("khoa, ma_hang, tong_so_luong")
+      .in("ma_hang", phan)
+      .range(f, t), { order: ["ma_hang", "khoa"] })));
+    for (const { data, error } of kq) {
+      if (error) {
+        if (!laLoiChuaCoBang(error)) console.info("[kỳ trước toàn viện] bỏ qua:", error.message);
+        return new Map();
+      }
+      for (const r of data || []) {
+        map.set(r.ma_hang, (map.get(r.ma_hang) || 0) + (Number(r.tong_so_luong) || 0));
+      }
+    }
+  } catch (e) {
+    console.info("[kỳ trước toàn viện] bỏ qua:", e?.message || e);
+    return new Map();
+  }
+  return map;
+}

@@ -33,6 +33,9 @@
 >   sau. Push lên nhánh = Netlify tự build → commit ghi `[skip netlify]` nếu không muốn build; đẩy web bằng đường
 >   tải lên (không tốn điểm, xem `04_VAN_HANH_KY_THUAT.md` "ĐẨY LÊN NETLIFY KHI ĐÃ HẾT CREDITS").
 > - Mốc gần nhất: **demo 14/10/2026**. Không còn mốc go-live (QĐ 18/09/2026).
+> - 🆕 **27–28/10 — Danh mục đề xuất (Xem nhanh + ô Điều chỉnh) + bỏ khoa tham gia và vòng xác nhận của khoa:** commit
+>   "Danh mục đề xuất 27–28/10…" [skip netlify] CHỈ TRONG MÁY (chưa push, Netlify vẫn bản 13/10). DB staging đã chạy patch_zzzzzzzp + zzzzzzzq.
+>   Chi tiết: Việc còn mở mục 17–20.
 > - Việc còn mở: mục **"Việc còn mở"** cuối file này.
 
 > ## 🔴🔴 TUYỆT ĐỐI KHÔNG BỊA — QĐ 27/08/2026
@@ -319,9 +322,86 @@ mục 4b.
     hỏi trước). Hết nhóm thì mục "Chưa phân gói" tự ẩn.
 16. Hai công tắc đang TẮT, bật lại khi cần: Sổ thiếu hàng của khoa (`ManChaoKhoa.jsx` lọc `thieuhang` +
     `App.jsx` chặn route) · thanh tiến trình màn chính khoa (`HIEN_THANH_TIEN_TRINH` đầu `ManChaoKhoa.jsx`).
+17. **Theo dõi sử dụng sau trúng thầu — làm SAU (chủ dự án 27/10/2026: "build sau, nhớ lại thành việc cần làm").**
+    Cách PĐD UMC đang làm ngoài đời (chủ dự án tả 27/10): theo **từng mã, cả viện**. Mức trung bình = số trúng ÷
+    số tháng của gói (vd gói 18 tháng); mốc 9 tháng phải dùng ≥ 50%, mốc 15 tháng ≥ 80%. **Còn đủ dùng (tháng) =
+    số còn lại ÷ trung bình 12 tháng gần nhất**; dưới 9 tháng → phải mở đề xuất thầu mới để hàng mới về vừa lúc hết.
+    Đã chốt 27/10: "đã dùng" = **số khoa lĩnh trong HIS** (xuất kho, cộng cả viện); trung bình lấy **12 tháng gần
+    nhất**. **Ba câu chưa chốt, hỏi em trước khi build:**
+    - 17a. Mốc 20% còn dùng không (tài liệu cũ ghi 20/50/80, em 27/10 chỉ nêu 50% và 80%).
+    - 17b. Số trúng dùng để tính có cộng phần mua thêm 30% và phần đổ sang mã tương đương không.
+    - 17c. Mã bị cảnh báo thì PĐD đốc thúc ai; web chỉ hiện danh sách cho PĐD hay khoa cũng thấy.
+    Màn cũ `TienDoSuDung.jsx` đang đọc bảng chết
+    (`01` mục 11) — đây là việc viết lại. Liên quan bài toán GMHS lĩnh hộ: xem
+    `Làm lại 16-10-2026/03_BAI_TOAN_KHOA_LINH_KHAC_KHOA_DE_XUAT.md` mục cập nhật 27/10.
+18. **27/10/2026 — Xem nhanh mới của Danh mục đề xuất khoa** (`DanhMucDeXuatKhoa.jsx`, chỉ trên máy, commit trong máy, chưa push,
+    không đẩy Netlify — em sắp hết điểm). Đã làm: mở ra là Xem nhanh; 15 cột theo thứ tự em đưa; Sản phẩm tham khảo
+    = cột lớn 4 cột nhỏ (Công ty · Nước SX · Tên thương mại · TSKT) **để trống**; ô **Điều chỉnh** (sổ xuống chọn
+    mục → gõ → Lưu → thành một dòng; mục: Tên mời thầu, Tiêu chí kỹ thuật, SP tham khảo – Tên TM / Hãng SX / Nước SX).
+    Ảnh: `.scratch/xem-nhanh-27-10/`. Em chốt 27/10: không có giá (giữ QĐ 17/08); dòng Điều chỉnh ghi như ô khoa sửa
+    hiện nay (không bước duyệt); cột ở Xem nhanh giữ chữ gốc. **Còn mở:**
+    - 18a. Khung tháng kỳ trước / kỳ này (vd 10/2024 – 4/2026): DB chưa có chỗ lưu — em bổ sung database sau.
+    - 18b. Dữ liệu Sản phẩm tham khảo kỳ 2025-2026 trống ở cả 3.327 mã — em bổ sung sau. (File "thông tin vật tư y
+      tế tiêu hao.xlsx" có tên TM/hãng/nước nhưng chưa rõ là kỳ nào, chưa dùng.)
+    - (18c–18d thay bằng mục 19 ngày 28/10: điều chỉnh nay lưu riêng khoa, có nút Xoá dòng.)
+    - 18c. ~~Chưa bấm Lưu thật~~ — em cho phép, thử 27/10 trên mã 67178: Lưu → dòng hiện, tải lại vẫn còn, cột Tên
+      mời thầu giữ chữ gốc, không lỗi; đã xoá dòng thử (id 239) bằng khoá staging, dữ liệu về như cũ. Sổ vết
+      `danh_muc_tong_hop_o_audit` giữ 2 dòng 268–269 của lần thử (để nguyên — dấu vết).
+    - 18d. Chưa có nút xoá một dòng Điều chỉnh (ghi rỗng sẽ làm trắng ô chung, không trả về chữ gốc). **Khoa KHÔNG có
+      quyền xoá** dòng `danh_muc_tong_hop_o` (thử 27/10: trả 200 nhưng xoá 0 dòng) → muốn có nút xoá phải thêm quyền/hàm DB.
+    - 18e. Bảng rộng ~1.990px ở màn 1440 → phải cuộn ngang; ĐVT ở Xem nhanh chỉ xem (sửa ở tab Đủ cột).
+19. **28/10/2026 — Điều chỉnh của khoa + Xem nhanh ở bảng Tổng hợp PĐD** (chỉ trên máy, commit trong máy, chưa push, không Netlify).
+    Quy tắc em chốt: khoa là nơi biết mình muốn mua gì (tự xây TSKT, tự chọn sản phẩm tham khảo) nhưng trên danh mục
+    **khoa chỉ gõ SL kỳ này + ô Điều chỉnh**; cột chính (tên mời thầu, TSKT, sản phẩm tham khảo) **chỉ PĐD sửa**, trên
+    bảng Tổng hợp, sau khi đọc điều chỉnh. Mỗi khoa giữ điều chỉnh RIÊNG (khoá `dc:*` trong `danh_muc_khoa_o`, cùng chỗ
+    giải trình); PĐD tự sửa cột, không có nút "Áp dụng". 4 cột SP tham khảo = Hãng · Nước sản xuất · Tên thương mại ·
+    Ký mã hiệu, điền từ file thông tin VTYT (cả hai bảng). Bảng PĐD có thêm cách xem **Xem nhanh** (mặc định), cột cuối
+    "Điều chỉnh của khoa" gom theo tên khoa, chỉ đọc. Mã: `lib/dieuChinhKhoa.js`, `DanhMucDeXuatKhoa.jsx`,
+    `TongHopPdd.jsx`, `lib/deXuatKyTruoc.js` (thêm số kỳ trước toàn viện).
+    **DB:** `patch_zzzzzzzp_dieu_chinh_rieng_khoa.sql` (+ rollback) ĐÃ CHẠY staging 28/10 — nới trigger
+    `fn_khoa_o_chi_nhan_giai_trinh` nhận `dc:*`, sửa lời thư báo cho PĐD. Sau đó sửa thêm lỗi tiêu đề "Khoa Khoa…" trong
+    cùng file → **cần chạy lại** `backend/scripts/chay_patch_dieu_chinh_28-10.sh` (chỉ `create or replace`, an toàn).
+    Đã thử thật: khoa lưu → tải lại còn, cột chính không đổi; PĐD thấy "▸ Khoa GMHS – Phòng mổ / Tên mời thầu: …";
+    PĐD mở sửa được ô ở Xem nhanh. Dữ liệu thử (dòng `danh_muc_khoa_o` 26031, thư 32370) đã xoá. **Còn mở:**
+    - 19a. Giải trình ở tab Đủ cột khoa vẫn tự gõ — hỏi em có khoá luôn không.
+    - 19b. Khoá cột chữ của khoa mới ở GIAO DIỆN; RLS `danh_muc_tong_hop_o` vẫn cho khoa ghi (patch_zzzzr) — muốn chặn
+      ở server thì thêm patch.
+    - 19c. Ô Nước SX mã 67178 = "Đức" do pdd@ sửa thử 16/10 (file ghi "Việt Nam") — hỏi em có trả về không.
+    - 19d. Bản trình ký (`chot_trinh_ky_toan_bo_v3`) chép nguyên JSONB của khoa nên sẽ mang cả `dc:*` vào
+      `gia_tri_khoa`; chưa ảnh hưởng gì đã biết, kiểm khi tới bước trình ký.
+20. **28/10/2026 (tối) — BỎ luật "khoa tham gia gói con" và BỎ HẲN tính năng xác nhận của khoa** (chỉ trên máy, commit
+    trong máy, chưa push, không Netlify). Em chốt: mọi khoa được đề xuất vào mọi gói con đang mở; theo dõi đủ chưa làm qua Teams; bỏ cổng
+    "đủ khoa xác nhận mới chốt số" (PĐD tự quyết lúc chốt); bỏ nút "Xác nhận thông tin đề xuất lần N" + "Không phát sinh
+    nhu cầu" + chặn gửi thêm sau xác nhận; GIỮ "Giỏ rớt của khoa" (đề xuất lại / xác nhận thôi).
+    **DB:** `patch_zzzzzzzq_bo_khoa_tham_gia_va_cong_xac_nhan.sql` (+ rollback, nguyên văn bản đọc trên staging 28/10) —
+    sửa `chot_so_tham_gia_thau_v3` (bỏ cổng xác nhận), `fn_gac_pham_vi_dot_goi_v3` (bỏ kiểm tham gia + kiểm "đã chốt danh
+    mục"), `chot_trinh_ky_khoa_v3` (bỏ kiểm tham gia + "đã chốt danh mục", thay bằng "khoa có đề xuất trong gói con"),
+    `khoa_chua_du_chot_trinh_ky` (tính theo khoa đã gửi). **ĐÃ CHẠY staging 28/10** (em gõ
+    `! bash backend/scripts/chay_patch_bo_khoa_tham_gia_28-10.sh`), đọc lại trên DB thật: cả 4 hàm đúng bản mới.
+    **Giao diện:** thanh tiến trình khoa 4 bước (bỏ "Xác nhận danh mục"), PĐD 6 bước (bỏ "Khoa xác nhận"), ô ① "N khoa đã
+    gửi"; bảng Tổng hợp bỏ dải "khoa chưa xác nhận" + khoá nút chốt; Bàn điều hành chỉ liệt kê khoa đã đề xuất (bỏ ô Khoa
+    tham gia/Chưa đề xuất/Đã xác nhận, cột Xác nhận, nút Nhắc, bộ lọc); Quản lý đợt bỏ bảng chọn khoa; màn Đề xuất bỏ chặn
+    "khoa đã xác nhận"; thẻ màn chính khoa đổi "Xem danh mục đề xuất"; chatbot bỏ 5 nút về xác nhận/nhắc khoa, sửa 9 câu.
+    Test: test:formula 10/10 OK (sửa tienTrinh + chatbot test), pytest 404 OK (sửa 3 test dò chữ — 1 test đã trượt từ
+    16/10, không do đợt này). Bấm thử phía PĐD: đạt; Danh mục khoa không còn nút xác nhận; bằng tài khoản dvsd1@: màn chính thẻ "Xem danh mục đề xuất", màn Đề xuất thanh 4 bước, "Đề xuất thêm nhóm" mở danh sách không bị chặn (ảnh `.scratch/xem-nhanh-27-10/08–12`). Không gửi đề xuất thật.
+    **Còn mở:** 20a. Bảng `dot_goi_khoa`, `danh_muc_khoa_chot` và các hàm `chot_danh_muc_khoa_v3`/`mo_chot_danh_muc_khoa_v3`/
+    `khoa_chua_xac_nhan`/`huy_xac_nhan_theo_ma` còn trong DB nhưng không còn ai gọi để chặn — dọn sau nếu muốn.
+    20b. View `v_theo_doi_chuyen_tiep_v3.khoa_da_xac_nhan` từ nay luôn false. 20c. Lời lỗi của `chot_trinh_ky_toan_bo_v3`
+    còn chữ "chưa đủ chốt danh mục và chốt trình ký" (hiếm hiện). 20d. `useTienTrinh.js` vẫn đọc `khoa_chua_xac_nhan`,
+    `dot_goi_khoa` cho số liệu nền (không còn hiện) — dọn sau.
+    20e. `01_NGHIEP_VU_HIEN_HANH.md` (Giai đoạn 6, mục xác nhận, 13 "không phát sinh") và slide hướng dẫn 33 trang vẫn
+    tả vòng xác nhận cũ — CHƯA sửa; đã ghi đảo luật ở `06`.
 11. `backend/scripts/sao_luu.py` đặt thư mục theo ngày → sao lưu hai lần cùng ngày ghi đè; nên thêm giờ vào tên thư mục.
 
 ## Ghi chú sửa
+
+- 28/10/2026 — báo em "lưu Điều chỉnh riêng khoa không cần đổi DB" khi chưa đọc trigger của `danh_muc_khoa_o`; bấm thử
+  mới lộ `fn_khoa_o_chi_nhan_giai_trinh` chặn (từ 19/08 bảng chỉ nhận giải trình) → trước khi nói "không cần đổi DB" phải
+  đọc `pg_trigger` + `pg_get_functiondef` trên DB thật (AGENTS.md điều 6), đọc bằng `.venv/bin/python` + psycopg chỉ đọc.
+
+- 27/10/2026 — viết lệnh ghi DB dùng `SUPABASE_URL` trong `backend/.env.local`, khoá đó trỏ **production**
+  (`jttucjnkqxckphmmilaa`), không phải staging; chốt `assert "ihgfafubwyxnbubmppbj" in url` chặn kịp, chưa ghi gì →
+  ghi staging phải dùng `SUPABASE_STAGING_URL` + `SUPABASE_STAGING_SERVICE_ROLE_KEY`, và luôn assert mã project trước khi ghi.
 
 - 16/10/2026 — hỏi chủ dự án "nhóm chưa phân gói hiện ở đâu" chỉ kèm con số, không kèm ví dụ → chủ dự án chọn "hiện ở mọi gói con", trụ chân răng 69538 lọt vào Dùng chung → hỏi quyết định nghiệp vụ phải kèm một ví dụ thật (tên món, mã hàng) hoặc hình minh hoạ cái màn sẽ trông ra sao.
 - 16/10/2026 — bấm thử nút Tải Excel nhưng chặn tệp trong trình duyệt, lại báo "đã tải thử và mở ra" → chủ dự án tìm trong Tải về không thấy → nói rõ "bấm thử, bắt tệp trong trình duyệt, không lưu vào máy"; muốn có tệp thật thì hỏi rồi tải thật.

@@ -316,7 +316,7 @@ export default function ManChaoKhoa({ profile, doiChon, dsDotTheoGoi = {}, dangT
           className="flex min-h-[5.5rem] items-center gap-3 rounded-xl border border-umc-300 bg-white px-5 py-4 text-left text-umc-800 transition-colors hover:bg-umc-50 disabled:cursor-not-allowed disabled:opacity-50">
           <Sheet size={26} className="shrink-0" />
           <span className="min-w-0 flex-1">
-            <span className="block text-base font-semibold">Xem &amp; xác nhận danh mục</span>
+            <span className="block text-base font-semibold">Xem danh mục đề xuất</span>
             <span className="block text-xs text-slate-500">
               {goi === "chi_dinh_thau" ? "Chỉ định thầu không có danh mục dạng này"
                 : goiId && dot?.id ? "Danh mục đề xuất của khoa, đúng gói con và đợt"

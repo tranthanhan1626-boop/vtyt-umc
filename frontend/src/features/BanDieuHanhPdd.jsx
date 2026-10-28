@@ -505,12 +505,10 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
     const q = tuKhoa.trim().toLowerCase();
     return tinhHinhKhoa.filter((k) => {
       if (q && !k.don_vi.toLowerCase().includes(q)) return false;
-      if (locKhoa === "chua") return !k.daDeXuat && !laKhongPhatSinh(k);
-      if (locKhoa === "thieu_ho_so") return k.daDeXuat && !k.duHoSo;
-      if (locKhoa === "du") return k.duHoSo;
-      return true;
+      // 28/10/2026 — chỉ liệt kê khoa ĐÃ đề xuất; theo dõi khoa chưa gửi làm qua Teams.
+      return k.daDeXuat;
     });
-  }, [tinhHinhKhoa, tuKhoa, locKhoa, laKhongPhatSinh]);
+  }, [tinhHinhKhoa, tuKhoa]);
 
   // ---- Dọn dữ liệu làm việc cuối đợt (patch_zm) ---------------------------
   // Chốt 07/08/2026: xuất Excel KHÔNG xoá gì. Chỉ khi đợt xong hẳn mới dọn,
@@ -745,7 +743,7 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
                       dangTai={dangTaiTienTrinh}
                       buoc={(tt?.buoc || []).map((b) => ({
                         ...b,
-                        onDi: b.ma === "khoa_de_xuat" || b.ma === "khoa_xac_nhan" ? xemKhoa : moBang,
+                        onDi: b.ma === "khoa_de_xuat" ? xemKhoa : moBang,
                       }))}
                       viecTiepTheo={tt?.viecTiepTheo || ""} />
                     <button type="button" onClick={moBang}
@@ -765,22 +763,12 @@ export default function BanDieuHanhPdd({ onMoManKhac }) {
           )}
         </div>
 
-        {/* Thanh tổng quan */}
+        {/* Thanh tổng quan — 28/10/2026: chỉ còn "Đã đề xuất". Bỏ "Khoa tham gia
+            gói", "Chưa đề xuất", "Đã xác nhận bản hiện tại" (chủ dự án: mọi khoa
+            được đề xuất, bỏ xác nhận, theo dõi đủ chưa qua Teams). */}
         <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
-          {/* "Khoa tham gia gói này", KHÔNG phải toàn viện: gói chuyên khoa
-              (GMHS · RHM · Tim mạch) chỉ vài khoa dự (QĐ 26/08/2026). */}
-          {/* G11 (03/10/2026): chưa chọn gói con thì chưa có số — hiện "—",
-              không hiện 0 (0 đọc như "chưa khoa nào", là sai). */}
-          <ONhanh nhan="Khoa tham gia gói" so={goiConId ? tongQuan.soKhoaToanVien : "—"}
-            mau={goiConId ? "text-slate-800" : "text-slate-500"} vach="bg-slate-300" />
-          <ONhanh nhan="Đã đề xuất" so={goiConId ? tongQuan.soKhoaDaDeXuat : "—"}
+          <ONhanh nhan="Khoa đã đề xuất" so={goiConId ? tongQuan.soKhoaDaDeXuat : "—"}
             mau={goiConId ? "text-emerald-600" : "text-slate-500"} vach={goiConId ? "bg-emerald-500" : "bg-slate-200"} />
-          <ONhanh nhan="Chưa đề xuất" so={goiConId ? tongQuan.soKhoaChuaDeXuat : "—"}
-            mau={!goiConId ? "text-slate-500" : tongQuan.soKhoaChuaDeXuat > 0 ? "text-red-600" : "text-slate-800"}
-            vach={!goiConId ? "bg-slate-200" : tongQuan.soKhoaChuaDeXuat > 0 ? "bg-red-500" : "bg-emerald-500"} />
-          <ONhanh nhan="Đã xác nhận bản hiện tại"
-            so={goiConId && tongQuan.soKhoaCanChot ? `${tongQuan.soKhoaDaChot}/${tongQuan.soKhoaCanChot}` : "—"}
-            vach="bg-cyan-400" />
         </div>
         {/* QĐ 26/08/2026 — mã rớt KHÔNG còn tự thành đề xuất ở đợt bổ sung; nó
             nằm trong GIỎ của khoa cho tới khi chính khoa bấm "Gửi giỏ". PĐD
@@ -990,22 +978,10 @@ function TabKhoa({
 }) {
   // Khoa nào đang mở phần "đề xuất ở những gói nào". Một khoa mỗi lần cho gọn.
   const [khoaMoGoi, setKhoaMoGoi] = useState("");
-  const BO_LOC = [
-    { ma: "tat_ca", ten: `Tất cả (${tongQuan.soKhoaToanVien})` },
-    { ma: "chua", ten: `Chưa đề xuất (${tongQuan.soKhoaChuaDeXuat})` },
-    { ma: "thieu_ho_so", ten: "Thiếu hồ sơ" },
-    { ma: "du", ten: "Đã đủ" },
-  ];
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3">
-        {BO_LOC.map((b) => (
-          <button key={b.ma} type="button" onClick={() => setLocKhoa(b.ma)}
-            className={`inline-flex min-h-9 items-center rounded-full px-3.5 py-1.5 text-[13px] font-medium ${
-              locKhoa === b.ma ? "bg-umc-800 text-white" : "border border-slate-300 text-slate-600 hover:bg-white"}`}>
-            {b.ten}
-          </button>
-        ))}
+        <span className="text-[13px] font-medium text-slate-700">Khoa đã đề xuất ({khoaHienThi.length})</span>
         <div className="relative ml-auto">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
           <input value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)} placeholder="Tìm khoa…"
@@ -1020,18 +996,16 @@ function TabKhoa({
           <thead className="sticky top-0 z-10 bg-umc-50 text-xs uppercase tracking-wide text-umc-800 shadow-[0_1px_0_#c3d9ee] [&_th]:font-semibold">
             <tr className="border-b border-umc-200">
               <th className="px-4 py-2 text-left">Khoa</th>
-              <th className="px-3 py-2 text-center">Đề xuất</th>
               <th className="px-3 py-2 text-right">Mã QL</th>
               <th className="px-3 py-2 text-right">Mã hàng</th>
               <th className="px-3 py-2 text-right">Tổng SL</th>
               <th className="px-3 py-2 text-center">Số gói</th>
-              <th className="px-3 py-2 text-center">Xác nhận đề xuất</th>
               <th className="px-3 py-2 text-right">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {khoaHienThi.length === 0 ? (
-              <tr><td colSpan={8} className="px-4 py-8 text-center text-sm text-slate-500">Không có khoa nào khớp bộ lọc.</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-500">Chưa khoa nào đề xuất ở gói con này.</td></tr>
             ) : khoaHienThi.map((k) => (
               <Fragment key={k.don_vi}>
               {/* Sọc ngựa vằn + đổi nền khi rê chuột: mắt phải dò ngang từ tên
@@ -1044,14 +1018,6 @@ function TabKhoa({
                   TRÊN BẢNG — chủ dự án chụp màn hình báo. */}
               <tr className="border-b border-slate-100 transition-colors last:border-0 even:bg-slate-50/60 hover:bg-umc-50/70">
                 <td className="px-4 py-2 font-medium text-slate-800">{k.don_vi}</td>
-                <td className="px-3 py-2 text-center">
-                  {k.daDeXuat
-                    ? <CheckCircle2 size={15} className="mx-auto text-emerald-600" />
-                    : khoaKhongPhatSinh.has(k.don_vi)
-                      ? <span className="whitespace-nowrap text-xs font-medium text-slate-600"
-                          title="Khoa đã bấm “Không phát sinh nhu cầu” ở gói con này">Không phát sinh</span>
-                      : <span className="text-xs font-medium text-slate-600">Chưa</span>}
-                </td>
                 <td className="px-3 py-2 text-right text-[13px] tabular-nums">{k.daDeXuat ? fmt(k.soMaQuanLy) : "—"}</td>
                 <td className="px-3 py-2 text-right text-[13px] tabular-nums">{k.daDeXuat ? fmt(k.soMaHang) : "—"}</td>
                 <td className="px-3 py-2 text-right text-[13px] tabular-nums">{k.daDeXuat ? fmt(k.tongSoLuong) : "—"}</td>
@@ -1076,19 +1042,6 @@ function TabKhoa({
                     );
                   })()}
                 </td>
-                <td className="px-3 py-2 text-center">
-                  {k.daChot
-                    ? (khoaKhongPhatSinh.has(k.don_vi) && !k.daDeXuat
-                      ? (
-                        <span className="inline-flex items-center gap-1 whitespace-nowrap text-xs text-slate-600"
-                          title="Khoa đã xác nhận: không phát sinh nhu cầu ở gói con này">
-                          <CheckCircle2 size={15} className="text-emerald-600" />
-                          Không phát sinh nhu cầu
-                        </span>
-                      )
-                      : <CheckCircle2 size={15} className="mx-auto text-emerald-600" />)
-                    : <span className="text-xs text-slate-500">—</span>}
-                </td>
                 <td className="px-3 py-2">
                   <div className="flex flex-wrap items-center justify-end gap-1">
                     {k.daDeXuat && (
@@ -1099,13 +1052,6 @@ function TabKhoa({
                         </button>
                       </>
                     )}
-                    {!k.duHoSo && !khoaKhongPhatSinh.has(k.don_vi) && (
-                      <button type="button" onClick={() => copyNhac(k)}
-                        className="inline-flex min-h-8 items-center gap-1 rounded border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
-                        {khoaDaCopy === k.don_vi ? <Copy size={11} /> : <Bell size={11} />}
-                        {khoaDaCopy === k.don_vi ? "Đã copy" : "Nhắc"}
-                      </button>
-                    )}
                   </div>
                 </td>
               </tr>
@@ -1115,7 +1061,7 @@ function TabKhoa({
                   `v_khoa_theo_goi_v3` — view gom trên toàn hệ (patch_zzzzzw). */}
               {khoaMoGoi === k.don_vi && (
                 <tr key={`${k.don_vi}:goi`} className="bg-umc-50/40">
-                  <td colSpan={8} className="px-4 py-2">
+                  <td colSpan={6} className="px-4 py-2">
                     <div className="rounded-lg border border-umc-200 bg-white p-2">
                       <p className="mb-1 text-xs font-semibold text-umc-900">
                         {k.don_vi} — đang đề xuất ở {(goiCuaKhoa.get(k.don_vi) || []).length} gói

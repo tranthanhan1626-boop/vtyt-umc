@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, ChevronRight, Lock, MoreHorizontal, Unlock, Users } from "lucide-react";
+import { ChevronDown, ChevronRight, Lock, MoreHorizontal, Unlock } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { dichLoi } from "../lib/dichLoi";
 import { useDongKhiRaNgoai } from "../components/ThanhDauUmc";
@@ -17,17 +17,17 @@ import { useDongKhiRaNgoai } from "../components/ThanhDauUmc";
 // và không có màn nào bỏ khoa ra. Hệ quả là Bàn điều hành báo "chưa đề xuất"
 // cho những khoa vốn không thuộc gói, và con số đó chảy thẳng vào cổng mềm
 // "chốt khi còn N khoa chưa nộp" ở Giai đoạn 6.
+//
+// 28/10/2026 — BỎ bảng chọn khoa tham gia (chủ dự án: "mặc định ai cũng được
+// vào đề xuất hết, theo dõi đủ chưa làm qua Teams"). patch_zzzzzzzq gỡ luôn
+// phần chặn ở DB. Màn này chỉ còn mở/đóng từng gói con.
 
-export default function DotGoiCuaDot({ dot, dsKhoa }) {
+export default function DotGoiCuaDot({ dot }) {
   const [mo, setMo] = useState(false);
   const [rows, setRows] = useState([]);
   const [nhanGoi, setNhanGoi] = useState({});
-  const [thamGia, setThamGia] = useState({});   // dot_goi_id -> Set(khoa)
   const [dangTai, setDangTai] = useState(false);
   const [loi, setLoi] = useState("");
-  const [moKhoa, setMoKhoa] = useState(null);   // dot_goi_id đang mở bảng khoa
-  const [nhap, setNhap] = useState(new Set());  // bản nháp của bảng đang mở
-  const [dangLuu, setDangLuu] = useState(false);
   // V28 (05/10/2026, theo G12): "Đóng gói con" là việc khó gỡ nên vào menu ⋯ ở
   // mép phải từng dòng (chữ đỏ), không còn nút đỏ cạnh huy hiệu "Đang mở" lặp
   // ở mọi gói con. Hành vi giữ nguyên: chọn mục này đóng gói con như nút cũ.
@@ -48,22 +48,6 @@ export default function DotGoiCuaDot({ dot, dsKhoa }) {
     setNhanGoi(Object.fromEntries((rGoiCon.data || []).map((g) => [g.goi_id, g.nhan])));
     const ds = rDotGoi.data || [];
     setRows(ds);
-
-    if (ds.length) {
-      const { data, error } = await supabase.from("dot_goi_khoa")
-        .select("dot_goi_id,khoa,tham_gia")
-        .in("dot_goi_id", ds.map((x) => x.id))
-        .eq("tham_gia", true)
-        .limit(20000);
-      if (error) setLoi(dichLoi(error));
-      else {
-        const gom = {};
-        for (const r of data || []) {
-          (gom[r.dot_goi_id] = gom[r.dot_goi_id] || new Set()).add(r.khoa);
-        }
-        setThamGia(gom);
-      }
-    }
     setDangTai(false);
   }, [dot.id]);
 
@@ -81,34 +65,6 @@ export default function DotGoiCuaDot({ dot, dsKhoa }) {
     }, { count: "exact" }).eq("id", dg.id);
     if (error) { setLoi(dichLoi(error)); return; }
     if (!count) { setLoi("Không đổi được — kiểm tra quyền."); return; }
-    await tai();
-  };
-
-  const moBangKhoa = (dg) => {
-    if (moKhoa === dg.id) { setMoKhoa(null); return; }
-    setMoKhoa(dg.id);
-    setNhap(new Set(thamGia[dg.id] || []));
-  };
-
-  const luuKhoa = async (dg) => {
-    setLoi("");
-    setDangLuu(true);
-    const dangCo = thamGia[dg.id] || new Set();
-    const bat = dsKhoa.filter((k) => nhap.has(k) && !dangCo.has(k));
-    const tat = dsKhoa.filter((k) => !nhap.has(k) && dangCo.has(k));
-    // upsert chứ không update: trigger khởi tạo chỉ chạy lúc tạo DOT_GOI, nên
-    // khoa mới thêm vào viện sau đó chưa có dòng nào ở dot_goi_khoa.
-    const ghi = [
-      ...bat.map((k) => ({ dot_goi_id: dg.id, khoa: k, tham_gia: true })),
-      ...tat.map((k) => ({ dot_goi_id: dg.id, khoa: k, tham_gia: false })),
-    ];
-    if (ghi.length) {
-      const { error } = await supabase.from("dot_goi_khoa")
-        .upsert(ghi, { onConflict: "dot_goi_id,khoa" });
-      if (error) { setLoi(dichLoi(error)); setDangLuu(false); return; }
-    }
-    setDangLuu(false);
-    setMoKhoa(null);
     await tai();
   };
 
@@ -136,7 +92,6 @@ export default function DotGoiCuaDot({ dot, dsKhoa }) {
 
           {rows.map((dg) => {
             const goiDangMo = dg.trang_thai === "mo";
-            const soThamGia = (thamGia[dg.id] || new Set()).size;
             return (
               <div key={dg.id} className="border border-slate-200 rounded-md bg-slate-50/60">
                 <div className="flex items-center gap-2 flex-wrap px-2.5 py-1.5">
@@ -147,10 +102,6 @@ export default function DotGoiCuaDot({ dot, dsKhoa }) {
                     goiDangMo ? "bg-umc-100 text-umc-800" : "bg-slate-200 text-slate-600"}`}>
                     {goiDangMo ? "Đang mở" : "Đã đóng"}
                   </span>
-                  <button type="button" onClick={() => moBangKhoa(dg)}
-                    className="inline-flex min-h-8 items-center gap-1 whitespace-nowrap px-2.5 py-1 text-xs rounded border border-slate-300 text-slate-700 hover:bg-white">
-                    <Users size={12} /> Khoa tham gia: {soThamGia}/{dsKhoa.length}
-                  </button>
                   {goiDangMo ? (
                     <div className="relative" ref={moMenu === dg.id ? refMenu : null}>
                       <button type="button" onClick={() => setMoMenu((v) => (v === dg.id ? null : dg.id))}
@@ -174,48 +125,6 @@ export default function DotGoiCuaDot({ dot, dsKhoa }) {
                     </button>
                   )}
                 </div>
-
-                {moKhoa === dg.id && (
-                  <div className="border-t border-slate-200 px-2.5 py-2 bg-white">
-                    <div className="flex items-center gap-2 mb-2">
-                      <button type="button" onClick={() => setNhap(new Set(dsKhoa))}
-                        className="inline-flex min-h-8 items-center px-2.5 py-1 text-xs rounded border border-slate-300 text-slate-600 hover:bg-slate-50">
-                        Chọn tất cả
-                      </button>
-                      <button type="button" onClick={() => setNhap(new Set())}
-                        className="inline-flex min-h-8 items-center px-2.5 py-1 text-xs rounded border border-slate-300 text-slate-600 hover:bg-slate-50">
-                        Bỏ chọn tất cả
-                      </button>
-                      <span className="text-xs text-slate-500">
-                        Đang chọn {nhap.size}/{dsKhoa.length}
-                      </span>
-                    </div>
-                    <div className="max-h-64 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-3 gap-y-0.5">
-                      {dsKhoa.map((k) => (
-                        <label key={k} className="flex items-start gap-1.5 text-xs text-slate-700 py-1">
-                          <input type="checkbox" checked={nhap.has(k)}
-                            onChange={(e) => setNhap((p) => {
-                              const q = new Set(p);
-                              if (e.target.checked) q.add(k); else q.delete(k);
-                              return q;
-                            })}
-                            className="mt-0.5" />
-                          <span className="min-w-0">{k}</span>
-                        </label>
-                      ))}
-                    </div>
-                    <div className="flex gap-2 mt-2">
-                      <button type="button" disabled={dangLuu} onClick={() => luuKhoa(dg)}
-                        className="flex min-h-8 items-center gap-1 px-3 py-1 text-xs rounded-md bg-umc-700 text-white font-medium disabled:opacity-60">
-                        <Check size={11} /> {dangLuu ? "Đang lưu…" : "Lưu danh sách khoa"}
-                      </button>
-                      <button type="button" onClick={() => setMoKhoa(null)}
-                        className="min-h-8 px-3 py-1 text-xs rounded-md border border-slate-300 text-slate-600">
-                        Huỷ
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             );
           })}

@@ -49,7 +49,10 @@ def test_ma_da_gui_an_den_khi_pdd_chot_da_di_thau():
     assert '.eq("da_di_thau", false)' in FUNCTION_1
     # 05/10/2026: bản cũ khẳng định "!maDangChoDiThau.has(m.ma_hang)" — dòng nằm
     # trong `maHangHienThi`, hàm chết đã gỡ. Màn hiện ẩn theo NHÓM, không theo mã.
-    assert "!nhomDangChoDiThau.has(n.ma_quan_ly)" in FUNCTION_1
+    # 28/10/2026: từ 16/10 (commit 218946c) màn gom nhóm ẩn thành một danh sách
+    # "tạm ẩn" — điều kiện viết xuôi `nhomTrongGio.has(...) || nhomDangChoDiThau
+    # .has(...)` thay cho bản phủ định cũ. Nghĩa giữ nguyên: nhóm chờ đi thầu bị ẩn.
+    assert "nhomDangChoDiThau.has(n.ma_quan_ly)" in FUNCTION_1
     assert "add column if not exists da_di_thau" in PATCH_X
     assert "chot_danh_muc_da_di_thau" in PATCH_X
 
