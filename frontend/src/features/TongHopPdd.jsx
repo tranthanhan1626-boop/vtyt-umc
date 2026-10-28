@@ -2175,7 +2175,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                                     <span className="whitespace-nowrap">{fmt(r._daiDen)}</span>
                                   </span>
                                 : <span className="text-slate-500">—</span>)
-                              : <span className={`o-chu min-w-0${laOChuDai(value, c.width) ? " o-dai" : ""}`}>{formatCell(value, c.kieu)}</span>}
+                              : <span className={`o-chu min-w-0${laOChuDai(value, c.width, c.key) ? " o-dai" : ""}`}>{formatCell(value, c.kieu)}</span>}
                             {/* P6p (KĐ lượt 4, 28/09/2026) — "số gốc" chỉ đúng cho ô
                                 SỐ; ô chữ phải ghi "giá trị gốc". 1e (03/10/2026):
                                 bỏ sửa đè phải HỎI LẠI, không làm ngay. */}

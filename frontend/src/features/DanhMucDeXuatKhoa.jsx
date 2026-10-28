@@ -1976,7 +1976,7 @@ function RowKhoa({
                 <span>
                   {/* L6: chỉ PHẦN CHỮ bị cắt ở chế độ Gọn (.o-chu); nhãn nhỏ
                       đi kèm (đã đổ, rớt, ai sửa cuối, lịch sử) luôn thấy. */}
-                  <span className={`o-chu${laOChuDai(value, c.width) ? " o-dai" : ""}`}
+                  <span className={`o-chu${laOChuDai(value, c.width, c.key) ? " o-dai" : ""}`}
                     title={typeof value === "string" && value.length > 30 ? value : undefined}>
                     {formatCell(value, c.kieu)}
                   </span>
@@ -2363,8 +2363,12 @@ function soDongSua(v, rong, nhieuDong) {
 }
 
 /** Ô chữ có dài quá 12 dòng ở độ rộng `rong` không (ước lượng ~7px/ký tự,
- *  cùng cách soDongSua). Chỉ để gắn lớp `.o-dai` (cuộn trong ô) — xem StyleTable. */
-export function laOChuDai(v, rong) {
+ *  cùng cách soDongSua). Chỉ để gắn lớp `.o-dai` (cuộn trong ô) — xem StyleTable.
+ *  28/10/2026 (chủ dự án): cột Tiêu chí kỹ thuật (mọi khoá `tskt*`) LUÔN hiện
+ *  đủ, không cuộn trong ô — TSKT là thứ phải đọc trọn để so với chào giá. Cột
+ *  khác giữ luật 12 dòng (ký mã hiệu dài tới 3.695 ký tự). */
+export function laOChuDai(v, rong, cot = "") {
+  if (String(cot).startsWith("tskt")) return false;
   const chu = chuThuanCuaO(v);
   if (chu.length < 100) return false;
   const kyTuMoiDong = Math.max(8, Math.floor(((Number(rong) || 160) - 20) / 7));

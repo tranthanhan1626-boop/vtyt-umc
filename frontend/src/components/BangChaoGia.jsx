@@ -7,9 +7,9 @@ import { khopSanPhamThamKhao, soTungY, tachY } from "../lib/chaoGia";
  * Bảng CHÀO GIÁ của một mã (28/10/2026) — nằm trong sổ xuống từng mã ở bảng
  * Tổng hợp PĐD và Danh mục đề xuất khoa.
  *
- * Mỗi công ty một khối cột: Tên công ty N · Đơn giá chào N (VNĐ) · cột lớn
- * "Thông tin sản phẩm chào giá N" (Tên thương mại · Ký mã hiệu · Hãng SX · Nước
- * SX · TSKT). Công ty chào ĐÚNG SẢN PHẨM THAM KHẢO của danh mục thì cả khối sáng
+ * Mỗi công ty MỘT HÀNG, xếp dọc (chủ dự án 28/10 tối — thay bản ngang "khối cột
+ * công ty 1, 2, 3"): STT · Tên công ty · Đơn giá chào (VNĐ) · cột lớn "Thông tin
+ * sản phẩm chào giá" (Tên thương mại · Ký mã hiệu · Hãng SX · Nước SX · TSKT). Công ty chào ĐÚNG SẢN PHẨM THAM KHẢO của danh mục thì cả khối sáng
  * xanh (lib/chaoGia.js khopSanPhamThamKhao). Công ty có ghi TSKT thì so thêm
  * từng ý với cột TSKT chính — chỉ để tham khảo, không quyết định sáng.
  *
@@ -69,16 +69,28 @@ export default function BangChaoGia({ dsCongTy = [], sptk = {}, tsktChuan, laPdd
       <div className="overflow-x-auto">
         <table className="bang-chao-gia w-max border-collapse bg-white">
           <thead>
-            <tr>{dsCongTy.map((c, i) => <ThKhoiDau key={c.id} i={i + 1} />)}</tr>
-            <tr>{dsCongTy.map((c) => <ThKhoiCon key={c.id} />)}</tr>
+            <tr>
+              <th rowSpan={2} style={TH}>STT</th>
+              <th rowSpan={2} style={TH}>Tên công ty</th>
+              <th rowSpan={2} style={TH}>Đơn giá chào (VNĐ)</th>
+              <th colSpan={5} style={TH}>Thông tin sản phẩm chào giá</th>
+            </tr>
+            <tr>
+              <th style={TH}>Tên thương mại</th>
+              <th style={TH}>Ký mã hiệu</th>
+              <th style={TH}>Hãng SX</th>
+              <th style={TH}>Nước SX</th>
+              <th style={TH}>Tiêu chí kỹ thuật</th>
+            </tr>
           </thead>
           <tbody>
-            <tr>
-              {dsCongTy.map((c, i) => {
-                const { sp, tskt } = ketQua[i];
-                const nen = sp.khop ? SANG : {};
-                return [
-                  <td key={`${c.id}-ten`} style={{ ...TD, ...nen, minWidth: 150, maxWidth: 200 }}>
+            {dsCongTy.map((c, i) => {
+              const { sp, tskt } = ketQua[i];
+              const nen = sp.khop ? SANG : {};
+              return (
+                <tr key={c.id}>
+                  <td style={{ ...TD, ...nen, textAlign: "center" }} className="tabular-nums text-slate-500">{i + 1}</td>
+                  <td style={{ ...TD, ...nen, minWidth: 170, maxWidth: 230 }}>
                     <div className="font-semibold text-slate-900">{c.ten_cong_ty}</div>
                     {sp.khop && (
                       <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-semibold text-white"
@@ -101,16 +113,15 @@ export default function BangChaoGia({ dsCongTy = [], sptk = {}, tsktChuan, laPdd
                         </button>
                       )
                     )}
-                  </td>,
-                  <td key={`${c.id}-gia`} style={{ ...TD, ...nen, textAlign: "right", whiteSpace: "nowrap" }}
-                    className="tabular-nums font-semibold">
+                  </td>
+                  <td style={{ ...TD, ...nen, textAlign: "right", whiteSpace: "nowrap" }} className="tabular-nums font-semibold">
                     {c.don_gia != null ? fmt(Number(c.don_gia)) : "—"}
-                  </td>,
-                  <td key={`${c.id}-tm`} style={{ ...TD, ...nen, minWidth: 140, maxWidth: 200 }}>{c.ten_thuong_mai || "—"}</td>,
-                  <td key={`${c.id}-kmh`} style={{ ...TD, ...nen, minWidth: 110, maxWidth: 180, whiteSpace: "pre-wrap" }}>{c.ky_ma_hieu || "—"}</td>,
-                  <td key={`${c.id}-hang`} style={{ ...TD, ...nen, minWidth: 110, maxWidth: 170 }}>{c.hang_san_xuat || "—"}</td>,
-                  <td key={`${c.id}-nuoc`} style={{ ...TD, ...nen, minWidth: 80 }}>{c.nuoc_san_xuat || "—"}</td>,
-                  <td key={`${c.id}-tskt`} style={{ ...TD, ...nen, minWidth: c.tieu_chi_ky_thuat ? 240 : 90, maxWidth: 320, whiteSpace: "pre-wrap" }}>
+                  </td>
+                  <td style={{ ...TD, ...nen, minWidth: 160, maxWidth: 240 }}>{c.ten_thuong_mai || "—"}</td>
+                  <td style={{ ...TD, ...nen, minWidth: 120, maxWidth: 200, whiteSpace: "pre-wrap" }}>{c.ky_ma_hieu || "—"}</td>
+                  <td style={{ ...TD, ...nen, minWidth: 130, maxWidth: 200 }}>{c.hang_san_xuat || "—"}</td>
+                  <td style={{ ...TD, ...nen, minWidth: 80 }}>{c.nuoc_san_xuat || "—"}</td>
+                  <td style={{ ...TD, ...nen, minWidth: c.tieu_chi_ky_thuat ? 280 : 100, maxWidth: 420, whiteSpace: "pre-wrap" }}>
                     {c.tieu_chi_ky_thuat || <span className="text-slate-400">Chưa có</span>}
                     {tskt && (
                       <div className={`mt-1.5 border-t pt-1 text-[11px] ${tskt.dat ? "border-emerald-200 text-emerald-800" : "border-red-200 text-red-700"}`}>
@@ -122,10 +133,10 @@ export default function BangChaoGia({ dsCongTy = [], sptk = {}, tsktChuan, laPdd
                         )}
                       </div>
                     )}
-                  </td>,
-                ];
-              })}
-            </tr>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -146,27 +157,5 @@ export function NhanChaoGia({ ds = [], sptk, onClick }) {
         Chào giá {ds.length} cty{soDung ? <> · <CheckCircle2 size={10} /> {soDung} đúng SP</> : ""} ▾
       </button>
     </span>
-  );
-}
-
-function ThKhoiDau({ i }) {
-  return (
-    <>
-      <th rowSpan={2} style={TH}>Tên công ty {i}</th>
-      <th rowSpan={2} style={TH}>Đơn giá chào {i} (VNĐ)</th>
-      <th colSpan={5} style={TH}>Thông tin sản phẩm chào giá {i}</th>
-    </>
-  );
-}
-
-function ThKhoiCon() {
-  return (
-    <>
-      <th style={TH}>Tên thương mại</th>
-      <th style={TH}>Ký mã hiệu</th>
-      <th style={TH}>Hãng SX</th>
-      <th style={TH}>Nước SX</th>
-      <th style={TH}>Tiêu chí kỹ thuật</th>
-    </>
   );
 }
