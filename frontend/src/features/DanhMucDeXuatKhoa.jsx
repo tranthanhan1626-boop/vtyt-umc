@@ -157,7 +157,10 @@ function docXemNhanh() {
   } catch { return true; }
 }
 
-const NHAN_GIAI_DOAN = { chao_gia: "Chào giá", mo_thau: "Mở thầu", danh_gia: "Đánh giá" };
+const NHAN_GIAI_DOAN = {
+  chao_gia: "Chào giá", kiem_tra_dvdt: "Kiểm tra ĐV đấu thầu", hoi_dong: "Hội đồng mua sắm",
+  mo_thau: "Mở thầu", danh_gia: "Kết quả đánh giá",
+};
 
 function monthId(nam, thang) { return nam * 12 + thang - 1; }
 function tongKhoang(theoThang, dau, cuoi) {

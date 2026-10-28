@@ -3,6 +3,9 @@ import { ChevronRight, ChevronDown } from "lucide-react";
 import { supabase, fetchAllRows } from "../supabaseClient";
 import { GOI_ID_MAP } from "../lib/cotChuan";
 import NutGiaiThich from "./NutGiaiThich";
+import { GIAI_DOAN_THAU } from "../lib/tienTrinh";
+
+const SO_GIAI_DOAN = GIAI_DOAN_THAU.length;
 
 // QĐ-23 — Tổng hợp kết quả thầu HAI TẦNG cho Phòng Điều dưỡng.
 //
@@ -21,8 +24,9 @@ import NutGiaiThich from "./NutGiaiThich";
 // dùng để GHI: đường ghi ma_moc_rot/ly_do_khong_trung ở form đã bỏ theo QĐ A2
 // trên). Vẫn giữ để dịch giá trị cột sang chữ khi hiện dòng "Rớt ở ...".
 const MOC = [
-  { v: "chao_gia", n: "Chào giá" }, { v: "mo_thau", n: "Mở thầu" },
-  { v: "danh_gia", n: "Đánh giá" }, { v: "ky_hop_dong", n: "Ký hợp đồng" },
+  { v: "chao_gia", n: "Chào giá" }, { v: "kiem_tra_dvdt", n: "Kiểm tra ĐV đấu thầu" },
+  { v: "hoi_dong", n: "Hội đồng mua sắm" }, { v: "mo_thau", n: "Mở thầu" },
+  { v: "danh_gia", n: "Kết quả đánh giá" }, { v: "ky_hop_dong", n: "Ký hợp đồng" },
   { v: "hang_ve_dot_dau", n: "Hàng về đợt đầu" },
 ];
 // L07 (28/09/2026) — khoá phải khớp ĐÚNG giá trị cột `ket_qua` mà view
@@ -60,6 +64,9 @@ const so = (v) => (v == null ? "—" : Number(v).toLocaleString("vi-VN"));
 //   `exists(... where dot_goi_id=p_dot_goi_id and trang_thai<>'hoan_thanh')
 //    or (count(*) where dot_goi_id=p_dot_goi_id) <> 3
 //    -> raise exception 'Phải hoàn thành đủ ba giai đoạn đấu thầu.'`
+// 28/10/2026 (patch_zzzzzzzt, tám bước): nay có NĂM giai đoạn, trình ký đứng
+// trước Mở thầu nên không còn chung điều kiện với cổng trình ký — màn này đòi
+// đủ năm dòng và cả năm 'hoan_thanh' (tức đã có Kết quả đánh giá).
 // Gộp theo (`dot_goi_id`, `ma_hang`) thay vì chỉ `ma_hang` để không trộn hai
 // đợt/gói con cùng mã hàng; mỗi dòng ghi thêm nhãn TÊN ĐỢT (`dot_de_xuat.ten`,
 // đọc trực tiếp — bảng cho phép "ai cũng xem đợt",
@@ -100,13 +107,14 @@ export default function TongHopKetQuaThau({ profile }) {
       dem.set(g.dot_goi_id, d);
     });
     const s = new Set();
-    dem.forEach((d, dotGoiId) => { if (d.tong === 3 && d.hoanThanh === 3) s.add(dotGoiId); });
+    // 28/10/2026: năm giai đoạn (patch_zzzzzzzt) — xong cả Kết quả đánh giá.
+    dem.forEach((d, dotGoiId) => { if (d.tong === SO_GIAI_DOAN && d.hoanThanh === SO_GIAI_DOAN) s.add(dotGoiId); });
     return s;
   }, [giaiDoan]);
 
   const tenDotTheoId = useMemo(() => new Map(dsDot.map((d) => [d.id, d.ten])), [dsDot]);
 
-  // Chỉ giữ dòng của gói con đã xong 3 giai đoạn.
+  // Chỉ giữ dòng của gói con đã xong đủ năm giai đoạn.
   const rowsHopLe = useMemo(
     () => rows.filter((r) => dotGoiHoanThanh.has(r.dot_goi_id)),
     [rows, dotGoiHoanThanh]
@@ -137,7 +145,7 @@ export default function TongHopKetQuaThau({ profile }) {
   if (theoMa.length === 0) {
     return (
       <div className="rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
-        Chưa có gói con nào hoàn thành đủ ba giai đoạn đấu thầu.
+        Chưa có gói con nào có Kết quả đánh giá.
       </div>
     );
   }
@@ -149,18 +157,18 @@ export default function TongHopKetQuaThau({ profile }) {
           <h2 className="text-base font-semibold text-slate-900">Tổng hợp kết quả thầu</h2>
           <NutGiaiThich nhan="Màn này cho xem gì" rong={380}>
             <p>
-              Chỉ gồm các mã của gói con <b>đã hoàn thành đủ ba giai đoạn đấu thầu</b> (Chào giá · Mở thầu ·
-              Đánh giá). Dòng gộp theo mã hàng trong từng đợt / gói con; bấm để bung ra xem{" "}
+              Chỉ gồm các mã của gói con <b>đã xong bước Kết quả đánh giá</b> (Chào giá · Kiểm tra ĐV đấu thầu ·
+              Hội đồng mua sắm · Mở thầu · Kết quả đánh giá). Dòng gộp theo mã hàng trong từng đợt / gói con; bấm để bung ra xem{" "}
               <b>từng khoa đề xuất bao nhiêu, trúng bao nhiêu</b>.
             </p>
             <p className="mt-2">
               Màn này chỉ để xem. Muốn sửa kết quả thầu (rớt / trúng), làm trên bảng Tổng hợp danh mục: ở các cột{" "}
-              <b>Rớt ở Chào giá / Mở thầu / Đánh giá</b> và nút <b>Xác nhận rớt</b>.
+              <b>Rớt ở Chào giá / Kiểm tra ĐV đấu thầu / Hội đồng mua sắm</b> và nút <b>Xác nhận rớt</b>.
             </p>
           </NutGiaiThich>
         </div>
         <p className="mt-0.5 text-sm text-slate-500">
-          Chỉ xem: các mã của gói con đã xong đủ ba giai đoạn thầu. Bấm một dòng để xem từng khoa.
+          Chỉ xem: các mã của gói con đã có Kết quả đánh giá. Bấm một dòng để xem từng khoa.
         </p>
       </div>
 

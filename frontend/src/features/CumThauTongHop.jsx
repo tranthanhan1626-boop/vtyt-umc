@@ -25,11 +25,20 @@ import { dichLoi } from "../lib/dichLoi";
  *   chuyen_tiep_rot_v3    — sổ phần rớt đã đẩy về đợt bổ sung
  */
 
+// 28/10/2026 tối (patch_zzzzzzzt, quy trình tám bước): năm giai đoạn. Ba giai
+// đoạn đầu đứng TRƯỚC chốt trình ký và giữ ba cột rớt R1–R3 (R2/R3 trước đây
+// là Mở thầu/Đánh giá). Mở thầu / Kết quả đánh giá đứng SAU trình ký, không có
+// cột rớt (miếng 3 sẽ thêm "đánh rớt cả mã khi không có nhà thầu").
 export const GIAI_DOAN = [
   { ma: "chao_gia", nhan: "Chào giá", cot: "r1" },
-  { ma: "mo_thau", nhan: "Mở thầu", cot: "r2" },
-  { ma: "danh_gia", nhan: "Đánh giá", cot: "r3" },
+  { ma: "kiem_tra_dvdt", nhan: "Kiểm tra ĐV đấu thầu", cot: "r2", nhanCot: "Kiểm tra",
+    tenDu: "Kiểm tra danh mục với đơn vị quản lý đấu thầu" },
+  { ma: "hoi_dong", nhan: "Hội đồng mua sắm", cot: "r3", nhanCot: "Hội đồng" },
+  { ma: "mo_thau", nhan: "Mở thầu", cot: null },
+  { ma: "danh_gia", nhan: "Kết quả đánh giá", cot: null },
 ];
+/** Ba giai đoạn có cột rớt (trước trình ký). */
+export const GIAI_DOAN_CO_ROT = GIAI_DOAN.filter((g) => g.cot);
 
 /** Đổi trạng thái một giai đoạn thầu — một lời gọi RPC, trả `error` (hoặc null).
  *  Tách ra để menu ⋯ của bảng Tổng hợp gọi "Mở lại giai đoạn…" mà không phải
@@ -139,7 +148,7 @@ export function useDuLieuThau(dotGoiId) {
     // là 1.608 dòng, hai lượt phân trang, 3,4 s — chiếm quá nửa thời gian mở
     // bảng (đo thật 24/08/2026). Cấp mã × khoa nay chỉ màn Theo dõi mới cần.
     const [gd, kq, rot, pb, nhan] = await Promise.all([
-      supabase.from("giai_doan_thau_v3").select("giai_doan, thu_tu, trang_thai")
+      supabase.from("giai_doan_thau_v3").select("giai_doan, thu_tu, trang_thai, lan_chao_gia_xong")
         .eq("dot_goi_id", dotGoiId).order("thu_tu"),
       phienId
         ? fetchAllRows((f, t) => supabase.from("v_ket_qua_thau_v3")
@@ -258,7 +267,7 @@ export function cauDaDuaVaoGio(d, truoc = {}, dvtCuaMa = null) {
 export function ThanhGiaiDoanThau({
   dotGoiId, giaiDoan, giaiDoanDangChay, tongChuaXuLy, coPhienQ, dangTai = false, soChuaChia = 0,
   onXong, onLoi, dotIdTrenUrl = null, chenSauNutChinh = null,
-  chuaXuLy = null, dvtCuaMa = null,
+  chuaXuLy = null, dvtCuaMa = null, daTrinhKy = false,
 }) {
   const [dangChay, setDangChay] = useState("");
   const [hoiHoanThanh, setHoiHoanThanh] = useState(null);   // ma giai đoạn
@@ -270,6 +279,15 @@ export function ThanhGiaiDoanThau({
     setDangChay("");
     if (error) { onLoi?.(dichLoi(error)); return; }
     await onXong?.();
+  };
+
+  // Ba lần chào giá với phòng VTTB — tiến từng lần (server chặn nhảy cóc).
+  const xongLanChaoGia = async (lan) => {
+    setDangChay("lan_chao_gia");
+    const { error } = await supabase.rpc("xong_lan_chao_gia_v3", { p_dot_goi_id: dotGoiId, p_lan: lan });
+    setDangChay("");
+    if (error) { onLoi?.(dichLoi(error)); return; }
+    await onXong?.(`Đã ghi xong chào giá lần ${lan}.`);
   };
 
   const xacNhanRot = async () => {
@@ -328,7 +346,7 @@ export function ThanhGiaiDoanThau({
   if (giaiDoan.length === 0) {
     return (
       <div className="rounded border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs text-red-800">
-        Đợt đã chốt Q nhưng thiếu bản ghi ba giai đoạn thầu (<code>giai_doan_thau_v3</code>).
+        Đợt đã chốt Q nhưng thiếu bản ghi giai đoạn thầu (<code>giai_doan_thau_v3</code>).
         Đây là <b>hỏng</b>, không phải trạng thái bình thường — báo lại để kiểm.
       </div>
     );
@@ -341,13 +359,17 @@ export function ThanhGiaiDoanThau({
     ? GIAI_DOAN.find((g, idx) => ttCua(g.ma) === "chua_bat_dau"
       && (idx === 0 || ttCua(GIAI_DOAN[idx - 1].ma) === "hoan_thanh"))
     : null;
+  // Mở thầu chỉ bắt đầu được SAU khi đã chốt trình ký (server cũng chặn).
+  const keCanTrinhKy = giaiDoanKe && !giaiDoanKe.cot && !daTrinhKy;
   const gdDangChay = GIAI_DOAN.find((g) => g.ma === giaiDoanDangChay?.giai_doan) || null;
+  const lanXong = Number(giaiDoan.find((x) => x.giai_doan === "chao_gia")?.lan_chao_gia_xong) || 0;
+  const dangChaoGia = gdDangChay?.ma === "chao_gia";
   const nutVien = "inline-flex min-h-9 items-center gap-1.5 rounded border px-3 text-sm font-semibold disabled:opacity-50";
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       <span className="text-[13px] text-slate-500"
-        title="Ba giai đoạn chạy tuần tự. Gõ số rớt của giai đoạn đang chạy, xong bấm Hoàn thành để mở giai đoạn kế tiếp.">
+        title="Các giai đoạn chạy tuần tự. Chào giá, Kiểm tra ĐV đấu thầu, Hội đồng: gõ số rớt (nếu có) rồi bấm Hoàn thành. Mở thầu và Kết quả đánh giá chỉ bắt đầu sau khi đã chốt trình ký.">
         Giai đoạn thầu:
       </span>
       {GIAI_DOAN.map((g) => {
@@ -357,13 +379,24 @@ export function ThanhGiaiDoanThau({
             : "border-slate-200 bg-white text-slate-500";
         return (
           <span key={g.ma} className={`inline-flex min-h-8 items-center gap-1.5 rounded border px-2.5 text-[13px] ${mau}`}
-            title={tt === "dang_thuc_hien" ? `Đang chạy — gõ số rớt ở cột "Rớt ở ${g.nhan}"`
-              : tt === "hoan_thanh" ? "Đã hoàn thành — số rớt chỉ đọc"
-                : "Chưa bắt đầu"}>
+            title={`${g.tenDu || g.nhan} — ${tt === "dang_thuc_hien"
+              ? (g.cot ? `đang chạy, gõ số rớt (nếu có) ở cột "Rớt ở ${g.nhan}"` : "đang chạy")
+              : tt === "hoan_thanh" ? (g.cot ? "đã hoàn thành, số rớt chỉ đọc" : "đã hoàn thành")
+                : g.cot ? "chưa bắt đầu" : "chưa bắt đầu — chỉ làm sau khi đã chốt trình ký"}`}>
             {tt === "dang_thuc_hien" && <span className="h-1.5 w-1.5 rounded-full bg-umc-600" />}
             {tt === "hoan_thanh" && <Check size={12} />}
             <b className="font-semibold">{g.nhan}</b>
-            {tt === "dang_thuc_hien" && <span>· đang gõ số rớt</span>}
+            {g.ma === "chao_gia" && (tt !== "chua_bat_dau" || lanXong > 0) && (
+              // Ba chấm 3a · 3b · 3c — lần nào đã xong thì tô xanh.
+              <span className="inline-flex items-center gap-0.5" aria-label={`Đã xong ${lanXong} lần chào giá`}>
+                {[1, 2, 3].map((n) => (
+                  <span key={n} className={`rounded px-1 text-[11px] font-semibold ${n <= lanXong
+                    ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400"}`}
+                    title={`Lần ${n}${n <= lanXong ? " · đã xong" : ""}`}>L{n}</span>
+                ))}
+              </span>
+            )}
+            {tt === "dang_thuc_hien" && g.cot && g.ma !== "chao_gia" && <span>· đang gõ số rớt</span>}
             {tt === "chua_bat_dau" && <span>· chờ</span>}
           </span>
         );
@@ -371,14 +404,27 @@ export function ThanhGiaiDoanThau({
 
       {/* MỘT nút việc chính của giai đoạn (G1). Viền, không nền đặc: nền đặc để
           dành cho khung đang mở (hộp ghi rớt, khung chia) — G15. */}
-      {gdDangChay && (
+      {dangChaoGia && lanXong < 3 && (
+        <button type="button" disabled={!!dangChay}
+          onClick={() => xongLanChaoGia(lanXong + 1)}
+          title={`Đã làm xong chào giá lần ${lanXong + 1} với phòng VTTB`}
+          className={`${nutVien} ml-1 border-umc-600 bg-white text-umc-800 hover:bg-umc-50`}>
+          <Check size={14} /> {dangChay === "lan_chao_gia" ? "Đang lưu…" : `Xong lần ${lanXong + 1}`}
+        </button>
+      )}
+      {gdDangChay && !(dangChaoGia && lanXong < 1) && (
         <button type="button" disabled={!!dangChay}
           onClick={() => setHoiHoanThanh(gdDangChay.ma)}
           className={`${nutVien} ml-1 border-umc-600 bg-white text-umc-800 hover:bg-umc-50`}>
           <Check size={14} /> {dangChay === gdDangChay.ma ? "Đang lưu…" : `Hoàn thành ${gdDangChay.nhan}`}
         </button>
       )}
-      {giaiDoanKe && (
+      {keCanTrinhKy && (
+        <span className="ml-1 rounded bg-slate-100 px-2.5 py-1 text-[13px] text-slate-600">
+          Chốt trình ký xong mới bắt đầu {giaiDoanKe.nhan}.
+        </span>
+      )}
+      {giaiDoanKe && !keCanTrinhKy && (
         <button type="button" disabled={!!dangChay}
           onClick={() => doiTrangThai(giaiDoanKe.ma, "dang_thuc_hien")}
           className={`${nutVien} ml-1 border-umc-600 bg-white text-umc-800 hover:bg-umc-50`}>
@@ -403,7 +449,9 @@ export function ThanhGiaiDoanThau({
       {hoiHoanThanh && (
         <HopHoiLai
           tieuDe={`Hoàn thành ${GIAI_DOAN.find((g) => g.ma === hoiHoanThanh)?.nhan}?`}
-          noiDung="Xong thì số rớt của giai đoạn này chỉ còn đọc. Muốn sửa lại phải mở lại và ghi lý do."
+          noiDung={GIAI_DOAN.find((g) => g.ma === hoiHoanThanh)?.cot
+            ? `Xong thì số rớt của giai đoạn này chỉ còn đọc. Muốn sửa lại phải mở lại và ghi lý do.${hoiHoanThanh === "chao_gia" ? ` (Đã xong ${lanXong}/3 lần chào giá.)` : ""}`
+            : "Đánh dấu giai đoạn này đã xong để qua bước sau."}
           nhanDongY="Hoàn thành"
           onHuy={() => setHoiHoanThanh(null)}
           onDongY={() => { const ma = hoiHoanThanh; setHoiHoanThanh(null); doiTrangThai(ma, "hoan_thanh"); }} />
@@ -485,9 +533,7 @@ export function OThauCuaDong({
       <td className={`${oSo} text-slate-600`} style={{ background: "#f1f5f9" }} title="Số đi thầu (Q) — đã chốt, không đổi">
         {fmt(kq.q)}
       </td>
-      {oRot("r1", "chao_gia")}
-      {oRot("r2", "mo_thau")}
-      {oRot("r3", "danh_gia")}
+      {GIAI_DOAN_CO_ROT.map((g) => oRot(g.cot, g.ma))}
       <td className={`${oSo} font-semibold text-emerald-700`} style={{ background: "#f0fdf4" }}
         title={nhan
           ? `Trúng ${fmt(kq.so_luong_trung)} + nhận ${fmt(nhan.da_nhan)} từ mã rớt = ${fmt(Number(kq.so_luong_trung) + Number(nhan.da_nhan))} sẽ mua`

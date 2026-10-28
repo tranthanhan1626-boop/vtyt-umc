@@ -183,6 +183,8 @@ const khoaTu = (v) => dungTrangThaiKhoa({ coDotGoi: true, giaiDoan: [], soMaRot:
 {
   const GD = [
     { giai_doan: "chao_gia", trang_thai: "hoan_thanh" },
+    { giai_doan: "kiem_tra_dvdt", trang_thai: "hoan_thanh" },
+    { giai_doan: "hoi_dong", trang_thai: "hoan_thanh" },
     { giai_doan: "mo_thau", trang_thai: "dang_thuc_hien" },
     { giai_doan: "danh_gia", trang_thai: "chua_bat_dau" },
   ];
@@ -195,7 +197,8 @@ const khoaTu = (v) => dungTrangThaiKhoa({ coDotGoi: true, giaiDoan: [], soMaRot:
   assert.equal(r.bienThe, 0);
   const p2 = dungTrangThaiPdd({ khoaChuaXacNhan: [], khoaDaGui: ["A"], coPhienQ: true, giaiDoan: GD, coPhienTrinhKy: false });
   assert.equal(p2.giaiDoanDangChay, "Mở thầu");
-  assert.equal(p2.baGiaiDoanXong, false);
+  // 28/10/2026: "đủ để trình ký" = xong ba giai đoạn trước trình ký.
+  assert.equal(p2.baGiaiDoanXong, true);
   // Hook chưa đọc soMaChuaChiaDu / tongRotChuaXuLy → hai biến thể đó bỏ qua,
   // tới biến thể giai đoạn đang chạy.
   const r2 = chonCauTraLoi(nut("p_tiep_goc"), { ctx: dungNguCanh({}, "pdd"), pdd: p2 });

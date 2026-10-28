@@ -19,14 +19,32 @@
  *   chuaRo — không xác định được chắc chắn
  */
 
-// Ba giai đoạn thầu — cùng mã và thứ tự với GIAI_DOAN ở CumThauTongHop.jsx
+// Năm giai đoạn thầu — cùng mã và thứ tự với GIAI_DOAN ở CumThauTongHop.jsx
 // (bảng `giai_doan_thau_v3`, cột `giai_doan`). Không import từ file JSX đó để
 // file này còn chạy được bằng node.
+// 28/10/2026 (patch_zzzzzzzt, quy trình tám bước): ba giai đoạn đầu đứng TRƯỚC
+// chốt trình ký và có cột rớt; Mở thầu / Kết quả đánh giá đứng SAU trình ký.
 export const GIAI_DOAN_THAU = [
-  { ma: "chao_gia", nhan: "Chào giá" },
-  { ma: "mo_thau", nhan: "Mở thầu" },
-  { ma: "danh_gia", nhan: "Đánh giá" },
+  { ma: "chao_gia", nhan: "Chào giá", truocTrinhKy: true },
+  { ma: "kiem_tra_dvdt", nhan: "Kiểm tra ĐV đấu thầu", truocTrinhKy: true },
+  { ma: "hoi_dong", nhan: "Hội đồng mua sắm", truocTrinhKy: true },
+  { ma: "mo_thau", nhan: "Mở thầu", truocTrinhKy: false },
+  { ma: "danh_gia", nhan: "Kết quả đánh giá", truocTrinhKy: false },
 ];
+
+/** Ba giai đoạn trước trình ký đã hoàn thành hết chưa (cùng luật server
+ *  `fn_xong_truoc_trinh_ky_v3`). `giaiDoan` không phải mảng → null (chưa rõ). */
+export function xongTruocTrinhKy(giaiDoan) {
+  if (!Array.isArray(giaiDoan)) return null;
+  return GIAI_DOAN_THAU.filter((g) => g.truocTrinhKy)
+    .every((g) => trangThaiGiaiDoan(giaiDoan, g.ma) === "hoan_thanh");
+}
+
+/** Số lần chào giá đã xong (0–3), đọc cột `lan_chao_gia_xong`. */
+export function lanChaoGiaXong(giaiDoan) {
+  const n = Number((giaiDoan || []).find((g) => g.giai_doan === "chao_gia")?.lan_chao_gia_xong);
+  return Number.isFinite(n) ? n : 0;
+}
 
 const coSo = (x) => typeof x === "number" && Number.isFinite(x);
 
@@ -163,7 +181,7 @@ export function tinhTienTrinhKhoa(v = {}) {
     } else {
       buoc.push({
         trangThai: "chua",
-        chuThich: gdDangChay ? `Đang ${gdDangChay.nhan.toLowerCase()}` : "Chưa bắt đầu thầu",
+        chuThich: gdDangChay ? `Đang ở bước ${gdDangChay.nhan}` : "Chưa bắt đầu thầu",
       });
     }
   }
@@ -211,10 +229,15 @@ const NHAN_NGAN_KHOA = ["Đề xuất", "Gửi", "Chờ chốt số", "Kết qu�
 // PĐD — theo một DOT_GOI
 // ─────────────────────────────────────────────────────────────────────────
 
-// 28/10/2026 — BỎ bước "Khoa xác nhận" (tính năng xác nhận của khoa đã bỏ). Còn 6 bước.
-const MA_PDD = ["khoa_de_xuat", "chot_q", "chao_gia", "mo_thau", "danh_gia", "trinh_ky"];
-const NHAN_PDD = ["Khoa đề xuất", "Chốt số đi thầu", "Chào giá", "Mở thầu", "Đánh giá", "Chốt trình ký"];
-const NHAN_NGAN_PDD = ["Đề xuất", "Chốt số", "Chào giá", "Mở thầu", "Đánh giá", "Trình ký"];
+// 28/10/2026 — BỎ bước "Khoa xác nhận" (tính năng xác nhận của khoa đã bỏ).
+// 28/10/2026 tối — quy trình TÁM bước (chủ dự án): thêm Kiểm tra với đơn vị
+// quản lý đấu thầu + Hội đồng mua sắm; trình ký (in MỘT lần) dời lên trước Mở
+// thầu. Nhãn ngắn giữ một chữ đôi để 8 ô vừa một dòng ở màn 1280px.
+const MA_PDD = ["khoa_de_xuat", "chot_q", "chao_gia", "kiem_tra_dvdt", "hoi_dong", "trinh_ky", "mo_thau", "danh_gia"];
+const NHAN_PDD = ["Đề xuất số lượng", "Chốt số lượng đề xuất", "Chào giá (3 lần với phòng VTTB)",
+  "Kiểm tra danh mục với đơn vị quản lý đấu thầu", "Hội đồng mua sắm", "Chốt và in trình ký",
+  "Mở thầu", "Kết quả đánh giá"];
+const NHAN_NGAN_PDD = ["Đề xuất", "Chốt số", "Chào giá", "Kiểm tra", "Hội đồng", "Trình ký", "Mở thầu", "Đánh giá"];
 
 /**
  * @param {object} v
@@ -243,32 +266,38 @@ export function tinhTienTrinhPdd(v = {}) {
   else if (v.coPhienQ) buoc.push({ trangThai: "xong", chuThich: "Đã chốt" });
   else buoc.push({ trangThai: "chua", chuThich: "Chưa chốt" });
 
-  // ③ ④ ⑤ Ba giai đoạn.
-  GIAI_DOAN_THAU.forEach((g) => {
+  // ③ ④ ⑤ Ba giai đoạn trước trình ký · ⑥ trình ký · ⑦ ⑧ hai giai đoạn sau.
+  const lan = lanChaoGiaXong(v.giaiDoan);
+  const buocGiaiDoan = (g) => {
     const tt = Array.isArray(v.giaiDoan) ? trangThaiGiaiDoan(v.giaiDoan, g.ma) : undefined;
     if (v.coPhienQ == null || v.giaiDoan == null) {
-      buoc.push({ trangThai: "chuaRo", chuThich: "chưa rõ" });
-    } else if (!v.coPhienQ) {
+      return { trangThai: "chuaRo", chuThich: "chưa rõ" };
+    }
+    if (!v.coPhienQ) {
       // Chưa có Q mà giai đoạn đã chạy/hoàn thành: dữ liệu không khớp nhau,
       // không tự quyết bên nào đúng.
-      buoc.push(tt && tt !== "chua_bat_dau"
+      return tt && tt !== "chua_bat_dau"
         ? { trangThai: "chuaRo", chuThich: "chưa rõ — chưa có bản chốt số hiệu lực" }
-        : { trangThai: "chua", chuThich: "Sau khi chốt số" });
-    } else if (!tt) {
-      buoc.push({ trangThai: "chuaRo", chuThich: "chưa rõ — thiếu bản ghi giai đoạn" });
-    } else if (tt === "hoan_thanh") {
-      buoc.push({ trangThai: "xong", chuThich: "Hoàn thành" });
-    } else if (tt === "dang_thuc_hien") {
-      buoc.push({ trangThai: "chua", chuThich: "Đang thực hiện" });
-    } else {
-      buoc.push({ trangThai: "chua", chuThich: "Chưa bắt đầu" });
+        : { trangThai: "chua", chuThich: "Sau khi chốt số" };
     }
-  });
+    if (!tt) return { trangThai: "chuaRo", chuThich: "chưa rõ — thiếu bản ghi giai đoạn" };
+    if (tt === "hoan_thanh") {
+      return { trangThai: "xong", chuThich: g.ma === "chao_gia" && lan > 0 ? `Hoàn thành · ${lan} lần` : "Hoàn thành" };
+    }
+    if (tt === "dang_thuc_hien") {
+      return { trangThai: "chua", chuThich: g.ma === "chao_gia" ? (lan > 0 ? `Xong lần ${lan}/3` : "Đang làm lần 1") : "Đang thực hiện" };
+    }
+    if (!g.truocTrinhKy && v.coPhienTrinhKy === false) return { trangThai: "chua", chuThich: "Sau trình ký" };
+    return { trangThai: "chua", chuThich: "Chưa bắt đầu" };
+  };
+  GIAI_DOAN_THAU.filter((g) => g.truocTrinhKy).forEach((g) => buoc.push(buocGiaiDoan(g)));
 
-  // ⑥ Chốt trình ký.
+  // ⑥ Chốt và in trình ký.
   if (v.coPhienTrinhKy == null) buoc.push({ trangThai: "chuaRo", chuThich: "chưa rõ" });
   else if (v.coPhienTrinhKy) buoc.push({ trangThai: "xong", chuThich: "Đã có bản chính thức" });
   else buoc.push({ trangThai: "chua", chuThich: "Chưa chốt" });
+
+  GIAI_DOAN_THAU.filter((g) => !g.truocTrinhKy).forEach((g) => buoc.push(buocGiaiDoan(g)));
 
   const coNhan = buoc.map((b, i) => ({
     ma: MA_PDD[i], nhan: NHAN_PDD[i], nhanNgan: NHAN_NGAN_PDD[i], ...b,
@@ -281,13 +310,19 @@ export function tinhTienTrinhPdd(v = {}) {
   if (chuaRo) viec = "Chưa đọc được đủ trạng thái — bấm Tải lại hoặc thử lại sau.";
   else if (ma === "khoa_de_xuat") viec = "Chưa khoa nào gửi đề xuất — nhắc khoa qua Teams.";
   else if (ma === "chot_q") viec = "Bấm “Chốt số đi thầu” trên bảng Tổng hợp.";
-  else if (["chao_gia", "mo_thau", "danh_gia"].includes(ma)) {
+  else if (ma === "chao_gia" && trangThaiGiaiDoan(v.giaiDoan, ma) === "dang_thuc_hien") {
+    viec = lan >= 3 ? "Đã xong 3 lần chào giá — bấm “✓ Hoàn thành Chào giá”."
+      : `Làm chào giá lần ${lan + 1} với phòng VTTB, xong bấm “✓ Xong lần ${lan + 1}”`
+        + (lan >= 1 ? " (hoặc “✓ Hoàn thành Chào giá” nếu không cần thêm lần)." : ".");
+  } else if (GIAI_DOAN_THAU.some((x) => x.ma === ma)) {
     const g = GIAI_DOAN_THAU.find((x) => x.ma === ma);
     viec = trangThaiGiaiDoan(v.giaiDoan, ma) === "dang_thuc_hien"
-      ? `Gõ số rớt giai đoạn ${g.nhan}, xong bấm “✓ Hoàn thành ${g.nhan}”.`
+      ? (g.truocTrinhKy
+        ? `Gõ số rớt (nếu có) ở cột “Rớt ở ${g.nhan}”, xong bấm “✓ Hoàn thành ${g.nhan}”.`
+        : `Có kết quả thì bấm “✓ Hoàn thành ${g.nhan}”.`)
       : `Bấm “▶ Bắt đầu ${g.nhan}” trên bảng Tổng hợp.`;
-  } else if (ma === "trinh_ky") viec = "Chia đủ số trúng về khoa rồi bấm “Chốt trình ký” trên bảng Tổng hợp.";
-  else viec = "Gói con đã có bản chốt trình ký chính thức.";
+  } else if (ma === "trinh_ky") viec = "Chia đủ số về khoa rồi bấm “Chốt trình ký” trên bảng Tổng hợp, sau đó in.";
+  else viec = "Gói con đã có kết quả đánh giá.";
 
   return { buoc: ketQua, buocHienTai: ma, viecTiepTheo: viec };
 }

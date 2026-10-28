@@ -231,7 +231,8 @@ def test_n6b_them_khoang_trang_dau_thau_chao_gia():
     # (G2), nên dấu cách sau thẻ </b> nay là dấu cách thật trong dòng, không còn
     # là {" "} cuối dòng. Ý của test vẫn giữ: có khoảng trắng giữa "đấu thầu" và
     # "(Chào giá", không dính liền.
-    assert "đấu thầu</b> (Chào giá" in text
+    # 28/10/2026: câu đổi thành "đã xong bước Kết quả đánh giá</b> (Chào giá …".
+    assert "Kết quả đánh giá</b> (Chào giá" in text
     assert "đấu thầu(chào giá" not in text
     assert "đấu thầu(Chào giá" not in text
 

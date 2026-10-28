@@ -29,6 +29,7 @@
 | **Gói bổ sung chia gói con** | Mỗi đợt bổ sung là một gói phẳng | 17/08/2026 |
 | Vai trò `admin` tách khỏi `dieu_duong` | PĐD = admin, cùng quyền | 17/08/2026 |
 | Mọi cột giá | Bỏ hẳn | 17/08/2026 |
+| **Bệnh viện không cần trình ký trước đấu thầu; chốt trình ký sau ba giai đoạn (Chào giá · Mở thầu · Đánh giá), số = số trúng** | Tám bước: Chào giá (3 lần) → Kiểm tra với đơn vị quản lý đấu thầu → Hội đồng mua sắm → **chốt + in trình ký MỘT lần** → Mở thầu → Kết quả đánh giá. Rớt gõ được ở 3 bước trước trình ký; Mở thầu / Đánh giá chỉ đánh rớt cả mã khi không có nhà thầu (patch_zzzzzzzt) | 28/10/2026 |
 | **Mọi cột giá — ngoại lệ Chào giá** | Cột **Đơn giá chào (VNĐ)** trong bảng `chao_gia_v3`, PĐD và khoa đều thấy (sổ xuống từng mã); các bảng khác vẫn không có giá | 28/10/2026 |
 | **Cổng mềm — PĐD tự quyết thời điểm chốt số tham gia đấu thầu** | Cổng cứng — đủ xác nhận của mọi khoa đã gửi đề xuất mới chốt được | 19/08/2026 |
 | **PĐD duyệt ô là khoá ô đó bên khoa** | Bỏ hẳn — ai sửa sau đè; đóng băng bằng chốt Q (cột số) và chốt trình ký (cột chữ) | 19/08/2026 |

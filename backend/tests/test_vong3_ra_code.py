@@ -56,8 +56,11 @@ def test_q05_gop_theo_dot_goi_id_va_ma_hang_khong_chi_ma_hang():
 
 
 def test_q05_man_rong_chi_gom_goi_con_da_xong_ba_giai_doan():
+    # 28/10/2026 (patch_zzzzzzzt): năm giai đoạn — màn chỉ gồm gói con đã xong
+    # bước cuối Kết quả đánh giá.
     text = KET_QUA_THAU.read_text(encoding="utf-8")
-    assert "Chưa có gói con nào hoàn thành đủ ba giai đoạn đấu thầu." in text
+    assert "Chưa có gói con nào có Kết quả đánh giá." in text
+    assert "d.tong === SO_GIAI_DOAN && d.hoanThanh === SO_GIAI_DOAN" in text
 
 
 def test_l15_trung_mot_phan_cung_hien_rot_o():

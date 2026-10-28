@@ -386,6 +386,11 @@ Q = Số lượng PĐD đã chốt tham gia đấu thầu
 Chào giá → Mở thầu → Đánh giá
 ```
 
+> 🆕 **28/10/2026 — ĐỔI THÀNH TÁM BƯỚC (patch_zzzzzzzt).** Chào giá (lần 1/2/3 với phòng VTTB) → Kiểm tra danh
+> mục với đơn vị quản lý đấu thầu → Hội đồng mua sắm → **chốt + in trình ký** → Mở thầu → Kết quả đánh giá. Ba
+> cột rớt nay là R1 Chào giá · R2 Kiểm tra · R3 Hội đồng. Mở thầu / Kết quả đánh giá đứng SAU trình ký, chỉ đánh
+> rớt cả mã khi không có nhà thầu (miếng 3, chưa thi công). Chi tiết `00_DOC_TRUOC_TIEN.md` Việc còn mở mục 22.
+
 🆕 Chuyển giai đoạn bấm ngay trên **thanh công cụ của Danh mục tổng hợp**
 (QĐ 21/08/2026), không phải vào màn riêng.
 
@@ -801,6 +806,10 @@ Chi tiết công thức ở `02_CONG_THUC_SO_LUONG.md`. Phần nghiệp vụ:
 ---
 
 ## 8. Chốt dữ liệu trình ký
+
+> 🆕 **28/10/2026 — đoạn ngay dưới HẾT HIỆU LỰC về thời điểm.** Trình ký nay làm **MỘT lần, sau Hội đồng mua sắm,
+> trước Mở thầu**; cổng chỉ đòi xong Chào giá · Kiểm tra ĐV đấu thầu · Hội đồng (`fn_xong_truoc_trinh_ky_v3`). Số
+> trình ký = số đi thầu trừ rớt ba cột, đã chia về khoa. Các cổng khác (khoá 2, khoá cứng sau chốt) giữ nguyên.
 
 Bệnh viện **không cần** bộ trình ký trước đấu thầu. Chỉ chốt và xuất bộ dữ liệu
 chính thức sau khi: ba giai đoạn đã xong · ngoại lệ rớt đã đầy đủ · số trúng đã

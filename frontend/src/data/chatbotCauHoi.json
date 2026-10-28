@@ -654,7 +654,7 @@
       ],
       "chu_de": "k_thau",
       "cau_hoi": "Nhãn \"Rớt … ở Chào giá · trúng …\" nghĩa là gì?",
-      "tra_loi": "Nhãn vàng \"Rớt N ở <giai đoạn> · trúng M\": mã rớt một phần. Nhãn đỏ \"Rớt toàn bộ ở <giai đoạn>\": không trúng. Giai đoạn là Chào giá, Mở thầu hoặc Đánh giá. Rê chuột lên nhãn để xem số mang đi thầu, trúng, thiếu và lý do. Khoa chỉ xem, không sửa.",
+      "tra_loi": "Nhãn vàng \"Rớt N ở <giai đoạn> · trúng M\": mã rớt một phần. Nhãn đỏ \"Rớt toàn bộ ở <giai đoạn>\": không trúng. Giai đoạn là Chào giá, Kiểm tra ĐV đấu thầu hoặc Hội đồng mua sắm. Rê chuột lên nhãn để xem số mang đi thầu, trúng, thiếu và lý do. Khoa chỉ xem, không sửa.",
       "bien_the_theo_trang_thai": [
         {
           "khi": "Khoa có mã rớt trong đợt · khoa.soMaRot > 0",
@@ -900,7 +900,7 @@
       ],
       "chu_de": "p_tiep",
       "cau_hoi": "Tôi phải làm gì tiếp?",
-      "tra_loi": "Mọi thao tác sửa làm trên bảng Tổng hợp của từng gói con. Thứ tự: khoa gửi → \"Chốt số đi thầu\" → Chào giá, Mở thầu, Đánh giá (gõ số rớt ở từng giai đoạn) → chia số trúng về khoa → đổ sang mã tương đương → \"Xác nhận rớt\" → \"Chốt trình ký\".",
+      "tra_loi": "Mọi thao tác sửa làm trên bảng Tổng hợp của từng gói con. Thứ tự: khoa gửi → \"Chốt số đi thầu\" → Chào giá (3 lần với phòng VTTB), Kiểm tra với đơn vị quản lý đấu thầu, Hội đồng mua sắm (gõ số rớt nếu có) → chia số về khoa → đổ sang mã tương đương → \"Xác nhận rớt\" → \"Chốt trình ký\" rồi in → Mở thầu → Kết quả đánh giá.",
       "bien_the_theo_trang_thai": [
         {
           "khi": "Chưa chốt Q, đã có khoa gửi · !pdd.coPhienQ && pdd.khoaDaGui.length > 0",
@@ -919,8 +919,8 @@
           "tra_loi": "Đang ở giai đoạn {pdd.giaiDoanDangChay}. Gõ số rớt của giai đoạn này, xong bấm \"✓ Hoàn thành {pdd.giaiDoanDangChay}\" cạnh dải giai đoạn để mở giai đoạn kế."
         },
         {
-          "khi": "Ba giai đoạn xong, chưa chốt trình ký · pdd.baGiaiDoanXong && !pdd.coPhienTrinhKy",
-          "tra_loi": "Ba giai đoạn thầu đã xong. Trước khi chốt trình ký, mọi mã phải chia đủ số trúng về khoa và xử lý xong phần rớt — nếu đầu bảng Tổng hợp còn nhãn vàng \"Còn N mã chưa chia đủ số trúng\" thì làm phần đó trước. Xong thì bấm \"✓ Chốt trình ký\" rồi \"CHỐT TRÌNH KÝ TOÀN BỘ\" (hệ hỏi lại)."
+          "khi": "Xong Hội đồng, chưa chốt trình ký · pdd.baGiaiDoanXong && !pdd.coPhienTrinhKy",
+          "tra_loi": "Đã xong Chào giá, Kiểm tra ĐV đấu thầu và Hội đồng mua sắm. Trước khi chốt trình ký, mọi mã phải chia đủ số trúng về khoa và xử lý xong phần rớt — nếu đầu bảng Tổng hợp còn nhãn vàng \"Còn N mã chưa chia đủ số trúng\" thì làm phần đó trước. Xong thì bấm \"✓ Chốt trình ký\" rồi \"CHỐT TRÌNH KÝ TOÀN BỘ\" (hệ hỏi lại)."
         },
         {
           "khi": "Còn mã rớt nằm trong giỏ khoa · pdd.rotTrongGio.soKhoa > 0",
@@ -1028,7 +1028,7 @@
       ],
       "chu_de": "p_q",
       "cau_hoi": "Chốt số đi thầu xong thì chuyện gì xảy ra?",
-      "tra_loi": "Hệ lưu bản số đi thầu cố định cho từng mã × khoa. Cột số lượng khoá, không thêm mã được nữa. Cột chữ như tiêu chí kỹ thuật vẫn sửa được tới khi chốt trình ký. Cụm \"Số đi thầu · Rớt ở Chào giá / Mở thầu / Đánh giá · Trúng\" bắt đầu có số và dải giai đoạn thầu hiện ra.",
+      "tra_loi": "Hệ lưu bản số đi thầu cố định cho từng mã × khoa. Cột số lượng khoá, không thêm mã được nữa. Cột chữ như tiêu chí kỹ thuật vẫn sửa được tới khi chốt trình ký. Cụm \"Số đi thầu · Rớt ở Chào giá / Kiểm tra ĐV đấu thầu / Hội đồng mua sắm · Trúng\" bắt đầu có số và dải giai đoạn thầu hiện ra.",
       "bien_the_theo_trang_thai": [],
       "di_toi": {
         "nhan": "Mở bảng Tổng hợp",
@@ -1065,7 +1065,7 @@
       ],
       "chu_de": "p_thau",
       "cau_hoi": "Chuyển giai đoạn thầu thế nào?",
-      "tra_loi": "Dải \"Giai đoạn thầu\" trên bảng Tổng hợp: Chào giá → Mở thầu → Đánh giá, chạy lần lượt. Bấm \"▶ Bắt đầu <giai đoạn>\", gõ rớt, xong bấm \"✓ Hoàn thành <giai đoạn>\" (hệ hỏi lại). Chữ \"· chờ\" nghĩa là giai đoạn trước chưa xong. \"Mở lại giai đoạn…\" ở menu ⋯, bắt nhập lý do và làm kết quả các giai đoạn sau hết hiệu lực.",
+      "tra_loi": "Dải \"Giai đoạn thầu\" trên bảng Tổng hợp: Chào giá → Kiểm tra ĐV đấu thầu → Hội đồng mua sắm → (chốt trình ký) → Mở thầu → Kết quả đánh giá, chạy lần lượt. Bấm \"▶ Bắt đầu <giai đoạn>\", gõ rớt nếu có, xong bấm \"✓ Hoàn thành <giai đoạn>\" (hệ hỏi lại). Chào giá có nút \"✓ Xong lần 1/2/3\"; xong ít nhất lần 1 mới hoàn thành được. Mở thầu chỉ bắt đầu sau khi đã chốt trình ký. Chữ \"· chờ\" nghĩa là giai đoạn trước chưa xong. \"Mở lại giai đoạn…\" ở menu ⋯, bắt nhập lý do và làm số rớt các giai đoạn sau hết hiệu lực.",
       "bien_the_theo_trang_thai": [
         {
           "khi": "Chưa chốt Q · !pdd.coPhienQ",
@@ -1088,8 +1088,8 @@
         "pdd"
       ],
       "chu_de": "p_thau",
-      "cau_hoi": "Nhập số rớt ở Chào giá, Mở thầu, Đánh giá thế nào?",
-      "tra_loi": "Bấm ô \"Rớt ở <giai đoạn>\" của giai đoạn đang chạy; hai cột kia chỉ đọc. Hộp nhập bắt số rớt và lý do. Tích \"Rớt toàn bộ phần còn lại của mã này\" nếu rớt sạch. Tổng rớt ba giai đoạn vượt \"Số đi thầu\" thì bị chặn ngay. Mã không nhập rớt mặc định trúng hết.",
+      "cau_hoi": "Nhập số rớt ở Chào giá, Kiểm tra ĐV đấu thầu, Hội đồng mua sắm thế nào?",
+      "tra_loi": "Bấm ô \"Rớt ở <giai đoạn>\" của giai đoạn đang chạy; hai cột kia chỉ đọc. Hộp nhập bắt số rớt và lý do. Tích \"Rớt toàn bộ phần còn lại của mã này\" nếu rớt sạch. Tổng rớt ba cột vượt \"Số đi thầu\" thì bị chặn ngay. Mã không nhập rớt mặc định trúng hết.",
       "bien_the_theo_trang_thai": [],
       "di_toi": {
         "nhan": "Mở bảng Tổng hợp",
@@ -1237,15 +1237,15 @@
       ],
       "chu_de": "p_tk",
       "cau_hoi": "Khi nào chốt trình ký được?",
-      "tra_loi": "Khi ba giai đoạn thầu đã hoàn thành và mọi mã đã chia khớp số trúng. Bấm \"Chốt trình ký\" rồi \"CHỐT TRÌNH KÝ TOÀN BỘ\": hệ tự chốt lần lượt các bảng khoa còn thiếu rồi đóng băng cả gói con. Còn mã lệch thì hệ liệt kê và từ chối chốt.",
+      "tra_loi": "Khi đã hoàn thành Chào giá, Kiểm tra ĐV đấu thầu và Hội đồng mua sắm, và mọi mã đã chia khớp số về khoa. Bấm \"Chốt trình ký\" rồi \"CHỐT TRÌNH KÝ TOÀN BỘ\": hệ tự chốt lần lượt các bảng khoa còn thiếu rồi đóng băng cả gói con. Còn mã lệch thì hệ liệt kê và từ chối chốt.",
       "bien_the_theo_trang_thai": [
         {
           "khi": "Đã chốt trình ký · pdd.coPhienTrinhKy",
           "tra_loi": "Gói con này đã chốt trình ký — bản số {pdd.revisionTrinhKy}. Excel xuất ra giờ là bản chính thức."
         },
         {
-          "khi": "Chưa đủ ba giai đoạn · !pdd.baGiaiDoanXong",
-          "tra_loi": "Chưa đủ ba giai đoạn thầu hoàn thành nên chưa chốt trình ký được. Hoàn thành Chào giá, Mở thầu, Đánh giá trước."
+          "khi": "Chưa xong Hội đồng · !pdd.baGiaiDoanXong",
+          "tra_loi": "Chưa xong Hội đồng mua sắm nên chưa chốt trình ký được. Hoàn thành Chào giá, Kiểm tra ĐV đấu thầu, Hội đồng mua sắm trước."
         }
       ],
       "di_toi": {
@@ -1256,7 +1256,7 @@
         "p_tk_excel",
         "p_tk_mo_lai"
       ],
-      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:726-760, 902-906; features/CumThauTongHop.jsx:820-840, 856-906; sql/*.sql raise 'Phải hoàn thành đủ ba giai đoạn đấu thầu.'",
+      "nguon": "HD/01_NGHIEP_VU_HIEN_HANH.md:726-760, 902-906; features/CumThauTongHop.jsx:820-840, 856-906; sql/patch_zzzzzzzt_tam_buoc_thau.sql fn_xong_truoc_trinh_ky_v3",
       "can_xac_nhan": null
     },
     {

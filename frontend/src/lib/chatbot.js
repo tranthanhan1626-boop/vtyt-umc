@@ -367,7 +367,10 @@ export function dungTrangThaiKhoa(v) {
   };
 }
 
-const NHAN_GD = { chao_gia: "Chào giá", mo_thau: "Mở thầu", danh_gia: "Đánh giá" };
+const NHAN_GD = {
+  chao_gia: "Chào giá", kiem_tra_dvdt: "Kiểm tra ĐV đấu thầu", hoi_dong: "Hội đồng mua sắm",
+  mo_thau: "Mở thầu", danh_gia: "Kết quả đánh giá",
+};
 
 /**
  * `pdd.*` từ một phần tử của `taiTrangThaiPddTheoDot(dotId)` (Map goiId → …).
@@ -394,7 +397,8 @@ export function dungTrangThaiPdd(v) {
     // biểu thức duy nhất dùng khoá này là `!= null`, cả hai nghĩa đều ra SAI.
     giaiDoanDangChay: dang ? (NHAN_GD[dang.giai_doan] || null) : null,
     baGiaiDoanXong: gd
-      ? ["chao_gia", "mo_thau", "danh_gia"].every((m) => gd.find((g) => g.giai_doan === m)?.trang_thai === "hoan_thanh")
+      // 28/10/2026: "đủ để chốt trình ký" = xong ba giai đoạn TRƯỚC trình ký.
+      ? ["chao_gia", "kiem_tra_dvdt", "hoi_dong"].every((m) => gd.find((g) => g.giai_doan === m)?.trang_thai === "hoan_thanh")
       : null,
     coPhienTrinhKy: boolHoacNull(v.coPhienTrinhKy),
   };

@@ -28,7 +28,7 @@ import {
   BangSoTrungTheoKhoa,
   // 03/10/2026 (sổ thi công việc 3): hộp hỏi lại dùng chung (G12), "Mở lại
   // bảng của một khoa" và "Mở lại giai đoạn" dời vào menu ⋯.
-  HopHoiLai, HopMoLaiBangKhoa, capNhatGiaiDoanThau, GIAI_DOAN,
+  HopHoiLai, HopMoLaiBangKhoa, capNhatGiaiDoanThau, GIAI_DOAN, GIAI_DOAN_CO_ROT,
 } from "./CumThauTongHop";
 import { dichLoi } from "../lib/dichLoi";
 import ThanhTienTrinh, { diToiPhanTu } from "../components/ThanhTienTrinh";
@@ -148,7 +148,7 @@ const NHOM_COT_XEM_NHANH_PDD = [
 //   - trước chốt số: 6 cột (STT · Tên · Đơn vị · Tổng đề xuất · Khoảng thường
 //     dùng · Số khoa gửi) — cụm thầu toàn "—" nên cất đi;
 //   - từ Chào giá: 13 cột = đúng bộ của chế độ gõ rớt cũ. KHÔNG ẩn cụm sau thầu
-//     ở Chào giá / Mở thầu / Đánh giá; rớt giai đoạn khác hiện chỉ đọc (Q5).
+//     ở Chào giá / Kiểm tra ĐV đấu thầu / Hội đồng; rớt giai đoạn khác chỉ đọc (Q5).
 // Lăng kính chỉ là cách XEM trên máy này: KHÔNG đụng `cotAn` (cấu hình ẩn cột
 // lưu ở server) và KHÔNG đổi file Excel xuất ra. "Đủ cột" = bảng đầy đủ như cũ.
 // Bỏ `ma_nhom` — mã quản lý đã hiện sẵn trong hộp "Đổ sang mã tương đương".
@@ -871,6 +871,8 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
     khoa_de_xuat: "th-dai-trang-thai",
     chot_q: "th-nut-chot-q",
     chao_gia: "th-giai-doan-thau",
+    kiem_tra_dvdt: "th-giai-doan-thau",
+    hoi_dong: "th-giai-doan-thau",
     mo_thau: "th-giai-doan-thau",
     danh_gia: "th-giai-doan-thau",
     // 18/09/2026: nút Chốt trình ký dời lên thanh công cụ, cạnh Chốt số đi thầu.
@@ -898,13 +900,17 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
   // luôn cất — việc thầu làm ở "Theo việc đang làm".
   const anCumThau = laXemNhanh || (laTheoViec && !coQ);
   const rongCumThau = laTheoViec ? RONG_CUM_THAU_GO_ROT : RONG_CUM_THAU;
-  // Trình ký: ba giai đoạn đã xong (server chặn chốt trước đó), hoặc đã có bản
-  // chốt. Nút "Chốt trình ký" chỉ hiện từ đây (bản vẽ M2_trinh-ky).
-  const baGiaiDoanXong = GIAI_DOAN.every((g) =>
+  // Trình ký: ba giai đoạn TRƯỚC trình ký (Chào giá · Kiểm tra ĐV đấu thầu ·
+  // Hội đồng) đã xong — server chặn chốt trước đó (fn_xong_truoc_trinh_ky_v3,
+  // 28/10/2026) — hoặc đã có bản chốt. Nút "Chốt trình ký" chỉ hiện từ đây.
+  const baGiaiDoanXong = GIAI_DOAN_CO_ROT.every((g) =>
     thau.giaiDoan.find((x) => x.giai_doan === g.ma)?.trang_thai === "hoan_thanh");
   const hienChotTrinhKy = thau.coPhienQ && (baGiaiDoanXong || revTrinhKy != null);
-  const coGiaiDoanXong = GIAI_DOAN.some((g) =>
-    thau.giaiDoan.find((x) => x.giai_doan === g.ma)?.trang_thai === "hoan_thanh");
+  // Giai đoạn mở lại được: đã hoàn thành; sau trình ký chỉ còn Mở thầu / Kết
+  // quả đánh giá (server khoá ba giai đoạn trước — phải mở chốt trình ký).
+  const giaiDoanMoLaiDuoc = GIAI_DOAN.filter((g) =>
+    thau.giaiDoan.find((x) => x.giai_doan === g.ma)?.trang_thai === "hoan_thanh"
+    && (revTrinhKy == null || !g.cot));
 
   // L3 (bấm thử 03/10/2026): bộ 13 cột thu sẵn cho vừa 1280 (≈1.248px). Màn
   // rộng hơn thì dồn phần dư cho cột Tên vật tư — tên ít xuống dòng, mỗi màn
@@ -1638,16 +1644,16 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                       <span className="block pl-6 text-xs text-slate-500">Mở cả gói con, phải ghi lý do, sửa xong chốt lại.</span>
                     </button>
                   )}
-                  {thau.coPhienQ && coGiaiDoanXong && (
+                  {thau.coPhienQ && giaiDoanMoLaiDuoc.length > 0 && (
                     <button type="button"
                       className="block w-full px-3 py-1.5 text-left hover:bg-red-50"
                       onClick={() => {
                         setMoMenuThem(false);
-                        const xong = GIAI_DOAN.filter((g) => thau.giaiDoan.find((x) => x.giai_doan === g.ma)?.trang_thai === "hoan_thanh");
+                        const xong = giaiDoanMoLaiDuoc;
                         setHoi({ loai: "mo_lai_gd", ma: xong[xong.length - 1]?.ma || "" });
                       }}>
                       <span className="block font-medium text-red-600 pl-6">Mở lại giai đoạn…</span>
-                      <span className="block pl-6 text-xs text-slate-500">Phải ghi lý do; kết quả từ giai đoạn đó trở đi hết hiệu lực.</span>
+                      <span className="block pl-6 text-xs text-slate-500">Phải ghi lý do; số rớt của các giai đoạn sau nó hết hiệu lực.</span>
                     </button>
                   )}
                   {hienChotTrinhKy && (
@@ -1732,6 +1738,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                 // L2 — để câu báo sau "Xác nhận rớt" ghi được số + đơn vị khi chỉ có 1 mã.
                 chuaXuLy={thau.chuaXuLy}
                 dvtCuaMa={(ma) => rows.find((x) => x.ma_hang === ma)?.dvt || ""}
+                daTrinhKy={revTrinhKy != null}
                 // L16 28/09/2026 — đây là lỗi THAO TÁC (đổi giai đoạn thầu / xác
                 // nhận rớt), không phải lỗi TẢI TRANG. Trước đổ vào `loi` (trang
                 // lỗi toàn màn) nên server từ chối một thao tác là mất cả màn
@@ -1946,12 +1953,12 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                   {/* G4 — tên lời thường, rê chuột thấy tên gốc. Rớt theo GIAI ĐOẠN,
                       không theo "lần". */}
                   <th title="Tên gốc: Q — số đã chốt đi thầu, không đổi">Số đi thầu</th>
-                  {GIAI_DOAN.map((g, i) => (
-                    <th key={g.ma} title={`Tên gốc: R${i + 1} — rớt ở giai đoạn ${g.nhan}`}>
-                      Rớt ở<span className="block text-xs font-normal opacity-80">{g.nhan}</span>
+                  {GIAI_DOAN_CO_ROT.map((g, i) => (
+                    <th key={g.ma} title={`Tên gốc: R${i + 1} — rớt ở giai đoạn ${g.tenDu || g.nhan}`}>
+                      Rớt ở<span className="block text-xs font-normal opacity-80">{g.nhanCot || g.nhan}</span>
                     </th>
                   ))}
-                  <th title="Số đi thầu trừ rớt ở ba giai đoạn">Trúng</th>
+                  <th title="Số đi thầu trừ rớt ở Chào giá, Kiểm tra ĐV đấu thầu và Hội đồng">Trúng</th>
                   {/* 1e — tooltip cũ "phải bằng Trúng" thiếu phần nhận từ mã rớt (D15). */}
                   <th title="Tên gốc: Đã chia — tổng đã chia về các khoa. Phải bằng Trúng + phần nhận từ mã rớt thì mới xác nhận rớt được.">
                     Đã chia về khoa
@@ -2666,12 +2673,11 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
         <HopHoiLai
           tieuDe="Mở lại giai đoạn thầu?"
           nguyHiem
-          noiDung="Kết quả từ giai đoạn đó trở đi hết hiệu lực."
+          noiDung="Số rớt của các giai đoạn sau nó hết hiệu lực, các giai đoạn sau quay về chưa bắt đầu."
           phu={(
             <select value={hoi.ma} onChange={(e) => setHoi((h) => ({ ...h, ma: e.target.value }))}
               className="w-full rounded border border-slate-300 px-2.5 py-2 text-sm">
-              {GIAI_DOAN.filter((g) => thau.giaiDoan.find((x) => x.giai_doan === g.ma)?.trang_thai === "hoan_thanh")
-                .map((g) => <option key={g.ma} value={g.ma}>{g.nhan}</option>)}
+              {giaiDoanMoLaiDuoc.map((g) => <option key={g.ma} value={g.ma}>{g.nhan}</option>)}
             </select>
           )}
           lyDo="" nhanLyDo="Lý do mở lại (bắt buộc)"

@@ -33,6 +33,9 @@
 >   sau. Push lên nhánh = Netlify tự build → commit ghi `[skip netlify]` nếu không muốn build; đẩy web bằng đường
 >   tải lên (không tốn điểm, xem `04_VAN_HANH_KY_THUAT.md` "ĐẨY LÊN NETLIFY KHI ĐÃ HẾT CREDITS").
 > - Mốc gần nhất: **demo 14/10/2026**. Không còn mốc go-live (QĐ 18/09/2026).
+> - 🆕 **28/10 khuya — QUY TRÌNH THẦU 8 BƯỚC (miếng 1/3)**: thanh PĐD = Đề xuất · Chốt số · Chào giá (lần 1/2/3) ·
+>   Kiểm tra ĐV đấu thầu · Hội đồng mua sắm · Trình ký (in 1 lần) · Mở thầu · Kết quả đánh giá. DB đã chạy
+>   patch_zzzzzzzt; commit trong máy [skip netlify], chưa push. Chi tiết Việc còn mở mục 22.
 > - 🆕 **28/10 tối — CHÀO GIÁ** (PĐD tải Excel chào giá, sổ xuống 2 thẻ, công ty đúng SP tham khảo sáng xanh; bảng
 >   cuộn full màn): commit trong máy [skip netlify], chưa push. DB đã chạy patch_zzzzzzzr + zzzzzzzs; dữ liệu thử ở gói
 >   con RHM. Chi tiết Việc còn mở mục 21.
@@ -427,6 +430,26 @@ mục 4b.
     trống, chọn mới mở — đúng ý em 28/10). 21b. Tệp chào giá thật (nguồn dữ liệu thử) nằm ở Tải về: `~/Downloads/tong_hop_rhm_sau_hdms_23.9(gui pvttb) -
     Copy.xlsx`, trang TRÌNH KÝ (em chọn để nguyên ở đó, không chép vào dự án). 21c. Bộ dữ liệu thử ở gói con RHM (20 đề xuất, đã chốt số, 46 chào giá) đang nằm trên staging —
     dọn khi em bảo. 21d. Tiêu chí kỹ thuật của công ty chưa có trong tệp chào giá thật — khi có, web so thêm từng ý.
+22. **28/10/2026 (khuya) — QUY TRÌNH THẦU 8 BƯỚC.** Em chốt thứ tự: 1 Đề xuất số lượng · 2 Chốt số lượng đề xuất ·
+    3 Chào giá (3a/3b/3c lần 1/2/3 với phòng VTTB) · 4 Kiểm tra danh mục với đơn vị quản lý đấu thầu · 5 Hội đồng mua
+    sắm · 6 chốt + **in trình ký MỘT lần** (đảo luật cũ "không cần trình ký trước đấu thầu", ở `06`) · 7 Mở thầu · 8 Kết
+    quả đánh giá. Sau Hội đồng khoá hết. Bớt số ở bước 3–5 = **gõ số rớt 3 cột** như cũ (R1 Chào giá · R2 Kiểm tra ·
+    R3 Hội đồng; trước đây R2/R3 là Mở thầu/Đánh giá), phần bớt về giỏ bổ sung như luật mã rớt. Mở thầu / Kết quả đánh
+    giá: PĐD chỉ đánh rớt **cả mã** khi không có nhà thầu (mã về gói bổ sung), còn lại bấm Hoàn thành. Chào giá **lưu
+    riêng từng lần**, sổ xuống hiện giá 3 lần cạnh nhau (thông tin SP lấy lần mới nhất). Chẻ 3 miếng:
+    **Miếng 1 — XONG 28/10:** `patch_zzzzzzzt_tam_buoc_thau.sql` (ĐÃ CHẠY qua `backend/scripts/chay_tam_buoc_thau_28-10.sh`;
+    lùi = `rollback_zzzzzzzt_tam_buoc_thau.sql`): `giai_doan_thau_v3` 5 dòng/gói con (`chao_gia` · `kiem_tra_dvdt` ·
+    `hoi_dong` · `mo_thau` · `danh_gia`) + cột `lan_chao_gia_xong`, RPC `xong_lan_chao_gia_v3` (tiến từng lần), Hoàn
+    thành Chào giá cần ≥ lần 1 (thầy tự định: lần 2–3 không bắt buộc — em chưa xác nhận); cổng trình ký =
+    `fn_xong_truoc_trinh_ky_v3` (xong bước 3–5); Mở thầu/Đánh giá chỉ bắt đầu khi có bản trình ký, trigger khoá sau
+    trình ký chừa riêng 2 dòng này. Web: thanh 8 ô (`lib/tienTrinh.js`), dải giai đoạn có nút "Xong lần N" + chấm L1–L3
+    (`CumThauTongHop.jsx`), cột rớt "Kiểm tra"/"Hội đồng", chatbot + màn Kết quả thầu (đủ 5 giai đoạn). Bấm thử PĐD
+    gói RHM 28/10: Xong lần 1 → Hoàn thành Chào giá → Kiểm tra → Hội đồng → nút Chốt trình ký hiện, Mở thầu báo "Chốt
+    trình ký xong mới bắt đầu". **Gói RHM (859) đang dừng ở bước Trình ký, CHƯA chốt** (chốt sẽ khoá dữ liệu thử).
+    **Chưa thử:** Mở thầu sau trình ký (trigger chừa 2 dòng). **Miếng 2:** chào giá lưu theo lần (cột lần ở
+    `chao_gia_v3`, tải lên chọn lần, bảng giá 3 lần cạnh nhau). **Miếng 3:** đánh rớt cả mã ở Mở thầu / Kết quả đánh
+    giá → số đã trình ký của từng khoa về giỏ bổ sung + thông báo khoa (phải mở khe cho `ket_qua_rot_v3` /
+    `phan_bo_trung_v3` sau trình ký). `01_NGHIEP_VU_HIEN_HANH.md` mục 5.1 và 8 đã ghi đè chú thích 28/10.
 11. `backend/scripts/sao_luu.py` đặt thư mục theo ngày → sao lưu hai lần cùng ngày ghi đè; nên thêm giờ vào tên thư mục.
 
 ## Ghi chú sửa

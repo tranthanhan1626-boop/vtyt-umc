@@ -51,7 +51,7 @@ export async function taiTrangThaiKhoa({ dotId, goiId, khoa, docGio = false }) {
     supabase.from("chot_q_phien").select("id")
       .eq("dot_goi_id", dotGoiId).eq("hieu_luc", true).maybeSingle(),
     // Ba giai đoạn — CumThauTongHop.jsx:63.
-    supabase.from("giai_doan_thau_v3").select("giai_doan, thu_tu, trang_thai")
+    supabase.from("giai_doan_thau_v3").select("giai_doan, thu_tu, trang_thai, lan_chao_gia_xong")
       .eq("dot_goi_id", dotGoiId).order("thu_tu"),
     // Mã có rớt của khoa — cùng view + điều kiện `ket_qua = khong_trung` với
     // DanhMucDeXuatKhoa.jsx:289 (taiKetQuaThau). Đếm theo MÃ HÀNG khác nhau.
@@ -206,7 +206,7 @@ export async function taiTrangThaiPddTheoDot(dotId) {
     supabase.from("chot_q_phien").select("dot_goi_id")
       .in("dot_goi_id", ids).eq("hieu_luc", true),
     // BanDieuHanhPdd.jsx:268 — tối đa 3 dòng mỗi DOT_GOI.
-    supabase.from("giai_doan_thau_v3").select("dot_goi_id, giai_doan, thu_tu, trang_thai")
+    supabase.from("giai_doan_thau_v3").select("dot_goi_id, giai_doan, thu_tu, trang_thai, lan_chao_gia_xong")
       .in("dot_goi_id", ids).order("dot_goi_id").order("thu_tu"),
     // BanDieuHanhPdd.jsx:299 — phiên trình ký hiệu lực (unique index).
     supabase.from("chot_trinh_ky_phien_v3").select("dot_goi_id")
