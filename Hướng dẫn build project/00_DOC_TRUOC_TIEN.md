@@ -33,7 +33,7 @@
 >   sau. Push lên nhánh = Netlify tự build → commit ghi `[skip netlify]` nếu không muốn build; đẩy web bằng đường
 >   tải lên (không tốn điểm, xem `04_VAN_HANH_KY_THUAT.md` "ĐẨY LÊN NETLIFY KHI ĐÃ HẾT CREDITS").
 > - Mốc gần nhất: **demo 14/10/2026**. Không còn mốc go-live (QĐ 18/09/2026).
-> - 🆕 **28/10 khuya — QUY TRÌNH THẦU 8 BƯỚC (miếng 1/3)**: thanh PĐD = Đề xuất · Chốt số · Chào giá (lần 1/2/3) ·
+> - 🆕 **28/10 khuya — QUY TRÌNH THẦU 8 BƯỚC (miếng 1 + 2/3; miếng 2 = chào giá lưu từng lần, patch_zzzzzzzu)**: thanh PĐD = Đề xuất · Chốt số · Chào giá (lần 1/2/3) ·
 >   Kiểm tra ĐV đấu thầu · Hội đồng mua sắm · Trình ký (in 1 lần) · Mở thầu · Kết quả đánh giá. DB đã chạy
 >   patch_zzzzzzzt; commit trong máy [skip netlify], chưa push. Chi tiết Việc còn mở mục 22.
 > - 🆕 **28/10 tối — CHÀO GIÁ** (PĐD tải Excel chào giá, sổ xuống 2 thẻ, công ty đúng SP tham khảo sáng xanh; bảng
@@ -446,8 +446,14 @@ mục 4b.
     (`CumThauTongHop.jsx`), cột rớt "Kiểm tra"/"Hội đồng", chatbot + màn Kết quả thầu (đủ 5 giai đoạn). Bấm thử PĐD
     gói RHM 28/10: Xong lần 1 → Hoàn thành Chào giá → Kiểm tra → Hội đồng → nút Chốt trình ký hiện, Mở thầu báo "Chốt
     trình ký xong mới bắt đầu". **Gói RHM (859) đang dừng ở bước Trình ký, CHƯA chốt** (chốt sẽ khoá dữ liệu thử).
-    **Chưa thử:** Mở thầu sau trình ký (trigger chừa 2 dòng). **Miếng 2:** chào giá lưu theo lần (cột lần ở
-    `chao_gia_v3`, tải lên chọn lần, bảng giá 3 lần cạnh nhau). **Miếng 3:** đánh rớt cả mã ở Mở thầu / Kết quả đánh
+    **Chưa thử:** Mở thầu sau trình ký (trigger chừa 2 dòng). **Miếng 2 — XONG 28/10:** `patch_zzzzzzzu_chao_gia_theo_lan.sql`
+    (ĐÃ CHẠY qua `backend/scripts/chay_chao_gia_theo_lan_28-10.sh`; lùi = `rollback_zzzzzzzu…`): cột `lan` 1..3 ở
+    `chao_gia_v3` (46 dòng cũ gán lần 2), khoá duy nhất thêm lần. Tệp bệnh viện: đọc HẾT các khối, lần lấy từ nhãn
+    "PHÒNG VẬT TƯ THIẾT BỊ PHẢN HỒI lần K" (tệp thật: lần 1 = 270 dòng, lần 2 = 306 dòng toàn tệp); tệp mẫu có cột
+    "Lần chào giá", ô trống thì khung xem trước cho chọn lần (mặc định = lần đang làm). Sổ xuống: mỗi công ty một
+    hàng, Đơn giá Lần 1 | Lần 2 | Lần 3, thông tin SP + sáng xanh theo lần mới nhất; Xoá = xoá công ty ở mọi lần
+    (`gopTheoCongTy` trong `lib/chaoGia.js`). Đã tải lại tệp thật lên gói RHM: thêm 46 dòng lần 1, cập nhật 46 dòng
+    lần 2 (2 mã đổi giá giữa hai lần: 67319, 73089). **Miếng 3:** đánh rớt cả mã ở Mở thầu / Kết quả đánh
     giá → số đã trình ký của từng khoa về giỏ bổ sung + thông báo khoa (phải mở khe cho `ket_qua_rot_v3` /
     `phan_bo_trung_v3` sau trình ký). `01_NGHIEP_VU_HIEN_HANH.md` mục 5.1 và 8 đã ghi đè chú thích 28/10.
 11. `backend/scripts/sao_luu.py` đặt thư mục theo ngày → sao lưu hai lần cùng ngày ghi đè; nên thêm giờ vào tên thư mục.

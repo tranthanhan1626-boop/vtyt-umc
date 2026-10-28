@@ -13,22 +13,30 @@ import { tenFileAnToan } from "../lib/xuatExcelDong";
  * báo tóm tắt → bấm Ghi lên. Đọc được tệp mẫu của web và tệp làm việc của bệnh
  * viện (lib/chaoGia.js). Tệp bệnh viện thường chứa cả trăm mã của nhiều gói con:
  * mã KHÔNG thuộc gói con đang xem thì bỏ qua (chỉ báo số), không coi là lỗi.
- * Cùng mã + cùng công ty xuất hiện hai lần trong tệp thì lấy dòng sau.
- * Tải lại = cộng thêm / cập nhật theo mã + tên công ty (nhap_chao_gia_v3).
+ * Cùng mã + cùng công ty + cùng lần xuất hiện hai lần trong tệp thì lấy dòng sau.
+ * Tải lại = cộng thêm / cập nhật theo mã + lần + tên công ty (nhap_chao_gia_v3).
+ *
+ * 28/10/2026 khuya (miếng 2): mỗi dòng mang LẦN chào giá (1/2/3). Tệp bệnh viện
+ * tự có lần (nhãn "PHẢN HỒI lần K"); dòng không ghi lần (tệp mẫu để trống cột
+ * "Lần chào giá", tệp chỉ một khối) lấy lần PĐD chọn ở khung xem trước — mặc
+ * định là lần đang làm của giai đoạn Chào giá (`lanMacDinh`).
  */
-function locTheoGoi(trang, coMa) {
+function locTheoGoi(trang, coMa, lanChon) {
   const theoKhoa = new Map();
   let ngoaiGoi = 0;
+  let khongLan = 0;
   trang.dong.forEach((d) => {
     if (!coMa.has(d.ma_hang)) { ngoaiGoi += 1; return; }
-    theoKhoa.set(`${d.ma_hang}|${d.ten_cong_ty.toLowerCase()}`, d);
+    if (d.lan == null) khongLan += 1;
+    const lan = d.lan ?? lanChon;
+    theoKhoa.set(`${d.ma_hang}|${lan}|${d.ten_cong_ty.toLowerCase()}`, { ...d, lan });
   });
   // Lỗi của dòng thuộc mã ngoài gói con không chặn việc ghi gói con này.
   const loi = trang.loi.filter((l) => { const m = /\(mã ([^)\s]+)\)/.exec(l); return !m || coMa.has(m[1]); });
-  return { dong: [...theoKhoa.values()], ngoaiGoi, loi };
+  return { dong: [...theoKhoa.values()], ngoaiGoi, khongLan, loi };
 }
 
-export default function NhapChaoGia({ dotGoiId, dsMa = [], tenGoi = "", onXong }) {
+export default function NhapChaoGia({ dotGoiId, dsMa = [], tenGoi = "", lanMacDinh = 1, onXong }) {
   const oChonTep = useRef(null);
   const [doc, setDoc] = useState(null);      // { tenTep, cacTrang, iTrang }
   const [dangGhi, setDangGhi] = useState(false);
@@ -47,13 +55,16 @@ export default function NhapChaoGia({ dotGoiId, dsMa = [], tenGoi = "", onXong }
         setBaoLoi("Không thấy trang tính nào có thông tin chào giá (cột “Tên công ty” / “Tên công ty 1”).");
         return;
       }
-      setDoc({ tenTep: file.name, cacTrang, iTrang: 0 });
+      setDoc({ tenTep: file.name, cacTrang, iTrang: 0, lanChon: Math.min(3, Math.max(1, lanMacDinh)) });
     } catch (err) {
       setBaoLoi(`Không đọc được tệp: ${err.message || err}`);
     }
   };
 
-  const trang = doc ? locTheoGoi(doc.cacTrang[doc.iTrang], coMa) : null;
+  const trang = doc ? locTheoGoi(doc.cacTrang[doc.iTrang], coMa, doc.lanChon) : null;
+  const demTheoLan = trang
+    ? [1, 2, 3].map((l) => [l, trang.dong.filter((d) => d.lan === l).length]).filter(([, n]) => n > 0)
+    : [];
 
   const ghiLen = async () => {
     setDangGhi(true);
@@ -103,11 +114,23 @@ export default function NhapChaoGia({ dotGoiId, dsMa = [], tenGoi = "", onXong }
             ) : <> · trang <b>{doc.cacTrang[0].ten}</b></>}
             : <b>{trang.dong.length}</b> dòng chào giá của gói con này · <b>{soMa}</b>/{dsMa.length} mã · <b>{soCongTy}</b> công ty.
           </div>
+          <div className="mt-1">
+            {demTheoLan.map(([l, n]) => <span key={l} className="mr-3">Lần {l}: <b>{n}</b> dòng</span>)}
+            {trang.khongLan > 0 && (
+              <span className="text-slate-600">
+                · {trang.khongLan} dòng tệp không ghi lần, tính là{" "}
+                <select value={doc.lanChon} onChange={(e) => setDoc((d) => ({ ...d, lanChon: Number(e.target.value) }))}
+                  className="rounded border border-slate-300 px-1 py-0.5">
+                  {[1, 2, 3].map((l) => <option key={l} value={l}>lần {l}</option>)}
+                </select>
+              </span>
+            )}
+          </div>
           {trang.ngoaiGoi > 0 && (
             <div className="mt-1 text-slate-500">Bỏ qua {trang.ngoaiGoi} dòng của mã không thuộc gói con này.</div>
           )}
           <div className="mt-1 text-slate-500">
-            Cùng mã + cùng tên công ty đã có thì cập nhật, còn lại thêm mới; dòng cũ không có trong tệp giữ nguyên.
+            Cùng mã + cùng lần + cùng tên công ty đã có thì cập nhật, còn lại thêm mới; dòng cũ không có trong tệp giữ nguyên.
           </div>
           {trang.loi.length > 0 && (
             <ul className="mt-1.5 ml-5 list-disc text-red-700">

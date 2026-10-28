@@ -9,6 +9,12 @@
  *           KÝ) — mỗi dòng = 1 mã, các khối "Tên công ty N · Đơn giá chào N (VND) ·
  *           Thông tin sản phẩm chào giá (N)". Khối xuất hiện hai lần (Phòng VTTB
  *           phản hồi lần 1, lần 2) thì lấy lần SAU CÙNG (chủ dự án: lần 2).
+ *   - 28/10/2026 khuya (miếng 2): chào giá LƯU RIÊNG TỪNG LẦN (cột `lan` 1..3,
+ *     patch_zzzzzzzu). Tệp bệnh viện: đọc HẾT các khối, lần lấy từ nhãn
+ *     "PHÒNG VẬT TƯ THIẾT BỊ PHẢN HỒI lần K" ở dòng trên tiêu đề (không có nhãn
+ *     thì khối lặp thứ K = lần K). Tệp mẫu: cột "Lần chào giá"; dòng không ghi
+ *     lần thì dùng lần PĐD chọn khi tải lên. Sổ xuống: mỗi công ty một hàng, giá
+ *     3 lần cạnh nhau, thông tin sản phẩm + so SP tham khảo theo lần mới nhất.
  *   - Sổ xuống từng mã (Tổng hợp PĐD, Danh mục đề xuất khoa) hiện các công ty,
  *     mỗi công ty một khối: Tên công ty · Đơn giá chào · Thông tin sản phẩm (Tên
  *     thương mại · Ký mã hiệu · Hãng SX · Nước SX · TSKT).
@@ -151,12 +157,37 @@ export function tachKhoiSanPham(chu) {
   return kq;
 }
 
+// ---- Gộp theo công ty ----------------------------------------------------
+
+/**
+ * Gộp các dòng chào giá của MỘT mã theo công ty (không phân biệt hoa thường,
+ * khoảng trắng hai đầu). Mỗi công ty: `theoLan` {1|2|3 → dòng}, `moiNhat` =
+ * dòng của lần lớn nhất (thông tin sản phẩm và so SP tham khảo lấy ở đây),
+ * `ids` mọi dòng (để xoá cả công ty). Thứ tự: công ty xuất hiện trước đứng trước.
+ */
+export function gopTheoCongTy(ds = []) {
+  const theoTen = new Map();
+  ds.forEach((d) => {
+    const k = String(d.ten_cong_ty || "").trim().toLowerCase();
+    if (!theoTen.has(k)) theoTen.set(k, { ten: String(d.ten_cong_ty || "").trim(), theoLan: {}, ids: [] });
+    const c = theoTen.get(k);
+    const lan = Number(d.lan) || 0;
+    c.theoLan[lan] = d;
+    if (d.id != null) c.ids.push(d.id);
+  });
+  return [...theoTen.values()].map((c) => {
+    const lanMoiNhat = Math.max(...Object.keys(c.theoLan).map(Number));
+    return { ...c, lanMoiNhat, moiNhat: c.theoLan[lanMoiNhat] };
+  });
+}
+
 // ---- Đọc bảng ------------------------------------------------------------
 
 // Tên cột trong tệp mẫu (dạng a). Đọc tệp thì dò theo TÊN (không theo vị trí).
 export const COT_MAU = [
   { key: "ma_hang", nhan: "Mã hàng", rong: 12 },
   { key: "_ten_hang", nhan: "Tên hàng (để tham khảo, không đọc)", rong: 40 },
+  { key: "lan", nhan: "Lần chào giá", rong: 10 },
   { key: "ten_cong_ty", nhan: "Tên công ty", rong: 28 },
   { key: "don_gia", nhan: "Đơn giá chào (VNĐ)", rong: 18 },
   { key: "ten_thuong_mai", nhan: "Tên thương mại", rong: 28 },
@@ -205,8 +236,12 @@ export function docDongTuBang(maTran) {
     if (!maHang) { loi.push(`Dòng ${soDong}: có tên công ty nhưng thiếu mã hàng.`); return; }
     const donGia = docDonGia(lay("don_gia"));
     if (Number.isNaN(donGia)) { loi.push(`Dòng ${soDong} (mã ${maHang}): đơn giá “${lay("don_gia")}” không đọc được.`); return; }
+    // Ô trống = chưa ghi lần (dùng lần PĐD chọn khi tải lên).
+    const oLan = String(lay("lan")).trim();
+    const lan = oLan ? Number(oLan) : null;
+    if (oLan && ![1, 2, 3].includes(lan)) { loi.push(`Dòng ${soDong} (mã ${maHang}): lần chào giá “${oLan}” phải là 1, 2 hoặc 3.`); return; }
     dong.push({
-      ma_hang: maHang, ten_cong_ty: tenCongTy, don_gia: donGia,
+      ma_hang: maHang, lan, ten_cong_ty: tenCongTy, don_gia: donGia,
       ten_thuong_mai: String(lay("ten_thuong_mai")), ky_ma_hieu: String(lay("ky_ma_hieu")),
       hang_san_xuat: String(lay("hang_san_xuat")), nuoc_san_xuat: String(lay("nuoc_san_xuat")),
       tieu_chi_ky_thuat: String(lay("tieu_chi_ky_thuat")),
@@ -233,21 +268,46 @@ export function docDongDangKhoi(maTran) {
   }
   if (cotMa < 0) return { dong: [], loi: ["Không thấy cột “Mã HIS” hoặc “Mã hàng”."] };
 
-  // Mỗi N: lấy khối SAU CÙNG (lần phản hồi mới nhất).
+  // Đọc HẾT các khối (miếng 2, 28/10/2026). Lần của khối: nhãn "… lần K" gần
+  // nhất bên trái ở 1–2 dòng trên tiêu đề (ô gộp "PHÒNG VẬT TƯ THIẾT BỊ PHẢN HỒI
+  // lần 1"); không có nhãn thì "Tên công ty N" lặp lại thứ K = lần K; khối chỉ
+  // có một lần, không nhãn → null (dùng lần PĐD chọn khi tải lên).
+  const nhanLan = [];
+  for (let k = iHeader - 1; k >= Math.max(0, iHeader - 2); k -= 1) {
+    (maTran[k] || []).forEach((x, j) => {
+      const m = /\blần\s*(\d+)/.exec(chuanHoa(x));
+      if (m) nhanLan.push({ j, lan: Number(m[1]) });
+    });
+  }
+  const reTen = /^tên công ty\s*(\d+)$/;
+  const soLanLap = new Map();
+  header.forEach((h) => { const m = reTen.exec(h); if (m) soLanLap.set(m[1], (soLanLap.get(m[1]) || 0) + 1); });
+  const daGap = new Map();
   const khoi = [];
-  for (let n = 1; n <= 20; n += 1) {
-    const iTen = header.map((h, i) => (h === `tên công ty ${n}` ? i : -1)).filter((i) => i >= 0).pop();
-    if (iTen == null) continue;
-    const sau = (re) => { const i = header.findIndex((h, j) => j > iTen && re.test(h)); return i; };
+  const loi = [];
+  header.forEach((h, iTen) => {
+    const m = reTen.exec(h);
+    if (!m) return;
+    const n = m[1];
+    const thu = (daGap.get(n) || 0) + 1;
+    daGap.set(n, thu);
+    const nhan = nhanLan.filter((x) => x.j <= iTen).sort((a, b) => b.j - a.j)[0];
+    const lan = nhan ? nhan.lan : (soLanLap.get(n) > 1 ? thu : null);
+    if (lan != null && ![1, 2, 3].includes(lan)) {
+      if (n === "1") loi.push(`Khối chào giá lần ${lan} vượt quá 3 lần — bỏ qua.`);
+      return;
+    }
+    // Chỉ dò trong khối của chính công ty này (tới "Tên công ty …" kế tiếp).
+    const iKe = header.findIndex((x, j) => j > iTen && reTen.test(x));
+    const sau = (re) => header.findIndex((x, j) => j > iTen && (iKe < 0 || j < iKe) && re.test(x));
     khoi.push({
-      n, iTen,
+      n, iTen, lan,
       iGia: sau(new RegExp(`^đơn giá chào ${n}\\b`)),
       iThongTin: sau(new RegExp(`^thông tin sản phẩm chào giá \\(?${n}\\)?$`)),
     });
-  }
+  });
 
   const dong = [];
-  const loi = [];
   maTran.slice(iHeader + 1).forEach((o, i) => {
     if (!o) return;
     const maHang = String(o[cotMa] ?? "").trim();
@@ -259,9 +319,9 @@ export function docDongDangKhoi(maTran) {
       const sp = tachKhoiSanPham(k.iThongTin >= 0 ? o[k.iThongTin] : "");
       let donGia = k.iGia >= 0 ? docDonGia(o[k.iGia]) : null;
       if (donGia == null) donGia = sp._don_gia;
-      if (Number.isNaN(donGia)) { loi.push(`Dòng ${soDong} (mã ${maHang}), công ty ${k.n}: đơn giá không đọc được.`); return; }
+      if (Number.isNaN(donGia)) { loi.push(`Dòng ${soDong} (mã ${maHang}), công ty ${k.n}${k.lan ? ` lần ${k.lan}` : ""}: đơn giá không đọc được.`); return; }
       delete sp._don_gia;
-      dong.push({ ma_hang: maHang, ten_cong_ty: ten, don_gia: donGia, ...sp });
+      dong.push({ ma_hang: maHang, lan: k.lan, ten_cong_ty: ten, don_gia: donGia, ...sp });
     });
   });
   return { dong, loi };
@@ -301,8 +361,9 @@ export async function taiMauExcel({ dsMa, tenGoi, tenFile }) {
   ws.columns = COT_MAU.map((c) => ({ width: c.rong }));
   ws.getCell("A1").value = `THÔNG TIN CHÀO GIÁ — ${tenGoi}`;
   ws.getCell("A1").font = { bold: true, size: 13 };
-  ws.getCell("A2").value = "Mỗi dòng = 1 mã × 1 công ty. Nhiều công ty cho cùng mã thì chép thêm dòng. "
-    + "Dòng để trống Tên công ty sẽ được bỏ qua. Tải lại tệp: cùng mã + cùng tên công ty thì cập nhật, còn lại thêm mới. "
+  ws.getCell("A2").value = "Mỗi dòng = 1 mã × 1 công ty × 1 lần chào giá. Nhiều công ty cho cùng mã thì chép thêm dòng. "
+    + "Cột Lần chào giá ghi 1, 2 hoặc 3; để trống thì web hỏi lần khi tải lên. "
+    + "Dòng để trống Tên công ty sẽ được bỏ qua. Tải lại tệp: cùng mã + cùng lần + cùng tên công ty thì cập nhật, còn lại thêm mới. "
     + "Web cũng đọc được tệp làm việc dạng “Tên công ty 1 · Đơn giá chào 1 · Thông tin sản phẩm chào giá (1)”.";
   ws.getCell("A2").font = { italic: true, size: 10, color: { argb: "FF64748B" } };
   const header = ws.getRow(3);

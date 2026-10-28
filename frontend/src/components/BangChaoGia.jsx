@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { CheckCircle2, Trash2 } from "lucide-react";
 import { fmt } from "./ChartDongBo";
-import { khopSanPhamThamKhao, soTungY, tachY } from "../lib/chaoGia";
+import { gopTheoCongTy, khopSanPhamThamKhao, soTungY, tachY } from "../lib/chaoGia";
 
 /*
  * Bảng CHÀO GIÁ của một mã (28/10/2026) — nằm trong sổ xuống từng mã ở bảng
@@ -12,6 +12,11 @@ import { khopSanPhamThamKhao, soTungY, tachY } from "../lib/chaoGia";
  * sản phẩm chào giá" (Tên thương mại · Ký mã hiệu · Hãng SX · Nước SX · TSKT). Công ty chào ĐÚNG SẢN PHẨM THAM KHẢO của danh mục thì cả khối sáng
  * xanh (lib/chaoGia.js khopSanPhamThamKhao). Công ty có ghi TSKT thì so thêm
  * từng ý với cột TSKT chính — chỉ để tham khảo, không quyết định sáng.
+ *
+ * 28/10/2026 khuya (miếng 2): dòng chào giá mang LẦN (1/2/3). Bảng gộp theo công
+ * ty (lib/chaoGia.js gopTheoCongTy): cột Đơn giá tách Lần 1 | Lần 2 | Lần 3,
+ * thông tin sản phẩm + so SP tham khảo lấy theo lần mới nhất của công ty đó.
+ * Xoá = xoá công ty đó ở mọi lần.
  *
  * Tiêu đề bảng dùng style INLINE: luật chung `thead th { position: sticky }`
  * (StyleTable) và `.umc-content table thead th` (chữ hoa nhỏ) đè lên bảng lồng.
@@ -25,8 +30,10 @@ const TH = {
 const TD = { padding: "4px 8px", border: "1px solid #cbd5e1", verticalAlign: "top", fontSize: 12 };
 const SANG = { background: "#d1fae5", borderColor: "#10b981" };
 
-/** Số công ty chào đúng sản phẩm tham khảo. */
-export const demDung = (ds = [], sptk) => ds.filter((c) => khopSanPhamThamKhao(sptk, c).khop).length;
+/** Số công ty chào đúng sản phẩm tham khảo (theo lần mới nhất của từng công ty). */
+export const demDung = (ds = [], sptk) => gopTheoCongTy(ds)
+  .filter((c) => khopSanPhamThamKhao(sptk, c.moiNhat).khop).length;
+const LAN = [1, 2, 3];
 
 export default function BangChaoGia({ dsCongTy = [], sptk = {}, tsktChuan, laPdd = false, onXoa }) {
   const [hoiXoa, setHoiXoa] = useState(null);
@@ -34,7 +41,8 @@ export default function BangChaoGia({ dsCongTy = [], sptk = {}, tsktChuan, laPdd
     return <div className="mt-2 text-xs text-slate-500">Chưa có thông tin chào giá cho mã này.</div>;
   }
   const coYChuan = tachY(tsktChuan).length > 0;
-  const ketQua = dsCongTy.map((c) => ({
+  const congTy = gopTheoCongTy(dsCongTy);
+  const ketQua = congTy.map(({ moiNhat: c }) => ({
     sp: khopSanPhamThamKhao(sptk, c),
     tskt: c.tieu_chi_ky_thuat && coYChuan ? soTungY(tsktChuan, c.tieu_chi_ky_thuat) : null,
   }));
@@ -47,7 +55,7 @@ export default function BangChaoGia({ dsCongTy = [], sptk = {}, tsktChuan, laPdd
     // bảng công ty bên trong cuộn ngang.
     <div className="mt-3" style={{ position: "sticky", left: 16, maxWidth: "calc(100vw - 9rem)" }}>
       <div className="mb-1 flex flex-wrap items-center gap-2 text-xs">
-        <span className="font-semibold text-slate-800">Thông tin chào giá · {dsCongTy.length} công ty</span>
+        <span className="font-semibold text-slate-800">Thông tin chào giá · {congTy.length} công ty</span>
         {coSptk ? (
           <span className={`rounded-full px-2 py-0.5 font-semibold ${soDung
             ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-700"}`}>
@@ -72,10 +80,11 @@ export default function BangChaoGia({ dsCongTy = [], sptk = {}, tsktChuan, laPdd
             <tr>
               <th rowSpan={2} style={TH}>STT</th>
               <th rowSpan={2} style={TH}>Tên công ty</th>
-              <th rowSpan={2} style={TH}>Đơn giá chào (VNĐ)</th>
-              <th colSpan={5} style={TH}>Thông tin sản phẩm chào giá</th>
+              <th colSpan={3} style={TH}>Đơn giá chào (VNĐ)</th>
+              <th colSpan={5} style={TH}>Thông tin sản phẩm chào giá (lần mới nhất)</th>
             </tr>
             <tr>
+              {LAN.map((l) => <th key={l} style={TH}>Lần {l}</th>)}
               <th style={TH}>Tên thương mại</th>
               <th style={TH}>Ký mã hiệu</th>
               <th style={TH}>Hãng SX</th>
@@ -84,14 +93,15 @@ export default function BangChaoGia({ dsCongTy = [], sptk = {}, tsktChuan, laPdd
             </tr>
           </thead>
           <tbody>
-            {dsCongTy.map((c, i) => {
+            {congTy.map((cty, i) => {
+              const c = cty.moiNhat;
               const { sp, tskt } = ketQua[i];
               const nen = sp.khop ? SANG : {};
               return (
-                <tr key={c.id}>
+                <tr key={cty.ids.join("-") || cty.ten}>
                   <td style={{ ...TD, ...nen, textAlign: "center" }} className="tabular-nums text-slate-500">{i + 1}</td>
                   <td style={{ ...TD, ...nen, minWidth: 170, maxWidth: 230 }}>
-                    <div className="font-semibold text-slate-900">{c.ten_cong_ty}</div>
+                    <div className="font-semibold text-slate-900">{cty.ten}</div>
                     {sp.khop && (
                       <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-semibold text-white"
                         title={`Chào đúng sản phẩm tham khảo (${sp.lyDo})`}>
@@ -99,14 +109,16 @@ export default function BangChaoGia({ dsCongTy = [], sptk = {}, tsktChuan, laPdd
                       </span>
                     )}
                     {laPdd && onXoa && (
-                      hoiXoa === c.id ? (
+                      hoiXoa === cty.ten ? (
                         <div className="mt-1 flex gap-1 text-[11px]">
-                          <button type="button" onClick={() => { setHoiXoa(null); onXoa(c); }}
-                            className="rounded bg-red-600 px-1.5 py-0.5 font-semibold text-white">Xoá công ty này</button>
+                          <button type="button" onClick={() => { setHoiXoa(null); onXoa(cty); }}
+                            className="rounded bg-red-600 px-1.5 py-0.5 font-semibold text-white">
+                            Xoá công ty này{Object.keys(cty.theoLan).length > 1 ? " (mọi lần)" : ""}
+                          </button>
                           <button type="button" onClick={() => setHoiXoa(null)} className="px-1 text-slate-500">Thôi</button>
                         </div>
                       ) : (
-                        <button type="button" onClick={() => setHoiXoa(c.id)}
+                        <button type="button" onClick={() => setHoiXoa(cty.ten)}
                           className="mt-1 flex items-center gap-1 text-[11px] text-slate-400 hover:text-red-600"
                           title="Xoá dòng chào giá của công ty này cho mã này">
                           <Trash2 size={11} /> Xoá
@@ -114,9 +126,17 @@ export default function BangChaoGia({ dsCongTy = [], sptk = {}, tsktChuan, laPdd
                       )
                     )}
                   </td>
-                  <td style={{ ...TD, ...nen, textAlign: "right", whiteSpace: "nowrap" }} className="tabular-nums font-semibold">
-                    {c.don_gia != null ? fmt(Number(c.don_gia)) : "—"}
-                  </td>
+                  {LAN.map((l) => {
+                    const d = cty.theoLan[l];
+                    const moi = l === cty.lanMoiNhat;
+                    return (
+                      <td key={l} style={{ ...TD, ...nen, textAlign: "right", whiteSpace: "nowrap" }}
+                        className={`tabular-nums ${moi ? "font-semibold text-slate-900" : "text-slate-500"}`}
+                        title={d ? `Lần ${l}${moi ? " · lần mới nhất" : ""}` : `Công ty không chào lần ${l}`}>
+                        {d ? (d.don_gia != null ? fmt(Number(d.don_gia)) : "—") : <span className="text-slate-300">—</span>}
+                      </td>
+                    );
+                  })}
                   <td style={{ ...TD, ...nen, minWidth: 160, maxWidth: 240 }}>{c.ten_thuong_mai || "—"}</td>
                   <td style={{ ...TD, ...nen, minWidth: 120, maxWidth: 200, whiteSpace: "pre-wrap" }}>{c.ky_ma_hieu || "—"}</td>
                   <td style={{ ...TD, ...nen, minWidth: 130, maxWidth: 200 }}>{c.hang_san_xuat || "—"}</td>
@@ -154,7 +174,7 @@ export function NhanChaoGia({ ds = [], sptk, onClick }) {
         className={`mt-0.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium ${soDung
           ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
           : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>
-        Chào giá {ds.length} cty{soDung ? <> · <CheckCircle2 size={10} /> {soDung} đúng SP</> : ""} ▾
+        Chào giá {gopTheoCongTy(ds).length} cty{soDung ? <> · <CheckCircle2 size={10} /> {soDung} đúng SP</> : ""} ▾
       </button>
     </span>
   );

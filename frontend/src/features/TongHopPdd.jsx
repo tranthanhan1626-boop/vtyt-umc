@@ -38,7 +38,7 @@ import { dauVaoPdd, useKhoaThamGiaVaDaGui } from "../lib/useTienTrinh";
 import { giaTriKhongDoi } from "../lib/oKhongDoi";
 import { TIEN_TO_DIEU_CHINH, MUC_DIEU_CHINH, COT_SP_THAM_KHAO, docDieuChinh } from "../lib/dieuChinhKhoa";
 import { taiDeXuatKyTruocToanVien } from "../lib/deXuatKyTruoc";
-import { taiChaoGia } from "../lib/chaoGia";
+import { gopTheoCongTy, taiChaoGia } from "../lib/chaoGia";
 import { useCuonDauTruoc } from "../lib/useCuonDauTruoc";
 import BangChaoGia, { NhanChaoGia } from "../components/BangChaoGia";
 
@@ -633,9 +633,12 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
     catch (e) { setLoiO(dichLoi(e)); }
   }, [dotGoiId]);
   useEffect(() => { taiLaiChaoGia(); }, [taiLaiChaoGia]);
-  const xoaChaoGia = async (c) => {
-    const { error } = await supabase.rpc("xoa_chao_gia_v3", { p_id: c.id });
-    if (error) { setLoiO(dichLoi(error)); return; }
+  // Xoá MỘT công ty của một mã — mọi lần chào giá của công ty đó (miếng 2).
+  const xoaChaoGia = async (congTy) => {
+    for (const id of congTy.ids) {
+      const { error } = await supabase.rpc("xoa_chao_gia_v3", { p_id: id });
+      if (error) { setLoiO(dichLoi(error)); break; }
+    }
     await taiLaiChaoGia();
   };
   const [formRot, setFormRot] = useState(null);
@@ -1782,6 +1785,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
             {thau.coPhienQ && dotGoiId && (
               <div id="th-chao-gia" className="basis-full">
                 <NhapChaoGia dotGoiId={dotGoiId} tenGoi={boThau.nhan}
+                  lanMacDinh={Math.min(3, (Number(thau.giaiDoan.find((g) => g.giai_doan === "chao_gia")?.lan_chao_gia_xong) || 0) + 1)}
                   dsMa={rows.map((r) => ({ ma_hang: r.ma_hang, ten: r.ten_vt_2627 }))}
                   onXong={taiLaiChaoGia} />
               </div>
@@ -2362,7 +2366,7 @@ export default function TongHopPdd({ goiId = "18t-dung-chung", profile, dotId = 
                               )}
                               <NutTheSoXuong dangMo={theSoXuong.get(r.ma_hang) === "chao_gia"}
                                 onClick={() => chonTheSoXuong(r.ma_hang, "chao_gia")}>
-                                Thông tin chào giá{chaoGia.get(r.ma_hang)?.length ? ` · ${chaoGia.get(r.ma_hang).length} công ty` : ""}
+                                Thông tin chào giá{chaoGia.get(r.ma_hang)?.length ? ` · ${gopTheoCongTy(chaoGia.get(r.ma_hang)).length} công ty` : ""}
                               </NutTheSoXuong>
                             </div>
                           )}

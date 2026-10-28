@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { tachY, soTungY, docDonGia, docDongTuBang, docDongDangKhoi, docTrang, tachKhoiSanPham, khopSanPhamThamKhao, tachMa } from "../src/lib/chaoGia.js";
+import { tachY, soTungY, docDonGia, docDongTuBang, docDongDangKhoi, docTrang, tachKhoiSanPham, khopSanPhamThamKhao, tachMa, gopTheoCongTy } from "../src/lib/chaoGia.js";
 
 // Chào giá 28/10/2026 — so TSKT công ty với cột TSKT chính theo TỪNG Ý.
 // TSKT thật của mã 67178 (Bảng đếm gạc), rút gọn.
@@ -62,7 +62,7 @@ const bang = [
 const kq = docTrang(bang);
 assert.equal(kq.dong.length, 2);
 assert.deepEqual(kq.dong[1], {
-  ma_hang: "22565", ten_cong_ty: "Công ty D", don_gia: 95000, ten_thuong_mai: "Clip X",
+  ma_hang: "22565", lan: null, ten_cong_ty: "Công ty D", don_gia: 95000, ten_thuong_mai: "Clip X",
   ky_ma_hieu: "", hang_san_xuat: "", nuoc_san_xuat: "Mỹ", tieu_chi_ky_thuat: "TSKT",
 });
 assert.equal(kq.loi.length, 2);
@@ -86,7 +86,7 @@ assert.equal(sp._don_gia, 6700000);
 assert.equal(tachKhoiSanPham("X\nMã hàng: A-1/ A-2\nB-1/ B-2\nHãng/Nước sản xuất: Tomy Inc./ Nhật Bản").ky_ma_hieu,
   "A-1/ A-2\nB-1/ B-2");
 
-// ---- Đọc bảng dạng khối (trang TRÌNH KÝ): lấy khối SAU CÙNG (lần 2) ----------
+// ---- Đọc bảng dạng khối (trang TRÌNH KÝ): đọc HẾT các lần (miếng 2, 28/10) ------
 const khoi = [
   ["Mã HIS", "Tên", "PHÒNG VẬT TƯ THIẾT BỊ PHẢN HỒI lần 1", null, null, null, "PHÒNG VẬT TƯ THIẾT BỊ PHẢN HỒI lần 2"],
   [null, null, "Tên công ty 1", "Đơn giá chào 1 (VND)", "Thông tin sản phẩm chào giá (1)", "Tên công ty 2",
@@ -99,12 +99,39 @@ const khoi = [
 ];
 const k2 = docDongDangKhoi(khoi);
 assert.equal(k2.loi.length, 0);
-assert.equal(k2.dong.length, 2);
-assert.deepEqual(k2.dong[0], {
-  ma_hang: "56644", ten_cong_ty: "Nguyễn Việt Tiên", don_gia: 450000, ten_thuong_mai: "Cung",
+assert.equal(k2.dong.length, 3);
+// Lần lấy từ nhãn "… PHẢN HỒI lần K" phía trên khối.
+assert.deepEqual(k2.dong.map((d) => [d.lan, d.ten_cong_ty, d.don_gia]),
+  [[1, "Nguyễn Việt Tiên", 700000], [2, "Nguyễn Việt Tiên", 450000], [2, "Công ty B", 1200000]]);
+assert.deepEqual(k2.dong[1], {
+  ma_hang: "56644", lan: 2, ten_cong_ty: "Nguyễn Việt Tiên", don_gia: 450000, ten_thuong_mai: "Cung",
   ky_ma_hieu: "C1", hang_san_xuat: "ABC", nuoc_san_xuat: "Đức", tieu_chi_ky_thuat: "",
 });
-assert.equal(k2.dong[1].don_gia, 1200000); // ô giá trống → lấy "Đơn giá:" trong khối
+assert.equal(k2.dong[2].don_gia, 1200000); // ô giá trống → lấy "Đơn giá:" trong khối
+// Không có nhãn lần: khối lặp thứ K = lần K; khối chỉ một lần → null (PĐD chọn lần).
+const khongNhan = docDongDangKhoi([["Mã HIS", "Tên"], ...khoi.slice(1)]);
+assert.deepEqual(khongNhan.dong.map((d) => d.lan), [1, 2, 2]);
+const motKhoi = docDongDangKhoi([["Mã HIS", "Tên công ty 1", "Đơn giá chào 1 (VND)"], ["56644", "Công ty A", 5000]]);
+assert.equal(motKhoi.dong[0].lan, null);
+// Cột "Lần chào giá" của tệp mẫu.
+const coLan = docDongTuBang([["Mã hàng", "Lần chào giá", "Tên công ty", "Đơn giá chào (VNĐ)"],
+  ["67330", 3, "Công ty A", 1000], ["67330", "4", "Công ty B", 1000]]);
+assert.equal(coLan.dong[0].lan, 3);
+assert.match(coLan.loi[0], /phải là 1, 2 hoặc 3/);
+
+// ---- Gộp theo công ty: giá từng lần, thông tin theo lần mới nhất ----------------
+const gop = gopTheoCongTy([
+  { id: 1, lan: 1, ten_cong_ty: "Công ty A", don_gia: 500000, ky_ma_hieu: "cu" },
+  { id: 2, lan: 2, ten_cong_ty: "công ty a ", don_gia: 450000, ky_ma_hieu: "moi" },
+  { id: 3, lan: 2, ten_cong_ty: "Công ty C", don_gia: 470000 },
+]);
+assert.equal(gop.length, 2);
+assert.equal(gop[0].theoLan[1].don_gia, 500000);
+assert.equal(gop[0].theoLan[2].don_gia, 450000);
+assert.equal(gop[0].lanMoiNhat, 2);
+assert.equal(gop[0].moiNhat.ky_ma_hieu, "moi");
+assert.deepEqual(gop[0].ids, [1, 2]);
+assert.equal(gop[1].theoLan[1], undefined);
 assert.equal(docDongDangKhoi([["Mã hàng", "Tên công ty"]]), null);
 
 // ---- Đúng sản phẩm tham khảo (ví dụ thật mã 67330) ----------------------------
