@@ -419,7 +419,11 @@ mục 4b.
     Đã bấm thử: PĐD (tải tệp, 15 nhãn khớp số đếm trước, hai thẻ, không nhảy) + khoa `dvsd2@` (thấy đúng 10 mã RHM,
     RLS trả 35 dòng, không có nút Xoá). Sau chốt em chốt thêm: (3) bảng chào giá **xếp DỌC — mỗi công ty một hàng** (STT · Tên công
     ty · Đơn giá · Thông tin SP 5 cột), bỏ bản ngang "công ty 1, 2, 3"; (4) **cột Tiêu chí kỹ thuật (mọi khoá `tskt*`) luôn
-    hiện đủ**, không cuộn trong ô (luật 12 dòng do Claude tự đặt 05/10 vẫn giữ cho cột khác, vd ký mã hiệu 3.695 ký tự). **Còn mở:** 21a. Mở thẳng thẻ chào giá thay vì để trống khi mới sổ? (hiện để
+    hiện đủ**, không cuộn trong ô (luật 12 dòng do Claude tự đặt 05/10 vẫn giữ cho cột khác, vd ký mã hiệu 3.695 ký tự). (5) Em hỏi: sau chốt số khoa có sửa được TSKT /
+    SP tham khảo theo chào giá không → **ĐƯỢC, qua ô Điều chỉnh** (đã thử 28/10 bằng `dvsd2@` trên mã 67330: lưu + xoá dòng chạy;
+    `luu_o_danh_muc_khoa` và trigger không chặn theo chốt số); PĐD sửa cột chính tới khi chốt trình ký. Thêm nhãn xanh
+    "Tiêu chí kỹ thuật, sản phẩm tham khảo: vẫn ghi được ở cột Điều chỉnh" cạnh nhãn khoá số lượng (chỉ vai khoa).
+    Lần thử để lại 1 thư báo cho PĐD (32371) và 1 ô điều chỉnh rỗng (26032) — vô hại. **Còn mở:** 21a. Mở thẳng thẻ chào giá thay vì để trống khi mới sổ? (hiện để
     trống, chọn mới mở — đúng ý em 28/10). 21b. Tệp chào giá thật (nguồn dữ liệu thử) nằm ở Tải về: `~/Downloads/tong_hop_rhm_sau_hdms_23.9(gui pvttb) -
     Copy.xlsx`, trang TRÌNH KÝ (em chọn để nguyên ở đó, không chép vào dự án). 21c. Bộ dữ liệu thử ở gói con RHM (20 đề xuất, đã chốt số, 46 chào giá) đang nằm trên staging —
     dọn khi em bảo. 21d. Tiêu chí kỹ thuật của công ty chưa có trong tệp chào giá thật — khi có, web so thêm từng ý.

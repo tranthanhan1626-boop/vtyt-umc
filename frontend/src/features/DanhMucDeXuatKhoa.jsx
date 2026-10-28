@@ -1541,6 +1541,16 @@ export default function DanhMucDeXuatKhoa({ goiId: goiIdUrl = "18t-dung-chung", 
                 ? "Số lượng: PĐD đã chốt số đi thầu, không sửa được ở đây"
                 : "Số lượng: sửa được tại đây"}
           </span>
+          {/* 28/10/2026 (chủ dự án): chốt số CHỈ khoá số lượng. Khoa vẫn dựa vào
+              chào giá để đề nghị đổi tiêu chí kỹ thuật / sản phẩm tham khảo qua ô
+              Điều chỉnh (luu_o_danh_muc_khoa không chặn theo chốt số); PĐD sửa cột
+              chính tới khi chốt trình ký. Nhãn này để khoa khỏi tưởng khoá hết. */}
+          {daChotQ && !laPdd && (
+            <span className="qtdx-badge green"
+              title="Đọc thông tin chào giá (nhãn “Chào giá N cty” dưới tên hàng), rồi ghi đề nghị đổi tiêu chí kỹ thuật hoặc sản phẩm tham khảo ở cột Điều chỉnh cuối bảng. Phòng Điều dưỡng sẽ sửa vào danh mục chính.">
+              Tiêu chí kỹ thuật, sản phẩm tham khảo: vẫn ghi được ở cột Điều chỉnh
+            </span>
+          )}
           {soMaRot > 0 && (
             <span className="qtdx-badge red">
               {chuDaiRot}
