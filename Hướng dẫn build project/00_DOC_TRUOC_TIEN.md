@@ -447,8 +447,10 @@ mục 4b.
     gói RHM 28/10: Xong lần 1 → Hoàn thành Chào giá → Kiểm tra → Hội đồng → nút Chốt trình ký hiện, Mở thầu báo "Chốt
     trình ký xong mới bắt đầu". **Gói RHM (859): em cho chốt trình ký THẬT 28/10 khuya** (bản số 1 — cột chữ dữ liệu thử đã vào
     `danh_muc_chot_ky`), đang ở **Mở thầu**; mã 67330 đã bấm "Không có nhà thầu" trên web (trúng 0, nhãn "Rớt cả
-    mã · Mở thầu"), **CHƯA bấm Xác nhận rớt** (bấm sẽ tạo/ghi giỏ đợt bổ sung + thư báo 2 khoa). Muốn dọn: bấm "Bỏ"
-    trên dòng 67330, rồi mở chốt trình ký từng khoa (⋯ → Mở lại bảng của một khoa, ghi lý do). **Miếng 2 — XONG 28/10:** `patch_zzzzzzzu_chao_gia_theo_lan.sql`
+    mã · Mở thầu"), rồi em cho **bấm Xác nhận rớt THẬT**: hệ TỰ TẠO đợt **#213 "Mua sắm bổ sung đợt tháng 1/2027"**
+    (gói con bổ sung 863), giỏ của 2 khoa có 67330 (RHM 130, GMHS 20, ghi phát sinh ở Mở thầu), thư báo 32376 (GMHS),
+    32377 (RHM), 32378 (PĐD). Gói 859 còn đang ở Mở thầu (chưa Hoàn thành). Dữ liệu thử này nằm trên hệ thật — dọn
+    khi em bảo (đợt #213, giỏ 2 khoa, 3 thư báo, chuyển tiếp rớt, rồi mở chốt trình ký gói 859). **Miếng 2 — XONG 28/10:** `patch_zzzzzzzu_chao_gia_theo_lan.sql`
     (ĐÃ CHẠY qua `backend/scripts/chay_chao_gia_theo_lan_28-10.sh`; lùi = `rollback_zzzzzzzu…`): cột `lan` 1..3 ở
     `chao_gia_v3` (46 dòng cũ gán lần 2), khoá duy nhất thêm lần. Tệp bệnh viện: đọc HẾT các khối, lần lấy từ nhãn
     "PHÒNG VẬT TƯ THIẾT BỊ PHẢN HỒI lần K" (tệp thật: lần 1 = 270 dòng, lần 2 = 306 dòng toàn tệp); tệp mẫu có cột
